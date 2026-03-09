@@ -1,8 +1,12 @@
 import { z } from "zod";
 
+const WEAK_SECRETS = ["smsok-dev-secret-change-in-production", "secret", "jwt-secret", "change-me"];
+
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
-  JWT_SECRET: z.string().min(16, "JWT_SECRET must be at least 16 characters"),
+  JWT_SECRET: z.string().min(16, "JWT_SECRET must be at least 16 characters")
+    .refine((s) => process.env.NODE_ENV !== "production" || !WEAK_SECRETS.includes(s),
+      "JWT_SECRET is too weak for production — use a random 32+ character string"),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   PORT: z.coerce.number().default(3000),
   REDIS_URL: z.string().optional(),
