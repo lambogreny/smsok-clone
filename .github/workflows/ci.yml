@@ -108,10 +108,29 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
+            set -e
             cd /opt/smsok-clone
             export COMMIT_SHA=${{ github.sha }}
+
+            # Pull new image
             docker compose -f docker-compose.prod.yml pull
+
+            # Run DB migrations before deploying new code
+            docker compose -f docker-compose.prod.yml run --rm app \
+              npx prisma db push --skip-generate 2>&1 || true
+
+            # Deploy with zero-downtime restart
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
-            sleep 10
-            curl -sf http://localhost:3458/api/health || echo "WARNING: Health check failed"
+
+            # Wait and verify health
+            echo "Waiting for health check..."
+            for i in 1 2 3 4 5 6; do
+              sleep 5
+              if curl -sf http://localhost:3458/api/health/ready; then
+                echo "Health check passed!"
+                break
+              fi
+              [ "$i" = "6" ] && echo "WARNING: Health check failed after 30s"
+            done
+
             docker image prune -f

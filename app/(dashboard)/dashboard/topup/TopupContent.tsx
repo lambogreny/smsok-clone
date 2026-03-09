@@ -1,5 +1,8 @@
 "use client";
 
+import { motion } from "framer-motion";
+import EmptyState from "@/app/components/ui/EmptyState";
+
 type Package = {
   id?: string;
   name: string;
@@ -31,12 +34,14 @@ function formatDuration(days: number): string {
 
 export default function TopupContent({ user, packages }: { user: User; packages: Package[] }) {
   return (
-    <div className="p-6 md:p-8 max-w-6xl animate-fade-in">
-      <h1 className="text-2xl font-bold text-white mb-1 tracking-tight">เติมเงิน</h1>
+    <motion.div className="p-6 md:p-8 max-w-6xl" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }}>
+      <h1 className="text-2xl font-bold tracking-tight mb-1">
+        <span className="gradient-text-sky">เติมเงิน</span>
+      </h1>
       <p className="text-sm text-white/40 mb-8">เลือกแพ็กเกจเพื่อเติมเครดิต SMS</p>
 
       {/* Current Credits */}
-      <div className="glass p-6 mb-8">
+      <div className="glass-sky p-6 mb-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-sky-500/[0.08] border border-sky-500/10 flex items-center justify-center">
@@ -46,7 +51,7 @@ export default function TopupContent({ user, packages }: { user: User; packages:
             </div>
             <div>
               <p className="text-xs text-white/30 uppercase tracking-wider font-medium">เครดิตคงเหลือ</p>
-              <p className="text-3xl font-bold neon-blue">{user.credits.toLocaleString()}</p>
+              <p className="text-3xl font-bold gradient-text-sky">{user.credits.toLocaleString()}</p>
             </div>
           </div>
           <div className="text-right">
@@ -57,19 +62,17 @@ export default function TopupContent({ user, packages }: { user: User; packages:
       </div>
 
       {/* Packages Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 stagger-children">
         {packages.map((pkg, i) => (
-          <div
+          <motion.div
             key={pkg.id ?? i}
-            className={`glass card-glow p-6 flex flex-col animate-fade-in ${
-              pkg.isBestSeller ? "border-sky-500/30 shadow-[0_0_30px_rgba(56,189,248,0.08)]" : ""
-            }`}
-            style={{ animationDelay: `${i * 0.06}s` }}
+            className={`glass card-glow p-6 flex flex-col ${pkg.isBestSeller ? "glass-sky border-sky-500/30 shadow-[0_0_30px_rgba(56,189,248,0.08)]" : ""}`}
+            whileHover={{ y: -6, transition: { duration: 0.3 } }}
           >
             {/* Best Seller Badge */}
             {pkg.isBestSeller && (
               <div className="mb-3">
-                <span className="badge badge-info">BEST SELLER</span>
+                <span className="badge-glow-info text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-md">BEST SELLER</span>
               </div>
             )}
 
@@ -78,7 +81,7 @@ export default function TopupContent({ user, packages }: { user: User; packages:
 
             {/* Price */}
             <div className="mb-4">
-              <span className="text-2xl font-bold neon-blue">{formatPrice(pkg.price)}</span>
+              <span className="text-2xl font-bold gradient-text-sky">{formatPrice(pkg.price)}</span>
               <span className="text-sm text-white/30 ml-1">บาท</span>
             </div>
 
@@ -107,17 +110,29 @@ export default function TopupContent({ user, packages }: { user: User; packages:
             </div>
 
             {/* Buy Button */}
-            <button className={`w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 ${
-              pkg.isBestSeller ? "btn-primary" : "btn-glass"
-            }`}>
+            <motion.button
+              className={`w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 ${
+                pkg.isBestSeller ? "btn-primary" : "btn-glass"
+              }`}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
               ซื้อแพ็กเกจ
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
-            </button>
-          </div>
+            </motion.button>
+          </motion.div>
         ))}
       </div>
-    </div>
+
+      {packages.length === 0 && (
+        <EmptyState
+          icon={<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" /></svg>}
+          title="ยังไม่มีแพ็กเกจ"
+          description="แพ็กเกจจะแสดงที่นี่เมื่อพร้อมใช้งาน"
+        />
+      )}
+    </motion.div>
   );
 }

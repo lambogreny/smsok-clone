@@ -24,11 +24,15 @@ export type RateLimitConfig = {
 };
 
 const DEFAULTS: Record<string, RateLimitConfig> = {
-  sms: { windowMs: 60_000, maxRequests: 10 },       // 10 SMS/min
-  batch: { windowMs: 60_000, maxRequests: 5 },       // 5 batch/min
-  auth: { windowMs: 15 * 60_000, maxRequests: 10 },  // 10 login attempts/15min
-  api: { windowMs: 60_000, maxRequests: 60 },         // 60 req/min general
-  slip: { windowMs: 60_000, maxRequests: 5 },         // 5 slip verifications/min
+  sms: { windowMs: 60_000, maxRequests: 10 },         // 10 SMS/min
+  batch: { windowMs: 60_000, maxRequests: 5 },         // 5 batch/min
+  auth: { windowMs: 15 * 60_000, maxRequests: 10 },    // 10 login attempts/15min
+  api: { windowMs: 60_000, maxRequests: 60 },           // 60 req/min general
+  slip: { windowMs: 60_000, maxRequests: 5 },           // 5 slip verifications/min
+  password: { windowMs: 15 * 60_000, maxRequests: 5 },  // 5 password changes/15min
+  apikey: { windowMs: 60_000, maxRequests: 10 },         // 10 key ops/min
+  import: { windowMs: 60_000, maxRequests: 5 },          // 5 imports/min
+  admin: { windowMs: 60_000, maxRequests: 30 },          // 30 admin ops/min
 };
 
 export function checkRateLimit(

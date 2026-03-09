@@ -23,10 +23,11 @@ export default async function SettingsPage() {
   if (!fullUser) redirect("/login");
 
   return (
-    <div className="p-6 md:p-8 max-w-4xl animate-fade-in">
-      <h1 className="text-2xl font-bold text-white mb-1 tracking-tight">ตั้งค่า</h1>
+    <div className="p-6 md:p-8 max-w-4xl animate-fade-in-up">
+      <h1 className="text-2xl font-bold tracking-tight mb-1"><span className="gradient-text-sky">ตั้งค่า</span></h1>
       <p className="text-sm text-white/40 mb-8">จัดการบัญชีและข้อมูลส่วนตัว</p>
 
+      <div className="space-y-6 stagger-children">
       {/* Profile Section */}
       <div className="glass p-6 md:p-8 mb-6">
         <h2 className="text-base font-semibold text-white mb-5 flex items-center gap-2.5">
@@ -85,7 +86,7 @@ export default async function SettingsPage() {
           </div>
           <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
             <p className="text-xs text-white/30 uppercase tracking-wider mb-1">เครดิตคงเหลือ</p>
-            <p className="text-lg font-semibold neon-blue">{fullUser.credits.toLocaleString()}</p>
+            <p className="text-lg font-semibold gradient-text-sky">{fullUser.credits.toLocaleString()}</p>
           </div>
           <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
             <p className="text-xs text-white/30 uppercase tracking-wider mb-1">สมาชิกตั้งแต่</p>
@@ -98,6 +99,7 @@ export default async function SettingsPage() {
             </p>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

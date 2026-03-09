@@ -17,9 +17,9 @@ export default async function SendersPage() {
   const pendingCount = senderNames.filter(s => s.status === "pending").length;
 
   return (
-    <div className="p-6 md:p-8 max-w-6xl animate-fade-in">
-      <h1 className="text-2xl font-bold text-white mb-1 tracking-tight">ชื่อผู้ส่ง</h1>
-      <p className="text-sm text-white/40 mb-8">ยื่นคำขอ Sender Name เพื่อใช้ส่ง SMS ในชื่อแบรนด์ของคุณ</p>
+    <div className="p-6 md:p-8 max-w-6xl animate-fade-in-up">
+      <h1 className="text-2xl font-bold mb-1 tracking-tight bg-gradient-to-r from-violet-300 via-pink-300 to-violet-400 bg-clip-text text-transparent">ชื่อผู้ส่ง</h1>
+      <p className="text-sm text-white/40 mb-8">ยื่นคำขอชื่อผู้ส่งเพื่อใช้ส่ง SMS ในชื่อแบรนด์ของคุณ</p>
 
       {/* Request Process Info */}
       <div className="glass p-5 mb-6">
@@ -30,7 +30,7 @@ export default async function SendersPage() {
             </svg>
           </div>
           <div>
-            <p className="text-sm text-white/60 font-medium mb-2">ขั้นตอนการขอ Sender Name</p>
+            <p className="text-sm text-white/60 font-medium mb-2">ขั้นตอนการขอชื่อผู้ส่ง</p>
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs text-white/35">
               <div className="flex items-center gap-2">
                 <span className="w-5 h-5 rounded-full bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 text-[10px] font-bold">1</span>
@@ -78,7 +78,7 @@ export default async function SendersPage() {
               <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6M12 18v-6M9 15h6" />
             </svg>
           </div>
-          ยื่นคำขอ Sender Name ใหม่
+          ยื่นคำขอชื่อผู้ส่งใหม่
         </h2>
         <SenderNameForm userId={user!.id} />
       </div>
@@ -139,7 +139,7 @@ export default async function SendersPage() {
                 <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6M12 18v-6M9 15h6" />
               </svg>
             </div>
-            <p className="text-sm text-white/25 mb-1">ยังไม่มีคำขอ Sender Name</p>
+            <p className="text-sm text-white/25 mb-1">ยังไม่มีคำขอชื่อผู้ส่ง</p>
             <p className="text-xs text-white/15">ยื่นคำขอด้านบนเพื่อใช้ชื่อแบรนด์ของคุณส่ง SMS</p>
           </div>
         )}

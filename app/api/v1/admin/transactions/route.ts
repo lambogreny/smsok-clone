@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { authenticateApiKey, ApiError, apiResponse, apiError } from "@/lib/api-auth";
 import { adminVerifyTransaction, adminGetPendingTransactions } from "@/lib/actions/payments";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 async function requireAdmin(req: NextRequest) {
   const user = await authenticateApiKey(req);
@@ -12,7 +13,11 @@ async function requireAdmin(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    await requireAdmin(req);
+    const admin = await requireAdmin(req);
+
+    const limit = checkRateLimit(admin.id, "admin");
+    if (!limit.allowed) return rateLimitResponse(limit.resetIn);
+
     const pending = await adminGetPendingTransactions();
     return apiResponse({ transactions: pending });
   } catch (error) {
@@ -23,6 +28,10 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const admin = await requireAdmin(req);
+
+    const limit = checkRateLimit(admin.id, "admin");
+    if (!limit.allowed) return rateLimitResponse(limit.resetIn);
+
     const body = await req.json();
     await adminVerifyTransaction(
       admin.id,

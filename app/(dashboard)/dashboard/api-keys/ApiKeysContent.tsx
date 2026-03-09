@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createApiKey, toggleApiKey, deleteApiKey } from "@/lib/actions/api-keys";
+import EmptyState from "@/app/components/ui/EmptyState";
+import ConfirmDialog from "@/app/components/ui/ConfirmDialog";
 
 type ApiKey = {
   id: string;
@@ -36,6 +38,7 @@ export default function ApiKeysContent({ userId, apiKeys: initialKeys }: { userI
   const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,13 +69,19 @@ export default function ApiKeysContent({ userId, apiKeys: initialKeys }: { userI
     }
   };
 
-  const handleDelete = async (keyId: string) => {
-    if (!confirm("คุณต้องการลบ API Key นี้?")) return;
+  const handleDelete = (keyId: string) => {
+    setDeleteTarget(keyId);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      await deleteApiKey(userId, keyId);
-      setApiKeys((prev) => prev.filter((k) => k.id !== keyId));
+      await deleteApiKey(userId, deleteTarget);
+      setApiKeys((prev) => prev.filter((k) => k.id !== deleteTarget));
     } catch (e) {
       setError(e instanceof Error ? e.message : "เกิดข้อผิดพลาด");
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -91,7 +100,7 @@ export default function ApiKeysContent({ userId, apiKeys: initialKeys }: { userI
     >
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-violet-300 via-sky-300 to-cyan-300 bg-clip-text text-transparent">คีย์ API</h1>
+          <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-emerald-300 via-sky-300 to-emerald-400 bg-clip-text text-transparent">คีย์ API</h1>
           <p className="text-sm text-white/40 mt-1">จัดการ API Keys สำหรับเชื่อมต่อระบบ</p>
         </div>
         <motion.button
@@ -237,7 +246,7 @@ export default function ApiKeysContent({ userId, apiKeys: initialKeys }: { userI
                     </td>
                     <td className="px-5 py-3.5">
                       <span className={`text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-md ${key.isActive ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"}`}>
-                        {key.isActive ? "เปิดใช้" : "ปิดใช้"}
+                        {key.isActive ? "ใช้งาน" : "ปิดใช้งาน"}
                       </span>
                     </td>
                     <td className="px-5 py-3.5 text-white/30 text-xs hidden md:table-cell">{new Date(key.createdAt).toLocaleDateString("th-TH")}</td>
@@ -268,31 +277,12 @@ export default function ApiKeysContent({ userId, apiKeys: initialKeys }: { userI
             </table>
           </div>
         ) : (
-          <motion.div
-            className="text-center py-14"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/[0.02] border border-white/[0.04] flex items-center justify-center">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-white/10">
-                <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
-              </svg>
-            </div>
-            <p className="text-sm text-white/25 mb-1">ยังไม่มี API Key</p>
-            <p className="text-xs text-white/15 mb-5">สร้าง API Key เพื่อเชื่อมต่อระบบของคุณ</p>
-            <motion.button
-              onClick={() => setShowForm(true)}
-              className="btn-primary inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              สร้าง API Key
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </motion.button>
-          </motion.div>
+          <EmptyState
+            icon={<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" /></svg>}
+            title="ยังไม่มีคีย์ API"
+            description="สร้างคีย์ API เพื่อเชื่อมต่อระบบของคุณ"
+            action={{ label: "สร้างคีย์ใหม่", onClick: () => setShowForm(true) }}
+          />
         )}
       </div>
 
@@ -316,6 +306,16 @@ export default function ApiKeysContent({ userId, apiKeys: initialKeys }: { userI
   -d '{"to": "0812345678", "message": "Hello!"}'`}</code>
         </div>
       </motion.div>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="ต้องการลบคีย์ API นี้?"
+        description="ระบบที่ใช้คีย์นี้จะไม่สามารถเชื่อมต่อได้อีก"
+        confirmLabel="ยืนยันลบ"
+        variant="danger"
+        onConfirm={confirmDelete}
+        onClose={() => setDeleteTarget(null)}
+      />
     </motion.div>
   );
 }

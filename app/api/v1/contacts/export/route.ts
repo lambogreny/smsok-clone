@@ -2,6 +2,15 @@ import { NextRequest } from "next/server";
 import { authenticateApiKey, apiResponse, apiError } from "@/lib/api-auth";
 import { exportContacts } from "@/lib/actions/contacts";
 
+/** Escape a value for safe CSV output (prevents CSV injection + XSS) */
+function escapeCsvField(value: unknown): string {
+  const str = String(value ?? "");
+  // Strip formula injection characters at start (=, +, -, @, \t, \r)
+  const sanitized = str.replace(/^[=+\-@\t\r]+/, "");
+  // Escape double quotes by doubling them, wrap in quotes
+  return `"${sanitized.replace(/"/g, '""')}"`;
+}
+
 export async function GET(req: NextRequest) {
   try {
     const user = await authenticateApiKey(req);
@@ -13,7 +22,9 @@ export async function GET(req: NextRequest) {
     if (format === "csv") {
       const header = "name,phone,email,tags,groups,createdAt";
       const rows = contacts.map(
-        (c) => `"${c.name}","${c.phone}","${c.email}","${c.tags}","${c.groups}","${c.createdAt}"`
+        (c) => [c.name, c.phone, c.email, c.tags, c.groups, c.createdAt]
+          .map(escapeCsvField)
+          .join(",")
       );
       const csv = [header, ...rows].join("\n");
 

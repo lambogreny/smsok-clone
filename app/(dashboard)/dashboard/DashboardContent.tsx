@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { sendSms } from "@/lib/actions/sms";
 
@@ -19,6 +19,36 @@ type DashboardStats = {
   recentMessages: { id: string; recipient: string; status: string; senderName: string; creditCost: number; createdAt: Date }[];
 };
 
+function useCountUp(target: number, duration = 1500) {
+  const [count, setCount] = useState(0);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          let start = 0;
+          const step = target / (duration / 16);
+          const timer = setInterval(() => {
+            start += step;
+            if (start >= target) {
+              setCount(target);
+              clearInterval(timer);
+            } else {
+              setCount(Math.floor(start));
+            }
+          }, 16);
+          observer.disconnect();
+          return () => clearInterval(timer);
+        }
+      },
+      { threshold: 0.5 }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [target, duration]);
+  return { count, ref };
+}
+
 const statCards = [
   {
     label: "เครดิต",
@@ -27,6 +57,7 @@ const statCards = [
     deltaColor: "text-emerald-400",
     sparkline: [2, 4, 3, 6, 8, 6, 4, 5, 7, 9],
     gradient: true,
+    glass: "glass-sky",
     accentFrom: "from-sky-400",
     accentTo: "to-cyan-300",
     icon: (
@@ -41,6 +72,7 @@ const statCards = [
     delta: "+23.5%",
     deltaColor: "text-emerald-400",
     sparkline: [1, 3, 5, 4, 7, 5, 3, 4, 6, 8],
+    glass: "glass-indigo",
     accentFrom: "from-violet-400",
     accentTo: "to-purple-300",
     icon: (
@@ -55,6 +87,7 @@ const statCards = [
     delta: "98.2%",
     deltaColor: "text-emerald-400",
     sparkline: [6, 8, 8, 9, 8, 9, 9, 9, 8, 9],
+    glass: "glass-emerald",
     accentFrom: "from-emerald-400",
     accentTo: "to-teal-300",
     icon: (
@@ -69,6 +102,7 @@ const statCards = [
     delta: "1.8%",
     deltaColor: "text-red-400",
     sparkline: [1, 1, 0, 1, 0, 0, 1, 0, 0, 1],
+    glass: "glass",
     accentFrom: "from-rose-400",
     accentTo: "to-red-300",
     icon: (
@@ -169,23 +203,26 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
   return (
     <motion.div
       className="p-6 md:p-8 max-w-6xl"
-      initial="hidden"
-      animate="show"
-      variants={stagger}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
     >
       {/* Greeting */}
       <motion.div className="mb-8" variants={fadeUp}>
-        <p className="text-white/30 text-sm">สวัสดี, <span className="text-white/60">{user.name}</span></p>
+        <h2 className="text-2xl font-bold tracking-tight mb-1">
+          <span className="gradient-text-sky">สวัสดี, {user.name}</span>
+        </h2>
+        <p className="text-sm text-white/40">ภาพรวมการส่ง SMS วันนี้</p>
       </motion.div>
 
       {/* Stats Grid */}
-      <motion.div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8" variants={stagger}>
+      <motion.div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 stagger-children" variants={stagger}>
         {statCards.map((stat) => (
           <motion.div
             key={stat.key}
             variants={fadeUp}
             whileHover={{ y: -4, transition: { duration: 0.2 } }}
-            className={`glass card-glow p-5 group transition-colors duration-300 ${
+            className={`${stat.glass} card-glow p-5 group transition-colors duration-300 ${
               stat.gradient ? "border-sky-500/20 shadow-[0_0_30px_rgba(56,189,248,0.06)]" : ""
             }`}
           >
@@ -235,7 +272,7 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
               <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
             </svg>
           </div>
-          <span className="bg-gradient-to-r from-sky-300 to-violet-300 bg-clip-text text-transparent">ส่งด่วน</span>
+          <span className="gradient-text-sky">ส่งด่วน</span>
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
@@ -326,7 +363,7 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
                 <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
               </svg>
             </div>
-            <span className="bg-gradient-to-r from-violet-300 to-sky-300 bg-clip-text text-transparent">ข้อความล่าสุด</span>
+            <span className="gradient-text-violet">ข้อความล่าสุด</span>
           </h2>
           <motion.a
             href="/dashboard/messages"
@@ -341,13 +378,11 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
         </div>
 
         {stats?.recentMessages && stats.recentMessages.length > 0 ? (
-          <div className="space-y-2">
-            {stats.recentMessages.map((msg, i) => (
+          <motion.div className="space-y-2" variants={{ show: { transition: { staggerChildren: 0.04 } } }} initial="hidden" animate="show">
+            {stats.recentMessages.map((msg) => (
               <motion.div
                 key={msg.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 + i * 0.06, duration: 0.4 }}
+                variants={{ hidden: { opacity: 0, x: -16 }, show: { opacity: 1, x: 0 } }}
                 whileHover={{ backgroundColor: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.06)" }}
                 className="flex items-center justify-between py-3 px-4 rounded-xl bg-white/[0.015] border border-white/[0.04] transition-all"
               >
@@ -376,7 +411,7 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
                 </div>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
         ) : (
           <motion.div
             className="text-center py-14"

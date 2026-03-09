@@ -4,6 +4,8 @@ import { useState, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createContact, deleteContact } from "@/lib/actions/contacts";
 import { useRouter } from "next/navigation";
+import EmptyState from "@/app/components/ui/EmptyState";
+import { useToast } from "@/app/components/ui/Toast";
 
 type Contact = {
   id: string;
@@ -97,7 +99,7 @@ export default function ContactsClient({
     >
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-sky-300 via-cyan-300 to-violet-300 bg-clip-text text-transparent">สมุดโทรศัพท์</h2>
+          <h2 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-indigo-300 via-violet-300 to-indigo-400 bg-clip-text text-transparent">รายชื่อผู้ติดต่อ</h2>
           <p className="text-sm text-white/40 mt-1">
             จัดการรายชื่อผู้ติดต่อ ({totalContacts} รายชื่อ)
           </p>
@@ -212,7 +214,7 @@ export default function ContactsClient({
                     กำลังบันทึก...
                   </span>
                 ) : (
-                  "บันทึกรายชื่อ"
+                  "บันทึก"
                 )}
               </motion.button>
             </div>
@@ -276,29 +278,12 @@ export default function ContactsClient({
           </div>
         </motion.div>
       ) : (
-        <motion.div
-          className="glass p-12 text-center"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2 }}
-        >
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/[0.02] border border-white/[0.04] flex items-center justify-center">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-white/10">
-              <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
-            </svg>
-          </div>
-          <p className="text-sm text-white/25 mb-1">ยังไม่มีรายชื่อ</p>
-          <p className="text-xs text-white/15 mb-5">เพิ่มรายชื่อผู้ติดต่อเพื่อส่ง SMS ได้ง่ายขึ้น</p>
-          <motion.button
-            onClick={() => setShowForm(true)}
-            className="btn-primary inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            + เพิ่มรายชื่อ
-          </motion.button>
-        </motion.div>
+        <EmptyState
+          icon={<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" /></svg>}
+          title="ยังไม่มีรายชื่อ"
+          description="เพิ่มรายชื่อผู้ติดต่อเพื่อส่งข้อความได้ง่ายขึ้น"
+          action={{ label: "+ เพิ่มรายชื่อ", onClick: () => setShowForm(true) }}
+        />
       )}
     </motion.div>
   );

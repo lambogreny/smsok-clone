@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { requestSenderName } from "@/lib/actions/sender-names";
 
 export default function SenderNameForm({ userId }: { userId: string }) {
@@ -31,6 +32,11 @@ export default function SenderNameForm({ userId }: { userId: string }) {
   };
 
   return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+    >
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>
@@ -67,10 +73,12 @@ export default function SenderNameForm({ userId }: { userId: string }) {
       </div>
 
       <div className="flex items-center gap-4">
-        <button
+        <motion.button
           type="submit"
           disabled={!isValid || loading}
           className="btn-primary px-6 py-3 rounded-xl text-sm font-semibold flex items-center gap-2 disabled:opacity-40 whitespace-nowrap"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
           {loading ? (
             <span className="flex items-center gap-2">
@@ -85,19 +93,29 @@ export default function SenderNameForm({ userId }: { userId: string }) {
               ยื่นคำขอ
             </>
           )}
-        </button>
+        </motion.button>
         <p className="text-[11px] text-white/20">คำขอจะถูกตรวจสอบโดยทีมงานภายใน 1-2 วันทำการ</p>
       </div>
 
-      {result && (
-        <div className={`p-4 rounded-xl border text-sm font-medium animate-fade-in ${
-          result.type === "success"
-            ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-            : "bg-red-500/10 border-red-500/20 text-red-400"
-        }`}>
-          {result.message}
-        </div>
-      )}
+      <AnimatePresence mode="wait">
+        {result && (
+          <motion.div
+            key={result.type}
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className={`p-4 rounded-xl border text-sm font-medium ${
+              result.type === "success"
+                ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                : "bg-red-500/10 border-red-500/20 text-red-400"
+            }`}
+          >
+            {result.message}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </form>
+    </motion.div>
   );
 }

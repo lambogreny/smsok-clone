@@ -2,8 +2,15 @@ node_modules
 .next
 .git
 .github
+.husky
+.vscode
 *.md
 .env*
 .DS_Store
 scripts
 tests
+docker-compose*.yml
+biome.json
+tsconfig.base.json
+turbo.json
+ψ/

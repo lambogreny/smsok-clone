@@ -114,7 +114,7 @@ function SidebarLink({ item, isActive }: { item: typeof sidebarItems[0]; isActiv
         <motion.div
           layoutId="sidebar-active"
           className="absolute inset-0 rounded-xl bg-gradient-to-r from-sky-500/[0.12] to-violet-500/[0.06] border-l-2 border-sky-400"
-          style={{ boxShadow: "inset 0 0 24px rgba(56,189,248,0.05), 0 0 12px rgba(56,189,248,0.04)" }}
+          style={{ boxShadow: "inset 0 0 20px rgba(56,189,248,0.03), -2px 0 8px rgba(56,189,248,0.15)" }}
           transition={{ type: "spring", stiffness: 350, damping: 30 }}
         />
       )}
@@ -145,7 +145,7 @@ export default function DashboardShell({
   return (
     <div className="min-h-screen flex bg-[var(--bg-base)]">
       {/* Sidebar */}
-      <aside className="hidden md:flex w-[240px] border-r border-white/[0.04] bg-[var(--bg-base)]/95 backdrop-blur-2xl flex-col p-4">
+      <aside className="hidden md:flex w-[240px] border-r border-white/[0.04] bg-[#080e1a]/95 backdrop-blur-2xl flex-col p-4">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 px-4 py-3 mb-6 group">
           <motion.svg
@@ -209,7 +209,7 @@ export default function DashboardShell({
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
         {/* Top Bar */}
-        <header className="sticky top-0 z-40 border-b border-white/[0.04] bg-[var(--bg-base)]/80 backdrop-blur-2xl px-6 md:px-8 h-14 flex items-center justify-between">
+        <header className="sticky top-0 z-40 border-b border-white/[0.04] bg-[#080e1a]/80 backdrop-blur-2xl px-6 md:px-8 h-14 flex items-center justify-between">
           <h1 className="text-lg font-semibold text-white tracking-tight">{title || sidebarItems.find(i => i.href === pathname)?.label || "แดชบอร์ด"}</h1>
           <div className="flex items-center gap-4">
             <motion.div
@@ -228,7 +228,17 @@ export default function DashboardShell({
           </div>
         </header>
 
-        {children}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={pathname}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+          >
+            {children}
+          </motion.div>
+        </AnimatePresence>
 
         {/* Footer */}
         <footer className="border-t border-white/[0.03] px-8 py-4 mt-8">
@@ -297,7 +307,7 @@ export default function DashboardShell({
       </AnimatePresence>
 
       {/* Mobile Bottom Nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-white/[0.04] bg-[var(--bg-base)]/90 backdrop-blur-2xl flex items-center justify-around px-2 py-2 safe-area-bottom">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-white/[0.04] bg-[#080e1a]/90 backdrop-blur-2xl flex items-center justify-around px-2 py-2 safe-area-bottom">
         <Link href="/dashboard" className={`flex flex-col items-center gap-1 py-1 px-3 ${pathname === "/dashboard" ? "text-sky-400" : "text-white/30"}`}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />

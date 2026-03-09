@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default async function CampaignsPage() {
   return (
-    <div className="p-6 md:p-8 max-w-4xl mx-auto animate-fade-in">
+    <div className="p-6 md:p-8 max-w-4xl mx-auto animate-fade-in-up">
       <div className="glass p-12 md:p-16 text-center relative overflow-hidden">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, rgba(56,189,248,0.06) 0%, transparent 70%)" }} />
 
@@ -12,20 +12,20 @@ export default async function CampaignsPage() {
           </svg>
         </div>
 
-        <h2 className="text-2xl font-bold text-white mb-3 tracking-tight relative">
-          แคมเปญ SMS
-          <span className="ml-3 badge badge-info">เร็วๆ นี้</span>
+        <h2 className="text-2xl font-bold mb-3 tracking-tight relative">
+          <span className="bg-gradient-to-r from-sky-300 via-indigo-300 to-violet-300 bg-clip-text text-transparent">แคมเปญ SMS</span>
+          <span className="ml-3 badge-glow-info">เร็วๆ นี้</span>
         </h2>
 
         <p className="text-sm text-white/50 mb-6 max-w-md mx-auto relative">
           ระบบส่ง SMS แบบแคมเปญกำลังพัฒนา จะเปิดให้ใช้งานเร็วๆ นี้
         </p>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8 max-w-lg mx-auto relative">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8 max-w-lg mx-auto relative stagger-children">
           {[
             { icon: "📊", label: "สร้างแคมเปญ" },
             { icon: "⏰", label: "ตั้งเวลาส่ง" },
-            { icon: "🔀", label: "A/B Testing" },
+            { icon: "🔀", label: "ทดสอบ A/B" },
             { icon: "📈", label: "รายงานผล" },
           ].map((feature) => (
             <div key={feature.label} className="glass p-3 rounded-xl text-center">

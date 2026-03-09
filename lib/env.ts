@@ -1,12 +1,25 @@
 import { z } from "zod";
 
-const WEAK_SECRETS = ["smsok-dev-secret-change-in-production", "secret", "jwt-secret", "change-me"];
+const WEAK_SECRETS = [
+  "smsok-dev-secret-change-in-production",
+  "smsok-local-dev-secret-32chars-min",
+  "secret",
+  "jwt-secret",
+  "change-me",
+];
 
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
-  JWT_SECRET: z.string().min(16, "JWT_SECRET must be at least 16 characters")
-    .refine((s) => process.env.NODE_ENV !== "production" || !WEAK_SECRETS.includes(s),
-      "JWT_SECRET is too weak for production — use a random 32+ character string"),
+  JWT_SECRET: z.string()
+    .min(16, "JWT_SECRET must be at least 16 characters")
+    .refine(
+      (s) => process.env.NODE_ENV !== "production" || s.length >= 32,
+      "JWT_SECRET must be at least 32 characters in production"
+    )
+    .refine(
+      (s) => process.env.NODE_ENV !== "production" || !WEAK_SECRETS.includes(s),
+      "JWT_SECRET is too weak for production — use: openssl rand -hex 32"
+    ),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   PORT: z.coerce.number().default(3000),
   REDIS_URL: z.string().optional(),
