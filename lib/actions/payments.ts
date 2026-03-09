@@ -3,6 +3,7 @@
 import { prisma as db } from "../db";
 import { revalidatePath } from "next/cache";
 import { idSchema } from "../validations";
+import { verifySlipByUrl } from "../easyslip";
 
 // ==========================================
 // Get active packages from DB
@@ -84,13 +85,57 @@ export async function uploadSlip(transactionId: string, slipUrl: string) {
     data: { slipUrl },
   });
 
-  // TODO: Call EasySlip API for auto-verify
-  // const response = await fetch("https://developer.easyslip.com/api/v1/verify", {
-  //   method: "POST",
-  //   headers: { Authorization: `Bearer ${process.env.EASYSLIP_API_KEY}` },
-  //   body: formData (slip image)
-  // });
-  // Validate: amount matches, account matches, ref not reused
+  // Auto-verify with EasySlip API
+  const slipResult = await verifySlipByUrl(slipUrl);
+
+  if (slipResult.success && slipResult.data) {
+    const slipAmount = slipResult.data.amount * 100; // Convert baht to satang
+    const expectedAmount = transaction.amount;
+
+    // Verify amount matches (allow 1 satang tolerance)
+    if (Math.abs(slipAmount - expectedAmount) <= 1) {
+      // Check reference not already used
+      const existingRef = await db.transaction.findFirst({
+        where: {
+          reference: slipResult.data.transRef,
+          status: "verified",
+          id: { not: transactionId },
+        },
+      });
+
+      if (existingRef) {
+        revalidatePath("/dashboard/topup");
+        return { status: "rejected", transactionId, error: "สลิปนี้ถูกใช้ไปแล้ว" };
+      }
+
+      // Auto-approve: add credits
+      await db.$transaction([
+        db.transaction.update({
+          where: { id: transactionId },
+          data: {
+            status: "verified",
+            reference: slipResult.data.transRef,
+            verifiedAt: new Date(),
+            verifiedBy: "easyslip-auto",
+          },
+        }),
+        db.user.update({
+          where: { id: transaction.userId },
+          data: { credits: { increment: transaction.credits } },
+        }),
+      ]);
+
+      revalidatePath("/dashboard/topup");
+      revalidatePath("/dashboard");
+      return { status: "verified", transactionId, credits: transaction.credits };
+    } else {
+      // Amount mismatch — needs manual review
+      await db.transaction.update({
+        where: { id: transactionId },
+        data: { reference: slipResult.data.transRef },
+      });
+    }
+  }
 
   revalidatePath("/dashboard/topup");
   return { status: "pending_review", transactionId };

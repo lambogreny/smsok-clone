@@ -9,6 +9,7 @@ import {
   normalizePhone,
   reportFilterSchema,
 } from "../validations";
+import { sendSingleSms, sendSmsBatch } from "../sms-gateway";
 
 // ==========================================
 // Send single SMS
@@ -54,8 +55,38 @@ export async function sendSms(userId: string, data: unknown) {
     }),
   ]);
 
-  // TODO: integrate real SMS gateway here
-  // await smsGateway.send({ to, message, sender })
+  // Send via EasyThunder SMS Gateway
+  try {
+    const result = await sendSingleSms(
+      normalizePhone(input.recipient),
+      input.message,
+      input.senderName
+    );
+
+    if (result.success) {
+      await db.message.update({
+        where: { id: message.id },
+        data: {
+          status: "sent",
+          sentAt: new Date(),
+          gatewayId: result.jobId || null,
+        },
+      });
+    } else {
+      await db.message.update({
+        where: { id: message.id },
+        data: { status: "failed" },
+      });
+      throw new Error(result.error || "ส่ง SMS ไม่สำเร็จ");
+    }
+  } catch (gatewayError) {
+    // If gateway fails, mark message as failed but don't refund yet
+    await db.message.update({
+      where: { id: message.id },
+      data: { status: "failed" },
+    });
+    throw gatewayError;
+  }
 
   revalidatePath("/dashboard");
   return message;
@@ -111,7 +142,20 @@ export async function sendBatchSms(userId: string, data: unknown) {
     return created;
   });
 
-  // TODO: queue batch sending via job queue
+  // Send via EasyThunder SMS Gateway (batches of 1000)
+  const normalizedRecipients = input.recipients.map(normalizePhone);
+  const batches: string[][] = [];
+  for (let i = 0; i < normalizedRecipients.length; i += 1000) {
+    batches.push(normalizedRecipients.slice(i, i + 1000));
+  }
+
+  for (const batch of batches) {
+    await sendSmsBatch({
+      recipients: batch,
+      message: input.message,
+      sender: input.senderName,
+    });
+  }
 
   revalidatePath("/dashboard");
   return { totalMessages: result.count, totalCredits };

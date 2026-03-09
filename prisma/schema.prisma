@@ -40,6 +40,7 @@ model Message {
   creditCost  Int       @default(1) @map("credit_cost")
   sentAt      DateTime? @map("sent_at")
   deliveredAt DateTime? @map("delivered_at")
+  gatewayId   String?   @map("gateway_id")
   errorCode   String?   @map("error_code")
   createdAt   DateTime  @default(now()) @map("created_at")
 
