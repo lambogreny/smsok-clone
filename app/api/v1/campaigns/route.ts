@@ -3,6 +3,7 @@ import { apiError, apiResponse } from "@/lib/api-auth";
 import { authenticatePublicApiKey } from "@/lib/api-key-auth";
 import { createCampaign, getCampaigns } from "@/lib/actions/campaigns";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { createCampaignSchema } from "@/lib/validations";
 
 export async function GET(req: NextRequest) {
   try {
@@ -25,7 +26,8 @@ export async function POST(req: NextRequest) {
     if (!limit.allowed) return rateLimitResponse(limit.resetIn);
 
     const body = await req.json();
-    const campaign = await createCampaign(user.id, body);
+    const input = createCampaignSchema.parse(body);
+    const campaign = await createCampaign(user.id, input);
     return apiResponse(campaign, 201);
   } catch (error) {
     return apiError(error);

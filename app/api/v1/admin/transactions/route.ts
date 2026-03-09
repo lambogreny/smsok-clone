@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { authenticateApiKey, ApiError, apiResponse, apiError } from "@/lib/api-auth";
 import { adminVerifyTransaction, adminGetPendingTransactions } from "@/lib/actions/payments";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { verifyTransactionSchema } from "@/lib/validations";
 
 async function requireAdmin(req: NextRequest) {
   const user = await authenticateApiKey(req);
@@ -29,11 +30,12 @@ export async function POST(req: NextRequest) {
     if (!limit.allowed) return rateLimitResponse(limit.resetIn);
 
     const body = await req.json();
+    const input = verifyTransactionSchema.parse(body);
     await adminVerifyTransaction(
       admin.id,
-      body.transactionId,
-      body.action,
-      body.rejectNote
+      input.transactionId,
+      input.action,
+      input.rejectNote
     );
     return apiResponse({ success: true });
   } catch (error) {

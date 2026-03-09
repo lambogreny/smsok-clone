@@ -128,6 +128,10 @@ export const resetPasswordSchema = z.object({
   email: emailSchema,
 });
 
+export const forgotPasswordSchema = z.object({
+  phone: phoneSchema,
+});
+
 export const changePasswordSchema = z
   .object({
     currentPassword: z.string().min(1),
@@ -142,6 +146,11 @@ export const changePasswordSchema = z
     message: "รหัสผ่านไม่ตรงกัน",
     path: ["confirmPassword"],
   });
+
+export const updateProfileSchema = z.object({
+  name: sanitizedNameSchema(2, 100, "ชื่อต้องมีอย่างน้อย 2 ตัวอักษร", "ชื่อต้องไม่เกิน 100 ตัวอักษร"),
+  phone: optionalPhoneSchema,
+});
 
 // ==========================================
 // SMS Validations
@@ -164,6 +173,21 @@ export const sendBatchSmsSchema = z.object({
     .max(11)
     .regex(/^[A-Za-z0-9 ]+$/),
   recipients: z
+    .array(phoneSchema)
+    .min(1, "ต้องมีเบอร์โทรอย่างน้อย 1 เบอร์")
+    .max(10000, "ส่งได้สูงสุด 10,000 เบอร์ต่อครั้ง"),
+  message: messageSchema(1, 1000, "กรุณากรอกข้อความ", "ข้อความต้องไม่เกิน 1,000 ตัวอักษร"),
+});
+
+export const sendSmsApiSchema = z.object({
+  sender: z.string().trim().default("EasySlip"),
+  to: phoneSchema,
+  message: messageSchema(1, 1000, "กรุณากรอกข้อความ", "ข้อความต้องไม่เกิน 1,000 ตัวอักษร"),
+});
+
+export const sendBatchSmsApiSchema = z.object({
+  sender: z.string().trim().default("EasySlip"),
+  to: z
     .array(phoneSchema)
     .min(1, "ต้องมีเบอร์โทรอย่างน้อย 1 เบอร์")
     .max(10000, "ส่งได้สูงสุด 10,000 เบอร์ต่อครั้ง"),
@@ -204,6 +228,11 @@ export const createContactGroupSchema = z.object({
 
 export const addGroupMembersSchema = z.object({
   contactIds: z.array(z.string().cuid()).min(1),
+});
+
+export const addContactsToGroupSchema = z.object({
+  groupId: z.string().cuid(),
+  contactIds: z.array(z.string().cuid()).min(1, "กรุณาเลือกรายชื่ออย่างน้อย 1 รายชื่อ"),
 });
 
 export const contactFilterSchema = z.object({
@@ -311,6 +340,18 @@ export const verifyTransactionSchema = z.object({
   rejectNote: z.string().max(500).optional(),
 });
 
+export const scheduledSmsCreateSchema = z.object({
+  sender: z.string().trim().default("EasySlip"),
+  to: phoneSchema,
+  message: messageSchema(1, 1000, "กรุณากรอกข้อความ", "ข้อความต้องไม่เกิน 1,000 ตัวอักษร"),
+  scheduledAt: z.string().trim().min(1, "กรุณาระบุเวลาที่ต้องการส่ง"),
+});
+
+export const scheduledSmsCancelSchema = z.object({
+  action: z.literal("cancel"),
+  id: z.string().cuid(),
+});
+
 // ==========================================
 // API Key Validations
 // ==========================================
@@ -337,6 +378,23 @@ export const templateSchema = z.object({
   content: messageSchema(1, 1000, "กรุณากรอกข้อความ", "ข้อความต้องไม่เกิน 1,000 ตัวอักษร"),
   category: sanitizedNameSchema(1, 50, "กรุณาระบุหมวดหมู่", "หมวดหมู่ต้องไม่เกิน 50 ตัวอักษร").default("general"),
 });
+
+export const contactsImportSchema = z.object({
+  contacts: z
+    .array(createContactSchema)
+    .min(1, "ไม่มีรายชื่อที่จะนำเข้า")
+    .max(10000, "นำเข้าได้สูงสุด 10,000 รายชื่อต่อครั้ง"),
+});
+
+export const templateRenderSchema = z
+  .object({
+    templateId: z.string().cuid().optional(),
+    content: messageSchema(1, 1000, "กรุณากรอกข้อความ", "ข้อความต้องไม่เกิน 1,000 ตัวอักษร").optional(),
+    variables: z.record(z.string(), z.string()).optional(),
+  })
+  .refine((value) => Boolean(value.templateId) || Boolean(value.content), {
+    message: "Provide templateId or content",
+  });
 
 const dateInputSchema = z
   .union([z.string(), z.undefined()])

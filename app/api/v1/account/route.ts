@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { authenticateApiKey, apiResponse, apiError } from "@/lib/api-auth";
 import { getProfile, updateProfile, changePassword } from "@/lib/actions/settings";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { changePasswordSchema, updateProfileSchema } from "@/lib/validations";
 
 export async function GET(req: NextRequest) {
   try {
@@ -23,11 +24,13 @@ export async function PUT(req: NextRequest) {
       const limit = checkRateLimit(user.id, "password");
       if (!limit.allowed) return rateLimitResponse(limit.resetIn);
 
-      const result = await changePassword(user.id, body);
+      const input = changePasswordSchema.parse(body);
+      const result = await changePassword(user.id, input);
       return apiResponse(result);
     }
 
-    const updated = await updateProfile(user.id, body);
+    const input = updateProfileSchema.parse(body);
+    const updated = await updateProfile(user.id, input);
     return apiResponse(updated);
   } catch (error) {
     return apiError(error);

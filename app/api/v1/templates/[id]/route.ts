@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { authenticateApiKey, apiResponse, apiError } from "@/lib/api-auth";
 import { updateTemplate, deleteTemplate } from "@/lib/actions/templates";
+import { templateSchema } from "@/lib/validations";
 
 export async function PUT(
   req: NextRequest,
@@ -10,7 +11,8 @@ export async function PUT(
     const user = await authenticateApiKey(req);
     const { id } = await params;
     const body = await req.json();
-    const template = await updateTemplate(user.id, id, body);
+    const input = templateSchema.partial().parse(body);
+    const template = await updateTemplate(user.id, id, input);
     return apiResponse(template);
   } catch (error) {
     return apiError(error);

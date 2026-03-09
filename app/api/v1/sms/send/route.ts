@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { authenticateApiKey, apiResponse, apiError } from "@/lib/api-auth";
 import { sendSms } from "@/lib/actions/sms";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { sendSmsApiSchema } from "@/lib/validations";
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,11 +12,11 @@ export async function POST(req: NextRequest) {
     if (!limit.allowed) return rateLimitResponse(limit.resetIn);
 
     const body = await req.json();
-
+    const input = sendSmsApiSchema.parse(body);
     const message = await sendSms(user.id, {
-      senderName: body.sender || "EasySlip",
-      recipient: body.to,
-      message: body.message,
+      senderName: input.sender,
+      recipient: input.to,
+      message: input.message,
     });
 
     return apiResponse({

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { authenticateApiKey, apiResponse, apiError } from "@/lib/api-auth";
 import { updateContact, deleteContact } from "@/lib/actions/contacts";
+import { updateContactSchema } from "@/lib/validations";
 
 export async function PUT(
   req: NextRequest,
@@ -10,7 +11,8 @@ export async function PUT(
     const user = await authenticateApiKey(req);
     const { id } = await params;
     const body = await req.json();
-    const contact = await updateContact(user.id, id, body);
+    const input = updateContactSchema.parse(body);
+    const contact = await updateContact(user.id, id, input);
     return apiResponse(contact);
   } catch (error) {
     return apiError(error);

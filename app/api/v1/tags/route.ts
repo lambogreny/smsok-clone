@@ -3,6 +3,7 @@ import { apiError, apiResponse } from "@/lib/api-auth";
 import { authenticatePublicApiKey } from "@/lib/api-key-auth";
 import { createTag, getTags } from "@/lib/actions/tags";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { createTagSchema } from "@/lib/validations";
 
 export async function GET(req: NextRequest) {
   try {
@@ -21,7 +22,8 @@ export async function POST(req: NextRequest) {
     if (!limit.allowed) return rateLimitResponse(limit.resetIn);
 
     const body = await req.json();
-    const tag = await createTag(user.id, body);
+    const input = createTagSchema.parse(body);
+    const tag = await createTag(user.id, input);
     return apiResponse(tag, 201);
   } catch (error) {
     return apiError(error);

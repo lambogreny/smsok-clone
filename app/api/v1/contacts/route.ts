@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { authenticateApiKey, apiResponse, apiError } from "@/lib/api-auth";
 import { getContacts, createContact } from "@/lib/actions/contacts";
+import { createContactSchema } from "@/lib/validations";
 
 export async function GET(req: NextRequest) {
   try {
@@ -21,7 +22,8 @@ export async function POST(req: NextRequest) {
   try {
     const user = await authenticateApiKey(req);
     const body = await req.json();
-    const contact = await createContact(user.id, body);
+    const input = createContactSchema.parse(body);
+    const contact = await createContact(user.id, input);
     return apiResponse(contact, 201);
   } catch (error) {
     return apiError(error);

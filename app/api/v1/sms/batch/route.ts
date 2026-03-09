@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { authenticateApiKey, apiResponse, apiError } from "@/lib/api-auth";
 import { sendBatchSms } from "@/lib/actions/sms";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { sendBatchSmsApiSchema } from "@/lib/validations";
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,11 +12,11 @@ export async function POST(req: NextRequest) {
     if (!limit.allowed) return rateLimitResponse(limit.resetIn);
 
     const body = await req.json();
-
+    const input = sendBatchSmsApiSchema.parse(body);
     const result = await sendBatchSms(user.id, {
-      senderName: body.sender || "EasySlip",
-      recipients: body.to, // array of phone numbers
-      message: body.message,
+      senderName: input.sender,
+      recipients: input.to,
+      message: input.message,
     });
 
     return apiResponse({

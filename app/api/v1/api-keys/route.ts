@@ -3,6 +3,7 @@ import { apiResponse, apiError } from "@/lib/api-auth";
 import { authenticatePublicApiKey } from "@/lib/api-key-auth";
 import { createApiKey, getApiKeys } from "@/lib/actions/api-keys";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { createApiKeySchema } from "@/lib/validations";
 
 export async function GET(req: NextRequest) {
   try {
@@ -22,7 +23,8 @@ export async function POST(req: NextRequest) {
     if (!limit.allowed) return rateLimitResponse(limit.resetIn);
 
     const body = await req.json();
-    const apiKey = await createApiKey(user.id, body);
+    const input = createApiKeySchema.parse(body);
+    const apiKey = await createApiKey(user.id, input);
     return apiResponse(apiKey, 201);
   } catch (error) {
     return apiError(error);

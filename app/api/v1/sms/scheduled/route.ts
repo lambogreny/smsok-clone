@@ -6,6 +6,7 @@ import {
   cancelScheduledSms,
 } from "@/lib/actions/scheduled-sms";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { scheduledSmsCancelSchema, scheduledSmsCreateSchema } from "@/lib/validations";
 
 // GET /api/v1/sms/scheduled — list scheduled messages
 export async function GET(req: NextRequest) {
@@ -26,7 +27,8 @@ export async function POST(req: NextRequest) {
 
     // Cancel
     if (body.action === "cancel" && body.id) {
-      const result = await cancelScheduledSms(user.id, body.id);
+      const input = scheduledSmsCancelSchema.parse(body);
+      const result = await cancelScheduledSms(user.id, input.id);
       return apiResponse(result);
     }
 
@@ -34,11 +36,12 @@ export async function POST(req: NextRequest) {
     const limit = checkRateLimit(user.id, "sms");
     if (!limit.allowed) return rateLimitResponse(limit.resetIn);
 
+    const input = scheduledSmsCreateSchema.parse(body);
     const result = await createScheduledSms(user.id, {
-      senderName: body.sender || "EasySlip",
-      recipient: body.to,
-      message: body.message,
-      scheduledAt: body.scheduledAt,
+      senderName: input.sender,
+      recipient: input.to,
+      message: input.message,
+      scheduledAt: input.scheduledAt,
     });
     return apiResponse(result, 201);
   } catch (error) {

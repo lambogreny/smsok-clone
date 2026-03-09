@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { authenticateApiKey, ApiError, apiResponse, apiError } from "@/lib/api-auth";
 import { adminApproveSenderName, adminGetPendingSenderNames } from "@/lib/actions/sender-names";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { approveSenderNameSchema } from "@/lib/validations";
 
 async function requireAdmin(req: NextRequest) {
   const user = await authenticateApiKey(req);
@@ -29,7 +30,8 @@ export async function POST(req: NextRequest) {
     if (!limit.allowed) return rateLimitResponse(limit.resetIn);
 
     const body = await req.json();
-    await adminApproveSenderName(admin.id, body);
+    const input = approveSenderNameSchema.parse(body);
+    await adminApproveSenderName(admin.id, input);
     return apiResponse({ success: true });
   } catch (error) {
     return apiError(error);

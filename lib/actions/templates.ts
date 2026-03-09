@@ -2,13 +2,7 @@
 
 import { prisma as db } from "../db";
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
-
-const templateSchema = z.object({
-  name: z.string().min(1, "กรุณาตั้งชื่อเทมเพลต").max(100).trim(),
-  content: z.string().min(1, "กรุณากรอกข้อความ").max(1000),
-  category: z.string().max(50).default("general"),
-});
+import { templateSchema } from "../validations";
 
 // ==========================================
 // List templates

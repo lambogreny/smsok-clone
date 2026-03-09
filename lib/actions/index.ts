@@ -5,6 +5,7 @@ export { purchasePackage, uploadSlip, adminVerifyTransaction, getUserTransaction
 export { createApiKey, getApiKeys, toggleApiKey, deleteApiKey } from "./api-keys";
 export { getTags, createTag, updateTag, deleteTag, assignTagToContact, unassignTagFromContact } from "./tags";
 export { updateProfile, changePassword, getProfile } from "./settings";
+export { forgotPassword } from "./auth";
 export { getTemplates, createTemplate, updateTemplate, deleteTemplate } from "./templates";
 export { generateOtp_, verifyOtp_ } from "./otp";
 export { createScheduledSms, getScheduledSms, cancelScheduledSms, processScheduledSms } from "./scheduled-sms";

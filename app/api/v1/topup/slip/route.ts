@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { authenticateApiKey, apiResponse, apiError } from "@/lib/api-auth";
 import { uploadSlip } from "@/lib/actions/payments";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { uploadSlipSchema } from "@/lib/validations";
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,8 +12,8 @@ export async function POST(req: NextRequest) {
     if (!limit.allowed) return rateLimitResponse(limit.resetIn);
 
     const body = await req.json();
-
-    const result = await uploadSlip(body.transactionId, body.slipUrl);
+    const input = uploadSlipSchema.parse(body);
+    const result = await uploadSlip(input.transactionId, input.slipUrl);
     return apiResponse(result);
   } catch (error) {
     return apiError(error);

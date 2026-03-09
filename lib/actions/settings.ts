@@ -2,18 +2,8 @@
 
 import { prisma as db } from "../db";
 import { revalidatePath } from "next/cache";
-import { changePasswordSchema } from "../validations";
+import { changePasswordSchema, updateProfileSchema } from "../validations";
 import { getSession, hashPassword, verifyPassword } from "../auth";
-import { z } from "zod";
-
-const updateProfileSchema = z.object({
-  name: z.string().min(2, "ชื่อต้องมีอย่างน้อย 2 ตัวอักษร").max(100).trim(),
-  phone: z
-    .string()
-    .regex(/^0[689]\d{8}$/, "เบอร์โทรไม่ถูกต้อง")
-    .optional()
-    .or(z.literal("")),
-});
 
 // ==========================================
 // Update profile (name, phone)

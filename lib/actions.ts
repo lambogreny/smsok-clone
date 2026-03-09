@@ -4,8 +4,7 @@ import { prisma } from "./db";
 import { hashPassword, verifyPassword, setSession, clearSession } from "./auth";
 import { redirect } from "next/navigation";
 import { loginSchema, registerSchema } from "./validations";
-import { sendSingleSms } from "./sms-gateway";
-import crypto from "crypto";
+import { forgotPassword as forgotPasswordAction } from "./actions/auth";
 
 export async function register(formData: FormData) {
   const parsed = registerSchema.safeParse({
@@ -115,41 +114,8 @@ export async function login(formData: FormData) {
   redirect("/dashboard");
 }
 
-// ==========================================
-// Forgot Password
-// ==========================================
-
 export async function forgotPassword(phone: string) {
-  const normalizedPhone = phone.trim().replace(/[^0-9+]/g, "");
-  if (!normalizedPhone) throw new Error("กรุณากรอกเบอร์โทร");
-
-  const user = await prisma.user.findFirst({
-    where: { phone: normalizedPhone },
-    select: { id: true, name: true },
-  });
-  if (!user) throw new Error("ไม่พบเบอร์โทรนี้ในระบบ");
-
-  // Generate 8-char alphanumeric temp password
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
-  const tempPassword = Array.from(crypto.getRandomValues(new Uint8Array(8)))
-    .map((b) => chars[b % chars.length])
-    .join("");
-
-  const hashed = await hashPassword(tempPassword);
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { password: hashed, mustChangePassword: true },
-  });
-
-  const message = `รหัสชั่วคราวของคุณคือ ${tempPassword} ใช้ได้ครั้งเดียว — SMSOK`;
-  const smsResult = await sendSingleSms(normalizedPhone, message, "EasySlip");
-  if (!smsResult.success) {
-    // Rollback mustChangePassword only if SMS failed
-    // Note: password was already changed — user can still log in if they have the password
-    throw new Error("ส่ง SMS ไม่สำเร็จ กรุณาลองใหม่ภายหลัง");
-  }
-
-  return { success: true };
+  return forgotPasswordAction({ phone });
 }
 
 // ==========================================
