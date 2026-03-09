@@ -16,8 +16,6 @@ export async function getPackages() {
   });
 }
 
-// Hardcoded fallback moved to lib/packages-data.ts (cannot export non-async from "use server")
-
 // ==========================================
 // Purchase package — create pending transaction
 // ==========================================

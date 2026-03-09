@@ -46,14 +46,11 @@ export async function getSenderNames(userId: string) {
 // ==========================================
 
 export async function getApprovedSenderNames(userId: string) {
-  const names = await db.senderName.findMany({
+  return db.senderName.findMany({
     where: { userId, status: "approved" },
     select: { name: true },
     orderBy: { name: "asc" },
   });
-
-  // Always include default sender
-  return [{ name: "EasySlip" }, ...names];
 }
 
 // ==========================================

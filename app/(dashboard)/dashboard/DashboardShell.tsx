@@ -302,7 +302,7 @@ export default function DashboardShell({
                 <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
               </svg>
               <span className="text-xs text-[var(--text-muted)]">เครดิต</span>
-              <span className="text-sm font-semibold gradient-text-cyan">{user.credits.toLocaleString()}</span>
+              <span className="text-sm font-semibold gradient-text-cyan">฿{user.credits.toLocaleString()}</span>
             </Link>
 
             {/* Mobile avatar */}

@@ -77,16 +77,7 @@ function MiniChart({ data, color }: { data: number[]; color: string }) {
   );
 }
 
-/* ── Recharts Area Chart — 7-day SMS ── */
-const chartData7d = [
-  { day: "จันทร์", short: "จ", sms: 120, delivered: 112, failed: 8 },
-  { day: "อังคาร", short: "อ", sms: 180, delivered: 174, failed: 6 },
-  { day: "พุธ", short: "พ", sms: 150, delivered: 145, failed: 5 },
-  { day: "พฤหัส", short: "พฤ", sms: 220, delivered: 215, failed: 5 },
-  { day: "ศุกร์", short: "ศ", sms: 310, delivered: 302, failed: 8 },
-  { day: "เสาร์", short: "ส", sms: 190, delivered: 185, failed: 5 },
-  { day: "อาทิตย์", short: "อา", sms: 140, delivered: 136, failed: 4 },
-];
+/* ── Recharts Area Chart — 7-day SMS (real data passed via props) ── */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function ChartTooltip({ active, payload, label }: any) {
@@ -110,9 +101,9 @@ function ChartTooltip({ active, payload, label }: any) {
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
-function SmsAreaChart() {
-  const total = chartData7d.reduce((a, b) => a + b.sms, 0);
-  const avg = Math.round(total / chartData7d.length);
+function SmsAreaChart({ chartData }: { chartData: DayStats[] }) {
+  const total = chartData.reduce((a, b) => a + b.sms, 0);
+  const avg = Math.round(total / (chartData.length || 1));
 
   return (
     <div className="relative">
@@ -137,7 +128,7 @@ function SmsAreaChart() {
       </div>
 
       <ResponsiveContainer width="100%" height={260}>
-        <RechartsAreaChart data={chartData7d} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+        <RechartsAreaChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
           <defs>
             <linearGradient id="gradSms" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.35} />
@@ -239,11 +230,10 @@ function ActivityRing({ percent, color, size = 56, label }: { percent: number; c
   );
 }
 
-/* ── Stat Card Config ── */
-const statCards = [
+/* ── Stat Card Config (styling only — values computed from real data) ── */
+const statCardStyles = [
   {
-    label: "เครดิตคงเหลือ", key: "credits" as const, delta: "+1,000", positive: true,
-    sparkline: [2, 4, 3, 6, 8, 6, 4, 5, 7, 9], color: "#22D3EE",
+    label: "เครดิตคงเหลือ", key: "credits" as const, color: "#22D3EE",
     gradient: "from-cyan-500/10 via-cyan-400/5 to-transparent",
     borderGlow: "hover:border-cyan-500/20 hover:shadow-[0_0_30px_rgba(34,211,238,0.08)]",
     iconBg: "from-cyan-500/20 to-cyan-400/5",
@@ -254,8 +244,7 @@ const statCards = [
     ),
   },
   {
-    label: "ส่งวันนี้", key: "sent" as const, delta: "+23.5%", positive: true,
-    sparkline: [1, 3, 5, 4, 7, 5, 3, 4, 6, 8], color: "#8B5CF6",
+    label: "ส่งวันนี้", key: "sent" as const, color: "#8B5CF6",
     gradient: "from-violet-500/10 via-violet-400/5 to-transparent",
     borderGlow: "hover:border-violet-500/20 hover:shadow-[0_0_30px_rgba(139,92,246,0.08)]",
     iconBg: "from-violet-500/20 to-violet-400/5",
@@ -266,8 +255,7 @@ const statCards = [
     ),
   },
   {
-    label: "สำเร็จ", key: "delivered" as const, delta: "98.2%", positive: true,
-    sparkline: [6, 8, 8, 9, 8, 9, 9, 9, 8, 9], color: "#10B981",
+    label: "สำเร็จ", key: "delivered" as const, color: "#10B981",
     gradient: "from-emerald-500/10 via-emerald-400/5 to-transparent",
     borderGlow: "hover:border-emerald-500/20 hover:shadow-[0_0_30px_rgba(16,185,129,0.08)]",
     iconBg: "from-emerald-500/20 to-emerald-400/5",
@@ -278,8 +266,7 @@ const statCards = [
     ),
   },
   {
-    label: "ล้มเหลว", key: "failed" as const, delta: "1.8%", positive: false,
-    sparkline: [1, 1, 0, 1, 0, 0, 1, 0, 0, 1], color: "#EF4444",
+    label: "ล้มเหลว", key: "failed" as const, color: "#EF4444",
     gradient: "from-red-500/10 via-red-400/5 to-transparent",
     borderGlow: "hover:border-red-500/20 hover:shadow-[0_0_30px_rgba(239,68,68,0.08)]",
     iconBg: "from-red-500/20 to-red-400/5",
@@ -374,6 +361,31 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
     sent: (stats?.today.total ?? 0).toLocaleString(),
     delivered: (stats?.today.delivered ?? 0).toLocaleString(),
     failed: (stats?.today.failed ?? 0).toLocaleString(),
+  };
+
+  // Compute real deltas (today vs yesterday)
+  const calcDelta = (today: number, yesterday: number): { text: string; positive: boolean } => {
+    if (yesterday === 0 && today === 0) return { text: "—", positive: true };
+    if (yesterday === 0) return { text: `+${today}`, positive: true };
+    const pct = Math.round(((today - yesterday) / yesterday) * 100);
+    return { text: `${pct >= 0 ? "+" : ""}${pct}%`, positive: pct >= 0 };
+  };
+
+  const deltas = {
+    credits: { text: `฿${(stats?.user.credits ?? user.credits).toLocaleString()}`, positive: true },
+    sent: calcDelta(stats?.today.total ?? 0, stats?.yesterday?.total ?? 0),
+    delivered: stats?.today.total
+      ? { text: `${Math.round(((stats?.today.delivered ?? 0) / stats.today.total) * 100)}%`, positive: true }
+      : { text: "—", positive: true },
+    failed: calcDelta(stats?.today.failed ?? 0, stats?.yesterday?.failed ?? 0),
+  };
+
+  // Sparkline from real 7-day data
+  const sparklines = {
+    credits: stats?.last7Days?.map(d => d.sms) ?? [],
+    sent: stats?.last7Days?.map(d => d.sms) ?? [],
+    delivered: stats?.last7Days?.map(d => d.delivered) ?? [],
+    failed: stats?.last7Days?.map(d => d.failed) ?? [],
   };
 
   const successRate = stats?.today.total
@@ -511,40 +523,44 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
           STATS GRID — Premium gradient glow cards
           ═══════════════════════════════════════════════════════ */}
       <motion.div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8" variants={stagger}>
-        {statCards.map((stat) => (
-          <motion.div
-            key={stat.key}
-            variants={fadeUp}
-            whileHover={{ y: -4, transition: { type: "spring", stiffness: 300, damping: 20 } }}
-            className={`relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[var(--bg-elevated)]/80 backdrop-blur-xl p-5 group cursor-default transition-all duration-500 ${stat.borderGlow}`}
-          >
-            {/* Gradient overlay */}
-            <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-60 group-hover:opacity-100 transition-opacity duration-500`} />
+        {statCardStyles.map((stat) => {
+          const delta = deltas[stat.key];
+          const sparkData = sparklines[stat.key];
+          return (
+            <motion.div
+              key={stat.key}
+              variants={fadeUp}
+              whileHover={{ y: -4, transition: { type: "spring", stiffness: 300, damping: 20 } }}
+              className={`relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[var(--bg-elevated)]/80 backdrop-blur-xl p-5 group cursor-default transition-all duration-500 ${stat.borderGlow}`}
+            >
+              {/* Gradient overlay */}
+              <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-60 group-hover:opacity-100 transition-opacity duration-500`} />
 
-            {/* Animated glow orb */}
-            <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-[40px]" style={{ backgroundColor: stat.color + "30" }} />
+              {/* Animated glow orb */}
+              <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-[40px]" style={{ backgroundColor: stat.color + "30" }} />
 
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-4">
-                <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${stat.iconBg} border border-white/[0.06] flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
-                  {stat.icon}
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${stat.iconBg} border border-white/[0.06] flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                    {stat.icon}
+                  </div>
+                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${delta.positive ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/15" : "bg-red-500/10 text-red-400 border-red-500/15"}`}>
+                    {delta.positive ? "↑" : "↓"} {delta.text}
+                  </span>
                 </div>
-                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${stat.positive ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/15" : "bg-red-500/10 text-red-400 border-red-500/15"}`}>
-                  {stat.positive ? "↑" : "↓"} {stat.delta}
-                </span>
-              </div>
 
-              <div className="text-3xl font-bold mb-1.5 text-[var(--text-primary)] tracking-tight">
-                <AnimatedCounter value={statValues[stat.key]} />
-              </div>
+                <div className="text-3xl font-bold mb-1.5 text-[var(--text-primary)] tracking-tight">
+                  <AnimatedCounter value={statValues[stat.key]} />
+                </div>
 
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-[var(--text-muted)] font-medium">{stat.label}</span>
-                <MiniChart data={stat.sparkline} color={stat.color} />
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-[var(--text-muted)] font-medium">{stat.label}</span>
+                  {sparkData.length > 0 && <MiniChart data={sparkData} color={stat.color} />}
+                </div>
               </div>
-            </div>
-          </motion.div>
-        ))}
+            </motion.div>
+          );
+        })}
       </motion.div>
 
       {/* ═══════════════════════════════════════════════════════
@@ -571,7 +587,7 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
             </div>
           </div>
 
-          <SmsAreaChart />
+          <SmsAreaChart chartData={stats?.last7Days ?? []} />
         </div>
       </motion.div>
 
@@ -803,19 +819,16 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { label: "SMS Gateway", latency: "12ms" },
-              { label: "OTP Service", latency: "8ms" },
-              { label: "API Server", latency: "5ms" },
-              { label: "Database", latency: "3ms" },
+              { label: "SMS Gateway" },
+              { label: "OTP Service" },
+              { label: "API Server" },
+              { label: "Database" },
             ].map((s) => (
               <div key={s.label} className="flex items-center gap-2.5 py-3 px-3.5 rounded-xl bg-[var(--bg-surface)]/40 border border-[var(--border-subtle)] hover:border-emerald-500/10 transition-colors group">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.5)] group-hover:shadow-[0_0_12px_rgba(16,185,129,0.7)] transition-shadow" />
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium text-[var(--text-secondary)]">{s.label}</p>
-                  <div className="flex items-center justify-between">
-                    <p className="text-[10px] text-emerald-400/60">Operational</p>
-                    <p className="text-[10px] text-[var(--text-muted)]">{s.latency}</p>
-                  </div>
+                  <p className="text-[10px] text-emerald-400/60">Operational</p>
                 </div>
               </div>
             ))}
