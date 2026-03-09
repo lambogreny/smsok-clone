@@ -124,22 +124,30 @@ export const loginSchema = z.object({
   password: z.string().min(1, "กรุณากรอกรหัสผ่าน"),
 });
 
-export const resetPasswordSchema = z.object({
-  email: emailSchema,
-});
+const strongPasswordSchema = z
+  .string()
+  .min(8, "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร")
+  .max(100)
+  .regex(/[A-Z]/, "ต้องมีตัวพิมพ์ใหญ่อย่างน้อย 1 ตัว")
+  .regex(/[0-9]/, "ต้องมีตัวเลขอย่างน้อย 1 ตัว");
 
 export const forgotPasswordSchema = z.object({
   phone: phoneSchema,
 });
 
+export const resetPasswordSchema = z.object({
+  token: z
+    .string()
+    .trim()
+    .min(12, "โทเค็นรีเซ็ตรหัสผ่านไม่ถูกต้อง")
+    .max(128, "โทเค็นรีเซ็ตรหัสผ่านไม่ถูกต้อง"),
+  newPassword: strongPasswordSchema,
+});
+
 export const changePasswordSchema = z
   .object({
     currentPassword: z.string().min(1),
-    newPassword: z
-      .string()
-      .min(8, "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร")
-      .regex(/[A-Z]/, "ต้องมีตัวพิมพ์ใหญ่อย่างน้อย 1 ตัว")
-      .regex(/[0-9]/, "ต้องมีตัวเลขอย่างน้อย 1 ตัว"),
+    newPassword: strongPasswordSchema,
     confirmPassword: z.string(),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
@@ -149,7 +157,6 @@ export const changePasswordSchema = z
 
 export const updateProfileSchema = z.object({
   name: sanitizedNameSchema(2, 100, "ชื่อต้องมีอย่างน้อย 2 ตัวอักษร", "ชื่อต้องไม่เกิน 100 ตัวอักษร"),
-  phone: optionalPhoneSchema,
 });
 
 // ==========================================

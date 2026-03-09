@@ -58,8 +58,13 @@ export function apiError(error: unknown) {
     return Response.json({ error: error.message }, { status: error.status });
   }
   if (error instanceof Error) {
+    const zodIssues =
+      error.name === "ZodError" && "issues" in error && Array.isArray((error as { issues?: unknown[] }).issues)
+        ? ((error as { issues: Array<{ message?: string }> }).issues)
+        : null;
+
     // Known validation/business logic errors → 400
-    const msg = error.message;
+    const msg = zodIssues?.[0]?.message || error.message;
     const isValidation =
       msg.includes("ไม่ถูกต้อง") ||
       msg.includes("ไม่พบ") ||

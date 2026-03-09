@@ -4,7 +4,7 @@ import { prisma } from "./db";
 import { hashPassword, verifyPassword, setSession, clearSession } from "./auth";
 import { redirect } from "next/navigation";
 import { loginSchema, registerSchema } from "./validations";
-import { forgotPassword as forgotPasswordAction } from "./actions/auth";
+import { forgotPassword as forgotPasswordAction, resetPassword as resetPasswordAction } from "./actions/auth";
 
 export async function register(formData: FormData) {
   const parsed = registerSchema.safeParse({
@@ -116,6 +116,10 @@ export async function login(formData: FormData) {
 
 export async function forgotPassword(phone: string) {
   return forgotPasswordAction({ phone });
+}
+
+export async function resetPassword(token: string, newPassword: string) {
+  return resetPasswordAction({ token, newPassword });
 }
 
 // ==========================================

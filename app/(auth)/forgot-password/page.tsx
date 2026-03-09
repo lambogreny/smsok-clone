@@ -60,8 +60,8 @@ export default function ForgotPasswordPage() {
                 </div>
                 <h2 className="text-lg font-semibold text-white mb-2">ส่ง SMS แล้ว!</h2>
                 <p className="text-white/40 text-sm mb-6 leading-relaxed">
-                  รหัสชั่วคราวถูกส่งไปที่ <span className="text-white/70">{phone}</span>
-                  <br />นำรหัสนั้นไปใช้ login แล้วเปลี่ยนรหัสผ่านทันที
+                  รหัสรีเซ็ตรหัสผ่านถูกส่งไปที่ <span className="text-white/70">{phone}</span>
+                  <br />ใช้รหัสนี้กับขั้นตอน reset password ภายใน 5 นาที
                 </p>
                 <Link href="/login" className="btn-primary px-8 py-3 rounded-xl text-sm font-semibold inline-flex items-center gap-2">
                   ไปหน้า Login →
@@ -109,7 +109,7 @@ export default function ForgotPasswordPage() {
                   >
                     {isPending
                       ? <><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>กำลังส่ง SMS...</>
-                      : <>รับรหัสชั่วคราวทาง SMS</>}
+                      : <>รับรหัสรีเซ็ตทาง SMS</>}
                   </motion.button>
                 </div>
 
