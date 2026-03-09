@@ -98,6 +98,8 @@ export async function login(formData: FormData) {
     select: { id: true, password: true, mustChangePassword: true },
   });
   if (!user) {
+    // Constant-time: always run bcrypt even when user not found
+    await verifyPassword(password, "$2b$12$qF1xea/GGCtjbQ6FC32FAu0YSQWxmgOuBDgvb4IVBhTrnjXPVYwoC");
     return { error: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" };
   }
 
