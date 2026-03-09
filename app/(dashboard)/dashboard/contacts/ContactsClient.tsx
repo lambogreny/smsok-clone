@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useMemo, useRef, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   createContact,
@@ -320,16 +321,30 @@ export default function ContactsClient({
 
   // Quick tag state
   const [quickTagContactId, setQuickTagContactId] = useState<string | null>(null);
+  const [quickTagRect, setQuickTagRect] = useState<{ top: number; left: number; width: number } | null>(null);
   const quickTagRef = useRef<HTMLDivElement>(null);
+  const quickTagPortalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleOutside(e: MouseEvent) {
-      if (quickTagRef.current && !quickTagRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      const inTrigger = quickTagRef.current?.contains(target);
+      const inPortal = quickTagPortalRef.current?.contains(target);
+      if (!inTrigger && !inPortal) {
         setQuickTagContactId(null);
+        setQuickTagRect(null);
       }
     }
+    function onScroll() {
+      setQuickTagContactId(null);
+      setQuickTagRect(null);
+    }
     document.addEventListener("mousedown", handleOutside);
-    return () => document.removeEventListener("mousedown", handleOutside);
+    window.addEventListener("scroll", onScroll, true);
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+      window.removeEventListener("scroll", onScroll, true);
+    };
   }, []);
 
   // Delete state
@@ -1166,47 +1181,19 @@ export default function ContactsClient({
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setQuickTagContactId(quickTagContactId === contact.id ? null : contact.id);
+                                if (quickTagContactId === contact.id) {
+                                  setQuickTagContactId(null);
+                                  setQuickTagRect(null);
+                                } else {
+                                  const r = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                                  setQuickTagRect({ top: r.bottom + 4, left: r.left, width: 208 });
+                                  setQuickTagContactId(contact.id);
+                                }
                               }}
                               className="w-5 h-5 rounded-md bg-white/5 hover:bg-white/10 border border-white/5 hover:border-violet-500/20 flex items-center justify-center text-[var(--text-muted)] hover:text-violet-400 transition-all"
                             >
                               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
                             </button>
-                            <AnimatePresence>
-                              {quickTagContactId === contact.id && (
-                                <motion.div
-                                  initial={{ opacity: 0, y: -4, scale: 0.95 }}
-                                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                                  exit={{ opacity: 0, y: -4, scale: 0.95 }}
-                                  transition={{ duration: 0.12 }}
-                                  className="absolute left-0 top-7 z-50 w-52 rounded-2xl border border-violet-500/15 bg-[#080F1E]/95 backdrop-blur-xl shadow-[0_12px_40px_rgba(0,0,0,0.6),0_0_0_1px_rgba(139,92,246,0.08)] overflow-hidden"
-                                >
-                                  <div className="px-3 py-2.5 border-b border-white/5 bg-white/[0.02]">
-                                    <span className="text-[10px] text-violet-400/70 uppercase tracking-wider font-semibold">เพิ่ม/ลบแท็ก</span>
-                                  </div>
-                                  <div className="max-h-40 overflow-y-auto py-1">
-                                    {[...new Set([...allTagNames, ...TAG_PRESETS])].map((tag) => {
-                                      const active = contactTags.includes(tag);
-                                      const color = getTagColor(tag);
-                                      return (
-                                        <button
-                                          key={tag}
-                                          type="button"
-                                          onClick={() => handleQuickTagToggle(contact.id, tag)}
-                                          className={`w-full flex items-center justify-between px-3 py-2 text-xs hover:bg-white/5 transition-colors ${active ? color.text : "text-[var(--text-secondary)]"}`}
-                                        >
-                                          <span className="flex items-center gap-2">
-                                            <span className={`w-1.5 h-1.5 rounded-full ${active ? color.text.replace("text-", "bg-") : "bg-white/20"}`} />
-                                            {tag}
-                                          </span>
-                                          {active && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg>}
-                                        </button>
-                                      );
-                                    })}
-                                  </div>
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
                           </div>
                         </div>
                       </td>
@@ -1327,6 +1314,52 @@ export default function ContactsClient({
             onClick: () => setShowForm(true),
           }}
         />
+      )}
+      {/* Quick tag portal dropdown */}
+      {typeof document !== "undefined" && quickTagContactId && quickTagRect && createPortal(
+        <AnimatePresence>
+          {quickTagContactId && quickTagRect && (() => {
+            const activeContact = initialContacts.find((c) => c.id === quickTagContactId);
+            const activeContactTags = activeContact ? parseTags(activeContact.tags) : [];
+            return (
+              <motion.div
+                ref={quickTagPortalRef}
+                key={quickTagContactId}
+                initial={{ opacity: 0, y: -4, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -4, scale: 0.95 }}
+                transition={{ duration: 0.12 }}
+                style={{ position: "fixed", top: quickTagRect.top, left: quickTagRect.left, width: quickTagRect.width, zIndex: 9999 }}
+                className="rounded-2xl border border-violet-500/15 bg-[#080F1E]/95 backdrop-blur-xl shadow-[0_12px_40px_rgba(0,0,0,0.6),0_0_0_1px_rgba(139,92,246,0.08)] overflow-hidden"
+              >
+                <div className="px-3 py-2.5 border-b border-white/5 bg-white/[0.02]">
+                  <span className="text-[10px] text-violet-400/70 uppercase tracking-wider font-semibold">เพิ่ม/ลบแท็ก</span>
+                </div>
+                <div className="max-h-40 overflow-y-auto py-1">
+                  {[...new Set([...allTagNames, ...TAG_PRESETS])].map((tag) => {
+                    const active = activeContactTags.includes(tag);
+                    const color = getTagColor(tag);
+                    return (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => handleQuickTagToggle(quickTagContactId, tag)}
+                        className={`w-full flex items-center justify-between px-3 py-2 text-xs hover:bg-white/5 transition-colors ${active ? color.text : "text-[var(--text-secondary)]"}`}
+                      >
+                        <span className="flex items-center gap-2">
+                          <span className={`w-1.5 h-1.5 rounded-full ${active ? color.text.replace("text-", "bg-") : "bg-white/20"}`} />
+                          {tag}
+                        </span>
+                        {active && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            );
+          })()}
+        </AnimatePresence>,
+        document.body
       )}
     </motion.div>
   );
