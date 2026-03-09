@@ -46,7 +46,7 @@ export default function TopupContent({ user, packages }: { user: User; packages:
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-cyan-500/[0.08] border border-cyan-500/10 flex items-center justify-center">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-cyan-400">
-                <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
+                <circle cx="12" cy="12" r="10" /><text x="12" y="16" textAnchor="middle" fill="currentColor" stroke="none" fontSize="12" fontWeight="bold">฿</text>
               </svg>
             </div>
             <div>
@@ -127,7 +127,7 @@ export default function TopupContent({ user, packages }: { user: User; packages:
 
       {packages.length === 0 && (
         <EmptyState
-          icon={<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" /></svg>}
+          icon={<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><circle cx="12" cy="12" r="10" /><text x="12" y="16" textAnchor="middle" fill="currentColor" stroke="none" fontSize="12" fontWeight="bold">฿</text></svg>}
           title="ยังไม่มีแพ็กเกจ"
           description="แพ็กเกจจะแสดงที่นี่เมื่อพร้อมใช้งาน"
         />
