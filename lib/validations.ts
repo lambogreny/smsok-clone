@@ -106,7 +106,7 @@ export const requestSenderNameSchema = z.object({
     .min(3, "ชื่อผู้ส่งต้องมีอย่างน้อย 3 ตัวอักษร")
     .max(11, "ชื่อผู้ส่งต้องไม่เกิน 11 ตัวอักษร")
     .regex(/^[A-Za-z0-9]+$/, "ต้องเป็นตัวอักษรภาษาอังกฤษหรือตัวเลขเท่านั้น")
-    .toUpperCase(),
+    .transform((s) => s.toUpperCase()),
 });
 
 export const approveSenderNameSchema = z.object({

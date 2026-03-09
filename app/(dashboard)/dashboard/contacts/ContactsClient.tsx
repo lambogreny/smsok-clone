@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { createContact, deleteContact } from "@/lib/actions/contacts";
 import { useRouter } from "next/navigation";
 
@@ -11,6 +12,16 @@ type Contact = {
   email: string | null;
   tags: string | null;
   createdAt: string;
+};
+
+const stagger = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.04 } },
+};
+
+const rowVariant = {
+  hidden: { opacity: 0, x: -16 },
+  show: { opacity: 1, x: 0, transition: { duration: 0.35, ease: "easeOut" as const } },
 };
 
 export default function ContactsClient({
@@ -78,138 +89,167 @@ export default function ContactsClient({
   };
 
   return (
-    <div className="p-6 md:p-8 max-w-6xl animate-fade-in">
+    <motion.div
+      className="p-6 md:p-8 max-w-6xl"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+    >
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h2 className="text-2xl font-bold text-white tracking-tight">Contacts</h2>
+          <h2 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-sky-300 via-cyan-300 to-violet-300 bg-clip-text text-transparent">สมุดโทรศัพท์</h2>
           <p className="text-sm text-white/40 mt-1">
             จัดการรายชื่อผู้ติดต่อ ({totalContacts} รายชื่อ)
           </p>
         </div>
-        <button
+        <motion.button
           onClick={() => setShowForm(!showForm)}
           className="btn-primary px-4 py-2.5 text-sm rounded-xl inline-flex items-center gap-2"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
-          {showForm ? "Cancel" : "+ Add Contact"}
-        </button>
+          {showForm ? "ยกเลิก" : "+ เพิ่มรายชื่อ"}
+        </motion.button>
       </div>
 
       {/* Feedback */}
-      {feedback && (
-        <div
-          className={`mb-6 p-4 rounded-xl border text-sm font-medium animate-fade-in ${
-            feedback.type === "success"
-              ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-              : "bg-red-500/10 border-red-500/20 text-red-400"
-          }`}
-        >
-          {feedback.text}
-        </div>
-      )}
+      <AnimatePresence>
+        {feedback && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className={`mb-6 p-4 rounded-xl border text-sm font-medium ${
+              feedback.type === "success"
+                ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                : "bg-red-500/10 border-red-500/20 text-red-400"
+            }`}
+          >
+            {feedback.text}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Add Contact Form */}
-      {showForm && (
-        <div className="glass p-6 mb-6 animate-fade-in">
-          <h3 className="text-base font-semibold text-white mb-5 flex items-center gap-2">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-sky-400">
-              <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-              <circle cx="8.5" cy="7" r="4" />
-              <line x1="20" y1="8" x2="20" y2="14" />
-              <line x1="23" y1="11" x2="17" y2="11" />
-            </svg>
-            Add New Contact
-          </h3>
+      <AnimatePresence>
+        {showForm && (
+          <motion.div
+            className="glass p-6 mb-6"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <h3 className="text-base font-semibold text-white mb-5 flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-500/[0.12] to-violet-500/[0.08] border border-sky-500/10 flex items-center justify-center">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-sky-400">
+                  <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                  <circle cx="8.5" cy="7" r="4" />
+                  <line x1="20" y1="8" x2="20" y2="14" />
+                  <line x1="23" y1="11" x2="17" y2="11" />
+                </svg>
+              </div>
+              <span className="bg-gradient-to-r from-sky-300 to-violet-300 bg-clip-text text-transparent">เพิ่มรายชื่อใหม่</span>
+            </h3>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs text-white/50 uppercase tracking-wider mb-2">Name *</label>
-              <input
-                type="text"
-                className="input-glass"
-                placeholder="ชื่อ-นามสกุล"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs text-white/50 uppercase tracking-wider mb-2">ชื่อ *</label>
+                <input
+                  type="text"
+                  className="input-glass"
+                  placeholder="ชื่อ-นามสกุล"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-white/50 uppercase tracking-wider mb-2">เบอร์โทร *</label>
+                <input
+                  type="text"
+                  className="input-glass"
+                  placeholder="0891234567"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-white/50 uppercase tracking-wider mb-2">อีเมล</label>
+                <input
+                  type="email"
+                  className="input-glass"
+                  placeholder="email@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-white/50 uppercase tracking-wider mb-2">แท็ก</label>
+                <input
+                  type="text"
+                  className="input-glass"
+                  placeholder="vip, customer"
+                  value={tags}
+                  onChange={(e) => setTags(e.target.value)}
+                />
+              </div>
             </div>
-            <div>
-              <label className="block text-xs text-white/50 uppercase tracking-wider mb-2">Phone *</label>
-              <input
-                type="text"
-                className="input-glass"
-                placeholder="0891234567"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-white/50 uppercase tracking-wider mb-2">Email</label>
-              <input
-                type="email"
-                className="input-glass"
-                placeholder="email@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-white/50 uppercase tracking-wider mb-2">Tags</label>
-              <input
-                type="text"
-                className="input-glass"
-                placeholder="vip, customer"
-                value={tags}
-                onChange={(e) => setTags(e.target.value)}
-              />
-            </div>
-          </div>
 
-          <div className="mt-5">
-            <button
-              onClick={handleAdd}
-              disabled={isPending || !name.trim() || !phone.trim()}
-              className="btn-primary px-6 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 disabled:opacity-40"
-            >
-              {isPending ? (
-                <span className="flex items-center gap-2">
-                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  Saving...
-                </span>
-              ) : (
-                "Save Contact"
-              )}
-            </button>
-          </div>
-        </div>
-      )}
+            <div className="mt-5">
+              <motion.button
+                onClick={handleAdd}
+                disabled={isPending || !name.trim() || !phone.trim()}
+                className="btn-primary px-6 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 disabled:opacity-40"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                {isPending ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    กำลังบันทึก...
+                  </span>
+                ) : (
+                  "บันทึกรายชื่อ"
+                )}
+              </motion.button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Contact List */}
       {initialContacts.length > 0 ? (
-        <div className="glass overflow-hidden">
+        <motion.div
+          className="glass overflow-hidden"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.15 }}
+        >
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/5">
-                  <th className="text-left px-5 py-3 text-xs text-white/40 uppercase tracking-wider font-medium">Name</th>
-                  <th className="text-left px-5 py-3 text-xs text-white/40 uppercase tracking-wider font-medium">Phone</th>
-                  <th className="text-left px-5 py-3 text-xs text-white/40 uppercase tracking-wider font-medium">Email</th>
-                  <th className="text-left px-5 py-3 text-xs text-white/40 uppercase tracking-wider font-medium">Tags</th>
-                  <th className="w-20 px-5 py-3 text-xs text-white/40 uppercase tracking-wider font-medium text-right">Actions</th>
+                  <th className="text-left px-5 py-3 text-xs text-white/40 uppercase tracking-wider font-medium">ชื่อ</th>
+                  <th className="text-left px-5 py-3 text-xs text-white/40 uppercase tracking-wider font-medium">เบอร์โทร</th>
+                  <th className="text-left px-5 py-3 text-xs text-white/40 uppercase tracking-wider font-medium hidden md:table-cell">อีเมล</th>
+                  <th className="text-left px-5 py-3 text-xs text-white/40 uppercase tracking-wider font-medium hidden md:table-cell">แท็ก</th>
+                  <th className="w-20 px-5 py-3 text-xs text-white/40 uppercase tracking-wider font-medium text-right">จัดการ</th>
                 </tr>
               </thead>
-              <tbody>
+              <motion.tbody variants={stagger} initial="hidden" animate="show">
                 {initialContacts.map((contact) => (
-                  <tr key={contact.id} className="table-row">
+                  <motion.tr key={contact.id} variants={rowVariant} className="table-row">
                     <td className="px-5 py-3.5 text-white/70">{contact.name}</td>
                     <td className="px-5 py-3.5 text-white/50 font-mono text-xs">{contact.phone}</td>
-                    <td className="px-5 py-3.5 text-white/40 text-xs">{contact.email || "-"}</td>
-                    <td className="px-5 py-3.5">
+                    <td className="px-5 py-3.5 text-white/40 text-xs hidden md:table-cell">{contact.email || "-"}</td>
+                    <td className="px-5 py-3.5 hidden md:table-cell">
                       {contact.tags ? (
                         <div className="flex gap-1 flex-wrap">
                           {contact.tags.split(",").map((tag) => (
-                            <span key={tag.trim()} className="badge badge-info">
+                            <span key={tag.trim()} className="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-md bg-sky-500/10 text-sky-400">
                               {tag.trim()}
                             </span>
                           ))}
@@ -219,39 +259,47 @@ export default function ContactsClient({
                       )}
                     </td>
                     <td className="px-5 py-3.5 text-right">
-                      <button
+                      <motion.button
                         onClick={() => handleDelete(contact.id)}
                         disabled={deletingId === contact.id}
                         className="btn-danger px-3 py-1.5 text-xs rounded-lg disabled:opacity-40"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                       >
-                        {deletingId === contact.id ? "..." : "Delete"}
-                      </button>
+                        {deletingId === contact.id ? "..." : "ลบ"}
+                      </motion.button>
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))}
-              </tbody>
+              </motion.tbody>
             </table>
           </div>
-        </div>
+        </motion.div>
       ) : (
-        /* Empty State */
-        <div className="glass p-12 text-center">
+        <motion.div
+          className="glass p-12 text-center"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2 }}
+        >
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/[0.02] border border-white/[0.04] flex items-center justify-center">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-white/10">
               <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
               <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
             </svg>
           </div>
-          <p className="text-sm text-white/25 mb-1">No contacts yet</p>
+          <p className="text-sm text-white/25 mb-1">ยังไม่มีรายชื่อ</p>
           <p className="text-xs text-white/15 mb-5">เพิ่มรายชื่อผู้ติดต่อเพื่อส่ง SMS ได้ง่ายขึ้น</p>
-          <button
+          <motion.button
             onClick={() => setShowForm(true)}
             className="btn-primary inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
-            + Add Contact
-          </button>
-        </div>
+            + เพิ่มรายชื่อ
+          </motion.button>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 }
