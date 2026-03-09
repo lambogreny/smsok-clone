@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { createTag, updateTag, deleteTag } from "@/lib/actions/tags";
 import { useToast } from "@/app/components/ui/Toast";
@@ -313,14 +314,37 @@ export function InlineTagPicker({
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const ref = useRef<HTMLDivElement>(null);
+  const [rect, setRect] = useState<{ top: number; left: number; width: number } | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  function computeRect() {
+    if (triggerRef.current) {
+      const r = triggerRef.current.getBoundingClientRect();
+      setRect({ top: r.bottom + 6, left: r.left, width: r.width });
+    }
+  }
+
+  function toggle() {
+    if (!open) computeRect();
+    setOpen((v) => !v);
+    setQuery("");
+  }
 
   useEffect(() => {
+    if (!open) return;
     function onClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (triggerRef.current?.contains(target) || dropdownRef.current?.contains(target)) return;
+      setOpen(false);
     }
-    if (open) document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
+    function onScroll() { setOpen(false); }
+    document.addEventListener("mousedown", onClickOutside);
+    window.addEventListener("scroll", onScroll, true);
+    return () => {
+      document.removeEventListener("mousedown", onClickOutside);
+      window.removeEventListener("scroll", onScroll, true);
+    };
   }, [open]);
 
   const filtered = tags.filter((t) =>
@@ -329,50 +353,20 @@ export function InlineTagPicker({
 
   const selectedCount = selectedIds.length;
 
-  return (
-    <div ref={ref} className="relative">
-      {/* Trigger */}
-      <motion.button
-        type="button"
-        onClick={() => { setOpen((v) => !v); setQuery(""); }}
-        whileHover={{ scale: 1.01 }}
-        whileTap={{ scale: 0.99 }}
-        className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm w-full
-          bg-[var(--bg-surface)]/80 backdrop-blur-sm border transition-colors
-          ${open ? "border-violet-500/40" : "border-[var(--border-subtle)] hover:border-violet-500/25"}
-          text-[var(--text-secondary)]`}
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[var(--text-muted)] flex-shrink-0" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" />
-          <line x1="7" y1="7" x2="7.01" y2="7" />
-        </svg>
-        <span className={`flex-1 text-left ${selectedCount === 0 ? "text-[var(--text-muted)]" : ""}`}>
-          {selectedCount === 0 ? "เลือกแท็ก..." : `${selectedCount} แท็ก`}
-        </span>
-        {selectedCount > 0 && (
-          <span className="text-[10px] bg-violet-500/15 text-violet-400 border border-violet-500/20 px-1.5 py-0.5 rounded-full tabular-nums">
-            {selectedCount}
-          </span>
-        )}
-        <motion.svg
-          animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.15 }}
-          width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[var(--text-muted)] flex-shrink-0">
-          <polyline points="6 9 12 15 18 9" />
-        </motion.svg>
-      </motion.button>
-
-      {/* Dropdown */}
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -6, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.97 }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
-            className="absolute z-50 w-full mt-1.5 rounded-2xl overflow-hidden
-              border border-white/[0.08] bg-[#0D1526]/95 backdrop-blur-2xl
-              shadow-[0_16px_48px_rgba(0,0,0,0.5)]"
-          >
+  const dropdown = rect && (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          ref={dropdownRef}
+          initial={{ opacity: 0, y: -6, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -6, scale: 0.97 }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
+          style={{ position: "fixed", top: rect.top, left: rect.left, width: rect.width, zIndex: 9999 }}
+          className="rounded-2xl overflow-hidden
+            border border-white/[0.08] bg-[#0D1526]/95 backdrop-blur-2xl
+            shadow-[0_16px_48px_rgba(0,0,0,0.5)]"
+        >
             {/* Search */}
             <div className="px-3 pt-3 pb-2">
               <div className="flex items-center gap-2 px-2.5 py-2 rounded-xl bg-white/[0.04] border border-white/[0.06] focus-within:border-violet-500/25 transition-colors">
@@ -421,9 +415,47 @@ export function InlineTagPicker({
                 })
               )}
             </div>
-          </motion.div>
+        </motion.div>
         )}
       </AnimatePresence>
+    )
+  );
+
+  return (
+    <div className="relative">
+      {/* Trigger */}
+      <motion.button
+        ref={triggerRef}
+        type="button"
+        onClick={toggle}
+        whileHover={{ scale: 1.01 }}
+        whileTap={{ scale: 0.99 }}
+        className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm w-full
+          bg-[var(--bg-surface)]/80 backdrop-blur-sm border transition-colors
+          ${open ? "border-violet-500/40" : "border-[var(--border-subtle)] hover:border-violet-500/25"}
+          text-[var(--text-secondary)]`}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[var(--text-muted)] flex-shrink-0" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" />
+          <line x1="7" y1="7" x2="7.01" y2="7" />
+        </svg>
+        <span className={`flex-1 text-left ${selectedCount === 0 ? "text-[var(--text-muted)]" : ""}`}>
+          {selectedCount === 0 ? "เลือกแท็ก..." : `${selectedCount} แท็ก`}
+        </span>
+        {selectedCount > 0 && (
+          <span className="text-[10px] bg-violet-500/15 text-violet-400 border border-violet-500/20 px-1.5 py-0.5 rounded-full tabular-nums">
+            {selectedCount}
+          </span>
+        )}
+        <motion.svg
+          animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.15 }}
+          width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[var(--text-muted)] flex-shrink-0">
+          <polyline points="6 9 12 15 18 9" />
+        </motion.svg>
+      </motion.button>
+
+      {/* Portal dropdown — escapes overflow:hidden */}
+      {typeof document !== "undefined" && createPortal(dropdown, document.body)}
     </div>
   );
 }
