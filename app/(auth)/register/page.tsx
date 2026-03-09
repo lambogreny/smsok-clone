@@ -23,6 +23,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState("");
 
@@ -49,7 +50,8 @@ export default function RegisterPage() {
   }
 
   const hasErrors = Object.values(errors).some(Boolean);
-  const isFormComplete = name.trim() && email.trim() && phone.trim() && password.trim();
+  const passwordMismatch = confirmPassword.length > 0 && confirmPassword !== password;
+  const isFormComplete = name.trim() && email.trim() && phone.trim() && password.trim() && confirmPassword === password;
 
   function handleSendOtp() {
     if (!isFormComplete || hasErrors) return;
@@ -187,8 +189,25 @@ export default function RegisterPage() {
                     </div>
                   )}
                 </div>
+                <div>
+                  <label className="block text-xs text-white/40 uppercase tracking-wider mb-2 font-medium">ยืนยันรหัสผ่าน</label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className={`input-glass transition-colors ${
+                      confirmPassword && confirmPassword === password
+                        ? "border-emerald-500/50"
+                        : passwordMismatch
+                        ? "border-red-500/50"
+                        : ""
+                    }`}
+                    placeholder="••••••••"
+                  />
+                  {passwordMismatch && <p className="text-red-400 text-xs mt-1">รหัสผ่านไม่ตรงกัน</p>}
+                </div>
 
-                <motion.button onClick={handleSendOtp} disabled={isPending || hasErrors || !isFormComplete}
+                <motion.button onClick={handleSendOtp} disabled={isPending || hasErrors || !isFormComplete || passwordMismatch}
                   className="w-full btn-primary py-3 rounded-xl text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
                   whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
                   {isPending
