@@ -12,13 +12,19 @@ export async function GET() {
     servers: [
       { url: "/api/v1", description: "API v1" },
     ],
-    security: [{ BearerAuth: [] }],
+    security: [{ BearerAuth: [] }, { ApiKeyAuth: [] }],
     components: {
       securitySchemes: {
         BearerAuth: {
           type: "http",
           scheme: "bearer",
           description: "API key (sk_live_xxx or sk_test_xxx)",
+        },
+        ApiKeyAuth: {
+          type: "apiKey",
+          in: "header",
+          name: "X-API-Key",
+          description: "Alternative header for external clients",
         },
       },
     },

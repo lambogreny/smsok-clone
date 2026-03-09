@@ -8,6 +8,19 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=${REDIS_URL}
       - JWT_SECRET=${JWT_SECRET}
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
+      - SMS_API_URL=${SMS_API_URL}
+      - SMS_API_USERNAME=${SMS_API_USERNAME}
+      - SMS_API_PASSWORD=${SMS_API_PASSWORD}
+      - EASYSLIP_API_KEY=${EASYSLIP_API_KEY}
+      - EASYSLIP_API_URL=${EASYSLIP_API_URL}
+      - CRON_SECRET=${CRON_SECRET:-}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - SMTP_FROM=${SMTP_FROM}
+      - SMTP_SECURE=${SMTP_SECURE:-true}
       - COMMIT_SHA=${COMMIT_SHA:-latest}
     depends_on:
       postgres:
@@ -96,6 +109,7 @@ services:
       - WATCHTOWER_SCOPE=smsok
       - WATCHTOWER_LIFECYCLE_HOOKS=true
       - WATCHTOWER_HTTP_API_UPDATE=true
+      - WATCHTOWER_HTTP_API_PERIODIC_POLLS=true
       - WATCHTOWER_HTTP_API_METRICS=true
       - WATCHTOWER_HTTP_API_TOKEN=${WATCHTOWER_TOKEN:-watchtower-secret-change-me}
       - WATCHTOWER_NOTIFICATIONS=shoutrrr
@@ -104,7 +118,7 @@ services:
       - "8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - watchtower_config:/config
+      - ${DOCKER_CONFIG_PATH:-/home/byteder/.docker/config.json}:/config.json:ro
     labels:
       - "com.centurylinklabs.watchtower.scope=smsok"
     restart: unless-stopped
@@ -118,4 +132,3 @@ services:
 volumes:
   pgdata:
   redisdata:
-  watchtower_config:

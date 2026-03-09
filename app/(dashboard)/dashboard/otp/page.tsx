@@ -214,8 +214,8 @@ export default function OtpPage() {
                   title="Response 201"
                   lang="response"
                   code={`{
-  "success": true,
-  "phone": "0891234567",
+  "ref": "ABC123EF",
+  "phone": "+66891234567",
   "purpose": "verify",
   "expiresAt": "2026-03-09T10:35:00Z",
   "creditUsed": 1
@@ -267,7 +267,7 @@ export default function OtpPage() {
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "phone": "0891234567",
+    "ref": "ABC123EF",
     "code": "123456"
   }'`}
                 />
@@ -275,8 +275,10 @@ export default function OtpPage() {
                   title="Response 200"
                   lang="response"
                   code={`{
+  "valid": true,
   "verified": true,
-  "phone": "0891234567",
+  "ref": "ABC123EF",
+  "phone": "+66891234567",
   "purpose": "verify"
 }`}
                 />
@@ -291,11 +293,11 @@ export default function OtpPage() {
                   </div>
                   <div className="flex items-center gap-3 py-2 border-b border-[var(--border-subtle)]">
                     <span className="text-red-400 font-mono font-bold">400</span>
-                    <span className="text-[var(--text-secondary)]">ไม่พบ OTP หรือ OTP หมดอายุ</span>
+                    <span className="text-[var(--text-secondary)]">ไม่พบ OTP นี้ หรือ OTP หมดอายุแล้ว</span>
                   </div>
                   <div className="flex items-center gap-3 py-2 border-b border-[var(--border-subtle)]">
                     <span className="text-red-400 font-mono font-bold">400</span>
-                    <span className="text-[var(--text-secondary)]">ลองผิดมากเกินไป (สูงสุด 5 ครั้ง)</span>
+                    <span className="text-[var(--text-secondary)]">OTP ถูกล็อคแล้ว กรุณาขอรหัสใหม่</span>
                   </div>
                   <div className="flex items-center gap-3 py-2">
                     <span className="text-orange-400 font-mono font-bold">429</span>
@@ -326,7 +328,7 @@ const gen = await fetch(BASE + "/otp/send", {
   },
   body: JSON.stringify({ phone: "0891234567", purpose: "verify" })
 });
-const { expiresAt } = await gen.json();
+const { ref, expiresAt } = await gen.json();
 
 // 2. User enters code from SMS...
 const userCode = "123456";
@@ -338,10 +340,10 @@ const verify = await fetch(BASE + "/otp/verify", {
     "Authorization": "Bearer " + API_KEY,
     "Content-Type": "application/json"
   },
-  body: JSON.stringify({ phone: "0891234567", code: userCode })
+  body: JSON.stringify({ ref, code: userCode })
 });
-const { verified } = await verify.json();
-console.log(verified ? "OTP correct!" : "Invalid OTP");`}
+const { valid } = await verify.json();
+console.log(valid ? "OTP correct!" : "Invalid OTP");`}
         />
       </div>
 

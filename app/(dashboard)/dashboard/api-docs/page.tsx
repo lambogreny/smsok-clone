@@ -101,8 +101,8 @@ const endpoints: Endpoint[] = [
   "purpose": "verify"
 }`,
     response: `{
-  "success": true,
-  "phone": "0891234567",
+  "ref": "ABC123EF",
+  "phone": "+66891234567",
   "purpose": "verify",
   "expiresAt": "2026-03-09T10:35:00Z",
   "creditUsed": 1
@@ -114,12 +114,14 @@ const endpoints: Endpoint[] = [
     description: "ยืนยันรหัส OTP (สูงสุด 5 ครั้ง)",
     headers: "Authorization: Bearer <API_KEY>",
     body: `{
-  "phone": "0891234567",
+  "ref": "ABC123EF",
   "code": "123456"
 }`,
     response: `{
+  "valid": true,
   "verified": true,
-  "phone": "0891234567",
+  "ref": "ABC123EF",
+  "phone": "+66891234567",
   "purpose": "verify"
 }`,
     rateLimit: "10 req/15min",

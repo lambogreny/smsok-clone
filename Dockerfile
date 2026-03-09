@@ -1,23 +1,31 @@
 FROM oven/bun:1 AS deps
 WORKDIR /app
 COPY package.json bun.lock* ./
-RUN bun install --frozen-lockfile 2>/dev/null || bun install
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+  bun install --frozen-lockfile 2>/dev/null || bun install
 
 FROM oven/bun:1 AS builder
 WORKDIR /app
 ARG COMMIT_SHA=dev
+ENV NEXT_TELEMETRY_DISABLED=1 COMMIT_SHA=$COMMIT_SHA
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-ENV COMMIT_SHA=$COMMIT_SHA
+COPY package.json bun.lock* next.config.ts tsconfig.json next-env.d.ts postcss.config.mjs ./
+COPY middleware.ts ./middleware.ts
+COPY app ./app
+COPY lib ./lib
+COPY prisma ./prisma
+COPY public ./public
 RUN bunx prisma generate && bun run build
 
 FROM node:22-slim
 RUN apt-get update -qq && \
-    apt-get install -y -qq openssl curl tini && \
+    apt-get install -y -qq --no-install-recommends openssl curl tini && \
     rm -rf /var/lib/apt/lists/* && \
     addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 WORKDIR /app
+ARG SOURCE_REPOSITORY=https://github.com/lambogreny/smsok-clone
+LABEL org.opencontainers.image.source=$SOURCE_REPOSITORY
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public

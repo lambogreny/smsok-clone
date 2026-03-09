@@ -17,7 +17,7 @@ const packages = [
 const benefits = [
   {
     title: "ราคาถูกที่สุด",
-    desc: "เริ่มต้นเพียง 0.147 บาท/SMS",
+    desc: "เริ่มต้นเพียง ฿0.147/SMS",
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
@@ -253,7 +253,7 @@ export default function LandingPage() {
 
           {/* Subheading */}
           <p className="animate-fade-in text-base sm:text-lg md:text-xl text-white/40 max-w-2xl mx-auto mb-10 sm:mb-12 leading-relaxed px-2" style={{ animationDelay: "0.2s" }}>
-            ส่ง SMS ผ่านเว็บหรือ API ได้ทันที ราคาเริ่มต้น 0.147 บาท/ข้อความ
+            ส่ง SMS ผ่านเว็บหรือ API ได้ทันที ราคาเริ่มต้น ฿0.147/ข้อความ
             <br className="hidden sm:block" />
             <span className="sm:hidden"> — </span>
             สมัครวันนี้รับฟรี 500 เครดิต

@@ -28,7 +28,7 @@ describe("API Route: POST /api/v1/sms/send", () => {
   });
 
   it("maps body.sender to senderName", () => {
-    expect(sendRoute).toContain('body.sender || "SMSOK"');
+    expect(sendRoute).toContain('body.sender || "EasySlip"');
   });
 
   it("maps body.to to recipient", () => {

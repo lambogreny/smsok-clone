@@ -145,6 +145,7 @@ if [ -z "${GHCR_TOKEN:-}" ]; then
 fi
 
 echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin 2>/dev/null
+DOCKER_CONFIG_DIR="${DOCKER_CONFIG:-$HOME/.docker}"
 log "GHCR login: OK (credentials stored for Watchtower)"
 
 # =============================================
@@ -176,6 +177,7 @@ ENVEOF
 
   # Auto-generate all secrets
   JWT_SECRET=$(openssl rand -hex 32)
+  CRON_SECRET=$(openssl rand -hex 24)
   DB_PASSWORD=$(openssl rand -hex 16)
   DB_USER="smsok"
   DB_NAME="smsok"
@@ -200,6 +202,15 @@ REDIS_URL=redis://redis:6379
 
 # --- Auth ---
 JWT_SECRET=${JWT_SECRET}
+CRON_SECRET=${CRON_SECRET}
+
+# --- SMTP / Email ---
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=CHANGE_ME
+SMTP_PASS=CHANGE_ME
+SMTP_FROM="SMSOK Clone <no-reply@your-domain.com>"
+SMTP_SECURE=false
 
 # --- EasyThunder SMS Gateway ---
 SMS_API_URL=https://sms-api.cl1.easythunder.com
@@ -216,6 +227,7 @@ NODE_ENV=production
 
 # --- Watchtower (auto-deploy) ---
 WATCHTOWER_TOKEN=${WATCHTOWER_TOKEN}
+DOCKER_CONFIG_PATH=${DOCKER_CONFIG_DIR}/config.json
 WATCHTOWER_NOTIFY_URL=
 ENVEOF
 
@@ -236,6 +248,7 @@ ENVEOF
   echo "   SMS_API_USERNAME  = (from EasyThunder)"
   echo "   SMS_API_PASSWORD  = (from EasyThunder)"
   echo "   EASYSLIP_API_KEY  = (from EasySlip dashboard)"
+  echo "   SMTP_HOST/PORT/USER/PASS/FROM = (your SMTP provider)"
   echo "   NEXT_PUBLIC_APP_URL = (your domain, or keep IP)"
   echo ""
   echo "   Edit: nano $APP_DIR/.env"

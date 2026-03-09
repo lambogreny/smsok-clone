@@ -7,11 +7,19 @@ import { NextRequest } from "next/server";
  */
 export async function authenticateApiKey(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
+  const headerApiKey = req.headers.get("x-api-key")?.trim();
+
+  if (authHeader && !authHeader.startsWith("Bearer ")) {
     throw new ApiError(401, "Missing or invalid Authorization header");
   }
 
-  const key = authHeader.slice(7);
+  const key = authHeader?.startsWith("Bearer ")
+    ? authHeader.slice(7).trim()
+    : headerApiKey;
+
+  if (!key) {
+    throw new ApiError(401, "Missing or invalid Authorization header");
+  }
 
   const apiKey = await db.apiKey.findUnique({
     where: { key },

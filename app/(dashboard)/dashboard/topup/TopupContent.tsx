@@ -81,8 +81,7 @@ export default function TopupContent({ user, packages }: { user: User; packages:
 
             {/* Price */}
             <div className="mb-4">
-              <span className="text-2xl font-bold gradient-text-cyan">{formatPrice(pkg.price)}</span>
-              <span className="text-sm text-[var(--text-muted)] ml-1">บาท</span>
+              <span className="text-2xl font-bold gradient-text-cyan">฿{formatPrice(pkg.price)}</span>
             </div>
 
             {/* Details */}

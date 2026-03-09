@@ -19,6 +19,10 @@ describe("API Auth: authenticateApiKey", () => {
     expect(apiAuth).toContain('Bearer ');
   });
 
+  it("supports X-API-Key header", () => {
+    expect(apiAuth).toContain("x-api-key");
+  });
+
   it("throws 401 on missing auth header", () => {
     expect(apiAuth).toContain("Missing or invalid Authorization header");
   });
