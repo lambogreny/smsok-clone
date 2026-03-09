@@ -18,7 +18,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8 animate-fade-in">
           <Link href="/" className="inline-flex items-center gap-2">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" className="text-purple-400">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" className="text-sky-400">
               <path d="M12 2L2 7l10 5 10-5-10-5z" fill="currentColor" opacity="0.3" />
               <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
@@ -74,7 +74,7 @@ export default function LoginPage() {
 
           <p className="text-center text-white/30 text-sm mt-6">
             ยังไม่มีบัญชี?{" "}
-            <Link href="/register" className="text-purple-400 hover:text-purple-300 transition-colors">
+            <Link href="/register" className="text-sky-400 hover:text-sky-300 transition-colors">
               สมัครฟรี →
             </Link>
           </p>

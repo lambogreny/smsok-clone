@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { logout } from "@/lib/actions";
+import { sendSms } from "@/lib/actions/sms";
 import Link from "next/link";
 
 type User = {
@@ -9,6 +11,13 @@ type User = {
   email: string;
   credits: number;
   role: string;
+};
+
+type DashboardStats = {
+  user: { credits: number; name: string; email: string };
+  today: { total: number; delivered: number; failed: number; sent: number; pending: number };
+  thisMonth: { total: number; delivered: number; failed: number; sent: number; pending: number };
+  recentMessages: { id: string; recipient: string; status: string; senderName: string; creditCost: number; createdAt: Date }[];
 };
 
 const sidebarItems = [
@@ -137,7 +146,7 @@ const statCards = [
   },
 ];
 
-function Sparkline({ data, color = "#8B5CF6" }: { data: number[]; color?: string }) {
+function Sparkline({ data, color = "#38BDF8" }: { data: number[]; color?: string }) {
   const max = Math.max(...data);
   const h = 20;
   return (
@@ -157,21 +166,42 @@ function Sparkline({ data, color = "#8B5CF6" }: { data: number[]; color?: string
   );
 }
 
-export default function DashboardContent({ user }: { user: User }) {
+export default function DashboardContent({ user, stats }: { user: User; stats?: DashboardStats }) {
+  const [phone, setPhone] = useState("");
+  const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sendResult, setSendResult] = useState<string | null>(null);
+
+  const handleQuickSend = async () => {
+    if (!phone || !message) return;
+    setSending(true);
+    setSendResult(null);
+    try {
+      await sendSms(user.id, { senderName: "SMSOK", recipient: phone, message });
+      setSendResult("ส่งสำเร็จ!");
+      setPhone("");
+      setMessage("");
+    } catch (e) {
+      setSendResult(e instanceof Error ? e.message : "เกิดข้อผิดพลาด");
+    } finally {
+      setSending(false);
+    }
+  };
+
   const statValues = {
-    credits: user.credits.toLocaleString(),
-    sent: "12,847",
-    delivered: "12,612",
-    failed: "235",
+    credits: (stats?.user.credits ?? user.credits).toLocaleString(),
+    sent: (stats?.today.total ?? 0).toLocaleString(),
+    delivered: (stats?.today.delivered ?? 0).toLocaleString(),
+    failed: (stats?.today.failed ?? 0).toLocaleString(),
   };
 
   return (
     <div className="min-h-screen flex bg-[var(--bg-base)]">
       {/* Sidebar */}
-      <aside className="hidden md:flex w-60 border-r border-white/5 bg-[#06060C]/90 backdrop-blur-xl flex-col p-4">
+      <aside className="hidden md:flex w-60 border-r border-white/5 bg-[#060A14]/90 backdrop-blur-xl flex-col p-4">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 px-4 py-3 mb-4">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" className="text-purple-400">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" className="text-sky-400">
             <path d="M12 2L2 7l10 5 10-5-10-5z" fill="currentColor" opacity="0.3" />
             <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
@@ -214,7 +244,7 @@ export default function DashboardContent({ user }: { user: User }) {
         {/* User */}
         <div className="border-t border-white/5 pt-4 px-2">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-xs font-semibold text-purple-300">
+            <div className="w-8 h-8 rounded-full bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-xs font-semibold text-sky-300">
               {user.name.charAt(0)}
             </div>
             <div className="flex-1 min-w-0">
@@ -240,9 +270,9 @@ export default function DashboardContent({ user }: { user: User }) {
           <h1 className="text-lg font-semibold text-white tracking-tight">Dashboard</h1>
           <div className="flex items-center gap-3">
             <div className="text-xs text-white/30">
-              เครดิต: <span className="text-purple-400 font-semibold">{user.credits.toLocaleString()}</span>
+              เครดิต: <span className="text-sky-400 font-semibold">{user.credits.toLocaleString()}</span>
             </div>
-            <div className="w-8 h-8 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-xs font-semibold text-purple-300 md:hidden">
+            <div className="w-8 h-8 rounded-full bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-xs font-semibold text-sky-300 md:hidden">
               {user.name.charAt(0)}
             </div>
           </div>
@@ -257,7 +287,7 @@ export default function DashboardContent({ user }: { user: User }) {
               <div
                 key={stat.key}
                 className={`glass p-5 group hover:animate-breathe transition-all animate-fade-in ${
-                  stat.gradient ? "border-purple-500/30 shadow-[0_0_30px_rgba(139,92,246,0.1)]" : ""
+                  stat.gradient ? "border-sky-500/30 shadow-[0_0_30px_rgba(56,189,248,0.1)]" : ""
                 }`}
                 style={{ animationDelay: `${i * 0.1}s` }}
               >
@@ -268,7 +298,7 @@ export default function DashboardContent({ user }: { user: User }) {
                 <div className={`text-2xl font-bold mb-3 ${stat.gradient ? "neon-purple" : "text-white"}`}>
                   {statValues[stat.key]}
                 </div>
-                <Sparkline data={stat.sparkline} color={stat.key === "failed" ? "#EF4444" : "#8B5CF6"} />
+                <Sparkline data={stat.sparkline} color={stat.key === "failed" ? "#EF4444" : "#38BDF8"} />
               </div>
             ))}
           </div>
@@ -276,7 +306,7 @@ export default function DashboardContent({ user }: { user: User }) {
           {/* Quick Send */}
           <div className="glass p-6 md:p-8 mb-8 animate-fade-in" style={{ animationDelay: "0.4s" }}>
             <h2 className="text-base font-semibold text-white mb-5 flex items-center gap-2">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-purple-400">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-sky-400">
                 <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
               </svg>
               Quick Send
@@ -287,7 +317,9 @@ export default function DashboardContent({ user }: { user: User }) {
                 <input
                   type="text"
                   className="input-glass"
-                  placeholder="+66 812345678"
+                  placeholder="0891234567"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                 />
               </div>
               <div>
@@ -296,12 +328,21 @@ export default function DashboardContent({ user }: { user: User }) {
                   type="text"
                   className="input-glass"
                   placeholder="Your OTP is {code}"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
                 />
               </div>
             </div>
+            {sendResult && (
+              <p className={`mt-2 text-xs ${sendResult.includes("สำเร็จ") ? "text-emerald-400" : "text-red-400"}`}>{sendResult}</p>
+            )}
             <div className="mt-4 flex gap-3">
-              <button className="btn-primary px-6 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2">
-                Send SMS
+              <button
+                onClick={handleQuickSend}
+                disabled={sending || !phone || !message}
+                className="btn-primary px-6 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
+              >
+                {sending ? "กำลังส่ง..." : "Send SMS"}
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
@@ -313,30 +354,56 @@ export default function DashboardContent({ user }: { user: User }) {
           <div className="glass p-6 md:p-8 animate-fade-in" style={{ animationDelay: "0.5s" }}>
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-base font-semibold text-white flex items-center gap-2">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-purple-400">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-sky-400">
                   <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
                 </svg>
                 Recent Messages
               </h2>
-              <a href="/dashboard/messages" className="text-xs text-purple-400 hover:text-purple-300 transition-colors">
+              <a href="/dashboard/messages" className="text-xs text-sky-400 hover:text-sky-300 transition-colors">
                 View All →
               </a>
             </div>
 
-            {/* Empty State */}
-            <div className="text-center py-12">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mx-auto text-white/10 mb-4">
-                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-              </svg>
-              <p className="text-sm text-white/30 mb-1">No messages yet</p>
-              <p className="text-xs text-white/20 mb-4">ส่ง SMS แรกของคุณเลย</p>
-              <a href="/dashboard/send" className="btn-primary inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm">
-                Send SMS
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12h14M12 5l7 7-7 7" />
+            {stats?.recentMessages && stats.recentMessages.length > 0 ? (
+              <div className="space-y-2">
+                {stats.recentMessages.map((msg) => (
+                  <div key={msg.id} className="flex items-center justify-between py-2 px-3 rounded-lg bg-white/[0.02] border border-white/5">
+                    <div className="flex items-center gap-3">
+                      <span className={`w-2 h-2 rounded-full ${
+                        msg.status === "delivered" ? "bg-emerald-400" :
+                        msg.status === "failed" ? "bg-red-400" :
+                        msg.status === "sent" ? "bg-blue-400" :
+                        "bg-yellow-400"
+                      }`} />
+                      <span className="text-sm text-white/60 font-mono">{msg.recipient}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-[11px] text-white/30">{msg.senderName}</span>
+                      <span className={`text-[11px] px-2 py-0.5 rounded-full ${
+                        msg.status === "delivered" ? "bg-emerald-500/10 text-emerald-400" :
+                        msg.status === "failed" ? "bg-red-500/10 text-red-400" :
+                        msg.status === "sent" ? "bg-blue-500/10 text-blue-400" :
+                        "bg-yellow-500/10 text-yellow-400"
+                      }`}>{msg.status}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mx-auto text-white/10 mb-4">
+                  <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
                 </svg>
-              </a>
-            </div>
+                <p className="text-sm text-white/30 mb-1">No messages yet</p>
+                <p className="text-xs text-white/20 mb-4">ส่ง SMS แรกของคุณเลย</p>
+                <a href="/dashboard/send" className="btn-primary inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm">
+                  Send SMS
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </a>
+              </div>
+            )}
           </div>
         </div>
 
@@ -351,12 +418,12 @@ export default function DashboardContent({ user }: { user: User }) {
 
       {/* Mobile Bottom Nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-white/5 bg-[var(--bg-base)]/90 backdrop-blur-xl flex items-center justify-around px-2 py-2 safe-area-bottom">
-        <a href="/dashboard" className="flex flex-col items-center gap-1 py-1 px-3 text-purple-400">
+        <a href="/dashboard" className="flex flex-col items-center gap-1 py-1 px-3 text-sky-400">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
           </svg>
           <span className="text-[10px]">Home</span>
-          <div className="w-1 h-1 rounded-full bg-purple-400" />
+          <div className="w-1 h-1 rounded-full bg-sky-400" />
         </a>
         <a href="/dashboard/send" className="flex flex-col items-center gap-1 py-1 px-3 text-white/40">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -364,7 +431,7 @@ export default function DashboardContent({ user }: { user: User }) {
           </svg>
           <span className="text-[10px]">Send</span>
         </a>
-        <a href="/dashboard/send" className="flex items-center justify-center w-12 h-12 -mt-5 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 shadow-[0_0_20px_rgba(139,92,246,0.4)]">
+        <a href="/dashboard/send" className="flex items-center justify-center w-12 h-12 -mt-5 rounded-full bg-gradient-to-br from-sky-500 to-sky-700 shadow-[0_0_20px_rgba(56,189,248,0.4)]">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
             <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
           </svg>
