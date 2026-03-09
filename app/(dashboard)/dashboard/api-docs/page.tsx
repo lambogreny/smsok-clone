@@ -14,7 +14,9 @@ type Endpoint = {
   body?: string;
   response: string;
   rateLimit?: string;
+  creditCost?: string;
   responseFields?: { name: string; type: string; description: string }[];
+  errors?: { code: string; description: string }[];
 };
 
 const methodColors: Record<string, string> = {
@@ -37,48 +39,60 @@ const endpoints: Endpoint[] = [
   // SMS
   {
     method: "POST", path: "/api/v1/sms/send", title: "Send SMS", category: "SMS",
-    description: "ส่ง SMS ไปยังเบอร์ปลายทาง (1 เบอร์)",
+    description: "ส่ง SMS ไปยังเบอร์ปลายทาง (1 เบอร์) — ใช้ 1 เครดิต/SMS",
     headers: "Authorization: Bearer <API_KEY>",
+    creditCost: "1 เครดิต / SMS",
     body: `{
-  "recipient": "0891234567",
-  "message": "สวัสดีครับ ข้อความทดสอบ",
-  "senderName": "EasySlip"
+  "sender": "EasySlip",
+  "to": "0891234567",
+  "message": "สวัสดีครับ ข้อความทดสอบ"
 }`,
     response: `{
-  "id": "msg_abc123",
-  "status": "sent",
-  "creditCost": 1,
-  "sentAt": "2026-03-09T10:30:00Z"
+  "id": "cm9abc123xyz",
+  "status": "pending",
+  "credits_used": 1,
+  "credits_remaining": 1499
 }`,
     rateLimit: "10 req/min",
     responseFields: [
-      { name: "id", type: "string", description: "รหัสข้อความ" },
-      { name: "status", type: "string", description: "สถานะ: sent, failed" },
-      { name: "creditCost", type: "number", description: "เครดิตที่ใช้" },
-      { name: "sentAt", type: "string (ISO8601)", description: "เวลาที่ส่ง" },
+      { name: "id", type: "string", description: "รหัสข้อความ (cuid)" },
+      { name: "status", type: "string", description: "สถานะ: pending, sent, delivered, failed" },
+      { name: "credits_used", type: "number", description: "เครดิตที่ใช้" },
+      { name: "credits_remaining", type: "number", description: "เครดิตคงเหลือ" },
+    ],
+    errors: [
+      { code: "400", description: "ข้อมูลไม่ถูกต้อง (sender/to/message)" },
+      { code: "401", description: "API Key ไม่ถูกต้อง" },
+      { code: "402", description: "เครดิตไม่เพียงพอ" },
+      { code: "429", description: "เกิน Rate Limit (10 req/min)" },
     ],
   },
   {
     method: "POST", path: "/api/v1/sms/batch", title: "Batch Send SMS", category: "SMS",
-    description: "ส่ง SMS แบบกลุ่ม (สูงสุด 1,000 เบอร์/ครั้ง)",
+    description: "ส่ง SMS แบบกลุ่ม (สูงสุด 10,000 เบอร์/ครั้ง) — ใช้ 1 เครดิต/เบอร์",
     headers: "Authorization: Bearer <API_KEY>",
+    creditCost: "1 เครดิต / เบอร์",
     body: `{
-  "recipients": ["0891234567", "0812345678"],
-  "message": "โปรโมชัน! ลด 50% วันนี้เท่านั้น",
-  "senderName": "EasySlip"
+  "sender": "EasySlip",
+  "to": ["0891234567", "0812345678"],
+  "message": "โปรโมชัน! ลด 50% วันนี้เท่านั้น"
 }`,
     response: `{
-  "totalMessages": 2,
-  "totalCredits": 2,
-  "sentCount": 2,
-  "failedCount": 0
+  "total_messages": 2,
+  "credits_used": 2,
+  "credits_remaining": 1498
 }`,
     rateLimit: "5 req/min",
     responseFields: [
-      { name: "totalMessages", type: "number", description: "จำนวนข้อความทั้งหมด" },
-      { name: "totalCredits", type: "number", description: "เครดิตที่ใช้ทั้งหมด" },
-      { name: "sentCount", type: "number", description: "จำนวนที่ส่งสำเร็จ" },
-      { name: "failedCount", type: "number", description: "จำนวนที่ส่งไม่สำเร็จ" },
+      { name: "total_messages", type: "number", description: "จำนวนข้อความทั้งหมด" },
+      { name: "credits_used", type: "number", description: "เครดิตที่ใช้ทั้งหมด" },
+      { name: "credits_remaining", type: "number", description: "เครดิตคงเหลือหลังส่ง" },
+    ],
+    errors: [
+      { code: "400", description: "ข้อมูลไม่ถูกต้อง หรือเบอร์เกิน 10,000" },
+      { code: "401", description: "API Key ไม่ถูกต้อง" },
+      { code: "402", description: "เครดิตไม่เพียงพอ" },
+      { code: "429", description: "เกิน Rate Limit (5 req/min)" },
     ],
   },
   {
@@ -129,31 +143,43 @@ const endpoints: Endpoint[] = [
   // OTP
   {
     method: "POST", path: "/api/v1/otp/send", title: "Generate OTP", category: "OTP",
-    description: "สร้างและส่งรหัส OTP 6 หลัก (หมดอายุ 5 นาที)",
+    description: "สร้างและส่งรหัส OTP 6 หลัก (หมดอายุ 5 นาที) — ใช้ 1 เครดิต/ครั้ง",
     headers: "Authorization: Bearer <API_KEY>",
+    creditCost: "1 เครดิต / OTP",
     body: `{
   "phone": "0891234567",
   "purpose": "verify"
 }`,
     response: `{
+  "id": "cm9otp123xyz",
   "ref": "ABC123EF",
   "phone": "+66891234567",
   "purpose": "verify",
   "expiresAt": "2026-03-09T10:35:00Z",
-  "creditUsed": 1
+  "expiresIn": 300,
+  "creditUsed": 1,
+  "creditsRemaining": 1499
 }`,
     rateLimit: "3 req/5min per phone",
     responseFields: [
-      { name: "ref", type: "string", description: "รหัสอ้างอิง OTP" },
+      { name: "ref", type: "string", description: "รหัสอ้างอิง OTP (ใช้ใน verify)" },
       { name: "phone", type: "string", description: "เบอร์ที่ส่ง (E.164)" },
-      { name: "purpose", type: "string", description: "วัตถุประสงค์" },
+      { name: "purpose", type: "string", description: "วัตถุประสงค์: verify, login, transaction" },
       { name: "expiresAt", type: "string (ISO8601)", description: "เวลาหมดอายุ" },
+      { name: "expiresIn", type: "number", description: "วินาทีที่เหลือก่อนหมดอายุ (300)" },
       { name: "creditUsed", type: "number", description: "เครดิตที่ใช้" },
+      { name: "creditsRemaining", type: "number", description: "เครดิตคงเหลือ" },
+    ],
+    errors: [
+      { code: "400", description: "เบอร์โทรศัพท์ไม่ถูกต้อง" },
+      { code: "401", description: "API Key ไม่ถูกต้อง" },
+      { code: "402", description: "เครดิตไม่เพียงพอ" },
+      { code: "429", description: "ส่ง OTP บ่อยเกินไป (สูงสุด 3 ครั้ง/5 นาที/เบอร์)" },
     ],
   },
   {
     method: "POST", path: "/api/v1/otp/verify", title: "Verify OTP", category: "OTP",
-    description: "ยืนยันรหัส OTP (สูงสุด 5 ครั้ง)",
+    description: "ยืนยันรหัส OTP (สูงสุด 5 ครั้ง — เกินจะถูกล็อค)",
     headers: "Authorization: Bearer <API_KEY>",
     body: `{
   "ref": "ABC123EF",
@@ -173,6 +199,13 @@ const endpoints: Endpoint[] = [
       { name: "ref", type: "string", description: "รหัสอ้างอิง" },
       { name: "phone", type: "string", description: "เบอร์ที่ยืนยัน" },
       { name: "purpose", type: "string", description: "วัตถุประสงค์" },
+    ],
+    errors: [
+      { code: "400", description: "รหัส OTP ไม่ถูกต้อง (แสดงจำนวนครั้งที่เหลือ)" },
+      { code: "401", description: "API Key ไม่ถูกต้อง" },
+      { code: "404", description: "ไม่พบ OTP นี้" },
+      { code: "410", description: "OTP หมดอายุหรือถูกล็อค" },
+      { code: "429", description: "เกิน Rate Limit" },
     ],
   },
 
@@ -724,10 +757,40 @@ function EndpointCard({ endpoint, isExpanded, onToggle, id }: { endpoint: Endpoi
                   </div>
                 </div>
 
+                {/* Credit Cost */}
+                {endpoint.creditCost && (
+                  <div className="mb-4 flex items-center gap-2 text-xs">
+                    <span className="w-5 h-5 rounded-md bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-400"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    </span>
+                    <span className="text-emerald-400 font-medium">ราคา:</span>
+                    <span className="text-[var(--text-secondary)]">{endpoint.creditCost}</span>
+                  </div>
+                )}
+
                 {/* Response Fields Table */}
                 {endpoint.responseFields && endpoint.responseFields.length > 0 && (
                   <div className="mb-5">
                     <ResponseFieldsTable fields={endpoint.responseFields} />
+                  </div>
+                )}
+
+                {/* Endpoint Errors */}
+                {endpoint.errors && endpoint.errors.length > 0 && (
+                  <div className="mb-5">
+                    <p className="text-[10px] font-medium text-[var(--text-muted)] mb-2 uppercase tracking-wider">Error Codes</p>
+                    <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl overflow-hidden">
+                      <table className="w-full text-xs">
+                        <tbody>
+                          {endpoint.errors.map((err) => (
+                            <tr key={err.code} className="border-b border-[var(--border-subtle)] last:border-0">
+                              <td className="p-3 font-mono text-red-400 w-16 shrink-0">{err.code}</td>
+                              <td className="p-3 text-[var(--text-secondary)]">{err.description}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 )}
 

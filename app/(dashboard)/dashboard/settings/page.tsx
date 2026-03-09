@@ -45,18 +45,6 @@ export default async function SettingsPage({
       <h1 className="text-2xl font-bold tracking-tight mb-1"><span className="gradient-text-cyan">ตั้งค่า</span></h1>
       <p className="text-sm text-[var(--text-muted)] mb-8">จัดการบัญชีและข้อมูลส่วนตัว</p>
 
-      {!fullUser.phone && (
-        <div className="mb-6 p-4 rounded-xl bg-amber-500/8 border border-amber-500/20 flex items-start gap-3">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-amber-400 flex-shrink-0 mt-0.5">
-            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-            <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
-          </svg>
-          <div>
-            <p className="text-sm font-medium text-amber-400">กรุณากรอกเบอร์โทรศัพท์</p>
-            <p className="text-xs text-amber-400/70 mt-0.5">ต้องใช้เบอร์โทรเพื่อรับ OTP และใช้งานฟีเจอร์ความปลอดภัย</p>
-          </div>
-        </div>
-      )}
 
       <div className="space-y-6 stagger-children">
         {/* Profile Card */}
@@ -81,15 +69,26 @@ export default async function SettingsPage({
             </div>
           </div>
 
-          <div className="mb-4">
-            <label className="block text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1.5 font-medium">อีเมล</label>
-            <div className="input-glass bg-[var(--bg-surface)] cursor-default text-[var(--text-secondary)]">{fullUser.email}</div>
-            <p className="text-[10px] text-[var(--text-muted)] mt-1">อีเมลไม่สามารถเปลี่ยนแปลงได้</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1.5 font-medium">อีเมล</label>
+              <div className="input-glass bg-[var(--bg-surface)] cursor-default text-[var(--text-secondary)]">{fullUser.email}</div>
+              <p className="text-[10px] text-[var(--text-muted)] mt-1">อีเมลไม่สามารถเปลี่ยนแปลงได้</p>
+            </div>
+            <div>
+              <label className="block text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1.5 font-medium">เบอร์โทรศัพท์</label>
+              <div className="input-glass bg-[var(--bg-surface)] cursor-default text-[var(--text-secondary)] font-mono">
+                {fullUser.phone || "ไม่ได้ระบุ"}
+              </div>
+              <p className="text-[10px] text-[var(--text-muted)] mt-1">
+                หากต้องการเปลี่ยนเบอร์โทร{" "}
+                <span className="text-cyan-400">กรุณาติดต่อ support</span>
+              </p>
+            </div>
           </div>
           <ProfileEditForm
             userId={fullUser.id}
             initialName={fullUser.name}
-            initialPhone={fullUser.phone ?? ""}
           />
         </div>
 
