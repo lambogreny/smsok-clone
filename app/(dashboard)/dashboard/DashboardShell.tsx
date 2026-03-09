@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "@/lib/actions";
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 type User = {
   id: string;
@@ -106,6 +107,25 @@ const sidebarItems = [
   },
 ];
 
+function SidebarLink({ item, isActive }: { item: typeof sidebarItems[0]; isActive: boolean }) {
+  return (
+    <Link href={item.href} className="block relative">
+      {isActive && (
+        <motion.div
+          layoutId="sidebar-active"
+          className="absolute inset-0 rounded-xl bg-sky-500/8 border-l-2 border-sky-400"
+          style={{ boxShadow: "inset 0 0 20px rgba(56,189,248,0.03)" }}
+          transition={{ type: "spring", stiffness: 350, damping: 30 }}
+        />
+      )}
+      <div className={`sidebar-item relative z-10 ${isActive ? "text-white" : ""}`}>
+        <span className="flex-shrink-0">{item.icon}</span>
+        {item.label}
+      </div>
+    </Link>
+  );
+}
+
 export default function DashboardShell({
   user,
   title = "",
@@ -124,21 +144,23 @@ export default function DashboardShell({
       <aside className="hidden md:flex w-[240px] border-r border-white/[0.04] bg-[var(--bg-base)]/95 backdrop-blur-2xl flex-col p-4">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 px-4 py-3 mb-6 group">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" className="text-sky-400 group-hover:drop-shadow-[0_0_8px_rgba(56,189,248,0.5)] transition-all">
+          <motion.svg
+            width="22" height="22" viewBox="0 0 24 24" fill="none"
+            className="text-sky-400"
+            whileHover={{ rotate: 12, scale: 1.1 }}
+            transition={{ type: "spring", stiffness: 300 }}
+          >
             <path d="M12 2L2 7l10 5 10-5-10-5z" fill="currentColor" opacity="0.3" />
             <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <span className="text-lg font-bold neon-blue">SMSOK</span>
+          </motion.svg>
+          <span className="text-lg font-bold bg-gradient-to-r from-sky-300 via-cyan-300 to-sky-400 bg-clip-text text-transparent">SMSOK</span>
         </Link>
 
         {/* Main */}
         <div className="text-[10px] uppercase tracking-[0.15em] text-white/15 px-4 mb-2 font-semibold">หลัก</div>
         <nav className="space-y-0.5 mb-6">
           {sidebarItems.filter(i => i.section === "main").map((item) => (
-            <Link key={item.label} href={item.href} className={`sidebar-item ${pathname === item.href ? "active" : ""}`}>
-              <span className="flex-shrink-0">{item.icon}</span>
-              {item.label}
-            </Link>
+            <SidebarLink key={item.label} item={item} isActive={pathname === item.href} />
           ))}
         </nav>
 
@@ -146,10 +168,7 @@ export default function DashboardShell({
         <div className="text-[10px] uppercase tracking-[0.15em] text-white/15 px-4 mb-2 font-semibold">จัดการ</div>
         <nav className="space-y-0.5 mb-6">
           {sidebarItems.filter(i => i.section === "manage").map((item) => (
-            <Link key={item.label} href={item.href} className={`sidebar-item ${pathname === item.href ? "active" : ""}`}>
-              <span className="flex-shrink-0">{item.icon}</span>
-              {item.label}
-            </Link>
+            <SidebarLink key={item.label} item={item} isActive={pathname === item.href} />
           ))}
         </nav>
 
@@ -157,17 +176,14 @@ export default function DashboardShell({
         <div className="text-[10px] uppercase tracking-[0.15em] text-white/15 px-4 mb-2 font-semibold">ตั้งค่า</div>
         <nav className="space-y-0.5 flex-1">
           {sidebarItems.filter(i => i.section === "settings").map((item) => (
-            <Link key={item.label} href={item.href} className={`sidebar-item ${pathname === item.href ? "active" : ""}`}>
-              <span className="flex-shrink-0">{item.icon}</span>
-              {item.label}
-            </Link>
+            <SidebarLink key={item.label} item={item} isActive={pathname === item.href} />
           ))}
         </nav>
 
         {/* User */}
         <div className="border-t border-white/[0.04] pt-4 px-2">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-500/30 to-indigo-500/20 border border-sky-500/20 flex items-center justify-center text-xs font-semibold text-sky-300 shadow-[0_0_12px_rgba(56,189,248,0.1)]">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-500/30 to-violet-500/20 border border-sky-500/20 flex items-center justify-center text-xs font-semibold text-sky-300 shadow-[0_0_12px_rgba(56,189,248,0.1)]">
               {user.name.charAt(0)}
             </div>
             <div className="flex-1 min-w-0">
@@ -192,14 +208,17 @@ export default function DashboardShell({
         <header className="sticky top-0 z-40 border-b border-white/[0.04] bg-[var(--bg-base)]/80 backdrop-blur-2xl px-6 md:px-8 h-14 flex items-center justify-between">
           <h1 className="text-lg font-semibold text-white tracking-tight">{title || sidebarItems.find(i => i.href === pathname)?.label || "แดชบอร์ด"}</h1>
           <div className="flex items-center gap-4">
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-sky-500/[0.06] border border-sky-500/10">
+            <motion.div
+              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-sky-500/[0.06] to-violet-500/[0.04] border border-sky-500/10"
+              whileHover={{ scale: 1.03, borderColor: "rgba(56,189,248,0.25)" }}
+            >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-sky-400">
                 <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
               </svg>
               <span className="text-xs text-white/40">เครดิต:</span>
-              <span className="text-sm text-sky-400 font-semibold">{user.credits.toLocaleString()}</span>
-            </div>
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-500/30 to-indigo-500/20 border border-sky-500/20 flex items-center justify-center text-xs font-semibold text-sky-300 md:hidden">
+              <span className="text-sm font-semibold bg-gradient-to-r from-sky-300 to-cyan-300 bg-clip-text text-transparent">{user.credits.toLocaleString()}</span>
+            </motion.div>
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-500/30 to-violet-500/20 border border-sky-500/20 flex items-center justify-center text-xs font-semibold text-sky-300 md:hidden">
               {user.name.charAt(0)}
             </div>
           </div>
@@ -217,41 +236,61 @@ export default function DashboardShell({
       </main>
 
       {/* Mobile More Menu Overlay */}
-      {moreOpen && (
-        <div className="md:hidden fixed inset-0 z-[60]">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMoreOpen(false)} />
-          <div className="absolute bottom-0 left-0 right-0 glass rounded-t-2xl border-t border-white/10 p-4 pb-8 animate-slide-up">
-            <div className="w-10 h-1 rounded-full bg-white/10 mx-auto mb-4" />
-            <div className="grid grid-cols-3 gap-3">
-              {sidebarItems.filter(i => !["/dashboard", "/dashboard/send", "/dashboard/messages"].includes(i.href)).map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMoreOpen(false)}
-                  className={`flex flex-col items-center gap-2 p-3 rounded-xl transition-all min-h-[72px] ${
-                    pathname === item.href
-                      ? "bg-sky-500/10 text-sky-400 border border-sky-500/20"
-                      : "bg-white/[0.02] text-white/40 hover:bg-white/[0.04] border border-white/[0.04]"
-                  }`}
-                >
-                  <span className="flex-shrink-0">{item.icon}</span>
-                  <span className="text-[11px] font-medium text-center leading-tight">{item.label}</span>
-                </Link>
-              ))}
-            </div>
-            <div className="mt-4 pt-4 border-t border-white/5">
-              <form action={logout}>
-                <button className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-red-400/60 hover:text-red-400 hover:bg-red-500/5 transition-all text-sm">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
-                  </svg>
-                  ออกจากระบบ
-                </button>
-              </form>
-            </div>
+      <AnimatePresence>
+        {moreOpen && (
+          <div className="md:hidden fixed inset-0 z-[60]">
+            <motion.div
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMoreOpen(false)}
+            />
+            <motion.div
+              className="absolute bottom-0 left-0 right-0 glass rounded-t-2xl border-t border-white/10 p-4 pb-8"
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            >
+              <div className="w-10 h-1 rounded-full bg-white/10 mx-auto mb-4" />
+              <div className="grid grid-cols-3 gap-3">
+                {sidebarItems.filter(i => !["/dashboard", "/dashboard/send", "/dashboard/messages"].includes(i.href)).map((item, idx) => (
+                  <motion.div
+                    key={item.href}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                  >
+                    <Link
+                      href={item.href}
+                      onClick={() => setMoreOpen(false)}
+                      className={`flex flex-col items-center gap-2 p-3 rounded-xl transition-all min-h-[72px] ${
+                        pathname === item.href
+                          ? "bg-sky-500/10 text-sky-400 border border-sky-500/20"
+                          : "bg-white/[0.02] text-white/40 hover:bg-white/[0.04] border border-white/[0.04]"
+                      }`}
+                    >
+                      <span className="flex-shrink-0">{item.icon}</span>
+                      <span className="text-[11px] font-medium text-center leading-tight">{item.label}</span>
+                    </Link>
+                  </motion.div>
+                ))}
+              </div>
+              <div className="mt-4 pt-4 border-t border-white/5">
+                <form action={logout}>
+                  <button className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-red-400/60 hover:text-red-400 hover:bg-red-500/5 transition-all text-sm">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
+                    </svg>
+                    ออกจากระบบ
+                  </button>
+                </form>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
       {/* Mobile Bottom Nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-white/[0.04] bg-[var(--bg-base)]/90 backdrop-blur-2xl flex items-center justify-around px-2 py-2 safe-area-bottom">
@@ -268,7 +307,7 @@ export default function DashboardShell({
           </svg>
           <span className="text-[10px]">ส่ง SMS</span>
         </Link>
-        <Link href="/dashboard/send" className="flex items-center justify-center w-12 h-12 -mt-5 rounded-full bg-gradient-to-br from-sky-400 to-sky-600 shadow-[0_0_25px_rgba(56,189,248,0.4),0_4px_12px_rgba(0,0,0,0.3)]">
+        <Link href="/dashboard/send" className="flex items-center justify-center w-12 h-12 -mt-5 rounded-full bg-gradient-to-br from-sky-400 via-cyan-400 to-violet-500 shadow-[0_0_25px_rgba(56,189,248,0.4),0_4px_12px_rgba(0,0,0,0.3)]">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
             <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
           </svg>
