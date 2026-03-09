@@ -233,6 +233,24 @@ export async function getContactsByGroup(userId: string, groupId: string) {
 }
 
 // ==========================================
+// Get contact groups
+// ==========================================
+
+export async function getContactGroups(userId: string) {
+  const groups = await db.contactGroup.findMany({
+    where: { userId },
+    include: { _count: { select: { members: true } } },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return groups.map((g: typeof groups[number]) => ({
+    id: g.id,
+    name: g.name,
+    memberCount: g._count.members,
+  }));
+}
+
+// ==========================================
 // Create contact group
 // ==========================================
 

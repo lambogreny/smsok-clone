@@ -178,6 +178,7 @@ ENVEOF
   # Auto-generate all secrets
   JWT_SECRET=$(openssl rand -hex 32)
   CRON_SECRET=$(openssl rand -hex 24)
+  OTP_HASH_SECRET=$(openssl rand -hex 32)
   DB_PASSWORD=$(openssl rand -hex 16)
   DB_USER="smsok"
   DB_NAME="smsok"
@@ -203,6 +204,7 @@ REDIS_URL=redis://redis:6379
 # --- Auth ---
 JWT_SECRET=${JWT_SECRET}
 CRON_SECRET=${CRON_SECRET}
+OTP_HASH_SECRET=${OTP_HASH_SECRET}
 
 # --- SMTP / Email ---
 SMTP_HOST=smtp.example.com
