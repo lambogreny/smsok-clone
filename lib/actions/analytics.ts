@@ -98,7 +98,7 @@ export async function getAnalytics(userId: string, period: string) {
       creditsUsed: creditUsed._sum.creditCost ?? 0,
       creditsRemaining: user.credits,
     },
-    daily: dailyBreakdown.map((d) => ({
+    daily: dailyBreakdown.map((d: { day: string; count: bigint }) => ({
       date: String(d.day).slice(0, 10),
       count: Number(d.count),
     })),

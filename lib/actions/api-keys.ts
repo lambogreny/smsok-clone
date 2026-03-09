@@ -65,7 +65,7 @@ export async function getApiKeys(userId: string) {
     orderBy: { createdAt: "desc" },
   });
 
-  return keys.map((k) => ({
+  return keys.map((k: typeof keys[number]) => ({
     ...k,
     key: k.key.slice(0, 12) + "..." + k.key.slice(-4),
   }));

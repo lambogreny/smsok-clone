@@ -105,10 +105,31 @@ export async function GET() {
       },
 
       // === OTP ===
+      "/otp/send": {
+        post: {
+          tags: ["OTP"],
+          summary: "Send OTP via SMS",
+          description: "Generate 6-digit OTP and send via SMS. Rate limit: 3 req/5min per phone+IP. TTL: 5 min. Max 5 verify attempts then 15-min lockout.",
+          requestBody: {
+            content: { "application/json": { schema: {
+              type: "object",
+              required: ["phone"],
+              properties: {
+                phone: { type: "string", example: "0891234567" },
+                purpose: { type: "string", enum: ["verify", "login", "transaction"], default: "verify" },
+              },
+            }}},
+          },
+          responses: {
+            "201": { description: "OTP sent — returns id, expiresAt, creditUsed" },
+            "429": { description: "Rate limited (3 per 5 min)" },
+          },
+        },
+      },
       "/otp/generate": {
         post: {
           tags: ["OTP"],
-          summary: "Generate and send OTP via SMS",
+          summary: "Generate and send OTP via SMS (alias for /otp/send)",
           requestBody: {
             content: { "application/json": { schema: {
               type: "object",
@@ -121,7 +142,7 @@ export async function GET() {
           },
           responses: {
             "201": { description: "OTP sent — returns id, expiresAt" },
-            "429": { description: "Rate limited (5/min)" },
+            "429": { description: "Rate limited (3 per 5 min)" },
           },
         },
       },

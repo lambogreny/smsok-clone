@@ -20,6 +20,7 @@ jobs:
         with:
           bun-version: latest
       - run: bun install --frozen-lockfile
+      - run: bunx prisma generate
       - run: bun run lint
       - run: bunx tsc --noEmit
 

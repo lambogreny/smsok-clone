@@ -10,7 +10,7 @@ export default async function ContactsPage() {
   const { contacts, pagination } = await getContacts(user.id);
 
   // Serialize dates for client component
-  const serializedContacts = contacts.map((c) => ({
+  const serializedContacts = contacts.map((c: typeof contacts[number]) => ({
     id: c.id,
     name: c.name,
     phone: c.phone,

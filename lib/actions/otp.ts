@@ -6,6 +6,7 @@ import crypto from "crypto";
 
 const OTP_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
 const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS = 15 * 60 * 1000; // 15 min lockout after max attempts
 const MAX_OTP_PER_PHONE_PER_WINDOW = 3; // 3 per 5 min (architect spec #100)
 const OTP_RATE_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
 const OTP_CREDIT_COST = 1;
@@ -92,6 +93,23 @@ export async function verifyOtp_(
     throw new Error("รหัส OTP ไม่ถูกต้อง");
   }
 
+  // Check 15-min lockout: if any OTP for this phone hit max attempts recently
+  const lockoutStart = new Date(Date.now() - LOCKOUT_MS);
+  const lockedOtp = await prisma.otpRequest.findFirst({
+    where: {
+      userId,
+      phone,
+      attempts: { gte: MAX_ATTEMPTS },
+      createdAt: { gte: lockoutStart },
+    },
+  });
+
+  if (lockedOtp) {
+    const unlockAt = new Date(lockedOtp.createdAt.getTime() + LOCKOUT_MS);
+    const minsLeft = Math.ceil((unlockAt.getTime() - Date.now()) / 60_000);
+    throw new Error(`ถูกล็อค กรุณารออีก ${minsLeft} นาที`);
+  }
+
   // Find the latest unexpired, unverified OTP for this phone
   const otp = await prisma.otpRequest.findFirst({
     where: {
@@ -109,7 +127,7 @@ export async function verifyOtp_(
 
   // Check max attempts
   if (otp.attempts >= MAX_ATTEMPTS) {
-    throw new Error("ลองผิดมากเกินไป กรุณาขอ OTP ใหม่");
+    throw new Error("ลองผิดมากเกินไป ถูกล็อค 15 นาที");
   }
 
   // Increment attempts

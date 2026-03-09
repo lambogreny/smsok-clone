@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma as db } from "../db";
+import type { PrismaClient } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import {
   sendSmsSchema,
@@ -138,7 +139,7 @@ export async function sendBatchSms(userId: string, data: unknown) {
   }
 
   // Create messages + deduct credits
-  const result = await db.$transaction(async (tx) => {
+  const result = await db.$transaction(async (tx: Omit<PrismaClient, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">) => {
     const created = await tx.message.createMany({
       data: input.recipients.map((phone) => ({
         userId,

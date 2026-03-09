@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     if (format === "csv") {
       const header = "name,phone,email,tags,groups,createdAt";
       const rows = contacts.map(
-        (c) => [c.name, c.phone, c.email, c.tags, c.groups, c.createdAt]
+        (c: typeof contacts[number]) => [c.name, c.phone, c.email, c.tags, c.groups, c.createdAt]
           .map(escapeCsvField)
           .join(",")
       );

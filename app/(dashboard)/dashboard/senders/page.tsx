@@ -15,8 +15,8 @@ export default async function SendersPage() {
     rejected: { badge: "badge-error", label: "ถูกปฏิเสธ", icon: "✕" },
   };
 
-  const approvedCount = senderNames.filter(s => s.status === "approved").length;
-  const pendingCount = senderNames.filter(s => s.status === "pending").length;
+  const approvedCount = senderNames.filter((s: typeof senderNames[number]) => s.status === "approved").length;
+  const pendingCount = senderNames.filter((s: typeof senderNames[number]) => s.status === "pending").length;
 
   return (
     <div className="p-6 md:p-8 max-w-6xl animate-fade-in-up">
@@ -112,7 +112,7 @@ export default async function SendersPage() {
                 </tr>
               </thead>
               <tbody>
-                {senderNames.map((sender) => {
+                {senderNames.map((sender: typeof senderNames[number]) => {
                   const s = statusConfig[sender.status] ?? { badge: "badge-info", label: sender.status.toUpperCase(), icon: "?" };
                   return (
                     <tr key={sender.id} className="table-row">

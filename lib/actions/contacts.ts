@@ -170,12 +170,12 @@ export async function exportContacts(userId: string) {
     orderBy: { createdAt: "desc" },
   });
 
-  return contacts.map((c) => ({
+  return contacts.map((c: typeof contacts[number]) => ({
     name: c.name,
     phone: c.phone,
     email: c.email || "",
     tags: c.tags || "",
-    groups: c.groups.map((g) => g.group.name).join(", "),
+    groups: c.groups.map((g: typeof c.groups[number]) => g.group.name).join(", "),
     createdAt: c.createdAt.toISOString(),
   }));
 }
@@ -205,7 +205,7 @@ export async function addContactsToGroup(
   });
 
   await db.contactGroupMember.createMany({
-    data: contacts.map((c) => ({ groupId, contactId: c.id })),
+    data: contacts.map((c: { id: string }) => ({ groupId, contactId: c.id })),
     skipDuplicates: true,
   });
 
@@ -229,7 +229,7 @@ export async function getContactsByGroup(userId: string, groupId: string) {
   });
   if (!group) throw new Error("ไม่พบกลุ่ม");
 
-  return group.members.map((m) => m.contact);
+  return group.members.map((m: typeof group.members[number]) => m.contact);
 }
 
 // ==========================================
