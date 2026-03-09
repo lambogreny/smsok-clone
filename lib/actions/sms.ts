@@ -318,10 +318,50 @@ export async function getDashboardStats(userId: string) {
     pending: stats.find((s) => s.status === "pending")?._count._all ?? 0,
   });
 
+  // 7-day daily breakdown for chart
+  const days: string[] = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัส", "ศุกร์", "เสาร์"];
+  const shortDays: string[] = ["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"];
+  const last7Days: { day: string; short: string; date: string; sms: number; delivered: number; failed: number }[] = [];
+
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const dayEnd = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+
+    const dayStats = await db.message.groupBy({
+      by: ["status"],
+      where: { userId, createdAt: { gte: dayStart, lt: dayEnd } },
+      _count: { _all: true },
+    });
+
+    const dayCounts = sumCounts(dayStats as unknown as StatRow[]);
+    last7Days.push({
+      day: days[d.getDay()],
+      short: shortDays[d.getDay()],
+      date: d.toISOString().slice(0, 10),
+      sms: dayCounts.total,
+      delivered: dayCounts.delivered,
+      failed: dayCounts.failed,
+    });
+  }
+
+  // Yesterday stats for delta calculation
+  const yesterdayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+  const yesterdayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterdayStats = await db.message.groupBy({
+    by: ["status"],
+    where: { userId, createdAt: { gte: yesterdayStart, lt: yesterdayEnd } },
+    _count: { _all: true },
+  });
+  const yesterday = sumCounts(yesterdayStats as unknown as StatRow[]);
+
   return {
     user,
     today: sumCounts(todayStats as unknown as StatRow[]),
+    yesterday,
     thisMonth: sumCounts(monthStats as unknown as StatRow[]),
     recentMessages,
+    last7Days,
   };
 }

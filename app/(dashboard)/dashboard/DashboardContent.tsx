@@ -23,11 +23,15 @@ type User = {
   role: string;
 };
 
+type DayStats = { day: string; short: string; date: string; sms: number; delivered: number; failed: number };
+
 type DashboardStats = {
   user: { credits: number; name: string; email: string };
   today: { total: number; delivered: number; failed: number; sent: number; pending: number };
+  yesterday: { total: number; delivered: number; failed: number; sent: number; pending: number };
   thisMonth: { total: number; delivered: number; failed: number; sent: number; pending: number };
   recentMessages: { id: string; recipient: string; status: string; senderName: string; creditCost: number; createdAt: Date }[];
+  last7Days: DayStats[];
 };
 
 /* ── Animated Counter ── */
