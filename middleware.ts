@@ -37,18 +37,20 @@ export function middleware(req: NextRequest) {
       return new NextResponse(null, { status: 204, headers: response.headers });
     }
 
-    // Rate limit API routes
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
-      || req.headers.get("x-real-ip")
-      || "unknown";
+    // Rate limit write operations only (GET/HEAD pass freely)
+    if (req.method !== "GET" && req.method !== "HEAD") {
+      const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+        || req.headers.get("x-real-ip")
+        || "unknown";
 
-    const result = checkRateLimit(ip, "api");
-    if (!result.allowed) {
-      return rateLimitResponse(result.resetIn);
+      const result = checkRateLimit(ip, "api");
+      if (!result.allowed) {
+        return rateLimitResponse(result.resetIn);
+      }
+
+      response.headers.set("X-RateLimit-Limit", "60");
+      response.headers.set("X-RateLimit-Remaining", String(result.remaining));
     }
-
-    response.headers.set("X-RateLimit-Limit", "60");
-    response.headers.set("X-RateLimit-Remaining", String(result.remaining));
   }
 
   // --- Auth rate limiting for login/register pages ---
