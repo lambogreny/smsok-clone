@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { createCampaign } from "@/lib/actions/campaigns";
 
 // ─── Types ────────────────────────────────────────────────────────────────
 type CampaignStatus = "draft" | "scheduled" | "running" | "completed" | "cancelled";
@@ -25,106 +27,6 @@ type Campaign = {
 
 type ContactGroup = { id: string; name: string; count: number };
 type Template = { id: string; name: string; body: string };
-
-// ─── Mock Data ────────────────────────────────────────────────────────────
-const MOCK_CAMPAIGNS: Campaign[] = [
-  {
-    id: "camp-1",
-    name: "โปรโมชั่นปีใหม่ 2026",
-    status: "completed",
-    groupName: "ลูกค้า VIP",
-    templateName: "New Year Promo",
-    senderName: "SMSOK",
-    scheduledAt: "2026-01-01T09:00:00Z",
-    totalRecipients: 1250,
-    sentCount: 1250,
-    deliveredCount: 1198,
-    failedCount: 52,
-    creditReserved: 1250,
-    creditUsed: 1198,
-    createdAt: "2025-12-28T10:00:00Z",
-  },
-  {
-    id: "camp-2",
-    name: "แจ้งเตือนชำระค่าบริการ",
-    status: "running",
-    groupName: "ลูกค้าค้างชำระ",
-    templateName: "Payment Reminder",
-    senderName: "BILLING",
-    scheduledAt: "2026-03-09T08:00:00Z",
-    totalRecipients: 340,
-    sentCount: 187,
-    deliveredCount: 180,
-    failedCount: 7,
-    creditReserved: 340,
-    creditUsed: 187,
-    createdAt: "2026-03-08T15:00:00Z",
-  },
-  {
-    id: "camp-3",
-    name: "ส่วนลดสมาชิกใหม่ 20%",
-    status: "scheduled",
-    groupName: "สมาชิกใหม่ มี.ค.",
-    templateName: "Welcome Discount",
-    senderName: "SMSOK",
-    scheduledAt: "2026-03-15T10:00:00Z",
-    totalRecipients: 580,
-    sentCount: 0,
-    deliveredCount: 0,
-    failedCount: 0,
-    creditReserved: 580,
-    creditUsed: 0,
-    createdAt: "2026-03-07T12:00:00Z",
-  },
-  {
-    id: "camp-4",
-    name: "ทดสอบระบบ Internal",
-    status: "draft",
-    groupName: "ทีมงาน",
-    templateName: "Test Message",
-    senderName: "TEST",
-    scheduledAt: null,
-    totalRecipients: 15,
-    sentCount: 0,
-    deliveredCount: 0,
-    failedCount: 0,
-    creditReserved: 0,
-    creditUsed: 0,
-    createdAt: "2026-03-09T06:00:00Z",
-  },
-  {
-    id: "camp-5",
-    name: "แคมเปญ Flash Sale ก.พ.",
-    status: "cancelled",
-    groupName: "ลูกค้าทั้งหมด",
-    templateName: "Flash Sale Feb",
-    senderName: "SMSOK",
-    scheduledAt: "2026-02-14T18:00:00Z",
-    totalRecipients: 3200,
-    sentCount: 0,
-    deliveredCount: 0,
-    failedCount: 0,
-    creditReserved: 0,
-    creditUsed: 0,
-    createdAt: "2026-02-10T09:00:00Z",
-  },
-];
-
-const MOCK_GROUPS: ContactGroup[] = [
-  { id: "grp-1", name: "ลูกค้า VIP", count: 1250 },
-  { id: "grp-2", name: "ลูกค้าค้างชำระ", count: 340 },
-  { id: "grp-3", name: "สมาชิกใหม่ มี.ค.", count: 580 },
-  { id: "grp-4", name: "ทีมงาน", count: 15 },
-  { id: "grp-5", name: "ลูกค้าทั้งหมด", count: 3200 },
-];
-
-const MOCK_TEMPLATES: Template[] = [
-  { id: "tpl-1", name: "New Year Promo", body: "สวัสดีปีใหม่! รับส่วนลด 30% สำหรับสินค้าทุกชิ้น ใช้โค้ด NY2026" },
-  { id: "tpl-2", name: "Payment Reminder", body: "แจ้งเตือน: กรุณาชำระค่าบริการภายในวันที่กำหนด เพื่อใช้งานอย่างต่อเนื่อง" },
-  { id: "tpl-3", name: "Welcome Discount", body: "ยินดีต้อนรับสมาชิกใหม่! รับส่วนลด 20% ใช้โค้ด WELCOME20" },
-  { id: "tpl-4", name: "Test Message", body: "ข้อความทดสอบจากระบบ SMSOK — กรุณาอย่าตอบกลับ" },
-  { id: "tpl-5", name: "Flash Sale Feb", body: "Flash Sale! ลดสูงสุด 50% เฉพาะวันนี้เท่านั้น สั่งซื้อเลยที่ smsok.me" },
-];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
 const STATUS_CONFIG: Record<
@@ -201,10 +103,23 @@ const rowVariant = {
 };
 
 // ─── Main Component ──────────────────────────────────────────────────────
-export default function CampaignsClient() {
-  const [campaigns, setCampaigns] = useState<Campaign[]>(MOCK_CAMPAIGNS);
+export default function CampaignsClient({
+  userId,
+  initialCampaigns,
+  groups,
+  templates,
+}: {
+  userId: string;
+  initialCampaigns: Campaign[];
+  groups: ContactGroup[];
+  templates: Template[];
+}) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [campaigns] = useState<Campaign[]>(initialCampaigns);
   const [showForm, setShowForm] = useState(false);
   const [filterStatus, setFilterStatus] = useState<CampaignStatus | "all">("all");
+  const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Form state
   const [formName, setFormName] = useState("");
@@ -227,59 +142,40 @@ export default function CampaignsClient() {
   const completedCampaigns = campaigns.filter((c) => c.status === "completed").length;
   const totalSmsSent = campaigns.reduce((sum, c) => sum + c.sentCount, 0);
 
-  const selectedGroup = MOCK_GROUPS.find((g) => g.id === formGroup);
+  const selectedGroup = groups.find((g) => g.id === formGroup);
   const creditEstimate = selectedGroup ? selectedGroup.count : 0;
 
   const handleCreate = () => {
     if (!formName.trim() || !formGroup || !formTemplate) return;
+    setFeedback(null);
 
-    const group = MOCK_GROUPS.find((g) => g.id === formGroup);
-    const template = MOCK_TEMPLATES.find((t) => t.id === formTemplate);
-
-    const newCampaign: Campaign = {
-      id: `camp-${Date.now()}`,
-      name: formName.trim(),
-      status: formSchedule ? "scheduled" : "draft",
-      groupName: group?.name || "",
-      templateName: template?.name || "",
-      senderName: formSender.trim() || "SMSOK",
-      scheduledAt: formSchedule || null,
-      totalRecipients: group?.count || 0,
-      sentCount: 0,
-      deliveredCount: 0,
-      failedCount: 0,
-      creditReserved: group?.count || 0,
-      creditUsed: 0,
-      createdAt: new Date().toISOString(),
-    };
-
-    setCampaigns((prev) => [newCampaign, ...prev]);
-    setFormName("");
-    setFormGroup("");
-    setFormTemplate("");
-    setFormSender("");
-    setFormSchedule("");
-    setShowForm(false);
+    startTransition(async () => {
+      try {
+        await createCampaign(userId, {
+          name: formName.trim(),
+          contactGroupId: formGroup,
+          templateId: formTemplate,
+          senderName: formSender.trim() || "EasySlip",
+          scheduledAt: formSchedule ? new Date(formSchedule).toISOString() : undefined,
+        });
+        setFeedback({ type: "success", text: "สร้างแคมเปญสำเร็จ!" });
+        setFormName("");
+        setFormGroup("");
+        setFormTemplate("");
+        setFormSender("");
+        setFormSchedule("");
+        setShowForm(false);
+        router.refresh();
+      } catch (e) {
+        setFeedback({ type: "error", text: e instanceof Error ? e.message : "เกิดข้อผิดพลาด" });
+      }
+    });
   };
 
-  const handleAction = (id: string, action: "start" | "cancel") => {
-    setCampaigns((prev) =>
-      prev.map((c) => {
-        if (c.id !== id) return c;
-        if (action === "start" && (c.status === "draft" || c.status === "scheduled")) {
-          return { ...c, status: "running" as CampaignStatus };
-        }
-        if (
-          action === "cancel" &&
-          (c.status === "draft" || c.status === "scheduled" || c.status === "running")
-        ) {
-          return { ...c, status: "cancelled" as CampaignStatus };
-        }
-        return c;
-      })
-    );
-    // If viewing a detail, close it after action
-    if (selectedCampaign?.id === id) setSelectedCampaign(null);
+  const handleAction = (_id: string, _action: "start" | "cancel") => {
+    // TODO: implement campaign start/cancel via server action
+    setFeedback({ type: "error", text: "ฟีเจอร์นี้กำลังพัฒนา" });
+    if (selectedCampaign?.id === _id) setSelectedCampaign(null);
   };
 
   const statCards = [
@@ -358,7 +254,7 @@ export default function CampaignsClient() {
         <div>
           <span className="text-sm font-semibold text-amber-400">Beta</span>
           <span className="text-sm text-[var(--text-secondary)] ml-2">
-            ระบบแคมเปญ SMS อยู่ในช่วงทดสอบ ข้อมูลที่แสดงเป็นตัวอย่าง (mock data)
+            ระบบแคมเปญ SMS — สร้างและจัดการแคมเปญส่งข้อความแบบกลุ่ม
           </span>
         </div>
       </motion.div>
@@ -482,7 +378,7 @@ export default function CampaignsClient() {
                   onChange={(e) => setFormGroup(e.target.value)}
                 >
                   <option value="">-- เลือกกลุ่ม --</option>
-                  {MOCK_GROUPS.map((g) => (
+                  {groups.map((g) => (
                     <option key={g.id} value={g.id}>
                       {g.name} ({g.count.toLocaleString()} รายชื่อ)
                     </option>
@@ -501,7 +397,7 @@ export default function CampaignsClient() {
                   onChange={(e) => setFormTemplate(e.target.value)}
                 >
                   <option value="">-- เลือกเทมเพลต --</option>
-                  {MOCK_TEMPLATES.map((t) => (
+                  {templates.map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.name}
                     </option>
@@ -558,7 +454,7 @@ export default function CampaignsClient() {
                     ตัวอย่างข้อความ
                   </p>
                   <p className="text-sm text-[var(--text-secondary)]">
-                    {MOCK_TEMPLATES.find((t) => t.id === formTemplate)?.body || ""}
+                    {templates.find((t) => t.id === formTemplate)?.body || ""}
                   </p>
                 </motion.div>
               )}
