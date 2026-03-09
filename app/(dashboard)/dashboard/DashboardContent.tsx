@@ -426,14 +426,14 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.15 }}
               >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-cyan-400/60">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-cyan-400">
                   <rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
                 </svg>
                 <span className="text-[11px] text-[var(--text-muted)]">{dateStr}</span>
               </motion.div>
 
               <motion.p
-                className="text-xs text-cyan-300/50 font-medium uppercase tracking-[0.2em] mb-2"
+                className="text-xs text-cyan-300 font-medium uppercase tracking-[0.2em] mb-2"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2 }}
@@ -457,21 +457,21 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
                 transition={{ delay: 0.4 }}
               >
                 <span className="flex items-center gap-1.5">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-violet-400/60">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-violet-400">
                     <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
                   </svg>
                   วันนี้ส่ง <span className="text-violet-400 font-semibold">{stats?.today.total ?? 0}</span> ข้อความ
                 </span>
                 {successRate > 0 && (
                   <span className="flex items-center gap-1.5">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-emerald-400/60">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-emerald-400">
                       <path d="M22 11.08V12a10 10 0 11-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
                     </svg>
                     อัตราสำเร็จ <span className="text-emerald-400 font-semibold">{successRate}%</span>
                   </span>
                 )}
                 <span className="flex items-center gap-1.5">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-cyan-400/60">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-cyan-400">
                     <circle cx="12" cy="12" r="10" /><text x="12" y="16" textAnchor="middle" fill="currentColor" stroke="none" fontSize="12" fontWeight="bold">฿</text>
                   </svg>
                   เครดิต <span className="text-cyan-400 font-semibold">{(stats?.user.credits ?? user.credits).toLocaleString()}</span>
@@ -513,7 +513,7 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
                 <span className="opacity-90">{action.icon}</span>
                 <span className="text-sm font-semibold">{action.label}</span>
               </div>
-              <span className="relative text-[10px] text-white/50 pl-[30px]">{action.desc}</span>
+              <span className="relative text-[10px] text-slate-300 pl-[30px]">{action.desc}</span>
             </Link>
           </motion.div>
         ))}
@@ -815,7 +815,7 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
               </svg>
             </div>
             สถานะระบบ
-            <span className="text-[10px] text-emerald-400/60 font-normal ml-1">ทุกระบบปกติ</span>
+            <span className="text-[10px] text-emerald-400 font-normal ml-1">ทุกระบบปกติ</span>
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
@@ -828,7 +828,7 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
                 <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.5)] group-hover:shadow-[0_0_12px_rgba(16,185,129,0.7)] transition-shadow" />
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium text-[var(--text-secondary)]">{s.label}</p>
-                  <p className="text-[10px] text-emerald-400/60">Operational</p>
+                  <p className="text-[10px] text-emerald-400">Operational</p>
                 </div>
               </div>
             ))}

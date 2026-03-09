@@ -40,7 +40,7 @@ export default function SenderNameForm({ userId }: { userId: string }) {
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>
-          <label className="block text-xs text-white/30 uppercase tracking-wider mb-2 font-medium">ชื่อผู้ส่ง (3-11 ตัวอักษร, A-Z, 0-9)</label>
+          <label className="block text-xs text-slate-300 uppercase tracking-wider mb-2 font-medium">ชื่อผู้ส่ง (3-11 ตัวอักษร, A-Z, 0-9)</label>
           <input
             type="text"
             className="input-glass"
@@ -51,7 +51,7 @@ export default function SenderNameForm({ userId }: { userId: string }) {
             minLength={3}
           />
           <div className="flex items-center gap-3 mt-2">
-            <span className={`text-xs ${name.length >= 3 && name.length <= 11 ? "text-emerald-400" : "text-white/20"}`}>
+            <span className={`text-xs ${name.length >= 3 && name.length <= 11 ? "text-emerald-400" : "text-slate-300"}`}>
               {name.length}/11 ตัวอักษร
             </span>
             {name.length > 0 && !isValid && (
@@ -60,7 +60,7 @@ export default function SenderNameForm({ userId }: { userId: string }) {
           </div>
         </div>
         <div>
-          <label className="block text-xs text-white/30 uppercase tracking-wider mb-2 font-medium">วัตถุประสงค์การใช้งาน</label>
+          <label className="block text-xs text-slate-300 uppercase tracking-wider mb-2 font-medium">วัตถุประสงค์การใช้งาน</label>
           <input
             type="text"
             className="input-glass"
@@ -68,7 +68,7 @@ export default function SenderNameForm({ userId }: { userId: string }) {
             value={purpose}
             onChange={(e) => setPurpose(e.target.value)}
           />
-          <p className="text-[11px] text-white/15 mt-2">ระบุเพื่อช่วยให้อนุมัติเร็วขึ้น</p>
+          <p className="text-[11px] text-slate-300 mt-2">ระบุเพื่อช่วยให้อนุมัติเร็วขึ้น</p>
         </div>
       </div>
 
@@ -94,7 +94,7 @@ export default function SenderNameForm({ userId }: { userId: string }) {
             </>
           )}
         </motion.button>
-        <p className="text-[11px] text-white/20">คำขอจะถูกตรวจสอบโดยทีมงานภายใน 1-2 วันทำการ</p>
+        <p className="text-[11px] text-slate-300">คำขอจะถูกตรวจสอบโดยทีมงานภายใน 1-2 วันทำการ</p>
       </div>
 
       <AnimatePresence mode="wait">

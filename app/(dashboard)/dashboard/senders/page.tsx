@@ -121,7 +121,7 @@ export default async function SendersPage() {
                           <div className="w-8 h-8 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400 font-bold text-xs">
                             {sender.name.charAt(0)}
                           </div>
-                          <span className="text-white/70 font-mono font-semibold">{sender.name}</span>
+                          <span className="text-slate-200 font-mono font-semibold">{sender.name}</span>
                         </div>
                       </td>
                       <td className="px-5 py-3.5"><span className={`badge ${s.badge}`}>{s.icon} {s.label}</span></td>

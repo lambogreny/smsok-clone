@@ -164,7 +164,7 @@ export default function MessagesClient({
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-2">
                             <span className={`w-2 h-2 rounded-full flex-shrink-0 ${status.dot}`} />
-                            <span className="text-white/70 font-mono text-xs">{msg.recipient}</span>
+                            <span className="text-slate-200 font-mono text-xs">{msg.recipient}</span>
                           </div>
                         </td>
                         <td className="px-5 py-3.5 text-[var(--text-muted)] text-xs max-w-[200px] truncate hidden md:table-cell">{msg.content}</td>

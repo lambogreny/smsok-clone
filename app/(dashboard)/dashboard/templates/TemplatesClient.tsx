@@ -424,7 +424,7 @@ export default function TemplatesClient({
               {label}
               <span
                 className={`text-xs ${
-                  isActive ? "text-white/50" : "text-[var(--text-muted)]"
+                  isActive ? "text-slate-300" : "text-[var(--text-muted)]"
                 }`}
               >
                 {count}

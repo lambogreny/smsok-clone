@@ -211,7 +211,7 @@ function TagInput({
         <input
           ref={inputRef}
           type="text"
-          className="bg-transparent outline-none text-sm text-white/80 placeholder:text-[var(--text-muted)] flex-1 min-w-[80px]"
+          className="bg-transparent outline-none text-sm text-slate-200 placeholder:text-[var(--text-muted)] flex-1 min-w-[80px]"
           placeholder={tags.length === 0 ? "พิมพ์แล้วกด Enter..." : ""}
           value={inputValue}
           onChange={(e) => {
@@ -242,7 +242,7 @@ function TagInput({
               key={preset}
               type="button"
               onClick={() => addTag(preset)}
-              className="text-[10px] px-2 py-0.5 rounded-md bg-white/5 text-[var(--text-muted)] hover:bg-white/10 hover:text-white/60 transition-colors border border-white/5"
+              className="text-[10px] px-2 py-0.5 rounded-md bg-white/5 text-[var(--text-muted)] hover:bg-white/10 hover:text-slate-200 transition-colors border border-white/5"
             >
               + {preset}
             </button>
@@ -264,7 +264,7 @@ function TagInput({
                 key={s}
                 type="button"
                 onClick={() => addTag(s)}
-                className="w-full text-left px-3 py-2 text-sm text-white/70 hover:bg-white/5 transition-colors flex items-center gap-2"
+                className="w-full text-left px-3 py-2 text-sm text-slate-200 hover:bg-white/5 transition-colors flex items-center gap-2"
               >
                 <TagChip tag={s} size="xs" />
               </button>
@@ -786,7 +786,7 @@ export default function ContactsClient({
           {searchQuery && (
             <button
               onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-white/60 transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-slate-200 transition-colors"
             >
               <svg
                 width="14"
@@ -836,7 +836,7 @@ export default function ContactsClient({
               className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all ${
                 activeTagFilter === null
                   ? "bg-white/10 text-white border border-white/20"
-                  : "bg-white/5 text-[var(--text-muted)] border border-transparent hover:bg-white/8 hover:text-white/60"
+                  : "bg-white/5 text-[var(--text-muted)] border border-transparent hover:bg-white/8 hover:text-slate-200"
               }`}
             >
               ทั้งหมด ({totalContacts})
@@ -1000,7 +1000,7 @@ export default function ContactsClient({
                 {!showGroupForm && (
                   <button
                     onClick={() => setShowGroupForm(true)}
-                    className="text-xs text-[var(--text-muted)] hover:text-white/60 transition-colors flex items-center gap-1"
+                    className="text-xs text-[var(--text-muted)] hover:text-slate-200 transition-colors flex items-center gap-1"
                   >
                     <svg
                       width="12"
@@ -1031,7 +1031,7 @@ export default function ContactsClient({
             exit={{ opacity: 0, y: -8 }}
             className="glass p-4 mb-4 flex items-center gap-3 flex-wrap"
           >
-            <span className="text-sm text-white/80 font-medium">
+            <span className="text-sm text-slate-200 font-medium">
               เลือก {selectedIds.size} รายชื่อ
             </span>
             <div className="h-4 w-px bg-white/10" />
@@ -1331,7 +1331,7 @@ export default function ContactsClient({
                           className="w-3.5 h-3.5 rounded accent-violet-500 cursor-pointer"
                         />
                       </td>
-                      <td className="px-5 py-3.5 text-white/70">
+                      <td className="px-5 py-3.5 text-slate-200">
                         {contact.name}
                       </td>
                       <td className="px-5 py-3.5 text-[var(--text-secondary)] font-mono text-xs">

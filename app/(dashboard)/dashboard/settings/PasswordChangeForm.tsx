@@ -46,7 +46,7 @@ export default function PasswordChangeForm() {
     <form onSubmit={handleSubmit}>
       <div className="space-y-4">
         <div>
-          <label className="block text-xs text-white/30 uppercase tracking-wider mb-2 font-medium">รหัสผ่านปัจจุบัน</label>
+          <label className="block text-xs text-slate-300 uppercase tracking-wider mb-2 font-medium">รหัสผ่านปัจจุบัน</label>
           <input
             type="password"
             className="input-glass"
@@ -57,7 +57,7 @@ export default function PasswordChangeForm() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs text-white/30 uppercase tracking-wider mb-2 font-medium">รหัสผ่านใหม่</label>
+            <label className="block text-xs text-slate-300 uppercase tracking-wider mb-2 font-medium">รหัสผ่านใหม่</label>
             <input
               type="password"
               className="input-glass"
@@ -71,7 +71,7 @@ export default function PasswordChangeForm() {
             )}
           </div>
           <div>
-            <label className="block text-xs text-white/30 uppercase tracking-wider mb-2 font-medium">ยืนยันรหัสผ่านใหม่</label>
+            <label className="block text-xs text-slate-300 uppercase tracking-wider mb-2 font-medium">ยืนยันรหัสผ่านใหม่</label>
             <input
               type="password"
               className="input-glass"

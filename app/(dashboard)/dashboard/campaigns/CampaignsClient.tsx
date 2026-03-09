@@ -800,7 +800,7 @@ export default function CampaignsClient() {
                     }}
                   >
                     <td className="px-5 py-3.5">
-                      <p className="text-white/80 font-medium text-sm">{campaign.name}</p>
+                      <p className="text-slate-200 font-medium text-sm">{campaign.name}</p>
                       <p className="text-[10px] text-[var(--text-muted)] font-mono mt-0.5">
                         {campaign.senderName}
                       </p>
@@ -880,7 +880,7 @@ export default function CampaignsClient() {
               >
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <p className="text-white/80 font-medium text-sm">{campaign.name}</p>
+                    <p className="text-slate-200 font-medium text-sm">{campaign.name}</p>
                     <p className="text-[10px] text-[var(--text-muted)] mt-0.5">
                       {campaign.groupName} &middot; {campaign.templateName}
                     </p>

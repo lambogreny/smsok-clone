@@ -84,7 +84,7 @@ export default async function SettingsPage() {
               </svg>
             </div>
             <p className="text-2xl font-bold gradient-text-cyan">{fullUser.credits.toLocaleString()}</p>
-            <Link href="/dashboard/topup" className="text-[10px] text-cyan-400/60 hover:text-cyan-400 transition-colors mt-1 inline-block">
+            <Link href="/dashboard/topup" className="text-[10px] text-cyan-400 hover:text-cyan-300 transition-colors mt-1 inline-block">
               เติมเครดิต →
             </Link>
           </div>

@@ -75,7 +75,7 @@ export default function SendSmsForm({ userId, senderNames = ["EasySlip"] }: { us
       transition={{ duration: 0.5, ease: "easeOut" }}
     >
       <h2 className="text-2xl font-bold mb-1 tracking-tight gradient-text-mixed">ส่ง SMS</h2>
-      <p className="text-sm text-white/40 mb-8">ส่งข้อความ SMS ถึงผู้รับ</p>
+      <p className="text-sm text-slate-300 mb-8">ส่งข้อความ SMS ถึงผู้รับ</p>
 
       {/* Feedback */}
       <AnimatePresence>
@@ -115,7 +115,7 @@ export default function SendSmsForm({ userId, senderNames = ["EasySlip"] }: { us
           <div className="space-y-5">
             {/* Sender Name */}
             <div>
-              <label className="block text-xs text-white/50 uppercase tracking-wider mb-2">ชื่อผู้ส่ง</label>
+              <label className="block text-xs text-slate-300 uppercase tracking-wider mb-2">ชื่อผู้ส่ง</label>
               <div className="relative">
                 <select
                   className="input-glass cursor-pointer appearance-none pr-10"
@@ -129,21 +129,21 @@ export default function SendSmsForm({ userId, senderNames = ["EasySlip"] }: { us
                     </option>
                   ))}
                 </select>
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white/30">
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M6 9l6 6 6-6" />
                   </svg>
                 </div>
               </div>
-              <p className="text-[11px] text-white/20 mt-1.5">
+              <p className="text-[11px] text-slate-300 mt-1.5">
                 {senderName === "EasySlip" ? "ใช้ชื่อค่าเริ่มต้นได้เลย หรือ" : "Sender ที่ผ่านอนุมัติแล้ว — "}{" "}
-                <a href="/dashboard/senders" className="text-violet-400/60 hover:text-violet-400 transition-colors">ขอ Sender Name ใหม่ →</a>
+                <a href="/dashboard/senders" className="text-violet-400 hover:text-violet-300 transition-colors">ขอ Sender Name ใหม่ →</a>
               </p>
             </div>
 
             {/* Message Type */}
             <div>
-              <label className="block text-xs text-white/50 uppercase tracking-wider mb-2">ประเภทข้อความ</label>
+              <label className="block text-xs text-slate-300 uppercase tracking-wider mb-2">ประเภทข้อความ</label>
               <div className="flex gap-2">
                 {(["english", "thai", "unicode"] as MsgType[]).map((type) => (
                   <motion.button
@@ -165,7 +165,7 @@ export default function SendSmsForm({ userId, senderNames = ["EasySlip"] }: { us
 
             {/* Recipients */}
             <div>
-              <label className="block text-xs text-white/50 uppercase tracking-wider mb-2">ผู้รับ</label>
+              <label className="block text-xs text-slate-300 uppercase tracking-wider mb-2">ผู้รับ</label>
               <textarea
                 value={recipients}
                 onChange={(e) => setRecipients(e.target.value)}
@@ -173,14 +173,14 @@ export default function SendSmsForm({ userId, senderNames = ["EasySlip"] }: { us
                 rows={3}
                 placeholder={"0891234567\n0891234568, 0891234569"}
               />
-              <p className="text-[11px] text-white/20 mt-1">
+              <p className="text-[11px] text-slate-300 mt-1">
                 {recipientCount} เบอร์ — คั่นด้วยเครื่องหมายจุลภาค หรือขึ้นบรรทัดใหม่
               </p>
             </div>
 
             {/* Message */}
             <div>
-              <label className="block text-xs text-white/50 uppercase tracking-wider mb-2">ข้อความ</label>
+              <label className="block text-xs text-slate-300 uppercase tracking-wider mb-2">ข้อความ</label>
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
@@ -189,7 +189,7 @@ export default function SendSmsForm({ userId, senderNames = ["EasySlip"] }: { us
                 placeholder="พิมพ์ข้อความ SMS ที่นี่..."
                 maxLength={1000}
               />
-              <div className="flex justify-between text-[11px] text-white/30 mt-1.5">
+              <div className="flex justify-between text-[11px] text-slate-300 mt-1.5">
                 <span>
                   {charCount} ตัวอักษร | {smsCount} ส่วน SMS
                 </span>
@@ -210,14 +210,14 @@ export default function SendSmsForm({ userId, senderNames = ["EasySlip"] }: { us
         >
           {/* Preview */}
           <div className="glass p-6">
-            <h3 className="text-xs text-white/50 uppercase tracking-wider mb-4">ตัวอย่าง</h3>
+            <h3 className="text-xs text-slate-300 uppercase tracking-wider mb-4">ตัวอย่าง</h3>
             <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4 min-h-[120px]">
               <div className="text-xs text-cyan-400 mb-2">จาก: {senderName || "EasySlip"}</div>
-              <p className="text-sm text-white/70 whitespace-pre-wrap">
+              <p className="text-sm text-slate-200 whitespace-pre-wrap">
                 {message || "ข้อความจะแสดงที่นี่..."}
               </p>
             </div>
-            <div className="flex justify-between text-xs text-white/30 mt-3">
+            <div className="flex justify-between text-xs text-slate-300 mt-3">
               <span>{charCount} ตัวอักษร</span>
               <span>{smsCount} ส่วน SMS</span>
             </div>
@@ -225,17 +225,17 @@ export default function SendSmsForm({ userId, senderNames = ["EasySlip"] }: { us
 
           {/* Cost Summary */}
           <div className="glass p-6">
-            <h3 className="text-xs text-white/50 uppercase tracking-wider mb-4">สรุปค่าใช้จ่าย</h3>
+            <h3 className="text-xs text-slate-300 uppercase tracking-wider mb-4">สรุปค่าใช้จ่าย</h3>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between text-white/50">
+              <div className="flex justify-between text-slate-300">
                 <span>จำนวนผู้รับ</span>
                 <span className="text-white">{recipientCount}</span>
               </div>
-              <div className="flex justify-between text-white/50">
+              <div className="flex justify-between text-slate-300">
                 <span>จำนวนส่วน SMS</span>
                 <span className="text-white">{smsCount}</span>
               </div>
-              <div className="flex justify-between text-white/50">
+              <div className="flex justify-between text-slate-300">
                 <span>ราคา/SMS</span>
                 <span className="text-white">฿0.22</span>
               </div>

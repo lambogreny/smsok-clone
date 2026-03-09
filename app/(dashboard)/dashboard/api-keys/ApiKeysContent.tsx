@@ -240,9 +240,9 @@ export default function ApiKeysContent({ userId, apiKeys: initialKeys }: { userI
               <motion.tbody variants={stagger} initial="hidden" animate="show">
                 {apiKeys.map((key) => (
                   <motion.tr key={key.id} variants={rowVariant} className="table-row">
-                    <td className="px-5 py-3.5 text-white/70 font-semibold">{key.name}</td>
+                    <td className="px-5 py-3.5 text-slate-200 font-semibold">{key.name}</td>
                     <td className="px-5 py-3.5">
-                      <code className="text-xs text-cyan-300/60 font-mono bg-[var(--bg-surface)] px-2 py-1 rounded">{maskKey(key.key)}</code>
+                      <code className="text-xs text-cyan-300 font-mono bg-[var(--bg-surface)] px-2 py-1 rounded">{maskKey(key.key)}</code>
                     </td>
                     <td className="px-5 py-3.5">
                       <span className={`text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-md ${key.isActive ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"}`}>
@@ -300,7 +300,7 @@ export default function ApiKeysContent({ userId, apiKeys: initialKeys }: { userI
           การใช้งาน API
         </h3>
         <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl p-4">
-          <code className="text-xs text-cyan-300/60 font-mono block whitespace-pre">{`curl -X POST https://api.smsok.com/v1/sms/send \\
+          <code className="text-xs text-cyan-300 font-mono block whitespace-pre">{`curl -X POST https://api.smsok.com/v1/sms/send \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{"to": "0812345678", "message": "Hello!"}'`}</code>
