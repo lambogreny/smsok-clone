@@ -33,7 +33,7 @@ const DEFAULTS: Record<string, RateLimitConfig> = {
   apikey: { windowMs: 60_000, maxRequests: 10 },         // 10 key ops/min
   import: { windowMs: 60_000, maxRequests: 5 },          // 5 imports/min
   admin: { windowMs: 60_000, maxRequests: 30 },              // 30 admin ops/min
-  otp_generate: { windowMs: 60_000, maxRequests: 5 },        // 5 OTP sends/min
+  otp_generate: { windowMs: 5 * 60_000, maxRequests: 3 },     // 3 OTP sends/5min (architect spec #100)
   otp_verify: { windowMs: 15 * 60_000, maxRequests: 10 },    // 10 verify attempts/15min
 };
 

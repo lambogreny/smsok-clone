@@ -6,7 +6,8 @@ import crypto from "crypto";
 
 const OTP_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
 const MAX_ATTEMPTS = 5;
-const MAX_OTP_PER_PHONE_PER_HOUR = 5;
+const MAX_OTP_PER_PHONE_PER_WINDOW = 3; // 3 per 5 min (architect spec #100)
+const OTP_RATE_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
 const OTP_CREDIT_COST = 1;
 
 function generateOtp(): string {
@@ -23,14 +24,14 @@ export async function generateOtp_(
     throw new Error("หมายเลขโทรศัพท์ไม่ถูกต้อง");
   }
 
-  // Rate limit: max 5 OTPs per phone per hour
-  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+  // Rate limit: max 3 OTPs per phone per 5 min (architect spec #100)
+  const windowStart = new Date(Date.now() - OTP_RATE_WINDOW_MS);
   const recentCount = await prisma.otpRequest.count({
-    where: { userId, phone, createdAt: { gte: oneHourAgo } },
+    where: { userId, phone, createdAt: { gte: windowStart } },
   });
 
-  if (recentCount >= MAX_OTP_PER_PHONE_PER_HOUR) {
-    throw new Error("ส่ง OTP มากเกินไป กรุณารอ 1 ชั่วโมง");
+  if (recentCount >= MAX_OTP_PER_PHONE_PER_WINDOW) {
+    throw new Error("ส่ง OTP มากเกินไป กรุณารอ 5 นาที");
   }
 
   // Check user credits
