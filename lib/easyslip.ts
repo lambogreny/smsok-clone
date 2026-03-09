@@ -17,6 +17,7 @@ export type SlipVerifyResult = {
     receiver: { name: string; bank: string; account: string };
   };
   error?: string;
+  isDuplicate?: boolean;
 };
 
 // ==========================================

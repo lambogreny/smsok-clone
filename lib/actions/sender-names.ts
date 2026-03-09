@@ -53,7 +53,7 @@ export async function getApprovedSenderNames(userId: string) {
   });
 
   // Always include default sender
-  return [{ name: "SMSOK" }, ...names];
+  return [{ name: "EasySlip" }, ...names];
 }
 
 // ==========================================

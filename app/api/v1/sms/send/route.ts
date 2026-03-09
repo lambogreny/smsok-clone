@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     const message = await sendSms(user.id, {
-      senderName: body.sender || "SMSOK",
+      senderName: body.sender || "EasySlip",
       recipient: body.to,
       message: body.message,
     });

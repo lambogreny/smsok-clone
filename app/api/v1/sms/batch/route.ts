@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     const result = await sendBatchSms(user.id, {
-      senderName: body.sender || "SMSOK",
+      senderName: body.sender || "EasySlip",
       recipients: body.to, // array of phone numbers
       message: body.message,
     });

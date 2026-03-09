@@ -37,14 +37,15 @@ async function login(): Promise<{ accessToken: string; refreshToken: string }> {
     throw new Error(`SMS Gateway login failed: ${res.status} ${body}`);
   }
 
-  const data = await res.json();
+  const json = await res.json();
+  const { accessToken, refreshToken, expiresIn } = json.data;
   cachedToken = {
-    accessToken: data.accessToken,
-    refreshToken: data.refreshToken,
-    expiresAt: Date.now() + 55 * 60 * 1000, // assume ~1h expiry, refresh at 55m
+    accessToken,
+    refreshToken,
+    expiresAt: Date.now() + (expiresIn || 3600) * 1000 - 60_000,
   };
 
-  return { accessToken: data.accessToken, refreshToken: data.refreshToken };
+  return { accessToken, refreshToken };
 }
 
 // ==========================================
@@ -59,10 +60,8 @@ async function refreshToken(): Promise<string> {
 
   const res = await fetch(`${SMS_API_URL}/auth/refresh`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${cachedToken.refreshToken}`,
-    },
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refreshToken: cachedToken.refreshToken }),
   });
 
   if (!res.ok) {
@@ -72,14 +71,14 @@ async function refreshToken(): Promise<string> {
     return accessToken;
   }
 
-  const data = await res.json();
+  const json = await res.json();
   cachedToken = {
-    accessToken: data.accessToken,
-    refreshToken: data.refreshToken || cachedToken.refreshToken,
-    expiresAt: Date.now() + 55 * 60 * 1000,
+    accessToken: json.data.accessToken,
+    refreshToken: json.data.refreshToken || cachedToken.refreshToken,
+    expiresAt: Date.now() + (json.data.expiresIn || 3600) * 1000 - 60_000,
   };
 
-  return data.accessToken;
+  return json.data.accessToken;
 }
 
 // ==========================================
@@ -192,8 +191,8 @@ export async function sendSmsBatch(params: SendSmsParams): Promise<SendSmsResult
       return { success: false, error: `SMS send failed after retry: ${retryRes.status} ${body}` };
     }
 
-    const data = await retryRes.json();
-    return { success: true, jobId: data.jobId || data.id, totalSent: msnList.length };
+    const retryJson = await retryRes.json();
+    return { success: true, jobId: retryJson.data?.jobId, totalSent: msnList.length };
   }
 
   if (!res.ok) {
@@ -201,8 +200,8 @@ export async function sendSmsBatch(params: SendSmsParams): Promise<SendSmsResult
     return { success: false, error: `SMS send failed: ${res.status} ${body}` };
   }
 
-  const data = await res.json();
-  return { success: true, jobId: data.jobId || data.id, totalSent: msnList.length };
+  const json = await res.json();
+  return { success: true, jobId: json.data?.jobId, totalSent: msnList.length };
 }
 
 // ==========================================
@@ -242,5 +241,6 @@ export async function getJobStatus(jobId: string): Promise<JobStatus> {
     throw new Error(`Failed to get job status: ${res.status} ${body}`);
   }
 
-  return res.json();
+  const json = await res.json();
+  return json.data;
 }

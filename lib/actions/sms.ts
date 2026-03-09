@@ -33,7 +33,7 @@ export async function sendSms(userId: string, data: unknown) {
   const sender = await db.senderName.findFirst({
     where: { userId, name: input.senderName, status: "approved" },
   });
-  if (!sender && input.senderName !== "SMSOK") {
+  if (!sender && input.senderName !== "EasySlip") {
     throw new Error("ชื่อผู้ส่งยังไม่ได้รับอนุมัติ");
   }
 
@@ -117,7 +117,7 @@ export async function sendBatchSms(userId: string, data: unknown) {
   const sender = await db.senderName.findFirst({
     where: { userId, name: input.senderName, status: "approved" },
   });
-  if (!sender && input.senderName !== "SMSOK") {
+  if (!sender && input.senderName !== "EasySlip") {
     throw new Error("ชื่อผู้ส่งยังไม่ได้รับอนุมัติ");
   }
 
