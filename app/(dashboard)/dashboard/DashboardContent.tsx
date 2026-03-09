@@ -198,7 +198,7 @@ export default function DashboardContent({ user, stats }: { user: User; stats?: 
   return (
     <div className="min-h-screen flex bg-[var(--bg-base)]">
       {/* Sidebar */}
-      <aside className="hidden md:flex w-60 border-r border-white/5 bg-[#060A14]/90 backdrop-blur-xl flex-col p-4">
+      <aside className="hidden md:flex w-60 border-r border-white/5 bg-[var(--bg-base)]/90 backdrop-blur-xl flex-col p-4">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 px-4 py-3 mb-4">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" className="text-sky-400">
