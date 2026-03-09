@@ -56,7 +56,7 @@ export default function CreditsPage() {
       params.set("page",  String(page));
       params.set("limit", String(PAGE_SIZE));
 
-      const res = await fetch(`/api/credits/history?${params.toString()}`);
+      const res = await fetch(`/api/credits/history?${params.toString()}`, { credentials: "include" });
       if (!res.ok) throw new Error("โหลดข้อมูลไม่สำเร็จ");
       const data: HistoryResponse = await res.json();
       setEntries(data.entries ?? []);
@@ -196,8 +196,8 @@ export default function CreditsPage() {
                       <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
                     </svg>
                   </div>
-                  <p className="text-sm text-[var(--text-secondary)]">ไม่พบรายการ</p>
-                  <p className="text-xs text-[var(--text-muted)]">ลองเปลี่ยนตัวกรองวันที่หรือประเภท</p>
+                  <p className="text-sm text-[var(--text-secondary)]">ยังไม่มีประวัติเครดิต</p>
+                  <p className="text-xs text-[var(--text-muted)]">{dateFrom || dateTo || typeFilter ? "ลองเปลี่ยนตัวกรองวันที่หรือประเภท" : "รายการจะแสดงเมื่อมีการเติมเครดิตหรือส่ง SMS"}</p>
                 </motion.div>
               )}
 
