@@ -1,0 +1,19 @@
+services:
+  app:
+    image: ghcr.io/lambogreny/smsok-clone:latest
+    ports:
+      - "3458:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 512M

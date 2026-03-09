@@ -1,0 +1,133 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  credits      Int      @default(0)
+  apiKey       String?  @unique
+  messages     Message[]
+  contacts     Contact[]
+  campaigns    Campaign[]
+  senderNames  SenderName[]
+  transactions Transaction[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Message {
+  id         String        @id @default(cuid())
+  to         String
+  body       String
+  status     MessageStatus @default(QUEUED)
+  senderName String        @default("SMSOK")
+  cost       Float         @default(0)
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  campaign   Campaign?     @relation(fields: [campaignId], references: [id])
+  campaignId String?
+  sentAt     DateTime?
+  deliveredAt DateTime?
+  createdAt  DateTime      @default(now())
+
+  @@index([userId, status])
+  @@index([campaignId])
+}
+
+model Contact {
+  id     String @id @default(cuid())
+  name   String?
+  phone  String
+  group  String @default("default")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, phone])
+  @@index([userId, group])
+}
+
+model Campaign {
+  id         String         @id @default(cuid())
+  name       String
+  body       String
+  status     CampaignStatus @default(DRAFT)
+  senderName String         @default("SMSOK")
+  totalSent  Int            @default(0)
+  totalCost  Float          @default(0)
+  messages   Message[]
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  scheduledAt DateTime?
+  completedAt DateTime?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@index([userId, status])
+}
+
+model SenderName {
+  id       String           @id @default(cuid())
+  name     String
+  status   ApprovalStatus   @default(PENDING)
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId   String
+  createdAt DateTime        @default(now())
+
+  @@unique([userId, name])
+}
+
+model Transaction {
+  id       String          @id @default(cuid())
+  type     TransactionType
+  amount   Float
+  credits  Int
+  status   PaymentStatus   @default(PENDING)
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId   String
+  createdAt DateTime       @default(now())
+
+  @@index([userId])
+}
+
+enum MessageStatus {
+  QUEUED
+  SENDING
+  SENT
+  DELIVERED
+  FAILED
+  EXPIRED
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum TransactionType {
+  TOPUP
+  USAGE
+  REFUND
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
