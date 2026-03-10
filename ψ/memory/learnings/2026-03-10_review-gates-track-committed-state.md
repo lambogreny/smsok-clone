@@ -1,0 +1,3 @@
+# Lesson Learned
+
+Review gates only stay trustworthy when findings are pinned to committed state instead of the live working tree. In this session, the important distinction was between recent commits that mostly changed presentation and the deeper issues that actually blocked deploy: mismatched search behavior between server and client, a notification bell that authenticated correctly but did not persist read state, and validation/auth surfaces that still needed stronger guarantees. The practical rule is simple: before calling a commit approved or blocked, verify the exact commit diff, then trace the runtime behavior end to end. That avoids false blame, catches regressions hidden behind polished UI work, and gives PM and QA a report they can use immediately.
