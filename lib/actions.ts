@@ -25,8 +25,20 @@ export async function register(formData: FormData) {
   }
 
   const hashed = await hashPassword(password);
-  const user = await prisma.user.create({
-    data: { name, email, phone, password: hashed },
+  const user = await prisma.$transaction(async (tx) => {
+    const newUser = await tx.user.create({
+      data: { name, email, phone, password: hashed },
+    });
+    await tx.creditTransaction.create({
+      data: {
+        userId: newUser.id,
+        amount: 15,
+        balance: 15,
+        type: "WELCOME_BONUS",
+        description: "เครดิตต้อนรับสมาชิกใหม่",
+      },
+    });
+    return newUser;
   });
 
   await setSession(user.id);
@@ -72,8 +84,20 @@ export async function registerWithOtp(data: {
   if (existingPhone) throw new Error("เบอร์โทรนี้ถูกใช้งานแล้ว");
 
   const hashed = await hashPassword(password);
-  const user = await prisma.user.create({
-    data: { name, email, phone, password: hashed, phoneVerified: true },
+  const user = await prisma.$transaction(async (tx) => {
+    const newUser = await tx.user.create({
+      data: { name, email, phone, password: hashed, phoneVerified: true },
+    });
+    await tx.creditTransaction.create({
+      data: {
+        userId: newUser.id,
+        amount: 15,
+        balance: 15,
+        type: "WELCOME_BONUS",
+        description: "เครดิตต้อนรับสมาชิกใหม่",
+      },
+    });
+    return newUser;
   });
 
   await setSession(user.id);
