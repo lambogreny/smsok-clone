@@ -72,7 +72,11 @@ export default async function SettingsPage({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1.5 font-medium">อีเมล</label>
-              <div className="input-glass bg-[var(--bg-surface)] cursor-default text-[var(--text-secondary)]">{fullUser.email}</div>
+              <input
+                readOnly
+                value={fullUser.email}
+                className="input-glass bg-[var(--bg-surface)] cursor-default text-[var(--text-secondary)] w-full"
+              />
               <p className="text-[10px] text-[var(--text-muted)] mt-1">อีเมลไม่สามารถเปลี่ยนแปลงได้</p>
             </div>
             <div>
@@ -82,9 +86,11 @@ export default async function SettingsPage({
                   <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" />
                 </svg>
               </label>
-              <div className="input-glass bg-[var(--bg-surface)] cursor-not-allowed text-[var(--text-secondary)] font-mono select-none" aria-readonly="true">
-                {fullUser.phone || "ไม่ได้ระบุ"}
-              </div>
+              <input
+                readOnly
+                value={fullUser.phone || "ไม่ได้ระบุ"}
+                className="input-glass bg-[var(--bg-surface)] cursor-not-allowed text-[var(--text-secondary)] font-mono select-none w-full"
+              />
               <p className="text-[10px] text-[var(--text-muted)] mt-1">
                 เบอร์โทรไม่สามารถเปลี่ยนได้หลังสมัคร{" "}
                 <span className="text-cyan-400">ติดต่อ support หากจำเป็น</span>
