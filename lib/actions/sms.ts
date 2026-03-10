@@ -353,7 +353,11 @@ export async function getMessages(userId: string, filters: unknown) {
     };
   }
 
-  const [messages, total] = await db.$transaction([
+  // Base where without status filter for stats
+  const statsWhere: Record<string, unknown> = { ...where };
+  delete statsWhere.status;
+
+  const [messages, total, statusCounts] = await db.$transaction([
     db.message.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -361,7 +365,23 @@ export async function getMessages(userId: string, filters: unknown) {
       take: input.limit,
     }),
     db.message.count({ where }),
+    db.message.groupBy({
+      by: ["status"],
+      where: statsWhere,
+      orderBy: { status: "asc" },
+      _count: { _all: true },
+    }),
   ]);
+
+  type StatRow = { status: string; _count: { _all: number } };
+  const counts = statusCounts as unknown as StatRow[];
+  const stats = {
+    total: counts.reduce((sum, s) => sum + s._count._all, 0),
+    delivered: counts.find((s) => s.status === "delivered")?._count._all ?? 0,
+    sent: counts.find((s) => s.status === "sent")?._count._all ?? 0,
+    pending: counts.find((s) => s.status === "pending")?._count._all ?? 0,
+    failed: counts.find((s) => s.status === "failed")?._count._all ?? 0,
+  };
 
   return {
     messages,
@@ -371,6 +391,7 @@ export async function getMessages(userId: string, filters: unknown) {
       total,
       totalPages: Math.ceil(total / input.limit),
     },
+    stats,
   };
 }
 

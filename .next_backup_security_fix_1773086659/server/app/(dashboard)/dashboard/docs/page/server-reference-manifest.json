@@ -1,0 +1,20 @@
+{
+  "node": {
+    "007c003ace4567ffac0111cc306486888c8c70ec15": {
+      "workers": {
+        "app/(dashboard)/dashboard/docs/page": {
+          "moduleId": 97938,
+          "async": false,
+          "exportedName": "logout",
+          "filename": "lib/actions.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/docs/page": "action-browser"
+      },
+      "exportedName": "logout",
+      "filename": "lib/actions.ts"
+    }
+  },
+  "edge": {}
+}

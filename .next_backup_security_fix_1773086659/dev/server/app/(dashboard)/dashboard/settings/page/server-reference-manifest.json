@@ -1,0 +1,65 @@
+{
+  "node": {
+    "008f729691ced488406cb11eb9f1b5d29439616cb6": {
+      "workers": {
+        "app/(dashboard)/dashboard/settings/page": {
+          "moduleId": "[project]/.next-internal/server/app/(dashboard)/dashboard/settings/page/actions.js { ACTIONS_MODULE0 => \"[project]/lib/actions.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/lib/actions/settings.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "logout",
+          "filename": "lib/actions.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/settings/page": "action-browser"
+      },
+      "exportedName": "logout",
+      "filename": "lib/actions.ts"
+    },
+    "4064e04b277bd8d378c042f52eceb08d7403780aa6": {
+      "workers": {
+        "app/(dashboard)/dashboard/settings/page": {
+          "moduleId": "[project]/.next-internal/server/app/(dashboard)/dashboard/settings/page/actions.js { ACTIONS_MODULE0 => \"[project]/lib/actions.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/lib/actions/settings.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "changePasswordForSession",
+          "filename": "lib/actions/settings.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/settings/page": "action-browser"
+      },
+      "exportedName": "changePasswordForSession",
+      "filename": "lib/actions/settings.ts"
+    },
+    "6041b2cb9367dd870393e026687ee07538a6306013": {
+      "workers": {
+        "app/(dashboard)/dashboard/settings/page": {
+          "moduleId": "[project]/.next-internal/server/app/(dashboard)/dashboard/settings/page/actions.js { ACTIONS_MODULE0 => \"[project]/lib/actions.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/lib/actions/settings.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "changePasswordForced",
+          "filename": "lib/actions.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/settings/page": "action-browser"
+      },
+      "exportedName": "changePasswordForced",
+      "filename": "lib/actions.ts"
+    },
+    "604f47c433ab3e0b231632ca0b30489842554d2986": {
+      "workers": {
+        "app/(dashboard)/dashboard/settings/page": {
+          "moduleId": "[project]/.next-internal/server/app/(dashboard)/dashboard/settings/page/actions.js { ACTIONS_MODULE0 => \"[project]/lib/actions.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/lib/actions/settings.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "updateProfile",
+          "filename": "lib/actions/settings.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/settings/page": "action-browser"
+      },
+      "exportedName": "updateProfile",
+      "filename": "lib/actions/settings.ts"
+    }
+  },
+  "edge": {}
+}

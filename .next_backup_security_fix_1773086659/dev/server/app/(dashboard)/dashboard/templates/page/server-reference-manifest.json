@@ -1,0 +1,80 @@
+{
+  "node": {
+    "008f729691ced488406cb11eb9f1b5d29439616cb6": {
+      "workers": {
+        "app/(dashboard)/dashboard/templates/page": {
+          "moduleId": "[project]/.next-internal/server/app/(dashboard)/dashboard/templates/page/actions.js { ACTIONS_MODULE0 => \"[project]/lib/actions.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/lib/actions/templates.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "logout",
+          "filename": "lib/actions.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/templates/page": "action-browser"
+      },
+      "exportedName": "logout",
+      "filename": "lib/actions.ts"
+    },
+    "408323a8c6e41483f655a8b14ec6edee798ddd65f2": {
+      "workers": {
+        "app/(dashboard)/dashboard/templates/page": {
+          "moduleId": "[project]/.next-internal/server/app/(dashboard)/dashboard/templates/page/actions.js { ACTIONS_MODULE0 => \"[project]/lib/actions.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/lib/actions/templates.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "getTemplates",
+          "filename": "lib/actions/templates.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/templates/page": "rsc"
+      },
+      "exportedName": "getTemplates",
+      "filename": "lib/actions/templates.ts"
+    },
+    "6049edb4c5bc14f8e98e5d16aa0b3d8b9deff64e82": {
+      "workers": {
+        "app/(dashboard)/dashboard/templates/page": {
+          "moduleId": "[project]/.next-internal/server/app/(dashboard)/dashboard/templates/page/actions.js { ACTIONS_MODULE0 => \"[project]/lib/actions.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/lib/actions/templates.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "createTemplate",
+          "filename": "lib/actions/templates.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/templates/page": "action-browser"
+      },
+      "exportedName": "createTemplate",
+      "filename": "lib/actions/templates.ts"
+    },
+    "6084036f69b1093559dc7c0898893c68cb8c902860": {
+      "workers": {
+        "app/(dashboard)/dashboard/templates/page": {
+          "moduleId": "[project]/.next-internal/server/app/(dashboard)/dashboard/templates/page/actions.js { ACTIONS_MODULE0 => \"[project]/lib/actions.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/lib/actions/templates.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "deleteTemplate",
+          "filename": "lib/actions/templates.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/templates/page": "action-browser"
+      },
+      "exportedName": "deleteTemplate",
+      "filename": "lib/actions/templates.ts"
+    },
+    "708be0ba59436565cc580695ab822dbd9f39c3870c": {
+      "workers": {
+        "app/(dashboard)/dashboard/templates/page": {
+          "moduleId": "[project]/.next-internal/server/app/(dashboard)/dashboard/templates/page/actions.js { ACTIONS_MODULE0 => \"[project]/lib/actions.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/lib/actions/templates.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "updateTemplate",
+          "filename": "lib/actions/templates.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/templates/page": "action-browser"
+      },
+      "exportedName": "updateTemplate",
+      "filename": "lib/actions/templates.ts"
+    }
+  },
+  "edge": {}
+}

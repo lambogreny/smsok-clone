@@ -13,8 +13,8 @@ type ApiKey = {
   name: string;
   key: string;
   isActive: boolean;
-  lastUsed: Date | null;
-  createdAt: Date;
+  lastUsed: string | null;
+  createdAt: string;
 };
 
 function maskKey(key: string): string {
@@ -51,7 +51,7 @@ export default function ApiKeysContent({ userId, apiKeys: initialKeys }: { userI
 
     try {
       const newKey = await createApiKey(userId, { name: keyName });
-      setApiKeys((prev) => [{ ...newKey, isActive: true, lastUsed: null } as ApiKey, ...prev]);
+      setApiKeys((prev) => [{ ...newKey, isActive: true, lastUsed: null, createdAt: new Date().toISOString() } as ApiKey, ...prev]);
       setNewlyCreatedKey(newKey.key);
       setKeyName("");
       setShowForm(false);

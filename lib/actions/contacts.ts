@@ -135,41 +135,63 @@ export async function deleteContact(userId: string, contactId: string) {
 
 export async function importContacts(
   userId: string,
-  contacts: { name: string; phone: string }[]
+  contacts: { name: string; phone: string; email?: string; tags?: string }[]
 ) {
-  if (contacts.length === 0) throw new Error("ไม่มีรายชื่อที่จะนำเข้า");
-  if (contacts.length > 10000) throw new Error("นำเข้าได้สูงสุด 10,000 รายชื่อต่อครั้ง");
+  if (!Array.isArray(contacts) || contacts.length === 0) throw new Error("ไม่มีรายชื่อที่จะนำเข้า");
+  if (contacts.length > 200) throw new Error("นำเข้าได้สูงสุด 200 รายชื่อต่อครั้ง");
 
-  const validated = contacts.map((c, i) => {
-    try {
-      return createContactSchema.parse(c);
-    } catch {
-      throw new Error(`แถวที่ ${i + 1}: ข้อมูลไม่ถูกต้อง`);
-    }
-  });
+  // Validate all rows with Zod + deduplicate
+  const valid: { name: string; phone: string; email?: string; tags?: string }[] = [];
+  const invalidRows: { row: number; error: string }[] = [];
+  const seenPhones = new Set<string>();
 
-  let imported = 0;
-  let skipped = 0;
-
-  for (const contact of validated) {
-    try {
-      await db.contact.create({
-        data: {
-          userId,
-          name: contact.name,
-          phone: contact.phone,
-          email: contact.email || null,
-          tags: contact.tags || null,
-        },
+  for (let i = 0; i < contacts.length; i++) {
+    const result = createContactSchema.safeParse(contacts[i]);
+    if (!result.success) {
+      invalidRows.push({
+        row: i + 1,
+        error: result.error.issues[0]?.message || "ข้อมูลไม่ถูกต้อง",
       });
-      imported++;
-    } catch {
-      skipped++;
+      continue;
     }
+    if (seenPhones.has(result.data.phone)) {
+      invalidRows.push({ row: i + 1, error: "เบอร์ซ้ำในไฟล์" });
+      continue;
+    }
+    seenPhones.add(result.data.phone);
+    valid.push(result.data);
+  }
+
+  if (valid.length === 0) {
+    return { imported: 0, skipped: invalidRows.length, total: contacts.length, invalidRows };
+  }
+
+  // Find existing phones to determine duplicates (batch query)
+  const phones = valid.map((c) => c.phone);
+  const existing = await db.contact.findMany({
+    where: { userId, phone: { in: phones } },
+    select: { phone: true },
+  });
+  const existingPhones = new Set(existing.map((c) => c.phone));
+
+  const toCreate = valid.filter((c) => !existingPhones.has(c.phone));
+  const skipped = valid.length - toCreate.length + invalidRows.length;
+
+  // Bulk create (createMany, not loop)
+  if (toCreate.length > 0) {
+    await db.contact.createMany({
+      data: toCreate.map((c) => ({
+        userId,
+        name: c.name,
+        phone: c.phone,
+        email: c.email || null,
+        tags: c.tags || null,
+      })),
+    });
   }
 
   revalidatePath("/dashboard/contacts");
-  return { imported, skipped, total: contacts.length };
+  return { imported: toCreate.length, skipped, total: contacts.length, invalidRows };
 }
 
 // ==========================================

@@ -1,0 +1,50 @@
+{
+  "node": {
+    "4082b84b284cfc22c7a9ae6a13c21383757bb31b41": {
+      "workers": {
+        "app/(auth)/register/page": {
+          "moduleId": "[project]/.next-internal/server/app/(auth)/register/page/actions.js { ACTIONS_MODULE0 => \"[project]/lib/actions/otp.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/lib/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "generateOtpForRegister",
+          "filename": "lib/actions/otp.ts"
+        }
+      },
+      "layer": {
+        "app/(auth)/register/page": "action-browser"
+      },
+      "exportedName": "generateOtpForRegister",
+      "filename": "lib/actions/otp.ts"
+    },
+    "6063c1db7918bb647ca83010a081add0cf5c647e3e": {
+      "workers": {
+        "app/(auth)/register/page": {
+          "moduleId": "[project]/.next-internal/server/app/(auth)/register/page/actions.js { ACTIONS_MODULE0 => \"[project]/lib/actions/otp.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/lib/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "verifyOtpForRegister",
+          "filename": "lib/actions/otp.ts"
+        }
+      },
+      "layer": {
+        "app/(auth)/register/page": "action-browser"
+      },
+      "exportedName": "verifyOtpForRegister",
+      "filename": "lib/actions/otp.ts"
+    },
+    "406c00b52c4e3093274676bccb5df152fc09c9e4fa": {
+      "workers": {
+        "app/(auth)/register/page": {
+          "moduleId": "[project]/.next-internal/server/app/(auth)/register/page/actions.js { ACTIONS_MODULE0 => \"[project]/lib/actions/otp.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/lib/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "registerWithOtp",
+          "filename": "lib/actions.ts"
+        }
+      },
+      "layer": {
+        "app/(auth)/register/page": "action-browser"
+      },
+      "exportedName": "registerWithOtp",
+      "filename": "lib/actions.ts"
+    }
+  },
+  "edge": {}
+}

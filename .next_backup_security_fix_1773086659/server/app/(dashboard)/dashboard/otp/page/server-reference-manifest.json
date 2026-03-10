@@ -1,0 +1,50 @@
+{
+  "node": {
+    "007c003ace4567ffac0111cc306486888c8c70ec15": {
+      "workers": {
+        "app/(dashboard)/dashboard/otp/page": {
+          "moduleId": 43347,
+          "async": false,
+          "exportedName": "logout",
+          "filename": "lib/actions.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/otp/page": "action-browser"
+      },
+      "exportedName": "logout",
+      "filename": "lib/actions.ts"
+    },
+    "4015497fec3dde43f176f8583343fc614fd1788efe": {
+      "workers": {
+        "app/(dashboard)/dashboard/otp/page": {
+          "moduleId": 43347,
+          "async": false,
+          "exportedName": "generateOtpForSession",
+          "filename": "lib/actions/otp.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/otp/page": "action-browser"
+      },
+      "exportedName": "generateOtpForSession",
+      "filename": "lib/actions/otp.ts"
+    },
+    "406860f86a4ad854b9b15d85eaf4c996dacf693152": {
+      "workers": {
+        "app/(dashboard)/dashboard/otp/page": {
+          "moduleId": 43347,
+          "async": false,
+          "exportedName": "verifyOtpForSession",
+          "filename": "lib/actions/otp.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/otp/page": "action-browser"
+      },
+      "exportedName": "verifyOtpForSession",
+      "filename": "lib/actions/otp.ts"
+    }
+  },
+  "edge": {}
+}

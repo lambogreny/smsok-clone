@@ -1,0 +1,50 @@
+{
+  "node": {
+    "007c003ace4567ffac0111cc306486888c8c70ec15": {
+      "workers": {
+        "app/(dashboard)/dashboard/campaigns/page": {
+          "moduleId": 48539,
+          "async": false,
+          "exportedName": "logout",
+          "filename": "lib/actions.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/campaigns/page": "action-browser"
+      },
+      "exportedName": "logout",
+      "filename": "lib/actions.ts"
+    },
+    "6015965f01c7d37636de46fea9ecf1f67eb9cf48c0": {
+      "workers": {
+        "app/(dashboard)/dashboard/campaigns/page": {
+          "moduleId": 48539,
+          "async": false,
+          "exportedName": "getCampaigns",
+          "filename": "lib/actions/campaigns.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/campaigns/page": "rsc"
+      },
+      "exportedName": "getCampaigns",
+      "filename": "lib/actions/campaigns.ts"
+    },
+    "60ecb030c89ff12d61b2b47cbcd47d3cc957dc1c61": {
+      "workers": {
+        "app/(dashboard)/dashboard/campaigns/page": {
+          "moduleId": 48539,
+          "async": false,
+          "exportedName": "createCampaign",
+          "filename": "lib/actions/campaigns.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/campaigns/page": "action-browser"
+      },
+      "exportedName": "createCampaign",
+      "filename": "lib/actions/campaigns.ts"
+    }
+  },
+  "edge": {}
+}

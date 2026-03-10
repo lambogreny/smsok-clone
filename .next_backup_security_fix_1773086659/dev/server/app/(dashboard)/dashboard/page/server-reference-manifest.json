@@ -1,0 +1,170 @@
+{
+  "node": {
+    "008f729691ced488406cb11eb9f1b5d29439616cb6": {
+      "workers": {
+        "app/(dashboard)/dashboard/page": {
+          "moduleId": "[project]/.next-internal/server/app/(dashboard)/dashboard/page/actions.js { ACTIONS_MODULE0 => \"[project]/lib/actions.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/lib/actions/sms.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE2 => \"[project]/lib/actions/sender-names.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "logout",
+          "filename": "lib/actions.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/page": "action-browser"
+      },
+      "exportedName": "logout",
+      "filename": "lib/actions.ts"
+    },
+    "403345bf9950af0c648740197f17bd3ada6bc89d5d": {
+      "workers": {
+        "app/(dashboard)/dashboard/page": {
+          "moduleId": "[project]/.next-internal/server/app/(dashboard)/dashboard/page/actions.js { ACTIONS_MODULE0 => \"[project]/lib/actions.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/lib/actions/sms.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE2 => \"[project]/lib/actions/sender-names.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "getDashboardStats",
+          "filename": "lib/actions/sms.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/page": "rsc"
+      },
+      "exportedName": "getDashboardStats",
+      "filename": "lib/actions/sms.ts"
+    },
+    "6002b115e4a3e04830a47d5f9a747ee0c711f7ce8f": {
+      "workers": {
+        "app/(dashboard)/dashboard/page": {
+          "moduleId": "[project]/.next-internal/server/app/(dashboard)/dashboard/page/actions.js { ACTIONS_MODULE0 => \"[project]/lib/actions.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/lib/actions/sms.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE2 => \"[project]/lib/actions/sender-names.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "getMessageStatus",
+          "filename": "lib/actions/sms.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/page": "rsc"
+      },
+      "exportedName": "getMessageStatus",
+      "filename": "lib/actions/sms.ts"
+    },
+    "6058cbec34c527362dbc5cd4936089f50b5d82e65c": {
+      "workers": {
+        "app/(dashboard)/dashboard/page": {
+          "moduleId": "[project]/.next-internal/server/app/(dashboard)/dashboard/page/actions.js { ACTIONS_MODULE0 => \"[project]/lib/actions.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/lib/actions/sms.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE2 => \"[project]/lib/actions/sender-names.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "sendBatchSms",
+          "filename": "lib/actions/sms.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/page": "rsc"
+      },
+      "exportedName": "sendBatchSms",
+      "filename": "lib/actions/sms.ts"
+    },
+    "607a5fbcdc4bac07ff6ac635187850162b936c359f": {
+      "workers": {
+        "app/(dashboard)/dashboard/page": {
+          "moduleId": "[project]/.next-internal/server/app/(dashboard)/dashboard/page/actions.js { ACTIONS_MODULE0 => \"[project]/lib/actions.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/lib/actions/sms.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE2 => \"[project]/lib/actions/sender-names.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "getMessages",
+          "filename": "lib/actions/sms.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/page": "rsc"
+      },
+      "exportedName": "getMessages",
+      "filename": "lib/actions/sms.ts"
+    },
+    "607ed3296f73e9739e110c241d900dee581b7f921e": {
+      "workers": {
+        "app/(dashboard)/dashboard/page": {
+          "moduleId": "[project]/.next-internal/server/app/(dashboard)/dashboard/page/actions.js { ACTIONS_MODULE0 => \"[project]/lib/actions.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/lib/actions/sms.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE2 => \"[project]/lib/actions/sender-names.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "sendSms",
+          "filename": "lib/actions/sms.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/page": "action-browser"
+      },
+      "exportedName": "sendSms",
+      "filename": "lib/actions/sms.ts"
+    },
+    "007e6974923bd822a8c9c729fb3827a91cb043d48a": {
+      "workers": {
+        "app/(dashboard)/dashboard/page": {
+          "moduleId": "[project]/.next-internal/server/app/(dashboard)/dashboard/page/actions.js { ACTIONS_MODULE0 => \"[project]/lib/actions.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/lib/actions/sms.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE2 => \"[project]/lib/actions/sender-names.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "adminGetPendingSenderNames",
+          "filename": "lib/actions/sender-names.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/page": "rsc"
+      },
+      "exportedName": "adminGetPendingSenderNames",
+      "filename": "lib/actions/sender-names.ts"
+    },
+    "40224d06e8b1c571d99047814be13c15f4e9605d65": {
+      "workers": {
+        "app/(dashboard)/dashboard/page": {
+          "moduleId": "[project]/.next-internal/server/app/(dashboard)/dashboard/page/actions.js { ACTIONS_MODULE0 => \"[project]/lib/actions.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/lib/actions/sms.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE2 => \"[project]/lib/actions/sender-names.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "getApprovedSenderNames",
+          "filename": "lib/actions/sender-names.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/page": "rsc"
+      },
+      "exportedName": "getApprovedSenderNames",
+      "filename": "lib/actions/sender-names.ts"
+    },
+    "4053c41ed021a06533d5fd947e25f4ddbbd1f0420f": {
+      "workers": {
+        "app/(dashboard)/dashboard/page": {
+          "moduleId": "[project]/.next-internal/server/app/(dashboard)/dashboard/page/actions.js { ACTIONS_MODULE0 => \"[project]/lib/actions.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/lib/actions/sms.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE2 => \"[project]/lib/actions/sender-names.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "getSenderNames",
+          "filename": "lib/actions/sender-names.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/page": "rsc"
+      },
+      "exportedName": "getSenderNames",
+      "filename": "lib/actions/sender-names.ts"
+    },
+    "6026104c23161b6d17e56a057706fbaa0d87be0e86": {
+      "workers": {
+        "app/(dashboard)/dashboard/page": {
+          "moduleId": "[project]/.next-internal/server/app/(dashboard)/dashboard/page/actions.js { ACTIONS_MODULE0 => \"[project]/lib/actions.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/lib/actions/sms.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE2 => \"[project]/lib/actions/sender-names.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "requestSenderName",
+          "filename": "lib/actions/sender-names.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/page": "rsc"
+      },
+      "exportedName": "requestSenderName",
+      "filename": "lib/actions/sender-names.ts"
+    },
+    "60fe7577099a2c6dd42a03a56bede32656688b283a": {
+      "workers": {
+        "app/(dashboard)/dashboard/page": {
+          "moduleId": "[project]/.next-internal/server/app/(dashboard)/dashboard/page/actions.js { ACTIONS_MODULE0 => \"[project]/lib/actions.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/lib/actions/sms.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE2 => \"[project]/lib/actions/sender-names.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "adminApproveSenderName",
+          "filename": "lib/actions/sender-names.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/page": "rsc"
+      },
+      "exportedName": "adminApproveSenderName",
+      "filename": "lib/actions/sender-names.ts"
+    }
+  },
+  "edge": {}
+}

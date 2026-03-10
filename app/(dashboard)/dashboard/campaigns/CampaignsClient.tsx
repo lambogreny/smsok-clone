@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { createCampaign, executeCampaign, getCampaignProgress } from "@/lib/actions/campaigns";
@@ -140,6 +140,19 @@ export default function CampaignsClient({
   // Detail view
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
 
+  // Track poll intervals for cleanup on unmount
+  const pollIntervalsRef = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
+
+  useEffect(() => {
+    return () => {
+      // Cleanup all poll intervals on unmount
+      for (const interval of pollIntervalsRef.current.values()) {
+        clearInterval(interval);
+      }
+      pollIntervalsRef.current.clear();
+    };
+  }, []);
+
   const filtered =
     filterStatus === "all" ? campaigns : campaigns.filter((c) => c.status === filterStatus);
 
@@ -199,7 +212,11 @@ export default function CampaignsClient({
           prev.map((c) => (c.id === campaignId ? { ...c, status: "running" as CampaignStatus } : c))
         );
 
-        // Poll progress
+        // Poll progress — store ref for cleanup on unmount
+        // Clear any existing poll for this campaign first
+        const existingInterval = pollIntervalsRef.current.get(campaignId);
+        if (existingInterval) clearInterval(existingInterval);
+
         const pollInterval = setInterval(async () => {
           try {
             const progress = await getCampaignProgress(userId, campaignId);
@@ -219,23 +236,22 @@ export default function CampaignsClient({
             );
 
             // Update selected campaign detail if open
-            if (selectedCampaign?.id === campaignId) {
-              setSelectedCampaign((prev) =>
-                prev
-                  ? {
-                      ...prev,
-                      status: progress.status as CampaignStatus,
-                      sentCount: progress.sentCount,
-                      deliveredCount: progress.deliveredCount,
-                      failedCount: progress.failedCount,
-                      creditUsed: progress.creditUsed,
-                    }
-                  : prev
-              );
-            }
+            setSelectedCampaign((prev) =>
+              prev?.id === campaignId
+                ? {
+                    ...prev,
+                    status: progress.status as CampaignStatus,
+                    sentCount: progress.sentCount,
+                    deliveredCount: progress.deliveredCount,
+                    failedCount: progress.failedCount,
+                    creditUsed: progress.creditUsed,
+                  }
+                : prev
+            );
 
             if (progress.status === "completed" || progress.status === "failed" || progress.status === "cancelled") {
               clearInterval(pollInterval);
+              pollIntervalsRef.current.delete(campaignId);
               setSendingIds((prev) => {
                 const next = new Set(prev);
                 next.delete(campaignId);
@@ -251,8 +267,11 @@ export default function CampaignsClient({
             }
           } catch {
             clearInterval(pollInterval);
+            pollIntervalsRef.current.delete(campaignId);
           }
         }, 2000);
+
+        pollIntervalsRef.current.set(campaignId, pollInterval);
       } catch (e) {
         // Rollback optimistic update
         setCampaigns((prev) =>

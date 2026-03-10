@@ -1,0 +1,65 @@
+{
+  "node": {
+    "007c003ace4567ffac0111cc306486888c8c70ec15": {
+      "workers": {
+        "app/(dashboard)/dashboard/settings/page": {
+          "moduleId": 17598,
+          "async": false,
+          "exportedName": "logout",
+          "filename": "lib/actions.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/settings/page": "action-browser"
+      },
+      "exportedName": "logout",
+      "filename": "lib/actions.ts"
+    },
+    "40b413abc8f42271f9902f60d2e54838a98891c626": {
+      "workers": {
+        "app/(dashboard)/dashboard/settings/page": {
+          "moduleId": 17598,
+          "async": false,
+          "exportedName": "changePasswordForSession",
+          "filename": "lib/actions/settings.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/settings/page": "action-browser"
+      },
+      "exportedName": "changePasswordForSession",
+      "filename": "lib/actions/settings.ts"
+    },
+    "6094927fdf2a2cd1b4f3ced0bce5d7740091367bc6": {
+      "workers": {
+        "app/(dashboard)/dashboard/settings/page": {
+          "moduleId": 17598,
+          "async": false,
+          "exportedName": "changePasswordForced",
+          "filename": "lib/actions.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/settings/page": "action-browser"
+      },
+      "exportedName": "changePasswordForced",
+      "filename": "lib/actions.ts"
+    },
+    "6036054542100262fe0724ed0ffd5f74b463d0d845": {
+      "workers": {
+        "app/(dashboard)/dashboard/settings/page": {
+          "moduleId": 17598,
+          "async": false,
+          "exportedName": "updateProfile",
+          "filename": "lib/actions/settings.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/settings/page": "action-browser"
+      },
+      "exportedName": "updateProfile",
+      "filename": "lib/actions/settings.ts"
+    }
+  },
+  "edge": {}
+}

@@ -1,0 +1,80 @@
+{
+  "node": {
+    "007c003ace4567ffac0111cc306486888c8c70ec15": {
+      "workers": {
+        "app/(dashboard)/dashboard/templates/page": {
+          "moduleId": 21893,
+          "async": false,
+          "exportedName": "logout",
+          "filename": "lib/actions.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/templates/page": "action-browser"
+      },
+      "exportedName": "logout",
+      "filename": "lib/actions.ts"
+    },
+    "402b8c78a9f49521cea8143fc0ef84f47e467ab268": {
+      "workers": {
+        "app/(dashboard)/dashboard/templates/page": {
+          "moduleId": 21893,
+          "async": false,
+          "exportedName": "getTemplates",
+          "filename": "lib/actions/templates.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/templates/page": "rsc"
+      },
+      "exportedName": "getTemplates",
+      "filename": "lib/actions/templates.ts"
+    },
+    "600d3e92549f1de8401735a1f761431762bca5adc8": {
+      "workers": {
+        "app/(dashboard)/dashboard/templates/page": {
+          "moduleId": 21893,
+          "async": false,
+          "exportedName": "createTemplate",
+          "filename": "lib/actions/templates.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/templates/page": "action-browser"
+      },
+      "exportedName": "createTemplate",
+      "filename": "lib/actions/templates.ts"
+    },
+    "60708c3ff0f2d0fef93b2def15d978a41c0792f2b9": {
+      "workers": {
+        "app/(dashboard)/dashboard/templates/page": {
+          "moduleId": 21893,
+          "async": false,
+          "exportedName": "deleteTemplate",
+          "filename": "lib/actions/templates.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/templates/page": "action-browser"
+      },
+      "exportedName": "deleteTemplate",
+      "filename": "lib/actions/templates.ts"
+    },
+    "70032a7d156bf60b565b9a00f8922de337df81819e": {
+      "workers": {
+        "app/(dashboard)/dashboard/templates/page": {
+          "moduleId": 21893,
+          "async": false,
+          "exportedName": "updateTemplate",
+          "filename": "lib/actions/templates.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/templates/page": "action-browser"
+      },
+      "exportedName": "updateTemplate",
+      "filename": "lib/actions/templates.ts"
+    }
+  },
+  "edge": {}
+}

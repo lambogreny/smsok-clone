@@ -1,0 +1,637 @@
+[00:00:00.954] Server  WARN    ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+[00:00:01.058] Server  LOG     ✓ Ready in 827ms
+[00:00:01.964] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:03.845] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:32.279] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:02:18.807] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:02:23.641] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:04:02.201] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:04:33.896] Server  LOG     ○ Compiling /api/v1/api-keys ...
+[00:04:54.125] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:05:07.715] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:05:40.764] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:09:44.976] Server  LOG     ✓ Compiled in 288ms
+[00:09:47.422] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:09:53.374] Server  LOG     ✓ Compiled in 462ms
+[00:10:03.636] Server  LOG     ✓ Compiled in 295ms
+[00:10:21.949] Server  LOG     ✓ Compiled in 124ms
+[00:10:34.363] Server  ERROR   ⨯ ./lib/actions.ts:7:1
+Module not found: Can't resolve './actions/auth'
+   5 | import { redirect } from "next/navigation";
+   6 | import { loginSchema, registerSchema } from "./validations";
+>  7 | import { forgotPassword as forgotPasswordAction } from "./actions/auth";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 |
+   9 | export async function register(formData: FormData) {
+  10 |   const parsed = registerSchema.safeParse({
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:10:34.370] Server  ERROR   ⨯ ./lib/actions.ts:7:1
+Module not found: Can't resolve './actions/auth'
+   5 | import { redirect } from "next/navigation";
+   6 | import { loginSchema, registerSchema } from "./validations";
+>  7 | import { forgotPassword as forgotPasswordAction } from "./actions/auth";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 |
+   9 | export async function register(formData: FormData) {
+  10 |   const parsed = registerSchema.safeParse({
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:10:34.373] Server  ERROR   ⨯ ./lib/actions.ts:7:1
+Module not found: Can't resolve './actions/auth'
+   5 | import { redirect } from "next/navigation";
+   6 | import { loginSchema, registerSchema } from "./validations";
+>  7 | import { forgotPassword as forgotPasswordAction } from "./actions/auth";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 |
+   9 | export async function register(formData: FormData) {
+  10 |   const parsed = registerSchema.safeParse({
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:10:34.374] Server  ERROR   ⨯ ./lib/actions.ts:7:1
+Module not found: Can't resolve './actions/auth'
+   5 | import { redirect } from "next/navigation";
+   6 | import { loginSchema, registerSchema } from "./validations";
+>  7 | import { forgotPassword as forgotPasswordAction } from "./actions/auth";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 |
+   9 | export async function register(formData: FormData) {
+  10 |   const parsed = registerSchema.safeParse({
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:10:34.380] Server  ERROR   ⨯ ./lib/actions.ts:7:1
+Module not found: Can't resolve './actions/auth'
+   5 | import { redirect } from "next/navigation";
+   6 | import { loginSchema, registerSchema } from "./validations";
+>  7 | import { forgotPassword as forgotPasswordAction } from "./actions/auth";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 |
+   9 | export async function register(formData: FormData) {
+  10 |   const parsed = registerSchema.safeParse({
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:10:34.383] Server  ERROR   ⨯ ./lib/actions.ts:7:1
+Module not found: Can't resolve './actions/auth'
+   5 | import { redirect } from "next/navigation";
+   6 | import { loginSchema, registerSchema } from "./validations";
+>  7 | import { forgotPassword as forgotPasswordAction } from "./actions/auth";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 |
+   9 | export async function register(formData: FormData) {
+  10 |   const parsed = registerSchema.safeParse({
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:10:34.386] Server  ERROR   ⨯ ./lib/actions.ts:7:1
+Module not found: Can't resolve './actions/auth'
+   5 | import { redirect } from "next/navigation";
+   6 | import { loginSchema, registerSchema } from "./validations";
+>  7 | import { forgotPassword as forgotPasswordAction } from "./actions/auth";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 |
+   9 | export async function register(formData: FormData) {
+  10 |   const parsed = registerSchema.safeParse({
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:10:34.390] Server  ERROR   ⨯ ./lib/actions.ts:7:1
+Module not found: Can't resolve './actions/auth'
+   5 | import { redirect } from "next/navigation";
+   6 | import { loginSchema, registerSchema } from "./validations";
+>  7 | import { forgotPassword as forgotPasswordAction } from "./actions/auth";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 |
+   9 | export async function register(formData: FormData) {
+  10 |   const parsed = registerSchema.safeParse({
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:10:34.395] Server  ERROR   ⨯ ./lib/actions.ts:7:1
+Module not found: Can't resolve './actions/auth'
+   5 | import { redirect } from "next/navigation";
+   6 | import { loginSchema, registerSchema } from "./validations";
+>  7 | import { forgotPassword as forgotPasswordAction } from "./actions/auth";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 |
+   9 | export async function register(formData: FormData) {
+  10 |   const parsed = registerSchema.safeParse({
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:10:34.399] Server  ERROR   ⨯ ./lib/actions.ts:7:1
+Module not found: Can't resolve './actions/auth'
+   5 | import { redirect } from "next/navigation";
+   6 | import { loginSchema, registerSchema } from "./validations";
+>  7 | import { forgotPassword as forgotPasswordAction } from "./actions/auth";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 |
+   9 | export async function register(formData: FormData) {
+  10 |   const parsed = registerSchema.safeParse({
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:10:34.407] Server  ERROR   ⨯ ./lib/actions.ts:7:1
+Module not found: Can't resolve './actions/auth'
+   5 | import { redirect } from "next/navigation";
+   6 | import { loginSchema, registerSchema } from "./validations";
+>  7 | import { forgotPassword as forgotPasswordAction } from "./actions/auth";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 |
+   9 | export async function register(formData: FormData) {
+  10 |   const parsed = registerSchema.safeParse({
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:10:34.410] Server  ERROR   ⨯ ./lib/actions.ts:7:1
+Module not found: Can't resolve './actions/auth'
+   5 | import { redirect } from "next/navigation";
+   6 | import { loginSchema, registerSchema } from "./validations";
+>  7 | import { forgotPassword as forgotPasswordAction } from "./actions/auth";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 |
+   9 | export async function register(formData: FormData) {
+  10 |   const parsed = registerSchema.safeParse({
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:10:34.413] Server  ERROR   ⨯ ./lib/actions.ts:7:1
+Module not found: Can't resolve './actions/auth'
+   5 | import { redirect } from "next/navigation";
+   6 | import { loginSchema, registerSchema } from "./validations";
+>  7 | import { forgotPassword as forgotPasswordAction } from "./actions/auth";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 |
+   9 | export async function register(formData: FormData) {
+  10 |   const parsed = registerSchema.safeParse({
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:10:34.414] Server  ERROR   ⨯ ./lib/actions.ts:7:1
+Module not found: Can't resolve './actions/auth'
+   5 | import { redirect } from "next/navigation";
+   6 | import { loginSchema, registerSchema } from "./validations";
+>  7 | import { forgotPassword as forgotPasswordAction } from "./actions/auth";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 |
+   9 | export async function register(formData: FormData) {
+  10 |   const parsed = registerSchema.safeParse({
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:10:34.429] Server  ERROR   ⨯ ./lib/actions.ts:7:1
+Module not found: Can't resolve './actions/auth'
+   5 | import { redirect } from "next/navigation";
+   6 | import { loginSchema, registerSchema } from "./validations";
+>  7 | import { forgotPassword as forgotPasswordAction } from "./actions/auth";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 |
+   9 | export async function register(formData: FormData) {
+  10 |   const parsed = registerSchema.safeParse({
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:10:34.431] Server  ERROR   ⨯ ./lib/actions.ts:7:1
+Module not found: Can't resolve './actions/auth'
+   5 | import { redirect } from "next/navigation";
+   6 | import { loginSchema, registerSchema } from "./validations";
+>  7 | import { forgotPassword as forgotPasswordAction } from "./actions/auth";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 |
+   9 | export async function register(formData: FormData) {
+  10 |   const parsed = registerSchema.safeParse({
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:10:34.445] Server  ERROR   ⨯ ./lib/actions.ts:7:1
+Module not found: Can't resolve './actions/auth'
+   5 | import { redirect } from "next/navigation";
+   6 | import { loginSchema, registerSchema } from "./validations";
+>  7 | import { forgotPassword as forgotPasswordAction } from "./actions/auth";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 |
+   9 | export async function register(formData: FormData) {
+  10 |   const parsed = registerSchema.safeParse({
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:10:34.446] Server  ERROR   ⨯ ./lib/actions.ts:7:1
+Module not found: Can't resolve './actions/auth'
+   5 | import { redirect } from "next/navigation";
+   6 | import { loginSchema, registerSchema } from "./validations";
+>  7 | import { forgotPassword as forgotPasswordAction } from "./actions/auth";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 |
+   9 | export async function register(formData: FormData) {
+  10 |   const parsed = registerSchema.safeParse({
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:10:34.447] Server  ERROR   ⨯ ./lib/actions.ts:7:1
+Module not found: Can't resolve './actions/auth'
+   5 | import { redirect } from "next/navigation";
+   6 | import { loginSchema, registerSchema } from "./validations";
+>  7 | import { forgotPassword as forgotPasswordAction } from "./actions/auth";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 |
+   9 | export async function register(formData: FormData) {
+  10 |   const parsed = registerSchema.safeParse({
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:10:34.448] Server  ERROR   ⨯ ./lib/actions.ts:7:1
+Module not found: Can't resolve './actions/auth'
+   5 | import { redirect } from "next/navigation";
+   6 | import { loginSchema, registerSchema } from "./validations";
+>  7 | import { forgotPassword as forgotPasswordAction } from "./actions/auth";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 |
+   9 | export async function register(formData: FormData) {
+  10 |   const parsed = registerSchema.safeParse({
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:10:34.575] Browser ERROR   ./lib/actions.ts:7:1
+Module not found: Can't resolve './actions/auth'
+   5 | import { redirect } from "next/navigation";
+   6 | import { loginSchema, registerSchema } from "./validations";
+>  7 | import { forgotPassword as forgotPasswordAction } from "./actions/auth";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 |
+   9 | export async function register(formData: FormData) {
+  10 |   const parsed = registerSchema.safeParse({
+
+https://nextjs.org/docs/messages/module-not-found
+[00:10:35.074] Browser ERROR   ./lib/actions.ts:7:1
+Module not found: Can't resolve './actions/auth'
+   5 | import { redirect } from "next/navigation";
+   6 | import { loginSchema, registerSchema } from "./validations";
+>  7 | import { forgotPassword as forgotPasswordAction } from "./actions/auth";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 |
+   9 | export async function register(formData: FormData) {
+  10 |   const parsed = registerSchema.safeParse({
+
+https://nextjs.org/docs/messages/module-not-found
+[00:10:39.664] Server  ERROR   ⨯ ./lib/actions.ts:7:1
+Module not found: Can't resolve './actions/auth'
+   5 | import { redirect } from "next/navigation";
+   6 | import { loginSchema, registerSchema } from "./validations";
+>  7 | import { forgotPassword as forgotPasswordAction } from "./actions/auth";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 |
+   9 | export async function register(formData: FormData) {
+  10 |   const parsed = registerSchema.safeParse({
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:10:39.667] Server  ERROR   ⨯ ./lib/actions.ts:7:1
+Module not found: Can't resolve './actions/auth'
+   5 | import { redirect } from "next/navigation";
+   6 | import { loginSchema, registerSchema } from "./validations";
+>  7 | import { forgotPassword as forgotPasswordAction } from "./actions/auth";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 |
+   9 | export async function register(formData: FormData) {
+  10 |   const parsed = registerSchema.safeParse({
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:10:39.672] Server  ERROR   ⨯ ./lib/actions.ts:7:1
+Module not found: Can't resolve './actions/auth'
+   5 | import { redirect } from "next/navigation";
+   6 | import { loginSchema, registerSchema } from "./validations";
+>  7 | import { forgotPassword as forgotPasswordAction } from "./actions/auth";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 |
+   9 | export async function register(formData: FormData) {
+  10 |   const parsed = registerSchema.safeParse({
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:10:39.673] Server  ERROR   ⨯ ./lib/actions.ts:7:1
+Module not found: Can't resolve './actions/auth'
+   5 | import { redirect } from "next/navigation";
+   6 | import { loginSchema, registerSchema } from "./validations";
+>  7 | import { forgotPassword as forgotPasswordAction } from "./actions/auth";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 |
+   9 | export async function register(formData: FormData) {
+  10 |   const parsed = registerSchema.safeParse({
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:10:39.674] Server  ERROR   ⨯ ./lib/actions.ts:7:1
+Module not found: Can't resolve './actions/auth'
+   5 | import { redirect } from "next/navigation";
+   6 | import { loginSchema, registerSchema } from "./validations";
+>  7 | import { forgotPassword as forgotPasswordAction } from "./actions/auth";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 |
+   9 | export async function register(formData: FormData) {
+  10 |   const parsed = registerSchema.safeParse({
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:10:39.675] Server  ERROR   ⨯ ./lib/actions.ts:7:1
+Module not found: Can't resolve './actions/auth'
+   5 | import { redirect } from "next/navigation";
+   6 | import { loginSchema, registerSchema } from "./validations";
+>  7 | import { forgotPassword as forgotPasswordAction } from "./actions/auth";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 |
+   9 | export async function register(formData: FormData) {
+  10 |   const parsed = registerSchema.safeParse({
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+[00:10:39.799] Browser ERROR   ./lib/actions.ts:7:1
+Module not found: Can't resolve './actions/auth'
+   5 | import { redirect } from "next/navigation";
+   6 | import { loginSchema, registerSchema } from "./validations";
+>  7 | import { forgotPassword as forgotPasswordAction } from "./actions/auth";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 |
+   9 | export async function register(formData: FormData) {
+  10 |   const parsed = registerSchema.safeParse({
+
+https://nextjs.org/docs/messages/module-not-found
+[00:10:40.072] Browser ERROR   ./lib/actions.ts:7:1
+Module not found: Can't resolve './actions/auth'
+   5 | import { redirect } from "next/navigation";
+   6 | import { loginSchema, registerSchema } from "./validations";
+>  7 | import { forgotPassword as forgotPasswordAction } from "./actions/auth";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 |
+   9 | export async function register(formData: FormData) {
+  10 |   const parsed = registerSchema.safeParse({
+
+https://nextjs.org/docs/messages/module-not-found
+[00:11:11.778] Server  LOG     ✓ Compiled in 2.3s
+[00:11:19.761] Server  LOG     ✓ Compiled in 570ms
+[00:11:20.679] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:11:21.390] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:15:09.129] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:15:15.120] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:15:16.499] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:16:47.924] Browser LOG     [ChromeTransport] chromePort disconnected
+[00:16:48.088] Browser LOG     [ChromeTransport] chromePort disconnected
+[00:21:02.696] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:23:41.106] Server  LOG     ✓ Compiled in 390ms
+[00:24:20.043] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:24:23.349] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:24:37.205] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:26:41.287] Server  LOG     ✓ Compiled in 354ms
+[00:26:52.786] Server  LOG     ✓ Compiled in 215ms
+[00:26:58.416] Server  LOG     ✓ Compiled in 335ms
+[00:27:04.272] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:27:36.337] Server  LOG     ✓ Compiled in 167ms
+[00:30:24.163] Server  LOG     ✓ Compiled in 422ms
+[00:30:29.116] Server  LOG     ✓ Compiled in 157ms
+[00:30:32.822] Server  LOG     ✓ Compiled in 87ms
+[00:30:36.574] Server  LOG     ✓ Compiled in 59ms
+[00:31:19.258] Server  LOG     ✓ Compiled in 436ms
+[00:33:54.578] Server  LOG     ✓ Compiled in 1007ms
+[00:44:53.593] Server  LOG       Reload env: .env
+[00:47:09.855] Server  LOG     ✓ Compiled in 117ms
+[00:52:07.890] Server  LOG     ✓ Compiled in 402ms
+[00:52:07.944] Server  LOG     ✓ Compiled in 0ms
+[00:52:11.413] Server  LOG     ✓ Compiled in 103ms
+[00:54:04.007] Server  LOG     ✓ Compiled in 136ms
+[00:54:35.780] Server  LOG     ✓ Compiled in 111ms
+[00:54:57.540] Server  LOG     ✓ Compiled in 100ms
+[00:54:57.648] Browser ERROR   ./app/(dashboard)/dashboard/contacts/TagsPanel.tsx:421:6
+Parsing ecmascript source code failed
+  419 |         )}
+  420 |       </AnimatePresence>
+> 421 |     </div>
+      |      ^^^^^
+  422 |   );
+  423 | }
+  424 |
+
+Unterminated regexp literal
+
+Import traces:
+  Client Component Browser:
+    ./app/(dashboard)/dashboard/contacts/TagsPanel.tsx [Client Component Browser]
+    ./app/(dashboard)/dashboard/contacts/ContactsClient.tsx [Client Component Browser]
+    ./app/(dashboard)/dashboard/contacts/ContactsClient.tsx [Server Component]
+    ./app/(dashboard)/dashboard/contacts/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./app/(dashboard)/dashboard/contacts/TagsPanel.tsx [Client Component SSR]
+    ./app/(dashboard)/dashboard/contacts/ContactsClient.tsx [Client Component SSR]
+    ./app/(dashboard)/dashboard/contacts/ContactsClient.tsx [Server Component]
+    ./app/(dashboard)/dashboard/contacts/page.tsx [Server Component]
+[00:54:58.074] Browser ERROR   ./app/(dashboard)/dashboard/contacts/TagsPanel.tsx:421:6
+Parsing ecmascript source code failed
+  419 |         )}
+  420 |       </AnimatePresence>
+> 421 |     </div>
+      |      ^^^^^
+  422 |   );
+  423 | }
+  424 |
+
+Unterminated regexp literal
+
+Import traces:
+  Client Component Browser:
+    ./app/(dashboard)/dashboard/contacts/TagsPanel.tsx [Client Component Browser]
+    ./app/(dashboard)/dashboard/contacts/ContactsClient.tsx [Client Component Browser]
+    ./app/(dashboard)/dashboard/contacts/ContactsClient.tsx [Server Component]
+    ./app/(dashboard)/dashboard/contacts/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./app/(dashboard)/dashboard/contacts/TagsPanel.tsx [Client Component SSR]
+    ./app/(dashboard)/dashboard/contacts/ContactsClient.tsx [Client Component SSR]
+    ./app/(dashboard)/dashboard/contacts/ContactsClient.tsx [Server Component]
+    ./app/(dashboard)/dashboard/contacts/page.tsx [Server Component]
+[00:55:20.257] Server  LOG     ✓ Compiled in 84ms
+[00:55:20.359] Browser ERROR   ./app/(dashboard)/dashboard/contacts/TagsPanel.tsx:418:10
+Parsing ecmascript source code failed
+  416 |               )}
+  417 |             </div>
+> 418 |         )}
+      |          ^
+  419 |       </AnimatePresence>
+  420 |     )
+  421 |   );
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import traces:
+  Client Component Browser:
+    ./app/(dashboard)/dashboard/contacts/TagsPanel.tsx [Client Component Browser]
+    ./app/(dashboard)/dashboard/contacts/ContactsClient.tsx [Client Component Browser]
+    ./app/(dashboard)/dashboard/contacts/ContactsClient.tsx [Server Component]
+    ./app/(dashboard)/dashboard/contacts/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./app/(dashboard)/dashboard/contacts/TagsPanel.tsx [Client Component SSR]
+    ./app/(dashboard)/dashboard/contacts/ContactsClient.tsx [Client Component SSR]
+    ./app/(dashboard)/dashboard/contacts/ContactsClient.tsx [Server Component]
+    ./app/(dashboard)/dashboard/contacts/page.tsx [Server Component]
+[00:55:21.073] Browser ERROR   ./app/(dashboard)/dashboard/contacts/TagsPanel.tsx:418:10
+Parsing ecmascript source code failed
+  416 |               )}
+  417 |             </div>
+> 418 |         )}
+      |          ^
+  419 |       </AnimatePresence>
+  420 |     )
+  421 |   );
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import traces:
+  Client Component Browser:
+    ./app/(dashboard)/dashboard/contacts/TagsPanel.tsx [Client Component Browser]
+    ./app/(dashboard)/dashboard/contacts/ContactsClient.tsx [Client Component Browser]
+    ./app/(dashboard)/dashboard/contacts/ContactsClient.tsx [Server Component]
+    ./app/(dashboard)/dashboard/contacts/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./app/(dashboard)/dashboard/contacts/TagsPanel.tsx [Client Component SSR]
+    ./app/(dashboard)/dashboard/contacts/ContactsClient.tsx [Client Component SSR]
+    ./app/(dashboard)/dashboard/contacts/ContactsClient.tsx [Server Component]
+    ./app/(dashboard)/dashboard/contacts/page.tsx [Server Component]
+[00:55:49.284] Server  LOG     ✓ Compiled in 96ms
+[00:55:49.386] Browser ERROR   ./app/(dashboard)/dashboard/contacts/TagsPanel.tsx:422:3
+Parsing ecmascript source code failed
+  420 |       </AnimatePresence>
+  421 |     )
+> 422 |   );
+      |   ^
+  423 |
+  424 |   return (
+  425 |     <div className="relative">
+
+Expression expected
+
+Import traces:
+  Client Component Browser:
+    ./app/(dashboard)/dashboard/contacts/TagsPanel.tsx [Client Component Browser]
+    ./app/(dashboard)/dashboard/contacts/ContactsClient.tsx [Client Component Browser]
+    ./app/(dashboard)/dashboard/contacts/ContactsClient.tsx [Server Component]
+    ./app/(dashboard)/dashboard/contacts/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./app/(dashboard)/dashboard/contacts/TagsPanel.tsx [Client Component SSR]
+    ./app/(dashboard)/dashboard/contacts/ContactsClient.tsx [Client Component SSR]
+    ./app/(dashboard)/dashboard/contacts/ContactsClient.tsx [Server Component]
+    ./app/(dashboard)/dashboard/contacts/page.tsx [Server Component]
+[00:55:50.074] Browser ERROR   ./app/(dashboard)/dashboard/contacts/TagsPanel.tsx:422:3
+Parsing ecmascript source code failed
+  420 |       </AnimatePresence>
+  421 |     )
+> 422 |   );
+      |   ^
+  423 |
+  424 |   return (
+  425 |     <div className="relative">
+
+Expression expected
+
+Import traces:
+  Client Component Browser:
+    ./app/(dashboard)/dashboard/contacts/TagsPanel.tsx [Client Component Browser]
+    ./app/(dashboard)/dashboard/contacts/ContactsClient.tsx [Client Component Browser]
+    ./app/(dashboard)/dashboard/contacts/ContactsClient.tsx [Server Component]
+    ./app/(dashboard)/dashboard/contacts/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./app/(dashboard)/dashboard/contacts/TagsPanel.tsx [Client Component SSR]
+    ./app/(dashboard)/dashboard/contacts/ContactsClient.tsx [Client Component SSR]
+    ./app/(dashboard)/dashboard/contacts/ContactsClient.tsx [Server Component]
+    ./app/(dashboard)/dashboard/contacts/page.tsx [Server Component]
+[00:57:26.535] Server  LOG     ✓ Compiled in 135ms
+[01:06:55.702] Server  LOG     ✓ Compiled in 132ms
+[01:07:02.427] Server  LOG     ✓ Compiled in 77ms
+[01:07:20.591] Server  LOG     ✓ Compiled in 91ms
+[01:07:30.042] Server  LOG     ✓ Compiled in 152ms
+[01:25:55.723] Server  LOG     ✓ Compiled in 156ms
+[01:26:23.702] Server  LOG     ✓ Compiled in 164ms

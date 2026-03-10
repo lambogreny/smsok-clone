@@ -1,0 +1,95 @@
+{
+  "node": {
+    "008f729691ced488406cb11eb9f1b5d29439616cb6": {
+      "workers": {
+        "app/(dashboard)/dashboard/senders/page": {
+          "moduleId": "[project]/.next-internal/server/app/(dashboard)/dashboard/senders/page/actions.js { ACTIONS_MODULE0 => \"[project]/lib/actions.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/lib/actions/sender-names.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "logout",
+          "filename": "lib/actions.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/senders/page": "action-browser"
+      },
+      "exportedName": "logout",
+      "filename": "lib/actions.ts"
+    },
+    "007e6974923bd822a8c9c729fb3827a91cb043d48a": {
+      "workers": {
+        "app/(dashboard)/dashboard/senders/page": {
+          "moduleId": "[project]/.next-internal/server/app/(dashboard)/dashboard/senders/page/actions.js { ACTIONS_MODULE0 => \"[project]/lib/actions.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/lib/actions/sender-names.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "adminGetPendingSenderNames",
+          "filename": "lib/actions/sender-names.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/senders/page": "rsc"
+      },
+      "exportedName": "adminGetPendingSenderNames",
+      "filename": "lib/actions/sender-names.ts"
+    },
+    "40224d06e8b1c571d99047814be13c15f4e9605d65": {
+      "workers": {
+        "app/(dashboard)/dashboard/senders/page": {
+          "moduleId": "[project]/.next-internal/server/app/(dashboard)/dashboard/senders/page/actions.js { ACTIONS_MODULE0 => \"[project]/lib/actions.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/lib/actions/sender-names.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "getApprovedSenderNames",
+          "filename": "lib/actions/sender-names.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/senders/page": "rsc"
+      },
+      "exportedName": "getApprovedSenderNames",
+      "filename": "lib/actions/sender-names.ts"
+    },
+    "4053c41ed021a06533d5fd947e25f4ddbbd1f0420f": {
+      "workers": {
+        "app/(dashboard)/dashboard/senders/page": {
+          "moduleId": "[project]/.next-internal/server/app/(dashboard)/dashboard/senders/page/actions.js { ACTIONS_MODULE0 => \"[project]/lib/actions.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/lib/actions/sender-names.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "getSenderNames",
+          "filename": "lib/actions/sender-names.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/senders/page": "rsc"
+      },
+      "exportedName": "getSenderNames",
+      "filename": "lib/actions/sender-names.ts"
+    },
+    "6026104c23161b6d17e56a057706fbaa0d87be0e86": {
+      "workers": {
+        "app/(dashboard)/dashboard/senders/page": {
+          "moduleId": "[project]/.next-internal/server/app/(dashboard)/dashboard/senders/page/actions.js { ACTIONS_MODULE0 => \"[project]/lib/actions.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/lib/actions/sender-names.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "requestSenderName",
+          "filename": "lib/actions/sender-names.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/senders/page": "action-browser"
+      },
+      "exportedName": "requestSenderName",
+      "filename": "lib/actions/sender-names.ts"
+    },
+    "60fe7577099a2c6dd42a03a56bede32656688b283a": {
+      "workers": {
+        "app/(dashboard)/dashboard/senders/page": {
+          "moduleId": "[project]/.next-internal/server/app/(dashboard)/dashboard/senders/page/actions.js { ACTIONS_MODULE0 => \"[project]/lib/actions.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/lib/actions/sender-names.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "adminApproveSenderName",
+          "filename": "lib/actions/sender-names.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/senders/page": "rsc"
+      },
+      "exportedName": "adminApproveSenderName",
+      "filename": "lib/actions/sender-names.ts"
+    }
+  },
+  "edge": {}
+}

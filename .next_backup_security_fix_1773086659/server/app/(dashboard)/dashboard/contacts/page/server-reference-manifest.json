@@ -1,0 +1,260 @@
+{
+  "node": {
+    "007c003ace4567ffac0111cc306486888c8c70ec15": {
+      "workers": {
+        "app/(dashboard)/dashboard/contacts/page": {
+          "moduleId": 9332,
+          "async": false,
+          "exportedName": "logout",
+          "filename": "lib/actions.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/contacts/page": "action-browser"
+      },
+      "exportedName": "logout",
+      "filename": "lib/actions.ts"
+    },
+    "4012e355e0e99542fd46ef96112921d5ceb53ec75d": {
+      "workers": {
+        "app/(dashboard)/dashboard/contacts/page": {
+          "moduleId": 9332,
+          "async": false,
+          "exportedName": "getContactGroups",
+          "filename": "lib/actions/contacts.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/contacts/page": "rsc"
+      },
+      "exportedName": "getContactGroups",
+      "filename": "lib/actions/contacts.ts"
+    },
+    "409b15cc476362df81a8a0061e6c4c0fe0bf200826": {
+      "workers": {
+        "app/(dashboard)/dashboard/contacts/page": {
+          "moduleId": 9332,
+          "async": false,
+          "exportedName": "exportContacts",
+          "filename": "lib/actions/contacts.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/contacts/page": "action-browser"
+      },
+      "exportedName": "exportContacts",
+      "filename": "lib/actions/contacts.ts"
+    },
+    "603bf04d37e3d1faea5a560d483146b0e56deddf61": {
+      "workers": {
+        "app/(dashboard)/dashboard/contacts/page": {
+          "moduleId": 9332,
+          "async": false,
+          "exportedName": "getContactsByGroup",
+          "filename": "lib/actions/contacts.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/contacts/page": "rsc"
+      },
+      "exportedName": "getContactsByGroup",
+      "filename": "lib/actions/contacts.ts"
+    },
+    "6047279e16f27d2460a32222f113f7495c594f5b3d": {
+      "workers": {
+        "app/(dashboard)/dashboard/contacts/page": {
+          "moduleId": 9332,
+          "async": false,
+          "exportedName": "getContacts",
+          "filename": "lib/actions/contacts.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/contacts/page": "rsc"
+      },
+      "exportedName": "getContacts",
+      "filename": "lib/actions/contacts.ts"
+    },
+    "608e6c57e1d61df198bbe510ac3f6ba77694181d54": {
+      "workers": {
+        "app/(dashboard)/dashboard/contacts/page": {
+          "moduleId": 9332,
+          "async": false,
+          "exportedName": "importContacts",
+          "filename": "lib/actions/contacts.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/contacts/page": "action-browser"
+      },
+      "exportedName": "importContacts",
+      "filename": "lib/actions/contacts.ts"
+    },
+    "609e682c8ff8a7afc3dbf3605b38a9746eac485675": {
+      "workers": {
+        "app/(dashboard)/dashboard/contacts/page": {
+          "moduleId": 9332,
+          "async": false,
+          "exportedName": "deleteContact",
+          "filename": "lib/actions/contacts.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/contacts/page": "action-browser"
+      },
+      "exportedName": "deleteContact",
+      "filename": "lib/actions/contacts.ts"
+    },
+    "60b9d1a24f52c0a094e2996aef68e730f3c4614ca2": {
+      "workers": {
+        "app/(dashboard)/dashboard/contacts/page": {
+          "moduleId": 9332,
+          "async": false,
+          "exportedName": "createContact",
+          "filename": "lib/actions/contacts.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/contacts/page": "action-browser"
+      },
+      "exportedName": "createContact",
+      "filename": "lib/actions/contacts.ts"
+    },
+    "60bf85d07c0d3d030f2a89a8ab107552be6af3b59a": {
+      "workers": {
+        "app/(dashboard)/dashboard/contacts/page": {
+          "moduleId": 9332,
+          "async": false,
+          "exportedName": "createContactGroup",
+          "filename": "lib/actions/contacts.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/contacts/page": "rsc"
+      },
+      "exportedName": "createContactGroup",
+      "filename": "lib/actions/contacts.ts"
+    },
+    "70002a043b2ccfcf5ab0787ade227290a94ad837dc": {
+      "workers": {
+        "app/(dashboard)/dashboard/contacts/page": {
+          "moduleId": 9332,
+          "async": false,
+          "exportedName": "updateContact",
+          "filename": "lib/actions/contacts.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/contacts/page": "action-browser"
+      },
+      "exportedName": "updateContact",
+      "filename": "lib/actions/contacts.ts"
+    },
+    "70112f0afa23ee73a8b425e9a0a89d8e2d53a1bf0b": {
+      "workers": {
+        "app/(dashboard)/dashboard/contacts/page": {
+          "moduleId": 9332,
+          "async": false,
+          "exportedName": "addContactsToGroup",
+          "filename": "lib/actions/contacts.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/contacts/page": "rsc"
+      },
+      "exportedName": "addContactsToGroup",
+      "filename": "lib/actions/contacts.ts"
+    },
+    "409d313929a85e9b61e5f38cde520a720e4748d0d6": {
+      "workers": {
+        "app/(dashboard)/dashboard/contacts/page": {
+          "moduleId": 9332,
+          "async": false,
+          "exportedName": "getTags",
+          "filename": "lib/actions/tags.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/contacts/page": "rsc"
+      },
+      "exportedName": "getTags",
+      "filename": "lib/actions/tags.ts"
+    },
+    "6062a63dd8150ee99efac3bf51b9c0de45222f8eca": {
+      "workers": {
+        "app/(dashboard)/dashboard/contacts/page": {
+          "moduleId": 9332,
+          "async": false,
+          "exportedName": "deleteTag",
+          "filename": "lib/actions/tags.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/contacts/page": "action-browser"
+      },
+      "exportedName": "deleteTag",
+      "filename": "lib/actions/tags.ts"
+    },
+    "60e833aab4ff65eecf8718a315b477d826792a974d": {
+      "workers": {
+        "app/(dashboard)/dashboard/contacts/page": {
+          "moduleId": 9332,
+          "async": false,
+          "exportedName": "createTag",
+          "filename": "lib/actions/tags.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/contacts/page": "action-browser"
+      },
+      "exportedName": "createTag",
+      "filename": "lib/actions/tags.ts"
+    },
+    "70337c412196fd51c04f2fb0ae47726a344a95d8f2": {
+      "workers": {
+        "app/(dashboard)/dashboard/contacts/page": {
+          "moduleId": 9332,
+          "async": false,
+          "exportedName": "assignTagToContact",
+          "filename": "lib/actions/tags.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/contacts/page": "rsc"
+      },
+      "exportedName": "assignTagToContact",
+      "filename": "lib/actions/tags.ts"
+    },
+    "7070cb788445236987779bc2270d0edbd04d60a22b": {
+      "workers": {
+        "app/(dashboard)/dashboard/contacts/page": {
+          "moduleId": 9332,
+          "async": false,
+          "exportedName": "unassignTagFromContact",
+          "filename": "lib/actions/tags.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/contacts/page": "rsc"
+      },
+      "exportedName": "unassignTagFromContact",
+      "filename": "lib/actions/tags.ts"
+    },
+    "70fc28bce96416c3a5959f7756bbe185e35ceba871": {
+      "workers": {
+        "app/(dashboard)/dashboard/contacts/page": {
+          "moduleId": 9332,
+          "async": false,
+          "exportedName": "updateTag",
+          "filename": "lib/actions/tags.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/contacts/page": "action-browser"
+      },
+      "exportedName": "updateTag",
+      "filename": "lib/actions/tags.ts"
+    }
+  },
+  "edge": {}
+}

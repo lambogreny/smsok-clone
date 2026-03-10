@@ -1,0 +1,50 @@
+{
+  "node": {
+    "4065b812df146f74037dff109e1f50ca76b6a5ed15": {
+      "workers": {
+        "app/(auth)/register/page": {
+          "moduleId": 24607,
+          "async": false,
+          "exportedName": "generateOtpForRegister",
+          "filename": "lib/actions/otp.ts"
+        }
+      },
+      "layer": {
+        "app/(auth)/register/page": "action-browser"
+      },
+      "exportedName": "generateOtpForRegister",
+      "filename": "lib/actions/otp.ts"
+    },
+    "60c84bb656361412d58f22e829cafd405d8c9116bb": {
+      "workers": {
+        "app/(auth)/register/page": {
+          "moduleId": 24607,
+          "async": false,
+          "exportedName": "verifyOtpForRegister",
+          "filename": "lib/actions/otp.ts"
+        }
+      },
+      "layer": {
+        "app/(auth)/register/page": "action-browser"
+      },
+      "exportedName": "verifyOtpForRegister",
+      "filename": "lib/actions/otp.ts"
+    },
+    "4024b0dfa1ac4f38219ac0f4f80d75a69c11ffa6af": {
+      "workers": {
+        "app/(auth)/register/page": {
+          "moduleId": 24607,
+          "async": false,
+          "exportedName": "registerWithOtp",
+          "filename": "lib/actions.ts"
+        }
+      },
+      "layer": {
+        "app/(auth)/register/page": "action-browser"
+      },
+      "exportedName": "registerWithOtp",
+      "filename": "lib/actions.ts"
+    }
+  },
+  "edge": {}
+}

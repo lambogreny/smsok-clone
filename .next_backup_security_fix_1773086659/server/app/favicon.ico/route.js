@@ -1,0 +1,10 @@
+var R=require("../../chunks/[turbopack]_runtime.js")("server/app/favicon.ico/route.js")
+R.c("server/chunks/[root-of-the-server]__d21d06e2._.js")
+R.c("server/chunks/node_modules_next_dist_433b860d._.js")
+R.c("server/chunks/node_modules_next_c5729131._.js")
+R.c("server/chunks/node_modules_next_dist_esm_build_templates_app-route_d6a474cc.js")
+R.c("server/chunks/[root-of-the-server]__8f5ebbc3._.js")
+R.c("server/chunks/node_modules_next_dist_23a07070._.js")
+R.c("server/chunks/_next-internal_server_app_favicon_ico_route_actions_353150a5.js")
+R.m(17951)
+module.exports=R.m(17951).exports

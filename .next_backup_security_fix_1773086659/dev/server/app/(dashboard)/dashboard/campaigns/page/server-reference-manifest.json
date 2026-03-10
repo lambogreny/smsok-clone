@@ -1,0 +1,50 @@
+{
+  "node": {
+    "008f729691ced488406cb11eb9f1b5d29439616cb6": {
+      "workers": {
+        "app/(dashboard)/dashboard/campaigns/page": {
+          "moduleId": "[project]/.next-internal/server/app/(dashboard)/dashboard/campaigns/page/actions.js { ACTIONS_MODULE0 => \"[project]/lib/actions.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/lib/actions/campaigns.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "logout",
+          "filename": "lib/actions.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/campaigns/page": "action-browser"
+      },
+      "exportedName": "logout",
+      "filename": "lib/actions.ts"
+    },
+    "601849ad3344897a2010c5899575bfc4b67b9a591a": {
+      "workers": {
+        "app/(dashboard)/dashboard/campaigns/page": {
+          "moduleId": "[project]/.next-internal/server/app/(dashboard)/dashboard/campaigns/page/actions.js { ACTIONS_MODULE0 => \"[project]/lib/actions.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/lib/actions/campaigns.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "getCampaigns",
+          "filename": "lib/actions/campaigns.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/campaigns/page": "rsc"
+      },
+      "exportedName": "getCampaigns",
+      "filename": "lib/actions/campaigns.ts"
+    },
+    "60dc009bea67060c66087e175546cfa898b79d0d5a": {
+      "workers": {
+        "app/(dashboard)/dashboard/campaigns/page": {
+          "moduleId": "[project]/.next-internal/server/app/(dashboard)/dashboard/campaigns/page/actions.js { ACTIONS_MODULE0 => \"[project]/lib/actions.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/lib/actions/campaigns.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "createCampaign",
+          "filename": "lib/actions/campaigns.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/campaigns/page": "action-browser"
+      },
+      "exportedName": "createCampaign",
+      "filename": "lib/actions/campaigns.ts"
+    }
+  },
+  "edge": {}
+}

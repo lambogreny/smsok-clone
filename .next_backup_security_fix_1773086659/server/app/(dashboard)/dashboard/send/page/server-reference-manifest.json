@@ -1,0 +1,125 @@
+{
+  "node": {
+    "007c003ace4567ffac0111cc306486888c8c70ec15": {
+      "workers": {
+        "app/(dashboard)/dashboard/send/page": {
+          "moduleId": 23518,
+          "async": false,
+          "exportedName": "logout",
+          "filename": "lib/actions.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/send/page": "action-browser"
+      },
+      "exportedName": "logout",
+      "filename": "lib/actions.ts"
+    },
+    "00cf7638a9152904ca580d2bc17abc43a4ab09af7e": {
+      "workers": {
+        "app/(dashboard)/dashboard/send/page": {
+          "moduleId": 23518,
+          "async": false,
+          "exportedName": "adminGetPendingSenderNames",
+          "filename": "lib/actions/sender-names.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/send/page": "rsc"
+      },
+      "exportedName": "adminGetPendingSenderNames",
+      "filename": "lib/actions/sender-names.ts"
+    },
+    "4079adbae78cf57184c623d958a0c4ffe5afb5b18f": {
+      "workers": {
+        "app/(dashboard)/dashboard/send/page": {
+          "moduleId": 23518,
+          "async": false,
+          "exportedName": "getApprovedSenderNames",
+          "filename": "lib/actions/sender-names.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/send/page": "rsc"
+      },
+      "exportedName": "getApprovedSenderNames",
+      "filename": "lib/actions/sender-names.ts"
+    },
+    "40fc42ed1fd9495f03ecfd17f97e92f47a24513e9d": {
+      "workers": {
+        "app/(dashboard)/dashboard/send/page": {
+          "moduleId": 23518,
+          "async": false,
+          "exportedName": "getSenderNames",
+          "filename": "lib/actions/sender-names.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/send/page": "rsc"
+      },
+      "exportedName": "getSenderNames",
+      "filename": "lib/actions/sender-names.ts"
+    },
+    "603985271062856158979666c73046e50b30ae19ac": {
+      "workers": {
+        "app/(dashboard)/dashboard/send/page": {
+          "moduleId": 23518,
+          "async": false,
+          "exportedName": "adminApproveSenderName",
+          "filename": "lib/actions/sender-names.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/send/page": "rsc"
+      },
+      "exportedName": "adminApproveSenderName",
+      "filename": "lib/actions/sender-names.ts"
+    },
+    "609da2ff8094d1202657814842d89040ff447d461c": {
+      "workers": {
+        "app/(dashboard)/dashboard/send/page": {
+          "moduleId": 23518,
+          "async": false,
+          "exportedName": "requestSenderName",
+          "filename": "lib/actions/sender-names.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/send/page": "rsc"
+      },
+      "exportedName": "requestSenderName",
+      "filename": "lib/actions/sender-names.ts"
+    },
+    "6054ab64e335af234f15ef0599144638ae60de7db2": {
+      "workers": {
+        "app/(dashboard)/dashboard/send/page": {
+          "moduleId": 23518,
+          "async": false,
+          "exportedName": "sendSms",
+          "filename": "lib/actions/sms.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/send/page": "action-browser"
+      },
+      "exportedName": "sendSms",
+      "filename": "lib/actions/sms.ts"
+    },
+    "606a8e71ec4ed79af8e91186669a04dc201f836225": {
+      "workers": {
+        "app/(dashboard)/dashboard/send/page": {
+          "moduleId": 23518,
+          "async": false,
+          "exportedName": "sendBatchSms",
+          "filename": "lib/actions/sms.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/send/page": "action-browser"
+      },
+      "exportedName": "sendBatchSms",
+      "filename": "lib/actions/sms.ts"
+    }
+  },
+  "edge": {}
+}

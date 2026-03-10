@@ -1,0 +1,95 @@
+{
+  "node": {
+    "007c003ace4567ffac0111cc306486888c8c70ec15": {
+      "workers": {
+        "app/(dashboard)/dashboard/messages/page": {
+          "moduleId": 85486,
+          "async": false,
+          "exportedName": "logout",
+          "filename": "lib/actions.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/messages/page": "action-browser"
+      },
+      "exportedName": "logout",
+      "filename": "lib/actions.ts"
+    },
+    "40b9b0ce7ce6d56a87c36f50af0c4e3574ebcc9d51": {
+      "workers": {
+        "app/(dashboard)/dashboard/messages/page": {
+          "moduleId": 85486,
+          "async": false,
+          "exportedName": "getDashboardStats",
+          "filename": "lib/actions/sms.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/messages/page": "rsc"
+      },
+      "exportedName": "getDashboardStats",
+      "filename": "lib/actions/sms.ts"
+    },
+    "6004d2549edf454bf74e237e74a5b2e795ced5b2fc": {
+      "workers": {
+        "app/(dashboard)/dashboard/messages/page": {
+          "moduleId": 85486,
+          "async": false,
+          "exportedName": "getMessageStatus",
+          "filename": "lib/actions/sms.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/messages/page": "rsc"
+      },
+      "exportedName": "getMessageStatus",
+      "filename": "lib/actions/sms.ts"
+    },
+    "6054ab64e335af234f15ef0599144638ae60de7db2": {
+      "workers": {
+        "app/(dashboard)/dashboard/messages/page": {
+          "moduleId": 85486,
+          "async": false,
+          "exportedName": "sendSms",
+          "filename": "lib/actions/sms.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/messages/page": "rsc"
+      },
+      "exportedName": "sendSms",
+      "filename": "lib/actions/sms.ts"
+    },
+    "606a8e71ec4ed79af8e91186669a04dc201f836225": {
+      "workers": {
+        "app/(dashboard)/dashboard/messages/page": {
+          "moduleId": 85486,
+          "async": false,
+          "exportedName": "sendBatchSms",
+          "filename": "lib/actions/sms.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/messages/page": "rsc"
+      },
+      "exportedName": "sendBatchSms",
+      "filename": "lib/actions/sms.ts"
+    },
+    "60f4e761c96c9f4b25f608d37011cf7909d5e66f4c": {
+      "workers": {
+        "app/(dashboard)/dashboard/messages/page": {
+          "moduleId": 85486,
+          "async": false,
+          "exportedName": "getMessages",
+          "filename": "lib/actions/sms.ts"
+        }
+      },
+      "layer": {
+        "app/(dashboard)/dashboard/messages/page": "rsc"
+      },
+      "exportedName": "getMessages",
+      "filename": "lib/actions/sms.ts"
+    }
+  },
+  "edge": {}
+}
