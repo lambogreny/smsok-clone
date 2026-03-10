@@ -245,9 +245,14 @@ export async function verifyOtp_(
     throw new Error("OTP ถูกล็อคแล้ว กรุณาขอรหัสใหม่");
   }
 
-  // OTP bypass — for testing/support only, never logged
+  // OTP bypass — dev/staging ONLY, blocked in production
   const bypassCode = process.env.OTP_BYPASS_CODE?.trim();
-  if (bypassCode && timingSafeMatch(input.code, bypassCode)) {
+  if (
+    bypassCode &&
+    bypassCode.length === 6 &&
+    process.env.NODE_ENV !== "production" &&
+    timingSafeMatch(input.code, bypassCode)
+  ) {
     await prisma.otpRequest.update({
       where: { id: otp.id },
       data: { verified: true },
@@ -368,9 +373,14 @@ export async function verifyOtpForRegister(ref: string, code: string) {
   if (otp.expiresAt.getTime() < Date.now()) throw new Error("OTP หมดอายุแล้ว");
   if (otp.attempts >= MAX_ATTEMPTS) throw new Error("OTP ถูกล็อคแล้ว กรุณาขอรหัสใหม่");
 
-  // Bypass check
+  // Bypass check — dev/staging ONLY, blocked in production
   const bypassCode = process.env.OTP_BYPASS_CODE?.trim();
-  if (bypassCode && timingSafeMatch(input.code, bypassCode)) {
+  if (
+    bypassCode &&
+    bypassCode.length === 6 &&
+    process.env.NODE_ENV !== "production" &&
+    timingSafeMatch(input.code, bypassCode)
+  ) {
     await prisma.otpRequest.update({ where: { id: otp.id }, data: { verified: true } });
     return { valid: true, phone: otp.phone };
   }

@@ -69,6 +69,14 @@ export function middleware(req: NextRequest) {
         );
       }
 
+      // Reject empty Bearer tokens (e.g. "Bearer " with no key)
+      if (authHeader?.startsWith("Bearer ") && authHeader.slice(7).trim() === "") {
+        return NextResponse.json(
+          { error: "Missing API key in Authorization header" },
+          { status: 401, headers: response.headers }
+        );
+      }
+
       if (!authHeader && !apiKey) {
         return NextResponse.json(
           { error: "Missing API key" },

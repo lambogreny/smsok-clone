@@ -8,55 +8,48 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  phone         String  @default("")
-  name          String
-  password      String
-  credits             Int       @default(15)
-  role                String    @default("user")
-  emailVerified       Boolean   @default(false)
-  phoneVerified       Boolean   @default(false) @map("phone_verified")
-  mustChangePassword    Boolean   @default(false) @map("must_change_password")
-  notificationsReadAt   DateTime? @map("notifications_read_at")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
-
-  senderNames      SenderName[]
-  contacts         Contact[]
-  contactGroups    ContactGroup[]
-  tags             Tag[]
-  messages         Message[]
-  transactions     Transaction[]
-  apiKeys          ApiKey[]
-  messageTemplates MessageTemplate[]
-  otpRequests         OtpRequest[]
-  campaigns           Campaign[]
-  scheduledSms        ScheduledSms[]
-  creditTransactions  CreditTransaction[]
+  id                  String              @id @default(cuid())
+  email               String              @unique
+  phone               String              @default("")
+  name                String
+  password            String
+  credits             Int                 @default(15)
+  role                String              @default("user")
+  emailVerified       Boolean             @default(false)
+  createdAt           DateTime            @default(now()) @map("created_at")
+  updatedAt           DateTime            @updatedAt @map("updated_at")
+  mustChangePassword  Boolean             @default(false) @map("must_change_password")
+  phoneVerified       Boolean             @default(false) @map("phone_verified")
+  notificationsReadAt DateTime?           @map("notifications_read_at")
+  acceptedTermsAt     DateTime?           @map("accepted_terms_at")
+  apiKeys             ApiKey[]
   apiLogs             ApiLog[]
+  autoTopup           AutoTopup?
+  billingInfo         BillingInfo?
+  campaigns           Campaign[]
+  contactGroups       ContactGroup[]
+  contacts            Contact[]
+  creditTransactions  CreditTransaction[]
+  invoices            Invoice[]
+  messageTemplates    MessageTemplate[]
+  messages            Message[]
+  otpRequests         OtpRequest[]
+  scheduledSms        ScheduledSms[]
+  senderNames         SenderName[]
+  tags                Tag[]
+  taxDocuments        TaxDocument[]
+  termsAcceptances    TermsAcceptance[]
+  transactions        Transaction[]
+  twoFactorAuth       TwoFactorAuth?
+  webhooks            Webhook[]
+  whtCertificates     WhtCertificate[]
 
   @@map("users")
-}
-
-enum MessageType {
-  SMS
-  OTP
-}
-
-enum Channel {
-  WEB
-  API
 }
 
 model Message {
   id          String      @id @default(cuid())
   userId      String      @map("user_id")
-  user        User        @relation(fields: [userId], references: [id])
-  campaignId  String?     @map("campaign_id")
-  campaign    Campaign?   @relation(fields: [campaignId], references: [id], onDelete: SetNull)
-  type        MessageType @default(SMS)
-  channel     Channel     @default(WEB)
   senderName  String      @map("sender_name")
   recipient   String
   content     String
@@ -64,9 +57,14 @@ model Message {
   creditCost  Int         @default(1) @map("credit_cost")
   sentAt      DateTime?   @map("sent_at")
   deliveredAt DateTime?   @map("delivered_at")
-  gatewayId   String?     @map("gateway_id")
   errorCode   String?     @map("error_code")
   createdAt   DateTime    @default(now()) @map("created_at")
+  gatewayId   String?     @map("gateway_id")
+  campaignId  String?     @map("campaign_id")
+  channel     Channel     @default(WEB)
+  type        MessageType @default(SMS)
+  campaign    Campaign?   @relation(fields: [campaignId], references: [id])
+  user        User        @relation(fields: [userId], references: [id])
 
   @@index([userId, createdAt])
   @@index([status])
@@ -78,13 +76,12 @@ model Message {
 model ApiKey {
   id        String    @id @default(cuid())
   userId    String    @map("user_id")
-  user      User      @relation(fields: [userId], references: [id])
   name      String
   key       String    @unique
   isActive  Boolean   @default(true) @map("is_active")
   lastUsed  DateTime? @map("last_used")
   createdAt DateTime  @default(now()) @map("created_at")
-
+  user      User      @relation(fields: [userId], references: [id])
   apiLogs   ApiLog[]
 
   @@index([key])
@@ -92,17 +89,16 @@ model ApiKey {
 }
 
 model Contact {
-  id        String   @id @default(cuid())
-  userId    String   @map("user_id")
-  user      User     @relation(fields: [userId], references: [id])
-  name      String
-  phone     String
-  email     String?
-  tags      String?
-  createdAt DateTime @default(now()) @map("created_at")
-
-  groups    ContactGroupMember[]
+  id          String               @id @default(cuid())
+  userId      String               @map("user_id")
+  name        String
+  phone       String
+  email       String?
+  tags        String?
+  createdAt   DateTime             @default(now()) @map("created_at")
+  groups      ContactGroupMember[]
   contactTags ContactTag[]
+  user        User                 @relation(fields: [userId], references: [id])
 
   @@unique([userId, phone])
   @@index([userId])
@@ -110,14 +106,13 @@ model Contact {
 }
 
 model Tag {
-  id        String      @id @default(cuid())
-  userId    String      @map("user_id")
-  user      User        @relation(fields: [userId], references: [id])
-  name      String
-  color     String      @default("#94A3B8")
-  createdAt DateTime    @default(now()) @map("created_at")
-
+  id          String       @id @default(cuid())
+  userId      String       @map("user_id")
+  name        String
+  color       String       @default("#94A3B8")
+  createdAt   DateTime     @default(now()) @map("created_at")
   contactTags ContactTag[]
+  user        User         @relation(fields: [userId], references: [id])
 
   @@unique([userId, name])
   @@index([userId])
@@ -125,11 +120,11 @@ model Tag {
 }
 
 model ContactTag {
-  id        String   @id @default(cuid())
-  contactId String   @map("contact_id")
-  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  tagId     String   @map("tag_id")
-  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  contactId String  @map("contact_id")
+  tagId     String  @map("tag_id")
+  contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@unique([contactId, tagId])
   @@index([tagId])
@@ -137,14 +132,13 @@ model ContactTag {
 }
 
 model ContactGroup {
-  id        String   @id @default(cuid())
-  userId    String   @map("user_id")
-  user      User     @relation(fields: [userId], references: [id])
+  id        String               @id @default(cuid())
+  userId    String               @map("user_id")
   name      String
-  createdAt DateTime @default(now()) @map("created_at")
-
-  members   ContactGroupMember[]
+  createdAt DateTime             @default(now()) @map("created_at")
   campaigns Campaign[]
+  members   ContactGroupMember[]
+  user      User                 @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@map("contact_groups")
@@ -153,9 +147,9 @@ model ContactGroup {
 model ContactGroupMember {
   id        String       @id @default(cuid())
   groupId   String       @map("group_id")
-  group     ContactGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
   contactId String       @map("contact_id")
   contact   Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  group     ContactGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   @@unique([groupId, contactId])
   @@map("contact_group_members")
@@ -164,13 +158,13 @@ model ContactGroupMember {
 model SenderName {
   id         String    @id @default(cuid())
   userId     String    @map("user_id")
-  user       User      @relation(fields: [userId], references: [id])
   name       String
   status     String    @default("pending")
   rejectNote String?   @map("reject_note")
   approvedAt DateTime? @map("approved_at")
   approvedBy String?   @map("approved_by")
   createdAt  DateTime  @default(now()) @map("created_at")
+  user       User      @relation(fields: [userId], references: [id])
 
   @@unique([userId, name])
   @@index([status])
@@ -178,31 +172,30 @@ model SenderName {
 }
 
 model Package {
-  id            String   @id @default(cuid())
-  name          String
-  price         Int
-  bonusPercent  Int      @default(0) @map("bonus_percent")
-  totalCredits  Int      @map("total_credits")
-  maxSenders    Int      @default(5) @map("max_senders")
-  durationDays  Int      @map("duration_days")
-  isActive      Boolean  @default(true) @map("is_active")
-  isBestSeller  Boolean  @default(false) @map("is_best_seller")
-  createdAt     DateTime @default(now()) @map("created_at")
+  id           String   @id @default(cuid())
+  name         String
+  price        Int
+  bonusPercent Int      @default(0) @map("bonus_percent")
+  totalCredits Int      @map("total_credits")
+  maxSenders   Int      @default(5) @map("max_senders")
+  durationDays Int      @map("duration_days")
+  isActive     Boolean  @default(true) @map("is_active")
+  isBestSeller Boolean  @default(false) @map("is_best_seller")
+  createdAt    DateTime @default(now()) @map("created_at")
 
   @@map("packages")
 }
 
 model MessageTemplate {
-  id        String   @id @default(cuid())
-  userId    String   @map("user_id")
-  user      User     @relation(fields: [userId], references: [id])
+  id        String     @id @default(cuid())
+  userId    String     @map("user_id")
   name      String
   content   String
-  category  String   @default("general")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
+  category  String     @default("general")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
   campaigns Campaign[]
+  user      User       @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@map("message_templates")
@@ -210,16 +203,16 @@ model MessageTemplate {
 
 model OtpRequest {
   id        String   @id @default(cuid())
-  userId    String?  @map("user_id")           // nullable for pre-registration OTP
-  user      User?    @relation(fields: [userId], references: [id])
-  refCode   String   @unique @map("ref_code")
+  userId    String?  @map("user_id")
   phone     String
-  code      String   // hashed OTP
-  purpose   String   @default("verify") // verify, login, transaction, register
+  code      String
+  purpose   String   @default("verify")
   attempts  Int      @default(0)
   verified  Boolean  @default(false)
   expiresAt DateTime @map("expires_at")
   createdAt DateTime @default(now()) @map("created_at")
+  refCode   String   @unique @map("ref_code")
+  user      User?    @relation(fields: [userId], references: [id])
 
   @@index([userId, phone, createdAt])
   @@index([phone, createdAt])
@@ -229,12 +222,9 @@ model OtpRequest {
 model Campaign {
   id              String           @id @default(cuid())
   userId          String           @map("user_id")
-  user            User             @relation(fields: [userId], references: [id])
   name            String
   contactGroupId  String?          @map("contact_group_id")
-  contactGroup    ContactGroup?    @relation(fields: [contactGroupId], references: [id], onDelete: SetNull)
   templateId      String?          @map("template_id")
-  template        MessageTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
   senderName      String?          @map("sender_name")
   status          String           @default("draft")
   scheduledAt     DateTime?        @map("scheduled_at")
@@ -247,7 +237,9 @@ model Campaign {
   startedAt       DateTime?        @map("started_at")
   completedAt     DateTime?        @map("completed_at")
   createdAt       DateTime         @default(now()) @map("created_at")
-
+  contactGroup    ContactGroup?    @relation(fields: [contactGroupId], references: [id])
+  template        MessageTemplate? @relation(fields: [templateId], references: [id])
+  user            User             @relation(fields: [userId], references: [id])
   messages        Message[]
 
   @@index([userId, status])
@@ -256,18 +248,18 @@ model Campaign {
 }
 
 model ScheduledSms {
-  id          String    @id @default(cuid())
-  userId      String    @map("user_id")
-  user        User      @relation(fields: [userId], references: [id])
-  senderName  String    @map("sender_name")
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  senderName  String   @map("sender_name")
   recipient   String
   content     String
-  scheduledAt DateTime  @map("scheduled_at")
-  status      String    @default("pending") // pending, sent, failed, cancelled
-  messageId   String?   @map("message_id")
-  errorCode   String?   @map("error_code")
-  creditCost  Int       @default(1) @map("credit_cost")
-  createdAt   DateTime  @default(now()) @map("created_at")
+  scheduledAt DateTime @map("scheduled_at")
+  status      String   @default("pending")
+  messageId   String?  @map("message_id")
+  errorCode   String?  @map("error_code")
+  creditCost  Int      @default(1) @map("credit_cost")
+  createdAt   DateTime @default(now()) @map("created_at")
+  user        User     @relation(fields: [userId], references: [id])
 
   @@index([userId, scheduledAt])
   @@index([status, scheduledAt])
@@ -277,13 +269,13 @@ model ScheduledSms {
 model CreditTransaction {
   id          String   @id @default(cuid())
   userId      String   @map("user_id")
-  user        User     @relation(fields: [userId], references: [id])
-  amount      Int      // positive = credit added, negative = deducted
-  balance     Int      // credits remaining after this transaction
-  type        String   // TOPUP | SMS_SEND | REFUND | BONUS | ADJUSTMENT
+  amount      Int
+  balance     Int
+  type        String
   description String
-  refId       String?  @map("ref_id") // transactionId or messageId
+  refId       String?  @map("ref_id")
   createdAt   DateTime @default(now()) @map("created_at")
+  user        User     @relation(fields: [userId], references: [id])
 
   @@index([userId, createdAt])
   @@index([type])
@@ -293,23 +285,23 @@ model CreditTransaction {
 model ApiLog {
   id         String   @id @default(cuid())
   userId     String?  @map("user_id")
-  user       User?    @relation(fields: [userId], references: [id])
+  method     String
+  url        String
+  reqHeaders String?  @map("req_headers")
+  reqBody    String?  @map("req_body")
+  resStatus  Int      @map("res_status")
+  resBody    String?  @map("res_body")
+  latencyMs  Int      @map("latency_ms")
+  errorCode  String?  @map("error_code")
+  errorMsg   String?  @map("error_msg")
+  createdAt  DateTime @default(now()) @map("created_at")
+  endpoint   String
+  ipAddress  String?  @map("ip_address")
+  stackTrace String?  @map("stack_trace")
+  source     String   @default("API")
   apiKeyId   String?  @map("api_key_id")
   apiKey     ApiKey?  @relation(fields: [apiKeyId], references: [id])
-  method     String   // GET, POST, PUT, DELETE
-  url        String   // Full URL with query params
-  endpoint   String   // Path only e.g. /api/v1/sms/send
-  reqHeaders String?  @map("req_headers")  // JSON — masked Authorization/API key
-  reqBody    String?  @map("req_body")     // JSON
-  resStatus  Int      @map("res_status")   // 200, 400, 401, 500
-  resBody    String?  @map("res_body")     // JSON
-  latencyMs  Int      @map("latency_ms")   // response time ms
-  ipAddress  String?  @map("ip_address")   // caller IP
-  source     String   @default("API")      // WEB or API
-  errorCode  String?  @map("error_code")   // 1001, 2004, 3001 etc
-  errorMsg   String?  @map("error_msg")    // generic error message
-  stackTrace String?  @map("stack_trace")  // INTERNAL ONLY — never sent to client
-  createdAt  DateTime @default(now()) @map("created_at")
+  user       User?    @relation(fields: [userId], references: [id])
 
   @@index([userId, createdAt])
   @@index([apiKeyId])
@@ -320,22 +312,260 @@ model ApiLog {
 }
 
 model Transaction {
-  id          String    @id @default(cuid())
-  userId      String    @map("user_id")
-  user        User      @relation(fields: [userId], references: [id])
-  packageId   String?   @map("package_id")
-  amount      Int
-  credits     Int
-  method      String
-  status      String    @default("pending")
-  slipUrl     String?   @map("slip_url")
-  reference   String?
-  verifiedAt  DateTime? @map("verified_at")
-  verifiedBy  String?   @map("verified_by")
-  expiresAt   DateTime  @map("expires_at")
-  createdAt   DateTime  @default(now()) @map("created_at")
+  id                  String           @id @default(cuid())
+  userId              String           @map("user_id")
+  packageId           String?          @map("package_id")
+  amount              Int
+  credits             Int
+  method              String
+  status              String           @default("pending")
+  slipUrl             String?          @map("slip_url")
+  reference           String?
+  verifiedAt          DateTime?        @map("verified_at")
+  verifiedBy          String?          @map("verified_by")
+  expiresAt           DateTime         @map("expires_at")
+  createdAt           DateTime         @default(now()) @map("created_at")
+  billingInfoSnapshot Json?            @map("billing_info_snapshot")
+  taxDocuments        TaxDocument[]
+  user                User             @relation(fields: [userId], references: [id])
+  whtCertificates     WhtCertificate[]
 
   @@index([userId, createdAt])
   @@index([status])
   @@map("transactions")
+}
+
+model TwoFactorAuth {
+  id            String   @id @default(cuid())
+  userId        String   @unique @map("user_id")
+  secret        String
+  recoveryCodes String[] @map("recovery_codes")
+  enabled       Boolean  @default(false)
+  createdAt     DateTime @default(now()) @map("created_at")
+  user          User     @relation(fields: [userId], references: [id])
+
+  @@map("two_factor_auth")
+}
+
+model Webhook {
+  id        String       @id @default(cuid())
+  userId    String       @map("user_id")
+  url       String
+  events    String[]
+  secret    String
+  active    Boolean      @default(true)
+  failCount Int          @default(0) @map("fail_count")
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+  logs      WebhookLog[]
+  user      User         @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("webhooks")
+}
+
+model WebhookLog {
+  id         String   @id @default(cuid())
+  webhookId  String   @map("webhook_id")
+  event      String
+  payload    Json
+  response   Json?
+  statusCode Int?     @map("status_code")
+  latency    Int?
+  success    Boolean
+  createdAt  DateTime @default(now()) @map("created_at")
+  webhook    Webhook  @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@index([webhookId, createdAt])
+  @@map("webhook_logs")
+}
+
+model TermsAcceptance {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  version    String
+  acceptedAt DateTime @default(now()) @map("accepted_at")
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, version])
+  @@map("terms_acceptances")
+}
+
+model Invoice {
+  id            String   @id @default(cuid())
+  userId        String   @map("user_id")
+  transactionId String?  @map("transaction_id")
+  invoiceNumber String   @unique @map("invoice_number")
+  items         Json
+  subtotal      Decimal  @db.Decimal(12, 2)
+  tax           Decimal  @db.Decimal(12, 2)
+  total         Decimal  @db.Decimal(12, 2)
+  pdfUrl        String?  @map("pdf_url")
+  createdAt     DateTime @default(now()) @map("created_at")
+  user          User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+  @@map("invoices")
+}
+
+model BillingInfo {
+  id            String      @id @default(cuid())
+  userId        String      @unique @map("user_id")
+  accountType   AccountType @map("account_type")
+  fullName      String?     @map("full_name")
+  citizenId     String?     @map("citizen_id")
+  companyName   String?     @map("company_name")
+  taxId         String?     @map("tax_id")
+  branchCode    String?     @default("00000") @map("branch_code")
+  branchName    String?     @map("branch_name")
+  contactPerson String?     @map("contact_person")
+  address       String
+  phone         String
+  email         String
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  user          User        @relation(fields: [userId], references: [id])
+
+  @@map("billing_info")
+}
+
+model TaxDocument {
+  id             String       @id @default(cuid())
+  userId         String       @map("user_id")
+  transactionId  String?      @map("transaction_id")
+  type           DocumentType
+  documentNumber String       @unique @map("document_number")
+  referenceDoc   String?      @map("reference_doc")
+  sellerName     String       @map("seller_name")
+  sellerTaxId    String       @map("seller_tax_id")
+  sellerBranch   String       @map("seller_branch")
+  sellerAddress  String       @map("seller_address")
+  buyerName      String       @map("buyer_name")
+  buyerTaxId     String?      @map("buyer_tax_id")
+  buyerBranch    String?      @map("buyer_branch")
+  buyerAddress   String       @map("buyer_address")
+  subtotal       Decimal      @db.Decimal(12, 2)
+  vatRate        Decimal      @default(7.00) @map("vat_rate") @db.Decimal(4, 2)
+  vatAmount      Decimal      @map("vat_amount") @db.Decimal(12, 2)
+  whtRate        Decimal?     @map("wht_rate") @db.Decimal(4, 2)
+  whtAmount      Decimal?     @map("wht_amount") @db.Decimal(12, 2)
+  totalAmount    Decimal      @map("total_amount") @db.Decimal(12, 2)
+  netPayable     Decimal      @map("net_payable") @db.Decimal(12, 2)
+  items          Json
+  amountInWords  String?      @map("amount_in_words")
+  status         DocStatus    @default(ISSUED)
+  voidedAt       DateTime?    @map("voided_at")
+  voidReason     String?      @map("void_reason")
+  pdfUrl         String?      @map("pdf_url")
+  pdfGeneratedAt DateTime?    @map("pdf_generated_at")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  transaction    Transaction? @relation(fields: [transactionId], references: [id])
+  user           User         @relation(fields: [userId], references: [id])
+
+  @@index([userId, type])
+  @@index([documentNumber])
+  @@index([createdAt])
+  @@map("tax_documents")
+}
+
+model WhtCertificate {
+  id            String       @id @default(cuid())
+  userId        String       @map("user_id")
+  transactionId String?      @map("transaction_id")
+  whtNumber     String?      @map("wht_number")
+  whtDate       DateTime     @map("wht_date")
+  payerName     String       @map("payer_name")
+  payerTaxId    String       @map("payer_tax_id")
+  amount        Decimal      @db.Decimal(12, 2)
+  whtRate       Decimal      @map("wht_rate") @db.Decimal(4, 2)
+  whtAmount     Decimal      @map("wht_amount") @db.Decimal(12, 2)
+  fileUrl       String       @map("file_url")
+  status        WhtStatus    @default(PENDING)
+  reviewedAt    DateTime?    @map("reviewed_at")
+  reviewNote    String?      @map("review_note")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  transaction   Transaction? @relation(fields: [transactionId], references: [id])
+  user          User         @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@map("wht_certificates")
+}
+
+model DocumentSequence {
+  id         String       @id @default(cuid())
+  type       DocumentType
+  year       Int
+  lastNumber Int          @default(0) @map("last_number")
+
+  @@unique([type, year])
+  @@map("document_sequences")
+}
+
+model CreditPackage {
+  id             String      @id @default(cuid())
+  name           String
+  credits        Int
+  price          Decimal     @db.Decimal(12, 2)
+  pricePerCredit Decimal     @map("price_per_credit") @db.Decimal(6, 4)
+  active         Boolean     @default(true)
+  sortOrder      Int         @default(0) @map("sort_order")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  autoTopups     AutoTopup[]
+
+  @@map("credit_packages")
+}
+
+model AutoTopup {
+  id            String        @id @default(cuid())
+  userId        String        @unique @map("user_id")
+  enabled       Boolean       @default(false)
+  threshold     Int
+  packageId     String        @map("package_id")
+  maxPerMonth   Int           @default(5) @map("max_per_month")
+  usedThisMonth Int           @default(0) @map("used_this_month")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  package       CreditPackage @relation(fields: [packageId], references: [id])
+  user          User          @relation(fields: [userId], references: [id])
+
+  @@map("auto_topups")
+}
+
+enum MessageType {
+  SMS
+  OTP
+}
+
+enum Channel {
+  WEB
+  API
+}
+
+enum AccountType {
+  INDIVIDUAL
+  CORPORATION
+}
+
+enum DocumentType {
+  TAX_INVOICE
+  RECEIPT
+  TAX_INVOICE_RECEIPT
+  INVOICE
+  DEBIT_NOTE
+  CREDIT_NOTE
+}
+
+enum DocStatus {
+  ISSUED
+  VOIDED
+}
+
+enum WhtStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }

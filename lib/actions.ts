@@ -3,7 +3,7 @@
 import { prisma } from "./db";
 import { hashPassword, verifyPassword, setSession, clearSession } from "./auth";
 import { redirect } from "next/navigation";
-import { loginSchema, registerSchema } from "./validations";
+import { loginSchema, registerSchema, normalizePhone } from "./validations";
 import { forgotPassword as forgotPasswordAction, resetPassword as resetPasswordAction } from "./actions/auth";
 
 export async function register(formData: FormData) {
@@ -18,8 +18,9 @@ export async function register(formData: FormData) {
     return { error: parsed.error.issues[0]?.message || "ข้อมูลไม่ถูกต้อง" };
   }
 
-  const { firstName, lastName, email, phone, password } = parsed.data;
+  const { firstName, lastName, email, phone: rawPhone, password } = parsed.data;
   const name = `${firstName} ${lastName}`;
+  const phone = rawPhone ? normalizePhone(rawPhone) : "";
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
@@ -58,6 +59,7 @@ export async function registerWithOtp(data: {
   password: string;
   otpRef: string;
   otpCode: string;
+  acceptTerms?: boolean;
 }) {
   const { verifyOtpForRegister } = await import("./actions/otp");
 
@@ -73,8 +75,9 @@ export async function registerWithOtp(data: {
   if (!parsed.success) {
     throw new Error(parsed.error.issues[0]?.message || "ข้อมูลไม่ถูกต้อง");
   }
-  const { firstName, lastName, email, phone, password } = parsed.data;
+  const { firstName, lastName, email, phone: rawPhone, password } = parsed.data;
   const name = `${firstName} ${lastName}`;
+  const phone = rawPhone ? normalizePhone(rawPhone) : "";
 
   const [existingEmail, existingPhone] = await Promise.all([
     prisma.user.findUnique({ where: { email }, select: { id: true } }),
@@ -89,10 +92,22 @@ export async function registerWithOtp(data: {
     throw new Error("OTP ไม่ถูกต้อง");
   }
 
+  // Verify OTP phone matches registration phone (both normalized to +66 format)
+  if (phone && otpResult.phone !== phone) {
+    throw new Error("เบอร์โทรไม่ตรงกับ OTP ที่ยืนยัน");
+  }
+
   const hashed = await hashPassword(password);
   const user = await prisma.$transaction(async (tx) => {
     const newUser = await tx.user.create({
-      data: { name, email, phone, password: hashed, phoneVerified: true },
+      data: {
+        name,
+        email,
+        phone,
+        password: hashed,
+        phoneVerified: true,
+        acceptedTermsAt: data.acceptTerms ? new Date() : null,
+      },
     });
     await tx.creditTransaction.create({
       data: {
@@ -125,7 +140,12 @@ export async function login(formData: FormData) {
 
   const user = await prisma.user.findUnique({
     where: { email },
-    select: { id: true, password: true, mustChangePassword: true },
+    select: {
+      id: true,
+      password: true,
+      mustChangePassword: true,
+      twoFactorAuth: { select: { enabled: true } },
+    },
   });
   if (!user) {
     // Constant-time: always run bcrypt even when user not found
@@ -136,6 +156,18 @@ export async function login(formData: FormData) {
   const valid = await verifyPassword(password, user.password);
   if (!valid) {
     return { error: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" };
+  }
+
+  // If 2FA is enabled, return challenge token instead of session
+  if (user.twoFactorAuth?.enabled) {
+    const jwt = await import("jsonwebtoken");
+    const { env } = await import("./env");
+    const challengeToken = jwt.default.sign(
+      { userId: user.id, purpose: "2fa-challenge" },
+      env.JWT_SECRET,
+      { expiresIn: "5m" }
+    );
+    return { needs2FA: true, challengeToken };
   }
 
   await setSession(user.id);

@@ -27,6 +27,9 @@ const envSchema = z.object({
   EASYTHUNDER_API_SECRET: z.string().optional(),
   EASYSLIP_API_KEY: z.string().optional(),
   COMMIT_SHA: z.string().default("dev"),
+  TWO_FA_ENCRYPTION_KEY: z.string()
+    .min(32, "TWO_FA_ENCRYPTION_KEY must be at least 32 characters")
+    .optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

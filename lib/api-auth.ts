@@ -25,9 +25,19 @@ export async function authenticateApiKey(req: NextRequest) {
     throw new ApiError(401, "Missing or invalid Authorization header", ERROR_CODES.AUTH_MISSING);
   }
 
+  // Validate key format before hitting DB
+  if (!key.startsWith("sk_live_") || key.length < 20) {
+    throw new ApiError(401, "Invalid API key format", ERROR_CODES.AUTH_INVALID);
+  }
+
   const apiKey = await db.apiKey.findUnique({
     where: { key },
-    select: { id: true, isActive: true, userId: true, user: { select: { id: true, credits: true, role: true } } },
+    select: {
+      id: true,
+      isActive: true,
+      userId: true,
+      user: { select: { id: true, credits: true, role: true } },
+    },
   });
 
   if (!apiKey) {
@@ -36,6 +46,11 @@ export async function authenticateApiKey(req: NextRequest) {
 
   if (!apiKey.isActive) {
     throw new ApiError(401, "API key is disabled", ERROR_CODES.AUTH_DISABLED);
+  }
+
+  // Ensure associated user still exists and is valid
+  if (!apiKey.user) {
+    throw new ApiError(401, "API key owner not found", ERROR_CODES.AUTH_INVALID);
   }
 
   // Update lastUsed (fire and forget)
@@ -99,6 +114,7 @@ export function apiError(error: unknown) {
       msg.includes("กรุณา") ||
       msg.includes("ไม่สำเร็จ") ||
       msg.includes("ใช้งานแล้ว") ||
+      msg.includes("มีอยู่แล้ว") ||
       msg.includes("ถูกล็อค") ||
       msg.includes("หากเบอร์") ||
       msg.includes("ระบบยังไม่พร้อม");

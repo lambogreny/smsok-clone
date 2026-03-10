@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { authenticateApiKey, apiResponse, apiError } from "@/lib/api-auth";
+import { authenticateApiKey, ApiError, apiResponse, apiError } from "@/lib/api-auth";
 import { createContact } from "@/lib/actions/contacts";
 import { createContactSchema } from "@/lib/validations";
 import { prisma } from "@/lib/db";
@@ -72,6 +72,10 @@ export async function POST(req: NextRequest) {
     const contact = await createContact(user.id, input);
     return apiResponse(contact, 201);
   } catch (error) {
+    // Duplicate phone → 409 Conflict (not 500)
+    if (error instanceof Error && error.message.includes("มีอยู่แล้ว")) {
+      return apiError(new ApiError(409, error.message, "DUPLICATE"));
+    }
     return apiError(error);
   }
 }

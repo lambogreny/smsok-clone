@@ -6,6 +6,7 @@ import {
   contactFilterSchema,
   createContactSchema,
   updateContactSchema,
+  addContactsToGroupSchema,
   idSchema,
 } from "../validations";
 
@@ -229,8 +230,7 @@ export async function addContactsToGroup(
   groupId: string,
   contactIds: string[]
 ) {
-  idSchema.parse({ id: groupId });
-  if (contactIds.length === 0) throw new Error("กรุณาเลือกรายชื่อ");
+  addContactsToGroupSchema.parse({ groupId, contactIds });
 
   // Verify group ownership
   const group = await db.contactGroup.findFirst({
@@ -279,6 +279,53 @@ export async function bulkDeleteContacts(userId: string, contactIds: string[]) {
 }
 
 // ==========================================
+// Bulk update tags (single DB transaction)
+// ==========================================
+
+export async function bulkUpdateTags(
+  userId: string,
+  contactIds: string[],
+  tag: string,
+  action: "add" | "remove",
+) {
+  if (contactIds.length === 0) throw new Error("กรุณาเลือกรายชื่อ");
+  if (!tag.trim()) throw new Error("กรุณาระบุแท็ก");
+
+  const contacts = await db.contact.findMany({
+    where: { id: { in: contactIds }, userId },
+    select: { id: true, tags: true },
+  });
+
+  if (contacts.length === 0) throw new Error("ไม่พบรายชื่อ");
+
+  const trimmedTag = tag.trim();
+
+  await db.$transaction(
+    contacts.map((contact: { id: string; tags: string | null }) => {
+      const currentTags = contact.tags
+        ? contact.tags.split(",").map((t: string) => t.trim()).filter(Boolean)
+        : [];
+
+      let newTags: string[];
+      if (action === "add") {
+        if (currentTags.includes(trimmedTag)) return db.contact.update({ where: { id: contact.id }, data: {} });
+        newTags = [...currentTags, trimmedTag];
+      } else {
+        newTags = currentTags.filter((t: string) => t !== trimmedTag);
+      }
+
+      return db.contact.update({
+        where: { id: contact.id },
+        data: { tags: newTags.length > 0 ? newTags.join(", ") : null },
+      });
+    }),
+  );
+
+  revalidatePath("/dashboard/contacts");
+  return { updated: contacts.length };
+}
+
+// ==========================================
 // Get contacts by group
 // ==========================================
 
@@ -299,7 +346,7 @@ export async function getContactsByGroup(userId: string, groupId: string) {
 }
 
 // ==========================================
-// Get contact groups
+// Get all contact groups (for user)
 // ==========================================
 
 export async function getContactGroups(userId: string) {
@@ -314,6 +361,91 @@ export async function getContactGroups(userId: string) {
     name: g.name,
     memberCount: g._count.members,
   }));
+}
+
+// ==========================================
+// Get groups that a specific contact belongs to
+// ==========================================
+
+export async function getGroupsForContact(userId: string, contactId: string) {
+  idSchema.parse({ id: contactId });
+
+  // Verify contact ownership
+  const contact = await db.contact.findFirst({
+    where: { id: contactId, userId },
+    select: { id: true },
+  });
+  if (!contact) throw new Error("ไม่พบรายชื่อ");
+
+  const memberships = await db.contactGroupMember.findMany({
+    where: { contactId },
+    include: { group: true },
+  });
+
+  return memberships.map((m: typeof memberships[number]) => ({
+    id: m.group.id,
+    name: m.group.name,
+  }));
+}
+
+// ==========================================
+// Get groups + contact-group membership map (for Add to Group checkbox UI)
+// ==========================================
+
+export async function getGroupsWithMemberships(userId: string, contactIds: string[]) {
+  if (contactIds.length > 100) {
+    throw new Error("contactIds ต้องไม่เกิน 100 รายการ")
+  }
+
+  if (contactIds.length === 0) {
+    const groups = await db.contactGroup.findMany({
+      where: { userId },
+      include: { _count: { select: { members: true } } },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return {
+      groups: groups.map((g: typeof groups[number]) => ({
+        id: g.id,
+        name: g.name,
+        memberCount: g._count.members,
+      })),
+      contactGroups: {} as Record<string, string[]>,
+    };
+  }
+
+  const [groups, memberships] = await Promise.all([
+    db.contactGroup.findMany({
+      where: { userId },
+      include: { _count: { select: { members: true } } },
+      orderBy: { createdAt: "desc" },
+    }),
+    db.contactGroupMember.findMany({
+      where: {
+        contactId: { in: contactIds },
+        group: { userId }, // ensure ownership
+      },
+      select: { contactId: true, groupId: true },
+    }),
+  ]);
+
+  // Build contactId → groupId[] map
+  const contactGroups: Record<string, string[]> = {};
+  for (const m of memberships) {
+    if (!contactGroups[m.contactId]) {
+      contactGroups[m.contactId] = [];
+    }
+    contactGroups[m.contactId].push(m.groupId);
+  }
+
+  return {
+    groups: groups.map((g: typeof groups[number]) => ({
+      id: g.id,
+      name: g.name,
+      memberCount: g._count.members,
+    })),
+    contactGroups,
+  };
 }
 
 // ==========================================

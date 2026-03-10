@@ -1,0 +1,330 @@
+"use server"
+
+import { prisma } from "@/lib/db"
+import { getSession } from "@/lib/auth"
+import { generateWebhookSecret, signPayload, type WebhookEvent } from "@/lib/webhook-dispatch"
+import { isObviouslyInternalUrl, safeFetch } from "@/lib/url-safety"
+import { encryptSecret, decryptSecret } from "@/lib/two-factor"
+import { randomBytes } from "crypto"
+
+const VALID_EVENTS: WebhookEvent[] = [
+  "sms.sent",
+  "sms.delivered",
+  "sms.failed",
+  "otp.verified",
+  "credit.low",
+]
+
+// ── List webhooks ───────────────────────────────────────
+
+export async function listWebhooks() {
+  const user = await getSession()
+  if (!user) throw new Error("กรุณาเข้าสู่ระบบ")
+
+  const webhooks = await prisma.webhook.findMany({
+    where: { userId: user.id },
+    select: {
+      id: true,
+      url: true,
+      events: true,
+      active: true,
+      failCount: true,
+      createdAt: true,
+      updatedAt: true,
+      _count: { select: { logs: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  })
+
+  return webhooks
+}
+
+// ── Create webhook ──────────────────────────────────────
+
+export async function createWebhook(input: {
+  url: string
+  events: string[]
+}) {
+  const user = await getSession()
+  if (!user) throw new Error("กรุณาเข้าสู่ระบบ")
+
+  // Validate URL
+  try {
+    const parsed = new URL(input.url)
+    if (!["http:", "https:"].includes(parsed.protocol)) {
+      throw new Error("URL ต้องเริ่มต้นด้วย http:// หรือ https://")
+    }
+  } catch {
+    throw new Error("URL ไม่ถูกต้อง")
+  }
+
+  // SSRF protection — block internal/private URLs
+  if (isObviouslyInternalUrl(input.url)) {
+    throw new Error("ไม่สามารถใช้ URL ที่ชี้ไปยัง internal/private address ได้")
+  }
+
+  // Validate events
+  if (!input.events.length) throw new Error("กรุณาเลือก event อย่างน้อย 1 รายการ")
+  for (const event of input.events) {
+    if (!VALID_EVENTS.includes(event as WebhookEvent)) {
+      throw new Error(`Event "${event}" ไม่ถูกต้อง`)
+    }
+  }
+
+  // Limit webhooks per user
+  const count = await prisma.webhook.count({ where: { userId: user.id } })
+  if (count >= 10) throw new Error("สร้าง webhook ได้สูงสุด 10 รายการ")
+
+  const secret = generateWebhookSecret()
+  const encryptedSecret = encryptSecret(secret)
+
+  const webhook = await prisma.webhook.create({
+    data: {
+      userId: user.id,
+      url: input.url,
+      events: input.events,
+      secret: encryptedSecret,
+    },
+    select: {
+      id: true,
+      url: true,
+      events: true,
+      secret: true,
+      active: true,
+      createdAt: true,
+    },
+  })
+
+  // Return secret only on creation (one-time display)
+  return webhook
+}
+
+// ── Update webhook ──────────────────────────────────────
+
+export async function updateWebhook(
+  id: string,
+  input: { url?: string; events?: string[]; active?: boolean }
+) {
+  const user = await getSession()
+  if (!user) throw new Error("กรุณาเข้าสู่ระบบ")
+
+  // Verify ownership
+  const webhook = await prisma.webhook.findFirst({
+    where: { id, userId: user.id },
+  })
+  if (!webhook) throw new Error("ไม่พบ webhook")
+
+  // Validate URL if provided
+  if (input.url) {
+    try {
+      const parsed = new URL(input.url)
+      if (!["http:", "https:"].includes(parsed.protocol)) {
+        throw new Error("URL ต้องเริ่มต้นด้วย http:// หรือ https://")
+      }
+    } catch {
+      throw new Error("URL ไม่ถูกต้อง")
+    }
+
+    // SSRF protection
+    if (isObviouslyInternalUrl(input.url)) {
+      throw new Error("ไม่สามารถใช้ URL ที่ชี้ไปยัง internal/private address ได้")
+    }
+  }
+
+  // Validate events if provided
+  if (input.events) {
+    if (!input.events.length) throw new Error("กรุณาเลือก event อย่างน้อย 1 รายการ")
+    for (const event of input.events) {
+      if (!VALID_EVENTS.includes(event as WebhookEvent)) {
+        throw new Error(`Event "${event}" ไม่ถูกต้อง`)
+      }
+    }
+  }
+
+  const updated = await prisma.webhook.update({
+    where: { id },
+    data: {
+      ...(input.url && { url: input.url }),
+      ...(input.events && { events: input.events }),
+      ...(input.active !== undefined && { active: input.active }),
+      // Reset fail count when reactivating
+      ...(input.active === true && { failCount: 0 }),
+    },
+    select: {
+      id: true,
+      url: true,
+      events: true,
+      active: true,
+      failCount: true,
+      updatedAt: true,
+    },
+  })
+
+  return updated
+}
+
+// ── Delete webhook ──────────────────────────────────────
+
+export async function deleteWebhook(id: string) {
+  const user = await getSession()
+  if (!user) throw new Error("กรุณาเข้าสู่ระบบ")
+
+  const webhook = await prisma.webhook.findFirst({
+    where: { id, userId: user.id },
+  })
+  if (!webhook) throw new Error("ไม่พบ webhook")
+
+  // Cascade delete logs (defined in schema)
+  await prisma.webhook.delete({ where: { id } })
+
+  return { success: true }
+}
+
+// ── Test webhook ────────────────────────────────────────
+
+export async function testWebhook(id: string) {
+  const user = await getSession()
+  if (!user) throw new Error("กรุณาเข้าสู่ระบบ")
+
+  const webhook = await prisma.webhook.findFirst({
+    where: { id, userId: user.id },
+  })
+  if (!webhook) throw new Error("ไม่พบ webhook")
+
+  const samplePayload = JSON.stringify({
+    event: "test",
+    data: {
+      message: "This is a test webhook delivery",
+      webhookId: webhook.id,
+      timestamp: new Date().toISOString(),
+    },
+    timestamp: new Date().toISOString(),
+  })
+
+  // Decrypt secret for signing
+  let plaintextSecret: string
+  try {
+    plaintextSecret = decryptSecret(webhook.secret)
+  } catch {
+    // Legacy plaintext secret or key mismatch — use as-is
+    plaintextSecret = webhook.secret
+  }
+  const signature = signPayload(samplePayload, plaintextSecret)
+  const start = Date.now()
+  let statusCode: number | null = null
+  let responseBody: unknown = null
+  let success = false
+
+  try {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 10_000)
+
+    // safeFetch: DNS resolve → IP validation → fetch by IP (anti-rebinding + SSRF)
+    const res = await safeFetch(webhook.url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Webhook-Signature": signature,
+        "X-Webhook-Event": "test",
+        "X-Webhook-Delivery": randomBytes(16).toString("hex"),
+      },
+      body: samplePayload,
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeout)
+    statusCode = res.status
+
+    try {
+      responseBody = await res.text()
+    } catch {
+      responseBody = null
+    }
+
+    success = res.ok
+  } catch (err) {
+    responseBody = err instanceof Error ? err.message : "Unknown error"
+    success = false
+  }
+
+  const latency = Date.now() - start
+
+  // Log test delivery
+  await prisma.webhookLog.create({
+    data: {
+      webhookId: webhook.id,
+      event: "test",
+      payload: JSON.parse(samplePayload),
+      response: responseBody ? { body: String(responseBody) } : undefined,
+      statusCode,
+      latency,
+      success,
+    },
+  })
+
+  return { success, statusCode, latency, response: responseBody }
+}
+
+// ── Rotate webhook secret ───────────────────────────────
+
+export async function rotateWebhookSecret(id: string) {
+  const user = await getSession()
+  if (!user) throw new Error("กรุณาเข้าสู่ระบบ")
+
+  const webhook = await prisma.webhook.findFirst({
+    where: { id, userId: user.id },
+  })
+  if (!webhook) throw new Error("ไม่พบ webhook")
+
+  const newSecret = generateWebhookSecret()
+  const encryptedSecret = encryptSecret(newSecret)
+
+  await prisma.webhook.update({
+    where: { id },
+    data: { secret: encryptedSecret },
+  })
+
+  // Return new secret only once (one-time display)
+  return { id, secret: newSecret }
+}
+
+// ── Get webhook logs ────────────────────────────────────
+
+export async function getWebhookLogs(
+  webhookId: string,
+  options: { page?: number; limit?: number } = {}
+) {
+  const user = await getSession()
+  if (!user) throw new Error("กรุณาเข้าสู่ระบบ")
+
+  // Verify ownership
+  const webhook = await prisma.webhook.findFirst({
+    where: { id: webhookId, userId: user.id },
+    select: { id: true },
+  })
+  if (!webhook) throw new Error("ไม่พบ webhook")
+
+  const page = options.page ?? 1
+  const limit = Math.min(options.limit ?? 20, 100)
+  const skip = (page - 1) * limit
+
+  const [logs, total] = await Promise.all([
+    prisma.webhookLog.findMany({
+      where: { webhookId },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+      select: {
+        id: true,
+        event: true,
+        statusCode: true,
+        latency: true,
+        success: true,
+        createdAt: true,
+      },
+    }),
+    prisma.webhookLog.count({ where: { webhookId } }),
+  ])
+
+  return { logs, total, page, limit, totalPages: Math.ceil(total / limit) }
+}

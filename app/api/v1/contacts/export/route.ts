@@ -26,7 +26,8 @@ export async function GET(req: NextRequest) {
           .map(escapeCsvField)
           .join(",")
       );
-      const csv = [header, ...rows].join("\n");
+      // UTF-8 BOM (\uFEFF) for Excel to recognize Thai characters
+      const csv = "\uFEFF" + [header, ...rows].join("\n");
 
       return new Response(csv, {
         headers: {

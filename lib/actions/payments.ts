@@ -5,6 +5,7 @@ import type { PrismaClient } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { idSchema } from "../validations";
 import { verifySlipByBase64, verifySlipByUrl } from "../easyslip";
+import { isObviouslyInternalUrl } from "../url-safety";
 
 type DbTx = Omit<PrismaClient, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">;
 
@@ -32,6 +33,7 @@ export async function createCreditLedgerEntry(tx: DbTx, entry: CreditLedgerEntry
 
 // ==========================================
 // Get active packages from DB
+// PUBLIC endpoint — no auth required (for pricing page)
 // ==========================================
 
 export async function getPackages() {
@@ -95,6 +97,11 @@ export async function purchasePackage(
 export async function uploadSlip(transactionId: string, slipUrl: string) {
   idSchema.parse({ id: transactionId });
 
+  // SSRF protection — block internal URLs
+  if (isObviouslyInternalUrl(slipUrl)) {
+    throw new Error("URL ไม่ถูกต้อง — ไม่อนุญาตให้ใช้ internal URL");
+  }
+
   const transaction = await db.transaction.findUnique({
     where: { id: transactionId },
   });
@@ -111,8 +118,8 @@ export async function uploadSlip(transactionId: string, slipUrl: string) {
 
   if (slipResult.success && slipResult.data) {
     const slipData = slipResult.data;
-    const slipAmount = slipData.amount * 100; // Convert baht to satang
-    const expectedAmount = transaction.amount;
+    const slipAmount = Math.round(slipData.amount * 100); // Convert baht to satang (round to avoid float drift)
+    const expectedAmount = Number(transaction.amount); // Ensure numeric comparison
 
     // Verify amount matches (allow 1 satang tolerance)
     if (Math.abs(slipAmount - expectedAmount) <= 1) {

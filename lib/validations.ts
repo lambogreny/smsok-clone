@@ -161,6 +161,28 @@ export const updateProfileSchema = z.object({
 });
 
 // ==========================================
+// 2FA Validations
+// ==========================================
+
+export const verify2FASchema = z.object({
+  code: z.string().regex(/^\d{6}$/, "รหัส 2FA ต้องเป็นตัวเลข 6 หลัก"),
+});
+
+export const disable2FASchema = z.object({
+  password: z.string().min(1, "กรุณากรอกรหัสผ่าน"),
+});
+
+export const challenge2FASchema = z.object({
+  challengeToken: z.string().min(1, "กรุณาส่ง challengeToken"),
+  code: z.string().regex(/^\d{6}$/, "รหัส 2FA ต้องเป็นตัวเลข 6 หลัก"),
+});
+
+export const recovery2FASchema = z.object({
+  challengeToken: z.string().min(1, "กรุณาส่ง challengeToken"),
+  recoveryCode: z.string().min(1, "กรุณาส่ง Recovery Code"),
+});
+
+// ==========================================
 // SMS Validations
 // ==========================================
 
@@ -216,6 +238,29 @@ export const verifyOtpSchema = z.object({
     .transform((value) => value.toUpperCase()),
   code: z.string().regex(/^\d{6}$/, "รหัส OTP ไม่ถูกต้อง"),
 });
+
+// ==========================================
+// Webhook Validations
+// ==========================================
+
+const webhookEventSchema = z.enum([
+  "sms.sent",
+  "sms.delivered",
+  "sms.failed",
+  "otp.verified",
+  "credit.low",
+])
+
+export const createWebhookSchema = z.object({
+  url: z.string().url("URL ไม่ถูกต้อง"),
+  events: z.array(webhookEventSchema).min(1, "กรุณาเลือก event อย่างน้อย 1 รายการ"),
+})
+
+export const updateWebhookSchema = z.object({
+  url: z.string().url("URL ไม่ถูกต้อง").optional(),
+  events: z.array(webhookEventSchema).min(1).optional(),
+  active: z.boolean().optional(),
+})
 
 // ==========================================
 // Contact Validations
