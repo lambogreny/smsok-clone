@@ -45,8 +45,21 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-6 mesh-bg relative">
-      <div className="fixed top-[20%] left-[15%] w-[400px] h-[400px] rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)" }} />
+    <div className="min-h-screen flex items-center justify-center px-6 mesh-bg relative overflow-hidden">
+      {/* Back button */}
+      <Link
+        href="/"
+        className="fixed top-5 left-5 z-20 flex items-center gap-1.5 text-white/40 hover:text-white transition-colors duration-200 group"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M19 12H5M12 5l-7 7 7 7" />
+        </svg>
+        <span className="text-sm">กลับหน้าหลัก</span>
+      </Link>
+
+      {/* Animated blobs */}
+      <div className="fixed top-[20%] left-[15%] w-[400px] h-[400px] rounded-full pointer-events-none blob-anim" style={{ background: "radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%)" }} />
+      <div className="fixed bottom-[15%] right-[10%] w-[300px] h-[300px] rounded-full pointer-events-none blob-anim" style={{ background: "radial-gradient(circle, rgba(59,130,246,0.10) 0%, transparent 70%)", animationDelay: "3s" }} />
 
       <div className="w-full max-w-md relative z-10">
         {/* Logo */}
@@ -66,8 +79,8 @@ export default function LoginPage() {
         {/* Glass Card */}
         <div className="glass p-8 sm:p-10 animate-fade-in" style={{ animationDelay: "0.1s" }}>
           <div className="text-center mb-8">
-            <h1 className="text-xl font-semibold text-white mb-1">ยินดีต้อนรับกลับ</h1>
-            <p className="text-white/30 text-sm">เข้าสู่ระบบเพื่อจัดการการส่ง SMS ของคุณ</p>
+            <h1 className="text-2xl font-bold text-white mb-1">ยินดีต้อนรับกลับ</h1>
+            <p className="text-white/40 text-sm">เข้าสู่ระบบเพื่อจัดการการส่ง SMS ของคุณ</p>
           </div>
 
           {serverError && (
@@ -78,7 +91,7 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-xs text-white/40 uppercase tracking-wider mb-2 font-medium">อีเมล</label>
+              <label className="block text-xs text-white font-medium uppercase tracking-wider mb-2">อีเมล</label>
               <input
                 type="email" name="email" required
                 value={email}
@@ -90,7 +103,7 @@ export default function LoginPage() {
               {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email}</p>}
             </div>
             <div>
-              <label className="block text-xs text-white/40 uppercase tracking-wider mb-2 font-medium">รหัสผ่าน</label>
+              <label className="block text-xs text-white font-medium uppercase tracking-wider mb-2">รหัสผ่าน</label>
               <input
                 type="password" name="password" required
                 value={password}

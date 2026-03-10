@@ -35,8 +35,21 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-6 mesh-bg relative">
-      <div className="fixed top-[30%] left-[10%] w-[300px] h-[300px] rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, rgba(129,140,248,0.06) 0%, transparent 70%)" }} />
+    <div className="min-h-screen flex items-center justify-center px-6 mesh-bg relative overflow-hidden">
+      {/* Back button */}
+      <Link
+        href="/"
+        className="fixed top-5 left-5 z-20 flex items-center gap-1.5 text-white/40 hover:text-white transition-colors duration-200"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M19 12H5M12 5l-7 7 7 7" />
+        </svg>
+        <span className="text-sm">กลับหน้าหลัก</span>
+      </Link>
+
+      {/* Animated blobs */}
+      <div className="fixed top-[30%] left-[10%] w-[300px] h-[300px] rounded-full pointer-events-none blob-anim" style={{ background: "radial-gradient(circle, rgba(129,140,248,0.10) 0%, transparent 70%)" }} />
+      <div className="fixed bottom-[20%] right-[15%] w-[250px] h-[250px] rounded-full pointer-events-none blob-anim" style={{ background: "radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)", animationDelay: "4s" }} />
 
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8 animate-fade-in">
@@ -58,7 +71,7 @@ export default function ForgotPasswordPage() {
                     <rect x="5" y="2" width="14" height="20" rx="2" /><line x1="12" y1="18" x2="12" y2="18" strokeWidth="2" strokeLinecap="round" />
                   </svg>
                 </div>
-                <h2 className="text-lg font-semibold text-white mb-2">ส่ง SMS แล้ว!</h2>
+                <h2 className="text-2xl font-bold text-white mb-2">ส่ง SMS แล้ว!</h2>
                 <p className="text-white/40 text-sm mb-6 leading-relaxed">
                   รหัสรีเซ็ตรหัสผ่านถูกส่งไปที่ <span className="text-white/70">{phone}</span>
                   <br />ใช้รหัสนี้กับขั้นตอน reset password ภายใน 5 นาที
@@ -75,8 +88,8 @@ export default function ForgotPasswordPage() {
                       <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" />
                     </svg>
                   </div>
-                  <h1 className="text-xl font-semibold text-white mb-1">ลืมรหัสผ่าน</h1>
-                  <p className="text-white/30 text-sm">กรอกเบอร์โทรที่ลงทะเบียนไว้</p>
+                  <h1 className="text-2xl font-bold text-white mb-1">ลืมรหัสผ่าน</h1>
+                  <p className="text-white/40 text-sm">กรอกเบอร์โทรที่ลงทะเบียนไว้</p>
                 </div>
 
                 {result === "error" && errorMsg && (
@@ -87,7 +100,7 @@ export default function ForgotPasswordPage() {
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-xs text-white/40 uppercase tracking-wider mb-2 font-medium">เบอร์โทรที่ลงทะเบียน</label>
+                    <label className="block text-xs text-white font-medium uppercase tracking-wider mb-2">เบอร์โทรที่ลงทะเบียน</label>
                     <input
                       type="tel" inputMode="numeric" maxLength={10}
                       value={phone}

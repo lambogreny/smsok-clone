@@ -110,8 +110,21 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-6 mesh-bg relative">
-      <div className="fixed top-[30%] right-[10%] w-[350px] h-[350px] rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, rgba(129,140,248,0.08) 0%, transparent 70%)" }} />
+    <div className="min-h-screen flex items-center justify-center px-6 mesh-bg relative overflow-hidden">
+      {/* Back button */}
+      <Link
+        href="/"
+        className="fixed top-5 left-5 z-20 flex items-center gap-1.5 text-white/40 hover:text-white transition-colors duration-200"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M19 12H5M12 5l-7 7 7 7" />
+        </svg>
+        <span className="text-sm">กลับหน้าหลัก</span>
+      </Link>
+
+      {/* Animated blobs */}
+      <div className="fixed top-[30%] right-[10%] w-[350px] h-[350px] rounded-full pointer-events-none blob-anim" style={{ background: "radial-gradient(circle, rgba(129,140,248,0.10) 0%, transparent 70%)" }} />
+      <div className="fixed bottom-[10%] left-[5%] w-[280px] h-[280px] rounded-full pointer-events-none blob-anim" style={{ background: "radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%)", animationDelay: "2.5s" }} />
 
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8 animate-fade-in">
@@ -144,7 +157,7 @@ export default function RegisterPage() {
           {step === "form" && (
             <motion.div key="form" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.25 }} className="glass p-8 sm:p-10">
               <div className="text-center mb-8">
-                <h1 className="text-xl font-semibold text-white mb-1">สมัครสมาชิก</h1>
+                <h1 className="text-2xl font-bold text-white mb-1">สมัครสมาชิก</h1>
                 <p className="text-white/30 text-sm">สมัครฟรี รับ 15 เครดิตทันที</p>
               </div>
 
@@ -154,20 +167,20 @@ export default function RegisterPage() {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs text-white/40 uppercase tracking-wider mb-2 font-medium">ชื่อ-นามสกุล</label>
+                  <label className="block text-xs text-white font-medium uppercase tracking-wider mb-2">ชื่อ-นามสกุล</label>
                   <input type="text" value={name} onChange={(e) => { setName(e.target.value); validate("name", e.target.value); }}
                     className={fieldCls(errors.name, name)} placeholder="สมชาย ใจดี" />
                   {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name}</p>}
                 </div>
                 <div>
-                  <label className="block text-xs text-white/40 uppercase tracking-wider mb-2 font-medium">อีเมล</label>
+                  <label className="block text-xs text-white font-medium uppercase tracking-wider mb-2">อีเมล</label>
                   <input type="email" value={email} onKeyDown={blockThai}
                     onChange={(e) => { setEmail(e.target.value); validate("email", e.target.value); }}
                     className={fieldCls(errors.email, email)} placeholder="you@example.com" />
                   {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email}</p>}
                 </div>
                 <div>
-                  <label className="block text-xs text-white/40 uppercase tracking-wider mb-2 font-medium">
+                  <label className="block text-xs text-white font-medium uppercase tracking-wider mb-2">
                     เบอร์โทร <span className="text-violet-400 text-[10px] normal-case">*ใช้รับ OTP</span>
                   </label>
                   <input type="tel" value={phone} inputMode="numeric" maxLength={10} onKeyDown={blockNonNumeric}
@@ -176,7 +189,7 @@ export default function RegisterPage() {
                   {errors.phone && <p className="text-red-400 text-xs mt-1">{errors.phone}</p>}
                 </div>
                 <div>
-                  <label className="block text-xs text-white/40 uppercase tracking-wider mb-2 font-medium">รหัสผ่าน (8 ตัวขึ้นไป)</label>
+                  <label className="block text-xs text-white font-medium uppercase tracking-wider mb-2">รหัสผ่าน (8 ตัวขึ้นไป)</label>
                   <input type="password" value={password} minLength={8}
                     onChange={(e) => { setPassword(e.target.value); validate("password", e.target.value); }}
                     className={fieldCls(errors.password, password)} placeholder="••••••••" />
@@ -190,7 +203,7 @@ export default function RegisterPage() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-xs text-white/40 uppercase tracking-wider mb-2 font-medium">ยืนยันรหัสผ่าน</label>
+                  <label className="block text-xs text-white font-medium uppercase tracking-wider mb-2">ยืนยันรหัสผ่าน</label>
                   <input
                     type="password"
                     value={confirmPassword}
@@ -231,7 +244,7 @@ export default function RegisterPage() {
                     <rect x="5" y="2" width="14" height="20" rx="2" /><line x1="12" y1="18" x2="12" y2="18" strokeWidth="2" strokeLinecap="round" />
                   </svg>
                 </div>
-                <h1 className="text-xl font-semibold text-white mb-1">ยืนยัน OTP</h1>
+                <h1 className="text-2xl font-bold text-white mb-1">ยืนยัน OTP</h1>
                 <p className="text-white/40 text-sm">ส่ง OTP ไปยัง {phone}</p>
                 {otpRef && <p className="text-violet-400/50 text-[11px] mt-1 font-mono">REF: {otpRef.slice(0, 8).toUpperCase()}</p>}
               </div>
@@ -248,7 +261,7 @@ export default function RegisterPage() {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs text-white/40 uppercase tracking-wider mb-2 font-medium">รหัส OTP 6 หลัก</label>
+                  <label className="block text-xs text-white font-medium uppercase tracking-wider mb-2">รหัส OTP 6 หลัก</label>
                   <input type="text" inputMode="numeric" maxLength={6} value={otpCode} onKeyDown={blockNonNumeric}
                     onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                     className="input-glass text-center text-2xl font-mono tracking-[0.5em]"

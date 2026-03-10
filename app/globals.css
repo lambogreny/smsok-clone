@@ -199,7 +199,7 @@
   /* ── BUTTONS ── */
 
   .btn-primary {
-    background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+    background: linear-gradient(135deg, #7C3AED, #8B5CF6, #3B82F6);
     color: white;
     border: none;
     border-radius: var(--radius-md);
@@ -265,8 +265,9 @@
   .input-glass::placeholder { color: var(--text-muted); }
 
   .input-glass:focus {
-    border-color: rgba(139,92,246,0.4);
-    box-shadow: 0 0 0 3px rgba(139,92,246,0.08);
+    border-color: rgba(139,92,246,0.7);
+    box-shadow: 0 0 0 3px rgba(139,92,246,0.18), 0 0 16px rgba(139,92,246,0.08);
+    outline: none;
   }
 
   /* ── STATUS BADGES ── */
@@ -642,6 +643,17 @@
 @keyframes breathe {
   0%, 100% { box-shadow: 0 0 0 0 rgba(139,92,246,0.04); }
   50% { box-shadow: 0 0 40px 8px rgba(139,92,246,0.06); }
+}
+
+@keyframes blob-float {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.6; }
+  33% { transform: translate(20px, -15px) scale(1.05); opacity: 0.8; }
+  66% { transform: translate(-15px, 10px) scale(0.96); opacity: 0.5; }
+}
+
+.blob-anim {
+  animation: blob-float 8s ease-in-out infinite;
+  will-change: transform;
 }
 
 /* ── REDUCED MOTION ── */
