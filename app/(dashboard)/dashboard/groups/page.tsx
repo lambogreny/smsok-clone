@@ -10,7 +10,7 @@ export default async function GroupsPage() {
 
   const [groups, { contacts }] = await Promise.all([
     getGroups(user.id),
-    getContacts(user.id, { page: 1, limit: 1000 }),
+    getContacts(user.id, { page: 1, limit: 100 }),
   ]);
 
   const allContacts = contacts.map((c: { id: string; name: string; phone: string }) => ({

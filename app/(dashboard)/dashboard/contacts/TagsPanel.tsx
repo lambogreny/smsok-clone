@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { createTag, updateTag, deleteTag } from "@/lib/actions/tags";
 import { useToast } from "@/app/components/ui/Toast";
+import { safeErrorMessage } from "@/lib/error-messages";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -174,7 +175,7 @@ function TagRow({
         onUpdate({ ...tag, ...res, _count: tag._count });
         setMode("view");
         toast("success", "อัปเดตแท็กแล้ว");
-      } catch (e) { toast("error", e instanceof Error ? e.message : "เกิดข้อผิดพลาด"); }
+      } catch (e) { toast("error", safeErrorMessage(e)); }
     });
   }
 
@@ -184,7 +185,7 @@ function TagRow({
         await deleteTag(userId, tag.id);
         onDelete(tag.id);
         toast("success", `ลบแท็ก "${tag.name}" แล้ว`);
-      } catch (e) { toast("error", e instanceof Error ? e.message : "เกิดข้อผิดพลาด"); }
+      } catch (e) { toast("error", safeErrorMessage(e)); }
     });
   }
 
@@ -483,7 +484,7 @@ function CreateModal({
         toast("success", `สร้างแท็ก "${trimmed}" แล้ว`);
         onClose();
       } catch (e) {
-        toast("error", e instanceof Error ? e.message : "เกิดข้อผิดพลาด");
+        toast("error", safeErrorMessage(e));
       }
     });
   }

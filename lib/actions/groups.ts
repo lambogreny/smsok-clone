@@ -63,6 +63,14 @@ export async function addContactToGroup(userId: string, groupId: string, contact
   ]);
   if (!group) throw new Error("ไม่พบกลุ่ม");
   if (!contact) throw new Error("ไม่พบรายชื่อ");
+
+  // Check if already a member (prevent unique constraint error)
+  const existing = await db.contactGroupMember.findUnique({
+    where: { groupId_contactId: { groupId, contactId } },
+    include: { contact: { select: { id: true, name: true, phone: true, email: true } } },
+  });
+  if (existing) return existing;
+
   const member = await db.contactGroupMember.create({
     data: { groupId, contactId },
     include: { contact: { select: { id: true, name: true, phone: true, email: true } } },

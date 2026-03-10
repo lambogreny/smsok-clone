@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { changePasswordForSession } from "@/lib/actions/settings";
 import { fieldCls } from "@/lib/form-utils";
+import { safeErrorMessage } from "@/lib/error-messages";
 
 export default function PasswordChangeForm() {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -37,7 +38,7 @@ export default function PasswordChangeForm() {
       setNewPassword("");
       setConfirmPassword("");
     } catch (e) {
-      setResult({ type: "error", message: e instanceof Error ? e.message : "เกิดข้อผิดพลาด" });
+      setResult({ type: "error", message: safeErrorMessage(e) });
     } finally {
       setLoading(false);
     }

@@ -58,6 +58,7 @@ export default function MessagesClient({
   const searchParams = useSearchParams();
   const [search, setSearch] = useState(initialSearch ?? "");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
 
   const filtered = messages.filter((msg) => {
     const matchSearch =
@@ -66,7 +67,8 @@ export default function MessagesClient({
       msg.content.toLowerCase().includes(search.toLowerCase()) ||
       msg.senderName.toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === "all" || msg.status === statusFilter;
-    return matchSearch && matchStatus;
+    const matchType = typeFilter === "all" || detectType(msg.content) === typeFilter;
+    return matchSearch && matchStatus && matchType;
   });
 
   function goToPage(p: number) {
@@ -121,6 +123,16 @@ export default function MessagesClient({
           />
         </div>
         <CustomSelect
+          value={typeFilter}
+          onChange={setTypeFilter}
+          options={[
+            { value: "all", label: "ทุกประเภท" },
+            { value: "SMS", label: "SMS" },
+            { value: "OTP", label: "OTP" },
+          ]}
+          className="min-w-[120px]"
+        />
+        <CustomSelect
           value={statusFilter}
           onChange={setStatusFilter}
           options={[
@@ -143,6 +155,7 @@ export default function MessagesClient({
                   <tr className="border-b border-[var(--border-subtle)]">
                     <th className="text-left px-4 py-3 text-xs text-[var(--text-muted)] uppercase tracking-wider font-medium whitespace-nowrap">วันที่/เวลา</th>
                     <th className="text-left px-4 py-3 text-xs text-[var(--text-muted)] uppercase tracking-wider font-medium">ผู้รับ</th>
+                    <th className="text-left px-4 py-3 text-xs text-[var(--text-muted)] uppercase tracking-wider font-medium hidden md:table-cell">เนื้อหา</th>
                     <th className="text-left px-4 py-3 text-xs text-[var(--text-muted)] uppercase tracking-wider font-medium">ประเภท</th>
                     <th className="text-left px-4 py-3 text-xs text-[var(--text-muted)] uppercase tracking-wider font-medium hidden md:table-cell">ช่องทาง</th>
                     <th className="text-left px-4 py-3 text-xs text-[var(--text-muted)] uppercase tracking-wider font-medium hidden lg:table-cell">Sender</th>
@@ -172,6 +185,12 @@ export default function MessagesClient({
                             <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${status.dot}`} />
                             <span className="text-slate-200 font-mono text-xs">{msg.recipient}</span>
                           </div>
+                        </td>
+                        {/* เนื้อหา */}
+                        <td className="px-4 py-3.5 hidden md:table-cell">
+                          <span className="text-[var(--text-secondary)] text-xs truncate block max-w-[200px]" title={msg.content}>
+                            {msg.content.length > 40 ? `${msg.content.slice(0, 40)}...` : msg.content}
+                          </span>
                         </td>
                         {/* ประเภท */}
                         <td className="px-4 py-3.5">

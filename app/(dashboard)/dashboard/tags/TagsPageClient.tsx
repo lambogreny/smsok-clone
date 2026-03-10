@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createTag, updateTag, deleteTag } from "@/lib/actions/tags";
+import { safeErrorMessage } from "@/lib/error-messages";
 
 type Tag = {
   id: string;
@@ -66,7 +67,7 @@ export default function TagsPageClient({ userId, initialTags }: { userId: string
         }
         setShowCreate(false);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "เกิดข้อผิดพลาด");
+        setError(safeErrorMessage(e));
       }
     });
   }

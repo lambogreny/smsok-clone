@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import { forgotPassword } from "@/lib/actions";
 import { blockNonNumeric, fieldCls } from "@/lib/form-utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { safeErrorMessage } from "@/lib/error-messages";
 
 export default function ForgotPasswordPage() {
   const [phone, setPhone] = useState("");
@@ -28,7 +29,7 @@ export default function ForgotPasswordPage() {
         await forgotPassword(phone);
         setResult("success");
       } catch (e) {
-        setErrorMsg(e instanceof Error ? e.message : "เกิดข้อผิดพลาด กรุณาลองใหม่");
+        setErrorMsg(safeErrorMessage(e));
         setResult("error");
       }
     });

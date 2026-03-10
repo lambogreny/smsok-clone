@@ -5,6 +5,7 @@ import Link from "next/link";
 import { generateOtpForSession, verifyOtpForSession } from "@/lib/actions/otp";
 import { blockNonNumeric, fieldCls } from "@/lib/form-utils";
 import CustomSelect from "@/components/ui/CustomSelect";
+import { safeErrorMessage } from "@/lib/error-messages";
 
 const features = [
   {
@@ -116,7 +117,7 @@ function OtpTestPanel() {
       } catch (error) {
         setResult({
           ok: false,
-          msg: error instanceof Error ? error.message : "Failed to send OTP",
+          msg: safeErrorMessage(error),
         });
       } finally {
         setLoading(false);
@@ -144,7 +145,7 @@ function OtpTestPanel() {
       } catch (error) {
         setResult({
           ok: false,
-          msg: error instanceof Error ? error.message : "Failed to verify OTP",
+          msg: safeErrorMessage(error),
         });
       } finally {
         setLoading(false);

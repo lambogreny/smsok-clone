@@ -3,6 +3,7 @@
 import { useState, useTransition, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createGroup, updateGroup, deleteGroup, getGroupContacts, addContactToGroup, removeContactFromGroup } from "@/lib/actions/groups";
+import { safeErrorMessage } from "@/lib/error-messages";
 
 type Group = {
   id: string;
@@ -69,16 +70,22 @@ export default function GroupsPageClient({
         }
         setShowForm(false);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "เกิดข้อผิดพลาด");
+        setError(safeErrorMessage(e));
       }
     });
   }
 
   function handleDelete(groupId: string) {
     startTransition(async () => {
-      await deleteGroup(userId, groupId);
-      setGroups(prev => prev.filter(g => g.id !== groupId));
-      setDeleteConfirm(null);
+      try {
+        await deleteGroup(userId, groupId);
+        setGroups(prev => prev.filter(g => g.id !== groupId));
+        setDeleteConfirm(null);
+        if (activeGroup?.id === groupId) setActiveGroup(null);
+      } catch (e) {
+        setDeleteConfirm(null);
+        setError(safeErrorMessage(e));
+      }
     });
   }
 
@@ -115,7 +122,7 @@ export default function GroupsPageClient({
         setMembers(prev => prev.filter(m => m.id !== tempMember.id));
         setGroups(prev => prev.map(g => g.id === activeGroup.id ? { ...g, _count: { members: g._count.members - 1 } } : g));
         setActiveGroup(prev => prev ? { ...prev, _count: { members: prev._count.members - 1 } } : prev);
-        setMemberError(e instanceof Error ? e.message : "เพิ่มไม่สำเร็จ");
+        setMemberError(safeErrorMessage(e));
       }
     });
   }
@@ -135,7 +142,7 @@ export default function GroupsPageClient({
         setMembers(prev => [...prev, member]);
         setGroups(prev => prev.map(g => g.id === activeGroup.id ? { ...g, _count: { members: g._count.members + 1 } } : g));
         setActiveGroup(prev => prev ? { ...prev, _count: { members: prev._count.members + 1 } } : prev);
-        setMemberError(e instanceof Error ? e.message : "ลบไม่สำเร็จ");
+        setMemberError(safeErrorMessage(e));
       }
     });
   }

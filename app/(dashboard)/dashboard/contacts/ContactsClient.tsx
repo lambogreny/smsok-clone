@@ -3,6 +3,7 @@
 import { useState, useTransition, useMemo, useRef, useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { safeErrorMessage } from "@/lib/error-messages";
 import {
   createContact,
   updateContact,
@@ -462,7 +463,7 @@ export default function ContactsClient({
       } catch (e) {
         toast(
           "error",
-          e instanceof Error ? e.message : "เกิดข้อผิดพลาด",
+          safeErrorMessage(e),
         );
       }
     });
@@ -482,7 +483,7 @@ export default function ContactsClient({
       } catch (e) {
         toast(
           "error",
-          e instanceof Error ? e.message : "ลบไม่สำเร็จ",
+          safeErrorMessage(e),
         );
       } finally {
         setDeletingId(null);
@@ -543,7 +544,7 @@ export default function ContactsClient({
       } catch (e) {
         toast(
           "error",
-          e instanceof Error ? e.message : "เกิดข้อผิดพลาด",
+          safeErrorMessage(e),
         );
       }
     });
@@ -652,7 +653,7 @@ export default function ContactsClient({
       } catch (e) {
         toast(
           "error",
-          e instanceof Error ? e.message : "ส่งออกไม่สำเร็จ",
+          safeErrorMessage(e),
         );
       }
     });

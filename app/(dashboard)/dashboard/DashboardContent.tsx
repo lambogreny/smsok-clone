@@ -15,6 +15,7 @@ import {
 } from "recharts";
 import { sendSms } from "@/lib/actions/sms";
 import CustomSelect from "@/components/ui/CustomSelect";
+import { safeErrorMessage } from "@/lib/error-messages";
 
 type User = {
   id: string;
@@ -351,7 +352,7 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
       setPhone("");
       setMessage("");
     } catch (e) {
-      setSendResult(e instanceof Error ? e.message : "เกิดข้อผิดพลาด");
+      setSendResult(safeErrorMessage(e));
     } finally {
       setSending(false);
     }

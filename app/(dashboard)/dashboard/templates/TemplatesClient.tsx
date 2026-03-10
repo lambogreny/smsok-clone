@@ -8,6 +8,7 @@ import {
   deleteTemplate,
 } from "@/lib/actions/templates";
 import { useRouter } from "next/navigation";
+import { safeErrorMessage } from "@/lib/error-messages";
 import EmptyState from "@/app/components/ui/EmptyState";
 import { smsCounterText, fieldCls } from "@/lib/form-utils";
 
@@ -310,7 +311,7 @@ export default function TemplatesClient({
       } catch (e) {
         setFeedback({
           type: "error",
-          text: e instanceof Error ? e.message : "เกิดข้อผิดพลาด",
+          text: safeErrorMessage(e),
         });
       }
     });
@@ -329,7 +330,7 @@ export default function TemplatesClient({
       } catch (e) {
         setFeedback({
           type: "error",
-          text: e instanceof Error ? e.message : "ลบไม่สำเร็จ",
+          text: safeErrorMessage(e),
         });
       } finally {
         setDeletingId(null);

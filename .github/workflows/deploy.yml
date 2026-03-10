@@ -20,7 +20,7 @@ jobs:
         uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
+          username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -euo pipefail
@@ -28,12 +28,13 @@ jobs:
             git fetch origin main
             git checkout main
             git pull --ff-only origin main
+            rm -rf .next
             npm install --force
             LIGHTNING_VER="$(node -e 'console.log(require("./node_modules/lightningcss/package.json").version)')"
             OXIDE_VER="$(node -e 'console.log(require("./node_modules/@tailwindcss/oxide/package.json").version)')"
             npm install "lightningcss-linux-x64-gnu@${LIGHTNING_VER}" "@tailwindcss/oxide-linux-x64-gnu@${OXIDE_VER}" --no-save --force
             NEXT_TELEMETRY_DISABLED=1 npm run build
-            pm2 restart smsok --update-env || pm2 start npm --name smsok -- start
+            PORT=3000 HOSTNAME=0.0.0.0 pm2 restart smsok --update-env || PORT=3000 HOSTNAME=0.0.0.0 pm2 start node --name smsok -- .next/standalone/server.js
             pm2 save
 
       - name: Verify health

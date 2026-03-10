@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import EmptyState from "@/app/components/ui/EmptyState";
+import { safeErrorMessage } from "@/lib/error-messages";
 
 type Package = {
   id?: string;
@@ -75,7 +76,7 @@ function SlipUploadSection({ userId }: { userId: string }) {
       setCredits(data.creditsAdded ?? null);
     } catch (e) {
       setStatus("error");
-      setMessage(e instanceof Error ? e.message : "เกิดข้อผิดพลาด กรุณาลองใหม่");
+      setMessage(safeErrorMessage(e));
     }
   }
 

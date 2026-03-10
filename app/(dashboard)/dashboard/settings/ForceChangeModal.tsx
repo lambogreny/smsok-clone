@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { changePasswordForced } from "@/lib/actions";
 import { fieldCls } from "@/lib/form-utils";
+import { safeErrorMessage } from "@/lib/error-messages";
 
 export default function ForceChangeModal({ userId }: { userId: string }) {
   const router = useRouter();
@@ -26,7 +27,7 @@ export default function ForceChangeModal({ userId }: { userId: string }) {
         await changePasswordForced(userId, newPassword);
         router.replace("/dashboard");
       } catch (e) {
-        setError(e instanceof Error ? e.message : "เกิดข้อผิดพลาด กรุณาลองใหม่");
+        setError(safeErrorMessage(e));
       }
     });
   }

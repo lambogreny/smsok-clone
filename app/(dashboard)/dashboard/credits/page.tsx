@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import CustomSelect from "@/components/ui/CustomSelect";
+import { safeErrorMessage } from "@/lib/error-messages";
 
 type CreditEntry = {
   id: string;
@@ -62,7 +63,7 @@ export default function CreditsPage() {
       setEntries(data.entries ?? []);
       setTotal(data.total ?? 0);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "เกิดข้อผิดพลาด");
+      setError(safeErrorMessage(e));
     } finally {
       setLoading(false);
     }

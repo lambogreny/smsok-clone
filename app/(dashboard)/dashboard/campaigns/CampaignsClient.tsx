@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createCampaign } from "@/lib/actions/campaigns";
 import { allowAlphaNumericSpace, fieldCls } from "@/lib/form-utils";
 import CustomSelect from "@/components/ui/CustomSelect";
+import { safeErrorMessage } from "@/lib/error-messages";
 
 // ─── Types ────────────────────────────────────────────────────────────────
 type CampaignStatus = "draft" | "scheduled" | "running" | "completed" | "cancelled";
@@ -175,7 +176,7 @@ export default function CampaignsClient({
         setShowForm(false);
         router.refresh();
       } catch (e) {
-        setFeedback({ type: "error", text: e instanceof Error ? e.message : "เกิดข้อผิดพลาด" });
+        setFeedback({ type: "error", text: safeErrorMessage(e) });
       }
     });
   };

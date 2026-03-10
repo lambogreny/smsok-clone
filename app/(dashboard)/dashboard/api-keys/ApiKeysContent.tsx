@@ -6,6 +6,7 @@ import { createApiKey, toggleApiKey, deleteApiKey } from "@/lib/actions/api-keys
 import EmptyState from "@/app/components/ui/EmptyState";
 import ConfirmDialog from "@/app/components/ui/ConfirmDialog";
 import { fieldCls } from "@/lib/form-utils";
+import { safeErrorMessage } from "@/lib/error-messages";
 
 type ApiKey = {
   id: string;
@@ -55,7 +56,7 @@ export default function ApiKeysContent({ userId, apiKeys: initialKeys }: { userI
       setKeyName("");
       setShowForm(false);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "เกิดข้อผิดพลาด");
+      setError(safeErrorMessage(e));
     } finally {
       setCreating(false);
     }
@@ -66,7 +67,7 @@ export default function ApiKeysContent({ userId, apiKeys: initialKeys }: { userI
       const updated = await toggleApiKey(userId, keyId);
       setApiKeys((prev) => prev.map((k) => (k.id === keyId ? { ...k, isActive: updated.isActive } : k)));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "เกิดข้อผิดพลาด");
+      setError(safeErrorMessage(e));
     }
   };
 
@@ -80,7 +81,7 @@ export default function ApiKeysContent({ userId, apiKeys: initialKeys }: { userI
       await deleteApiKey(userId, deleteTarget);
       setApiKeys((prev) => prev.filter((k) => k.id !== deleteTarget));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "เกิดข้อผิดพลาด");
+      setError(safeErrorMessage(e));
     } finally {
       setDeleteTarget(null);
     }

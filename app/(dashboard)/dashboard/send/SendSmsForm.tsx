@@ -6,6 +6,7 @@ import { sendSms, sendBatchSms } from "@/lib/actions/sms";
 import { smsCounterText } from "@/lib/form-utils";
 import { calculateCreditCost, calculateSmsCount } from "@/lib/validations";
 import CustomSelect from "@/components/ui/CustomSelect";
+import { safeErrorMessage } from "@/lib/error-messages";
 
 type MsgType = "english" | "thai" | "unicode";
 
@@ -66,7 +67,7 @@ export default function SendSmsForm({ userId, senderNames = ["EasySlip"] }: { us
       } catch (e) {
         setResult({
           type: "error",
-          text: e instanceof Error ? e.message : "เกิดข้อผิดพลาด",
+          text: safeErrorMessage(e),
         });
       }
     });

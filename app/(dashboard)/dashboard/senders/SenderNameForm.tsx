@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { requestSenderName } from "@/lib/actions/sender-names";
 import { allowAlphaNumericSpace, fieldCls } from "@/lib/form-utils";
+import { safeErrorMessage } from "@/lib/error-messages";
 
 export default function SenderNameForm({ userId }: { userId: string }) {
   const [name, setName] = useState("");
@@ -26,7 +27,7 @@ export default function SenderNameForm({ userId }: { userId: string }) {
       setName("");
       setPurpose("");
     } catch (e) {
-      setResult({ type: "error", message: e instanceof Error ? e.message : "เกิดข้อผิดพลาด" });
+      setResult({ type: "error", message: safeErrorMessage(e) });
     } finally {
       setLoading(false);
     }
