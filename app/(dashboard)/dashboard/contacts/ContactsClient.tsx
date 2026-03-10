@@ -280,15 +280,31 @@ export default function ContactsClient({
   initialContacts,
   totalContacts,
   initialTags,
+  initialPage = 1,
+  initialLimit = 20,
+  totalPages = 1,
 }: {
   userId: string;
   initialContacts: Contact[];
   totalContacts: number;
   initialTags: DbTag[];
+  initialPage?: number;
+  initialLimit?: number;
+  totalPages?: number;
 }) {
   const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
+
+  // Pagination navigation
+  function navigatePage(page: number, limit?: number) {
+    const params = new URLSearchParams();
+    params.set("page", String(page));
+    params.set("limit", String(limit ?? initialLimit));
+    startTransition(() => {
+      router.push(`/dashboard/contacts?${params.toString()}`);
+    });
+  }
 
   // Form state
   const [showForm, setShowForm] = useState(false);
@@ -1254,6 +1270,91 @@ export default function ContactsClient({
                   </span>
                 </span>
               )}
+            </div>
+          )}
+
+          {/* Pagination Controls */}
+          {!activeTagFilter && !searchQuery && totalContacts > initialLimit && (
+            <div className="px-5 py-4 border-t border-[var(--border-subtle)] flex flex-col sm:flex-row items-center justify-between gap-3">
+              {/* Left: showing info + per-page */}
+              <div className="flex items-center gap-3 text-xs text-[var(--text-muted)]">
+                <span>
+                  แสดง{" "}
+                  <span className="text-[var(--text-primary)] font-medium">
+                    {(initialPage - 1) * initialLimit + 1}–{Math.min(initialPage * initialLimit, totalContacts)}
+                  </span>{" "}
+                  จาก{" "}
+                  <span className="text-[var(--text-primary)] font-medium">{totalContacts}</span>{" "}
+                  รายชื่อ
+                </span>
+                <select
+                  value={initialLimit}
+                  onChange={(e) => navigatePage(1, Number(e.target.value))}
+                  disabled={isPending}
+                  className="bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] text-xs rounded-lg px-2 py-1 focus:outline-none focus:border-violet-500 disabled:opacity-40"
+                >
+                  <option value={20}>20 / หน้า</option>
+                  <option value={50}>50 / หน้า</option>
+                  <option value={100}>100 / หน้า</option>
+                </select>
+              </div>
+
+              {/* Right: page buttons */}
+              <div className="flex items-center gap-1">
+                {/* Previous */}
+                <button
+                  onClick={() => navigatePage(initialPage - 1)}
+                  disabled={isPending || initialPage <= 1}
+                  className="px-3 py-1.5 text-xs rounded-lg border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-violet-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  ← ก่อนหน้า
+                </button>
+
+                {/* Page numbers (max 5 visible) */}
+                {(() => {
+                  const pages: (number | "...")[] = [];
+                  const total = totalPages;
+                  const cur = initialPage;
+                  if (total <= 5) {
+                    for (let i = 1; i <= total; i++) pages.push(i);
+                  } else {
+                    pages.push(1);
+                    if (cur > 3) pages.push("...");
+                    const start = Math.max(2, cur - 1);
+                    const end = Math.min(total - 1, cur + 1);
+                    for (let i = start; i <= end; i++) pages.push(i);
+                    if (cur < total - 2) pages.push("...");
+                    pages.push(total);
+                  }
+                  return pages.map((p, idx) =>
+                    p === "..." ? (
+                      <span key={`ellipsis-${idx}`} className="px-2 py-1.5 text-xs text-[var(--text-muted)]">…</span>
+                    ) : (
+                      <button
+                        key={p}
+                        onClick={() => navigatePage(p as number)}
+                        disabled={isPending || p === cur}
+                        className={`min-w-[32px] px-2 py-1.5 text-xs rounded-lg border transition-colors disabled:cursor-not-allowed ${
+                          p === cur
+                            ? "border-violet-500 bg-violet-500/20 text-violet-300 font-medium"
+                            : "border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-violet-500 disabled:opacity-30"
+                        }`}
+                      >
+                        {isPending && p === cur ? "..." : p}
+                      </button>
+                    )
+                  );
+                })()}
+
+                {/* Next */}
+                <button
+                  onClick={() => navigatePage(initialPage + 1)}
+                  disabled={isPending || initialPage >= totalPages}
+                  className="px-3 py-1.5 text-xs rounded-lg border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-violet-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  ถัดไป →
+                </button>
+              </div>
             </div>
           )}
         </motion.div>
