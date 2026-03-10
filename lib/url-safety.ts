@@ -90,8 +90,10 @@ function isBlockedIPv4(ip: string): boolean {
 }
 
 function isBlockedIP(ip: string): boolean {
-  if (isIP(ip) === 4) return isBlockedIPv4(ip)
-  if (isIP(ip) === 6) return isBlockedIPv6(ip)
+  // Strip IPv6 brackets if present (e.g., "[::1]" → "::1")
+  const cleaned = ip.startsWith("[") && ip.endsWith("]") ? ip.slice(1, -1) : ip
+  if (isIP(cleaned) === 4) return isBlockedIPv4(cleaned)
+  if (isIP(cleaned) === 6) return isBlockedIPv6(cleaned)
   return false
 }
 

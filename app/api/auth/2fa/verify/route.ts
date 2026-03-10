@@ -4,11 +4,28 @@ import { prisma } from "@/lib/db"
 import { setSession } from "@/lib/auth"
 import { ApiError, apiError, apiResponse } from "@/lib/api-auth"
 import { startApiLog, setApiLogUser } from "@/lib/api-log"
+import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit"
 import { env } from "@/lib/env"
 import { verify2FAChallenge } from "@/lib/actions/two-factor"
 
+function getClientIp(req: NextRequest) {
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("x-real-ip") ||
+    "unknown"
+  )
+}
+
 export async function POST(req: NextRequest) {
   startApiLog(req)
+
+  // Rate limit BEFORE auth — prevents TOTP brute-force
+  const ip = getClientIp(req)
+  const limit = checkRateLimit(ip, "auth")
+  if (!limit.allowed) {
+    return rateLimitResponse(limit.resetIn)
+  }
+
   try {
     let body: unknown
     try {
