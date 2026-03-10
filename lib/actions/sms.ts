@@ -65,6 +65,7 @@ export async function sendSms(userId: string, data: unknown, channel: "WEB" | "A
   });
 
   // Send via EasyThunder SMS Gateway
+  let gatewaySent = false;
   try {
     const result = await sendSingleSms(
       normalizePhone(input.recipient),
@@ -73,17 +74,21 @@ export async function sendSms(userId: string, data: unknown, channel: "WEB" | "A
     );
 
     if (result.success) {
-      await db.$transaction(async (tx: Omit<PrismaClient, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">) => {
-        await tx.message.update({
-          where: { id: message.id },
-          data: {
-            status: "sent",
-            sentAt: new Date(),
-            gatewayId: result.jobId || null,
-          },
-        });
+      gatewaySent = true;
 
-        await tx.creditTransaction.create({
+      // Step 1: ALWAYS mark message as "sent" first — this must succeed
+      await db.message.update({
+        where: { id: message.id },
+        data: {
+          status: "sent",
+          sentAt: new Date(),
+          gatewayId: result.jobId || null,
+        },
+      });
+
+      // Step 2: Create ledger entry — if this fails, SMS is still recorded as sent
+      try {
+        await db.creditTransaction.create({
           data: {
             userId,
             amount: -smsCount,
@@ -93,7 +98,10 @@ export async function sendSms(userId: string, data: unknown, channel: "WEB" | "A
             refId: message.id,
           },
         });
-      });
+      } catch (ledgerError) {
+        // Log but don't fail — SMS was sent, message is marked "sent", credits already deducted
+        console.error("[sendSms] creditTransaction ledger failed but SMS was sent:", ledgerError);
+      }
     } else {
       // Gateway returned failure — REFUND credits
       await db.$transaction([
@@ -109,19 +117,21 @@ export async function sendSms(userId: string, data: unknown, channel: "WEB" | "A
       throw new Error(result.error || "ส่ง SMS ไม่สำเร็จ");
     }
   } catch (gatewayError) {
-    // If gateway throws exception — REFUND credits
-    const isSendError = gatewayError instanceof Error && gatewayError.message.includes("ส่ง SMS ไม่สำเร็จ");
-    if (!isSendError) {
-      await db.$transaction([
-        db.message.update({
-          where: { id: message.id },
-          data: { status: "failed" },
-        }),
-        db.user.update({
-          where: { id: userId },
-          data: { credits: { increment: smsCount } },
-        }),
-      ]);
+    // ONLY refund if SMS was NOT actually sent
+    if (!gatewaySent) {
+      const isAlreadyHandled = gatewayError instanceof Error && gatewayError.message.includes("ส่ง SMS ไม่สำเร็จ");
+      if (!isAlreadyHandled) {
+        await db.$transaction([
+          db.message.update({
+            where: { id: message.id },
+            data: { status: "failed" },
+          }),
+          db.user.update({
+            where: { id: userId },
+            data: { credits: { increment: smsCount } },
+          }),
+        ]);
+      }
     }
     throw gatewayError;
   }
@@ -190,6 +200,8 @@ export async function sendBatchSms(userId: string, data: unknown, channel: "WEB"
 
   let sentCount = 0;
   let failedCount = 0;
+  const sentRecipients: string[] = [];
+  const failedRecipients: string[] = [];
 
   for (const batch of batches) {
     try {
@@ -200,35 +212,62 @@ export async function sendBatchSms(userId: string, data: unknown, channel: "WEB"
       });
       if (batchResult.success) {
         sentCount += batch.length;
+        sentRecipients.push(...batch);
       } else {
         failedCount += batch.length;
+        failedRecipients.push(...batch);
       }
     } catch {
       failedCount += batch.length;
+      failedRecipients.push(...batch);
     }
   }
 
-  // Refund credits for failed messages
-  if (failedCount > 0) {
-    const refundCredits = smsCount * failedCount;
-    await db.user.update({
-      where: { id: userId },
-      data: { credits: { increment: refundCredits } },
+  // Update individual message statuses in DB
+  if (sentRecipients.length > 0) {
+    await db.message.updateMany({
+      where: { userId, recipient: { in: sentRecipients }, status: "pending" },
+      data: { status: "sent", sentAt: new Date() },
+    });
+  }
+  if (failedRecipients.length > 0) {
+    await db.message.updateMany({
+      where: { userId, recipient: { in: failedRecipients }, status: "pending" },
+      data: { status: "failed" },
     });
   }
 
-  if (sentCount > 0) {
+  // Refund credits for failed messages + create ledger in one transaction
+  if (failedCount > 0 || sentCount > 0) {
+    const refundCredits = smsCount * failedCount;
     const consumedCredits = smsCount * sentCount;
-    const balance = user.credits - consumedCredits;
-    await db.creditTransaction.create({
-      data: {
-        userId,
-        amount: -consumedCredits,
-        balance,
-        type: "SMS_SEND",
-        description: `Batch SMS sent to ${sentCount} recipients`,
-      },
-    });
+    const finalBalance = user.credits - consumedCredits;
+
+    const ops = [];
+    if (failedCount > 0) {
+      ops.push(
+        db.user.update({
+          where: { id: userId },
+          data: { credits: { increment: refundCredits } },
+        })
+      );
+    }
+    if (sentCount > 0) {
+      ops.push(
+        db.creditTransaction.create({
+          data: {
+            userId,
+            amount: -consumedCredits,
+            balance: finalBalance,
+            type: "SMS_SEND",
+            description: `Batch SMS sent to ${sentCount} recipients`,
+          },
+        })
+      );
+    }
+    if (ops.length > 0) {
+      await db.$transaction(ops);
+    }
   }
 
   revalidatePath("/dashboard");

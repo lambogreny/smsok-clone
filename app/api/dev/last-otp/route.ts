@@ -8,26 +8,31 @@ export async function GET() {
     return NextResponse.json({ error: "Not available in production" }, { status: 403 });
   }
 
-  const otp = await prisma.otpRequest.findFirst({
-    orderBy: { createdAt: "desc" },
-    select: {
-      phone: true,
-      refCode: true,
-      purpose: true,
-      verified: true,
-      attempts: true,
-      expiresAt: true,
-      createdAt: true,
-    },
-  });
+  try {
+    const otp = await prisma.otpRequest.findFirst({
+      orderBy: { createdAt: "desc" },
+      select: {
+        phone: true,
+        refCode: true,
+        purpose: true,
+        verified: true,
+        attempts: true,
+        expiresAt: true,
+        createdAt: true,
+      },
+    });
 
-  if (!otp) {
-    return NextResponse.json({ message: "No OTP requests found" });
+    if (!otp) {
+      return NextResponse.json({ message: "No OTP requests found" });
+    }
+
+    return NextResponse.json({
+      ...otp,
+      note: "Plaintext OTP is logged to server console (search '[DEV] OTP') and shown in register UI as debugCode",
+      expired: otp.expiresAt < new Date(),
+    });
+  } catch (error) {
+    console.error("[dev/last-otp]", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  return NextResponse.json({
-    ...otp,
-    note: "Plaintext OTP is logged to server console (search '[DEV] OTP') and shown in register UI as debugCode",
-    expired: otp.expiresAt < new Date(),
-  });
 }
