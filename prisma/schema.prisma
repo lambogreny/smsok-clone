@@ -38,26 +38,39 @@ model User {
   @@map("users")
 }
 
+enum MessageType {
+  SMS
+  OTP
+}
+
+enum Channel {
+  WEB
+  API
+}
+
 model Message {
-  id          String    @id @default(cuid())
-  userId      String    @map("user_id")
-  user        User      @relation(fields: [userId], references: [id])
-  campaignId  String?   @map("campaign_id")
-  campaign    Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
-  senderName  String    @map("sender_name")
+  id          String      @id @default(cuid())
+  userId      String      @map("user_id")
+  user        User        @relation(fields: [userId], references: [id])
+  campaignId  String?     @map("campaign_id")
+  campaign    Campaign?   @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  type        MessageType @default(SMS)
+  channel     Channel     @default(WEB)
+  senderName  String      @map("sender_name")
   recipient   String
   content     String
-  status      String    @default("pending")
-  creditCost  Int       @default(1) @map("credit_cost")
-  sentAt      DateTime? @map("sent_at")
-  deliveredAt DateTime? @map("delivered_at")
-  gatewayId   String?   @map("gateway_id")
-  errorCode   String?   @map("error_code")
-  createdAt   DateTime  @default(now()) @map("created_at")
+  status      String      @default("pending")
+  creditCost  Int         @default(1) @map("credit_cost")
+  sentAt      DateTime?   @map("sent_at")
+  deliveredAt DateTime?   @map("delivered_at")
+  gatewayId   String?     @map("gateway_id")
+  errorCode   String?     @map("error_code")
+  createdAt   DateTime    @default(now()) @map("created_at")
 
   @@index([userId, createdAt])
   @@index([status])
   @@index([campaignId])
+  @@index([type])
   @@map("messages")
 }
 

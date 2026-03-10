@@ -174,6 +174,8 @@ export async function generateOtp_(
     prisma.message.create({
       data: {
         userId,
+        type: "OTP",
+        channel: "WEB",
         senderName: "EasySlip",
         recipient: normalizedPhone,
         content: "[OTP]",

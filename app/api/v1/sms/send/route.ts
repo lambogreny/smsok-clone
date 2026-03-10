@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
       senderName: input.sender,
       recipient: input.to,
       message: input.message,
-    });
+    }, "API");
 
     return apiResponse({
       id: message.id,

@@ -16,7 +16,7 @@ import { sendSingleSms, sendSmsBatch } from "../sms-gateway";
 // Send single SMS
 // ==========================================
 
-export async function sendSms(userId: string, data: unknown) {
+export async function sendSms(userId: string, data: unknown, channel: "WEB" | "API" = "WEB") {
   const input = sendSmsSchema.parse(data);
   const smsCount = calculateSmsCount(input.message);
 
@@ -43,6 +43,7 @@ export async function sendSms(userId: string, data: unknown) {
     const createdMessage = await tx.message.create({
       data: {
         userId,
+        channel,
         recipient: normalizePhone(input.recipient),
         content: input.message,
         senderName: input.senderName,
@@ -133,7 +134,7 @@ export async function sendSms(userId: string, data: unknown) {
 // Send batch SMS (creates multiple messages)
 // ==========================================
 
-export async function sendBatchSms(userId: string, data: unknown) {
+export async function sendBatchSms(userId: string, data: unknown, channel: "WEB" | "API" = "WEB") {
   const input = sendBatchSmsSchema.parse(data);
   const smsCount = calculateSmsCount(input.message);
   const totalCredits = smsCount * input.recipients.length;
@@ -163,6 +164,7 @@ export async function sendBatchSms(userId: string, data: unknown) {
     const created = await tx.message.createMany({
       data: input.recipients.map((phone) => ({
         userId,
+        channel,
         recipient: normalizePhone(phone),
         content: input.message,
         senderName: input.senderName,

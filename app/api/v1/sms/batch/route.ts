@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
       senderName: input.sender,
       recipients: input.to,
       message: input.message,
-    });
+    }, "API");
 
     return apiResponse({
       total_messages: result.totalMessages,
