@@ -58,6 +58,13 @@ export function apiError(error: unknown) {
     return Response.json({ error: error.message }, { status: error.status });
   }
   if (error instanceof Error) {
+    // Log unexpected server errors for debugging
+    if (process.env.NODE_ENV !== "production" || process.env.DEBUG_API_ERRORS === "1") {
+      console.error("[apiError]", error.name, error.message, error.stack);
+    } else {
+      console.error("[apiError]", error.name, ":", error.message);
+    }
+
     const zodIssues =
       error.name === "ZodError" && "issues" in error && Array.isArray((error as { issues?: unknown[] }).issues)
         ? ((error as { issues: Array<{ message?: string }> }).issues)
@@ -85,5 +92,6 @@ export function apiError(error: unknown) {
       { status: isValidation ? 400 : 500 }
     );
   }
+  console.error("[apiError] unknown error type:", typeof error, error);
   return Response.json({ error: "Internal server error" }, { status: 500 });
 }
