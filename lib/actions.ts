@@ -8,7 +8,8 @@ import { forgotPassword as forgotPasswordAction, resetPassword as resetPasswordA
 
 export async function register(formData: FormData) {
   const parsed = registerSchema.safeParse({
-    name: formData.get("name"),
+    firstName: formData.get("firstName"),
+    lastName: formData.get("lastName"),
     email: formData.get("email"),
     phone: formData.get("phone"),
     password: formData.get("password"),
@@ -17,7 +18,8 @@ export async function register(formData: FormData) {
     return { error: parsed.error.issues[0]?.message || "ข้อมูลไม่ถูกต้อง" };
   }
 
-  const { name, email, phone, password } = parsed.data;
+  const { firstName, lastName, email, phone, password } = parsed.data;
+  const name = `${firstName} ${lastName}`;
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
@@ -62,7 +64,8 @@ export async function registerWithOtp(data: {
   // Validate schema + check duplicates BEFORE consuming OTP
   // (prevents OTP being permanently used if validation or duplicate check fails)
   const parsed = registerSchema.safeParse({
-    name: data.name,
+    firstName: data.name.split(" ")[0] || data.name,
+    lastName: data.name.split(" ").slice(1).join(" ") || data.name,
     email: data.email,
     phone: data.phone,
     password: data.password,
@@ -70,7 +73,8 @@ export async function registerWithOtp(data: {
   if (!parsed.success) {
     throw new Error(parsed.error.issues[0]?.message || "ข้อมูลไม่ถูกต้อง");
   }
-  const { name, email, phone, password } = parsed.data;
+  const { firstName, lastName, email, phone, password } = parsed.data;
+  const name = `${firstName} ${lastName}`;
 
   const [existingEmail, existingPhone] = await Promise.all([
     prisma.user.findUnique({ where: { email }, select: { id: true } }),

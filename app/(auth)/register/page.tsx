@@ -8,6 +8,7 @@ import { blockNonNumeric, blockThai, fieldCls } from "@/lib/form-utils";
 import { generateOtpForRegister } from "@/lib/actions/otp";
 import { registerWithOtp } from "@/lib/actions";
 import { motion, AnimatePresence } from "framer-motion";
+import { safeErrorMessage } from "@/lib/error-messages";
 
 type Step = "form" | "otp";
 
@@ -19,7 +20,8 @@ export default function RegisterPage() {
   const [step, setStep] = useState<Step>("form");
   const [isPending, startTransition] = useTransition();
 
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -51,7 +53,7 @@ export default function RegisterPage() {
 
   const hasErrors = Object.values(errors).some(Boolean);
   const passwordMismatch = confirmPassword.length > 0 && confirmPassword !== password;
-  const isFormComplete = name.trim() && email.trim() && phone.trim() && password.trim() && confirmPassword === password;
+  const isFormComplete = firstName.trim() && lastName.trim() && email.trim() && phone.trim() && password.trim() && confirmPassword === password;
 
   function handleSendOtp() {
     if (!isFormComplete || hasErrors) return;
@@ -67,7 +69,7 @@ export default function RegisterPage() {
           setDebugCode((result as { debugCode?: string }).debugCode ?? null);
         }
       } catch (e) {
-        setFormError(e instanceof Error ? e.message : "เกิดข้อผิดพลาด กรุณาลองใหม่");
+        setFormError(safeErrorMessage(e));
       }
     });
   }
@@ -86,7 +88,7 @@ export default function RegisterPage() {
           setDebugCode((result as { debugCode?: string }).debugCode ?? null);
         }
       } catch (e) {
-        setOtpError(e instanceof Error ? e.message : "เกิดข้อผิดพลาด");
+        setOtpError(safeErrorMessage(e));
       }
     });
   }
@@ -96,10 +98,10 @@ export default function RegisterPage() {
     setOtpError("");
     startTransition(async () => {
       try {
-        await registerWithOtp({ name, email, phone, password, otpRef, otpCode });
+        await registerWithOtp({ name: `${firstName.trim()} ${lastName.trim()}`, email, phone, password, otpRef, otpCode });
         router.push("/dashboard");
       } catch (e) {
-        setOtpError(e instanceof Error ? e.message : "เกิดข้อผิดพลาด");
+        setOtpError(safeErrorMessage(e));
       }
     });
   }
@@ -165,11 +167,19 @@ export default function RegisterPage() {
               )}
 
               <div className="space-y-4">
-                <div>
-                  <label className="block text-xs text-white font-medium uppercase tracking-wider mb-2">ชื่อ-นามสกุล</label>
-                  <input type="text" value={name} onChange={(e) => { setName(e.target.value); validate("name", e.target.value); }}
-                    className={fieldCls(errors.name, name)} placeholder="สมชาย ใจดี" />
-                  {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name}</p>}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-white font-medium uppercase tracking-wider mb-2">ชื่อ</label>
+                    <input type="text" value={firstName} onChange={(e) => { setFirstName(e.target.value); validate("firstName", e.target.value); }}
+                      className={fieldCls(errors.firstName, firstName)} placeholder="สมชาย" />
+                    {errors.firstName && <p className="text-red-400 text-xs mt-1">{errors.firstName}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-xs text-white font-medium uppercase tracking-wider mb-2">นามสกุล</label>
+                    <input type="text" value={lastName} onChange={(e) => { setLastName(e.target.value); validate("lastName", e.target.value); }}
+                      className={fieldCls(errors.lastName, lastName)} placeholder="ใจดี" />
+                    {errors.lastName && <p className="text-red-400 text-xs mt-1">{errors.lastName}</p>}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs text-white font-medium uppercase tracking-wider mb-2">อีเมล</label>

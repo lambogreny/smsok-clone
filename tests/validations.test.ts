@@ -36,20 +36,22 @@ import {
 
 describe("registerSchema", () => {
   const valid = {
-    name: "สมชาย ใจดี",
+    firstName: "สมชาย",
+    lastName: "ใจดี",
     email: "test@example.com",
     password: "Password1",
   };
 
   it("accepts valid registration", () => {
     const result = registerSchema.parse(valid);
-    expect(result.name).toBe("สมชาย ใจดี");
+    expect(result.firstName).toBe("สมชาย");
+    expect(result.lastName).toBe("ใจดี");
     expect(result.email).toBe("test@example.com");
   });
 
   it("trims name whitespace", () => {
-    const result = registerSchema.parse({ ...valid, name: "  สมชาย  " });
-    expect(result.name).toBe("สมชาย");
+    const result = registerSchema.parse({ ...valid, firstName: "  สมชาย  " });
+    expect(result.firstName).toBe("สมชาย");
   });
 
   it("lowercases email", () => {
@@ -57,8 +59,12 @@ describe("registerSchema", () => {
     expect(result.email).toBe("test@example.com");
   });
 
-  it("rejects name < 2 chars", () => {
-    expect(() => registerSchema.parse({ ...valid, name: "A" })).toThrow();
+  it("rejects firstName empty", () => {
+    expect(() => registerSchema.parse({ ...valid, firstName: "" })).toThrow();
+  });
+
+  it("rejects lastName empty", () => {
+    expect(() => registerSchema.parse({ ...valid, lastName: "" })).toThrow();
   });
 
   it("rejects invalid email", () => {
