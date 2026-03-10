@@ -31,12 +31,21 @@ function applyApiHeaders(response: NextResponse, origin: string | null) {
   response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-API-Key");
   response.headers.set("Access-Control-Max-Age", "86400");
   response.headers.set("Vary", "Origin, Authorization, X-API-Key");
+  response.headers.set("Access-Control-Expose-Headers", "X-Request-Id, X-RateLimit-Limit, X-RateLimit-Remaining, Retry-After");
 }
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const requestHeaders = new Headers(req.headers);
+
+  // Generate or propagate X-Request-Id on every request
+  const requestId = req.headers.get("x-request-id") || crypto.randomUUID();
+  requestHeaders.set("x-request-id", requestId);
+
   let response = NextResponse.next({ request: { headers: requestHeaders } });
+
+  // Attach X-Request-Id to every response
+  response.headers.set("X-Request-Id", requestId);
 
   applySecurityHeaders(response);
 
@@ -47,7 +56,9 @@ export function middleware(req: NextRequest) {
 
     // Preflight
     if (req.method === "OPTIONS") {
-      return new NextResponse(null, { status: 204, headers: response.headers });
+      const preflightHeaders = new Headers(response.headers);
+      preflightHeaders.set("X-Request-Id", requestId);
+      return new NextResponse(null, { status: 204, headers: preflightHeaders });
     }
 
     const authHeader = req.headers.get("authorization");
