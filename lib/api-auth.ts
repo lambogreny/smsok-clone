@@ -1,11 +1,15 @@
 import { prisma as db } from "./db";
 import { NextRequest } from "next/server";
+import { startApiLog, setApiLogUser, finishApiLog } from "./api-log";
 
 /**
  * Authenticate API request via Bearer token
  * Checks ApiKey model first, then falls back to User.apiKey
  */
 export async function authenticateApiKey(req: NextRequest) {
+  // Start API request logging
+  startApiLog(req);
+
   const authHeader = req.headers.get("authorization");
   const headerApiKey = req.headers.get("x-api-key")?.trim();
 
@@ -37,6 +41,9 @@ export async function authenticateApiKey(req: NextRequest) {
   // Update lastUsed (fire and forget)
   db.apiKey.update({ where: { id: apiKey.id }, data: { lastUsed: new Date() } }).catch(() => {});
 
+  // Set userId for API logging
+  setApiLogUser(apiKey.user.id);
+
   return apiKey.user;
 }
 
@@ -50,12 +57,15 @@ export class ApiError extends Error {
 }
 
 export function apiResponse(data: unknown, status = 200) {
+  finishApiLog(status, data);
   return Response.json(data, { status });
 }
 
 export function apiError(error: unknown) {
   if (error instanceof ApiError) {
-    return Response.json({ error: error.message }, { status: error.status });
+    const body = { error: error.message };
+    finishApiLog(error.status, body, "CLIENT_ERROR", error.message);
+    return Response.json(body, { status: error.status });
   }
   if (error instanceof Error) {
     // Log unexpected server errors for debugging
@@ -67,10 +77,9 @@ export function apiError(error: unknown) {
 
     // Zod validation errors → always return generic Thai message (never expose field details)
     if (error.name === "ZodError") {
-      return Response.json(
-        { error: "ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบและลองใหม่", code: "VALIDATION_ERROR" },
-        { status: 400 }
-      );
+      const body = { error: "ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบและลองใหม่", code: "VALIDATION_ERROR" };
+      finishApiLog(400, body, "VALIDATION_ERROR", body.error);
+      return Response.json(body, { status: 400 });
     }
 
     // Known Thai validation/business logic errors → 400, expose message
@@ -89,12 +98,13 @@ export function apiError(error: unknown) {
       msg.includes("ถูกล็อค") ||
       msg.includes("หากเบอร์") ||
       msg.includes("ระบบยังไม่พร้อม");
-    // For unexpected server errors (5xx), never expose raw message — may leak internals
-    return Response.json(
-      { error: isThaiValidation ? msg : "เกิดข้อผิดพลาดภายในระบบ กรุณาลองใหม่" },
-      { status: isThaiValidation ? 400 : 500 }
-    );
+    const status = isThaiValidation ? 400 : 500;
+    const body = { error: isThaiValidation ? msg : "เกิดข้อผิดพลาดภายในระบบ กรุณาลองใหม่" };
+    finishApiLog(status, body, status >= 500 ? "INTERNAL_ERROR" : "CLIENT_ERROR", body.error);
+    return Response.json(body, { status });
   }
   console.error("[apiError] unknown error type:", typeof error, error);
-  return Response.json({ error: "Internal server error" }, { status: 500 });
+  const body = { error: "Internal server error" };
+  finishApiLog(500, body, "INTERNAL_ERROR", body.error);
+  return Response.json(body, { status: 500 });
 }

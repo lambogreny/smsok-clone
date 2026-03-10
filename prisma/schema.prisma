@@ -34,6 +34,7 @@ model User {
   campaigns           Campaign[]
   scheduledSms        ScheduledSms[]
   creditTransactions  CreditTransaction[]
+  apiLogs             ApiLog[]
 
   @@map("users")
 }
@@ -285,6 +286,27 @@ model CreditTransaction {
   @@index([userId, createdAt])
   @@index([type])
   @@map("credit_transactions")
+}
+
+model ApiLog {
+  id         String   @id @default(cuid())
+  userId     String?  @map("user_id")
+  user       User?    @relation(fields: [userId], references: [id])
+  method     String   // GET, POST, DELETE
+  url        String   // /api/v1/sms/send
+  reqHeaders String?  @map("req_headers")  // JSON — masked
+  reqBody    String?  @map("req_body")     // JSON — masked
+  resStatus  Int      @map("res_status")   // 200, 400, 500
+  resBody    String?  @map("res_body")     // JSON
+  latencyMs  Int      @map("latency_ms")   // response time
+  errorCode  String?  @map("error_code")   // VALIDATION_ERROR, INTERNAL_ERROR
+  errorMsg   String?  @map("error_msg")    // generic error message
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@index([resStatus])
+  @@index([url])
+  @@map("api_logs")
 }
 
 model Transaction {

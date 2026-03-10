@@ -1,8 +1,10 @@
 import { NextRequest } from "next/server";
 import { ApiError, apiError, apiResponse } from "@/lib/api-auth";
 import { registerWithOtp } from "@/lib/actions";
+import { startApiLog } from "@/lib/api-log";
 
 export async function POST(req: NextRequest) {
+  startApiLog(req);
   try {
     let body: unknown;
     try {
