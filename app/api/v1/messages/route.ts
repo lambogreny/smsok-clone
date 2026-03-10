@@ -19,6 +19,8 @@ export async function GET(req: NextRequest) {
       page: searchParams.get("page") || "1",
       limit: searchParams.get("limit") || "20",
       status: searchParams.get("status") || undefined,
+      type: searchParams.get("type") || undefined,
+      channel: searchParams.get("channel") || undefined,
       senderName: searchParams.get("sender") || undefined,
       search: searchParams.get("search") || undefined,
       from: searchParams.get("from") || undefined,

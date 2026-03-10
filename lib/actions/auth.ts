@@ -25,7 +25,7 @@ function alternatePhone(phone: string) {
 function getResetTokenSecret() {
   const secret = process.env.OTP_HASH_SECRET?.trim() || process.env.JWT_SECRET?.trim();
   if (!secret) {
-    throw new Error("OTP_HASH_SECRET is not configured");
+    throw new Error("ระบบยังไม่พร้อมให้บริการ กรุณาติดต่อผู้ดูแล");
   }
   return secret;
 }

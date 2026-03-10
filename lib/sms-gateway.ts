@@ -34,7 +34,8 @@ async function login(): Promise<{ accessToken: string; refreshToken: string }> {
 
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`SMS Gateway login failed: ${res.status} ${body}`);
+    console.error("[sms-gateway] login failed:", res.status, body);
+    throw new Error("ส่ง SMS ไม่สำเร็จ — gateway authentication failed");
   }
 
   const json = await res.json();
@@ -238,7 +239,8 @@ export async function getJobStatus(jobId: string): Promise<JobStatus> {
 
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`Failed to get job status: ${res.status} ${body}`);
+    console.error("[sms-gateway] job status failed:", res.status, body);
+    throw new Error("ไม่สามารถตรวจสอบสถานะ SMS ได้");
   }
 
   const json = await res.json();

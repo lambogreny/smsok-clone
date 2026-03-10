@@ -103,7 +103,7 @@ export async function sendSms(userId: string, data: unknown, channel: "WEB" | "A
         console.error("[sendSms] creditTransaction ledger failed but SMS was sent:", ledgerError);
       }
     } else {
-      // Gateway returned failure — REFUND credits
+      // Gateway returned failure — REFUND credits + create refund ledger entry
       await db.$transaction([
         db.message.update({
           where: { id: message.id },
@@ -112,6 +112,16 @@ export async function sendSms(userId: string, data: unknown, channel: "WEB" | "A
         db.user.update({
           where: { id: userId },
           data: { credits: { increment: smsCount } },
+        }),
+        db.creditTransaction.create({
+          data: {
+            userId,
+            amount: smsCount,
+            balance: updatedUser.credits + smsCount,
+            type: "REFUND",
+            description: `SMS failed to ${normalizePhone(input.recipient)} — credits refunded`,
+            refId: message.id,
+          },
         }),
       ]);
       throw new Error(result.error || "ส่ง SMS ไม่สำเร็จ");
@@ -129,6 +139,16 @@ export async function sendSms(userId: string, data: unknown, channel: "WEB" | "A
           db.user.update({
             where: { id: userId },
             data: { credits: { increment: smsCount } },
+          }),
+          db.creditTransaction.create({
+            data: {
+              userId,
+              amount: smsCount,
+              balance: updatedUser.credits + smsCount,
+              type: "REFUND",
+              description: `SMS failed — credits refunded`,
+              refId: message.id,
+            },
           }),
         ]);
       }
@@ -308,6 +328,8 @@ export async function getMessages(userId: string, filters: unknown) {
 
   const where: Record<string, unknown> = { userId };
   if (input.status) where.status = input.status;
+  if (input.type) where.type = input.type;
+  if (input.channel) where.channel = input.channel;
   if (input.senderName) where.senderName = input.senderName;
   if (input.search) {
     where.OR = [

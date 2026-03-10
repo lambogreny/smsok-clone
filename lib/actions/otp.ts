@@ -19,7 +19,7 @@ type GenerateOtpOptions = {
 
 function getOtpHashSecret(): string {
   const secret = process.env.OTP_HASH_SECRET?.trim();
-  if (!secret) throw new Error("OTP_HASH_SECRET is not configured");
+  if (!secret) throw new Error("ระบบยังไม่พร้อมให้บริการ กรุณาติดต่อผู้ดูแล");
   return secret;
 }
 
@@ -63,7 +63,8 @@ export async function generateOtp_(
   userId: string,
   phone: string,
   purpose: string = "verify",
-  options: GenerateOtpOptions = {}
+  options: GenerateOtpOptions = {},
+  channel: "WEB" | "API" = "WEB"
 ) {
   const input = sendOtpSchema.parse({ phone, purpose });
   const normalizedPhone = normalizePhone(input.phone);
@@ -175,7 +176,7 @@ export async function generateOtp_(
       data: {
         userId,
         type: "OTP",
-        channel: "WEB",
+        channel,
         senderName: "EasySlip",
         recipient: normalizedPhone,
         content: "[OTP]",

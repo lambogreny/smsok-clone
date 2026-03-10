@@ -16,9 +16,10 @@ export async function GET() {
     await prisma.$queryRaw`SELECT 1`;
     checks.database = { status: "ok", latency: Date.now() - dbStart };
   } catch (e) {
-    const error = e instanceof Error ? e.message : "unknown";
-    checks.database = { status: "error", error };
-    logger.error("Health check: database unreachable", { error });
+    const rawError = e instanceof Error ? e.message : "unknown";
+    // Never expose raw DB error to client — may contain connection strings
+    checks.database = { status: "error", error: "database unreachable" };
+    logger.error("Health check: database unreachable", { error: rawError });
   }
 
   // Memory usage

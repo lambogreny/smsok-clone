@@ -108,7 +108,8 @@ function sanitizedOptionalTextSchema(max: number, maxMessage: string) {
 // ==========================================
 
 export const registerSchema = z.object({
-  name: sanitizedNameSchema(2, 100, "ชื่อต้องมีอย่างน้อย 2 ตัวอักษร", "ชื่อต้องไม่เกิน 100 ตัวอักษร"),
+  firstName: sanitizedNameSchema(1, 50, "กรุณากรอกชื่อ", "ชื่อต้องไม่เกิน 50 ตัวอักษร"),
+  lastName: sanitizedNameSchema(1, 50, "กรุณากรอกนามสกุล", "นามสกุลต้องไม่เกิน 50 ตัวอักษร"),
   email: emailSchema,
   phone: optionalPhoneSchema,
   password: z
@@ -443,6 +444,8 @@ export const reportFilterSchema = z
     page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(100).default(20),
     status: z.enum(["pending", "sent", "delivered", "failed"]).optional(),
+    type: z.enum(["SMS", "OTP"]).optional(),
+    channel: z.enum(["WEB", "API"]).optional(),
     senderName: sanitizedOptionalTextSchema(50, "senderName ต้องไม่เกิน 50 ตัวอักษร"),
     search: sanitizedOptionalTextSchema(100, "คำค้นหาต้องไม่เกิน 100 ตัวอักษร"),
     from: z.coerce.date().optional(),

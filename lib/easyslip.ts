@@ -40,7 +40,8 @@ export async function verifySlipByUrl(imageUrl: string): Promise<SlipVerifyResul
 
   if (!res.ok) {
     const body = await res.text();
-    return { success: false, error: `EasySlip verify failed: ${res.status} ${body}` };
+    console.error("[easyslip] verify failed:", res.status, body);
+    return { success: false, error: "ตรวจสอบสลิปไม่สำเร็จ กรุณาลองใหม่" };
   }
 
   const data = await res.json();
@@ -89,7 +90,8 @@ export async function verifySlipByBase64(base64Image: string): Promise<SlipVerif
 
   if (!res.ok) {
     const body = await res.text();
-    return { success: false, error: `EasySlip verify failed: ${res.status} ${body}` };
+    console.error("[easyslip] verify failed:", res.status, body);
+    return { success: false, error: "ตรวจสอบสลิปไม่สำเร็จ กรุณาลองใหม่" };
   }
 
   const data = await res.json();

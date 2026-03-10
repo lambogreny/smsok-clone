@@ -64,7 +64,7 @@ export async function handleSendOtp(req: NextRequest, body?: unknown) {
 
     const result = await generateOtp_(user.id, input.phone, input.purpose, {
       debug: shouldExposeDebugOtp(req),
-    });
+    }, "API");
     return apiResponse(result, 201);
   } catch (error) {
     return apiError(error);
