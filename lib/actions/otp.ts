@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { sendSingleSms } from "@/lib/sms-gateway";
 import { normalizePhone, sendOtpSchema, verifyOtpSchema } from "@/lib/validations";
+import { checkOtpRateLimit, recordOtpSend } from "@/lib/otp-rate-limit";
 import crypto from "crypto";
 import { Prisma } from "@prisma/client";
 
@@ -64,13 +65,20 @@ export async function generateOtp_(
   phone: string,
   purpose: string = "verify",
   options: GenerateOtpOptions = {},
-  channel: "WEB" | "API" = "WEB"
+  channel: "WEB" | "API" = "WEB",
+  ip: string = "unknown"
 ) {
   const input = sendOtpSchema.parse({ phone, purpose });
   const normalizedPhone = normalizePhone(input.phone);
   const debugMode = options.debug === true && process.env.NODE_ENV !== "production";
 
-  // Rate limit: max 3 OTPs per phone per 5 min (architect spec #100)
+  // Redis rate limit: exponential backoff + daily quota + IP limit
+  const rateLimit = await checkOtpRateLimit(normalizedPhone, ip);
+  if (!rateLimit.allowed) {
+    throw new Error(rateLimit.reason || "ส่ง OTP มากเกินไป กรุณารอสักครู่");
+  }
+
+  // DB-level fallback: max 3 OTPs per phone per 10 min
   const windowStart = new Date(Date.now() - OTP_RATE_WINDOW_MS);
   const recentCount = await prisma.otpRequest.count({
     where: { phone: normalizedPhone, createdAt: { gte: windowStart } },
@@ -158,6 +166,9 @@ export async function generateOtp_(
       throw new Error("ส่ง OTP ไม่สำเร็จ กรุณาลองใหม่");
     }
   }
+
+  // Record successful send for Redis backoff tracking
+  await recordOtpSend(normalizedPhone, ip);
 
   // Log credit deduction + SMS history after confirmed send
   const sentAt = new Date();
@@ -305,12 +316,20 @@ export async function verifyOtpForSession(data: unknown) {
 // Registration OTP — no userId required
 // ==========================================
 
-export async function generateOtpForRegister(phone: string) {
+export async function generateOtpForRegister(phone: string, ip: string = "unknown") {
   const normalizedPhone = normalizePhone(sendOtpSchema.parse({ phone, purpose: "verify" }).phone);
+
+  // Anti-enumeration: check rate limit BEFORE phone existence check
+  // This way attackers can't distinguish "phone exists" vs "rate limited"
+  const rateLimit = await checkOtpRateLimit(normalizedPhone, ip);
+  if (!rateLimit.allowed) {
+    throw new Error(rateLimit.reason || "ส่ง OTP มากเกินไป กรุณารอสักครู่");
+  }
 
   const existing = await prisma.user.findFirst({ where: { phone: normalizedPhone }, select: { id: true } });
   if (existing) throw new Error("เบอร์โทรนี้ถูกใช้งานแล้ว");
 
+  // DB-level fallback
   const windowStart = new Date(Date.now() - OTP_RATE_WINDOW_MS);
   const recentCount = await prisma.otpRequest.count({
     where: { phone: normalizedPhone, createdAt: { gte: windowStart } },
@@ -347,9 +366,13 @@ export async function generateOtpForRegister(phone: string) {
     if (!result.success) throw new Error("ส่ง OTP ไม่สำเร็จ กรุณาลองใหม่");
   }
 
+  // Record successful send for Redis backoff tracking
+  await recordOtpSend(normalizedPhone, ip);
+
   return {
     ref: refCode,
     expiresIn: Math.floor(OTP_EXPIRY_MS / 1000),
+    remainingToday: rateLimit.remainingToday,
     delivery,
     ...(delivery === "debug" ? { debugCode: code } : {}),
   };

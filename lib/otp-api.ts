@@ -1,7 +1,8 @@
 import { NextRequest } from "next/server";
-import { authenticateApiKey, apiError, apiResponse } from "./api-auth";
+import { authenticateApiKey, ApiError, apiError, apiResponse } from "./api-auth";
 import { generateOtp_, verifyOtp_ } from "./actions/otp";
 import { checkRateLimit, rateLimitResponse } from "./rate-limit";
+import { checkOtpRateLimit, recordOtpSend } from "./otp-rate-limit";
 import { sendOtpSchema, verifyOtpSchema } from "./validations";
 
 type JsonRecord = Record<string, unknown>;
@@ -49,23 +50,45 @@ export function isVerifyOtpRequest(body: unknown): boolean {
 export async function handleSendOtp(req: NextRequest, body?: unknown) {
   try {
     const user = await authenticateApiKey(req);
-    const input = pickSendInput(body ?? await req.json());
     const ip = getClientIp(req);
 
-    const phoneLimit = checkRateLimit(`phone:${input.phone}`, "otp_generate");
-    if (!phoneLimit.allowed) {
-      return rateLimitResponse(phoneLimit.resetIn);
+    let input: ReturnType<typeof pickSendInput>;
+    try {
+      input = pickSendInput(body ?? await req.json());
+    } catch {
+      throw new ApiError(400, "กรุณาส่งข้อมูล JSON");
     }
 
-    const ipLimit = checkRateLimit(`otp-send:${ip}`, "otp_generate");
-    if (!ipLimit.allowed) {
-      return rateLimitResponse(ipLimit.resetIn);
+    // Redis-backed OTP rate limiting: exponential backoff + daily quota + IP limit
+    const limit = await checkOtpRateLimit(input.phone, ip);
+    if (!limit.allowed) {
+      return Response.json(
+        {
+          error: limit.reason,
+          retryAfter: limit.retryAfter,
+          remainingToday: limit.remainingToday,
+          otpExpiresIn: limit.otpExpiresIn,
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(limit.retryAfter),
+            "X-RateLimit-Remaining": String(limit.remainingToday),
+          },
+        }
+      );
     }
 
     const result = await generateOtp_(user.id, input.phone, input.purpose, {
       debug: shouldExposeDebugOtp(req),
-    }, "API");
-    return apiResponse(result, 201);
+    }, "API", ip);
+
+    return apiResponse({
+      ...result,
+      retryAfter: 0,
+      remainingToday: limit.remainingToday,
+      otpExpiresIn: limit.otpExpiresIn,
+    }, 201);
   } catch (error) {
     return apiError(error);
   }
@@ -74,17 +97,24 @@ export async function handleSendOtp(req: NextRequest, body?: unknown) {
 export async function handleVerifyOtp(req: NextRequest, body?: unknown) {
   try {
     const user = await authenticateApiKey(req);
-    const input = pickVerifyInput(body ?? await req.json());
     const ip = getClientIp(req);
+
+    let input: ReturnType<typeof pickVerifyInput>;
+    try {
+      input = pickVerifyInput(body ?? await req.json());
+    } catch {
+      throw new ApiError(400, "กรุณาส่งข้อมูล JSON");
+    }
+
+    // IP-based rate limit on verify (still in-memory — verify doesn't need Redis backoff)
+    const ipLimit = checkRateLimit(`otp-verify:${ip}`, "otp_verify");
+    if (!ipLimit.allowed) {
+      return rateLimitResponse(ipLimit.resetIn);
+    }
 
     const refLimit = checkRateLimit(`ref:${input.ref}`, "otp_verify");
     if (!refLimit.allowed) {
       return rateLimitResponse(refLimit.resetIn);
-    }
-
-    const ipLimit = checkRateLimit(`otp-verify:${ip}`, "otp_verify");
-    if (!ipLimit.allowed) {
-      return rateLimitResponse(ipLimit.resetIn);
     }
 
     const result = await verifyOtp_(user.id, input.ref, input.code);
