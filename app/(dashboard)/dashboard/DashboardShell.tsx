@@ -71,7 +71,7 @@ const sidebarItems = [
         <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" />
       </svg>
     ),
-    label: "Contacts",
+    label: "รายชื่อผู้ติดต่อ",
     href: "/dashboard/contacts",
     section: "audience",
   },
@@ -81,7 +81,7 @@ const sidebarItems = [
         <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" /><line x1="7" y1="7" x2="7.01" y2="7" strokeWidth="2.5" />
       </svg>
     ),
-    label: "Tags",
+    label: "แท็ก",
     href: "/dashboard/tags",
     section: "audience",
   },
@@ -91,7 +91,7 @@ const sidebarItems = [
         <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
       </svg>
     ),
-    label: "Segments",
+    label: "กลุ่ม",
     href: "/dashboard/groups",
     section: "audience",
   },
@@ -151,7 +151,7 @@ const sidebarItems = [
         <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" /><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" />
       </svg>
     ),
-    label: "API Docs",
+    label: "เอกสาร API",
     href: "/dashboard/docs",
     section: "settings",
   },
@@ -300,7 +300,7 @@ export default function DashboardShell({
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
                   </svg>
-                  Audience
+                  ผู้รับ
                 </span>
                 <motion.span
                   animate={{ rotate: audienceOpen ? 0 : -90 }}
