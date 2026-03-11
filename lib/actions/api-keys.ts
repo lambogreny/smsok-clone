@@ -105,6 +105,29 @@ export async function toggleApiKey(userId: string, keyId: string) {
 }
 
 // ==========================================
+// Update API key name
+// ==========================================
+
+export async function updateApiKeyName(userId: string, keyId: string, data: unknown) {
+  idSchema.parse({ id: keyId });
+  const input = createApiKeySchema.parse(data);
+
+  const apiKey = await db.apiKey.findFirst({
+    where: { id: keyId, userId },
+  });
+  if (!apiKey) throw new Error("ไม่พบ API Key");
+
+  const updated = await db.apiKey.update({
+    where: { id: keyId },
+    data: { name: input.name },
+    select: { id: true, name: true },
+  });
+
+  revalidatePath("/dashboard/api-keys");
+  return updated;
+}
+
+// ==========================================
 // Delete API key
 // ==========================================
 
