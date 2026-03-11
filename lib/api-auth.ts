@@ -1,7 +1,7 @@
 import { prisma as db } from "./db";
 import { NextRequest } from "next/server";
 import { startApiLog, setApiLogUser, setApiLogApiKey, finishApiLog, ERROR_CODES } from "./api-log";
-import { hashApiKey } from "./actions/api-keys";
+import { hashApiKey } from "./crypto-utils";
 
 /**
  * Authenticate API request via Bearer token

@@ -3,7 +3,8 @@
 import { prisma as db } from "../db";
 import { createApiKeySchema, idSchema } from "../validations";
 import { revalidatePath } from "next/cache";
-import { randomBytes, createHash } from "crypto";
+import { randomBytes } from "crypto";
+import { hashApiKey } from "../crypto-utils";
 
 // ==========================================
 // Generate API key (sk_live_xxxxx format)
@@ -11,10 +12,6 @@ import { randomBytes, createHash } from "crypto";
 
 function generateApiKey(): string {
   return "sk_live_" + randomBytes(32).toString("hex");
-}
-
-export function hashApiKey(key: string): string {
-  return createHash("sha256").update(key).digest("hex");
 }
 
 function maskApiKey(key: string): string {

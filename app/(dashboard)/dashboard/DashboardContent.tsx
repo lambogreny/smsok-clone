@@ -1,8 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { springs } from "@/lib/motion";
+import { useState, useCallback } from "react";
 import Link from "next/link";
 import {
   AreaChart as RechartsAreaChart,
@@ -15,8 +13,27 @@ import {
   ReferenceLine,
 } from "recharts";
 import { sendSms } from "@/lib/actions/sms";
-import CustomSelect from "@/components/ui/CustomSelect";
 import { safeErrorMessage } from "@/lib/error-messages";
+
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type User = {
   id: string;
@@ -37,66 +54,22 @@ type DashboardStats = {
   last7Days: DayStats[];
 };
 
-/* ── Animated Counter ── */
-function AnimatedCounter({ value, duration = 1.2 }: { value: string; duration?: number }) {
-  const numericValue = Number.parseInt(value.replace(/,/g, ""), 10);
-  const isNumeric = !Number.isNaN(numericValue);
-  const [display, setDisplay] = useState(isNumeric ? "0" : value);
-
-  useEffect(() => {
-    if (!isNumeric) return;
-    const end = numericValue;
-    const startTime = performance.now();
-    const animate = (now: number) => {
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / (duration * 1000), 1);
-      const eased = 1 - (1 - progress) ** 3;
-      setDisplay(Math.floor(eased * end).toLocaleString());
-      if (progress < 1) requestAnimationFrame(animate);
-      else setDisplay(end.toLocaleString());
-    };
-    requestAnimationFrame(animate);
-  }, [numericValue, duration, value, isNumeric]);
-
-  return <>{display}</>;
-}
-
-/* ── Sparkline Bar Chart ── */
-function MiniChart({ data, color }: { data: number[]; color: string }) {
-  const max = Math.max(...data);
-  return (
-    <div className="flex items-end gap-[3px] h-10">
-      {data.map((v, i) => (
-        <motion.div
-          key={i}
-          className="w-[5px] rounded-full"
-          initial={{ height: 2, opacity: 0 }}
-          animate={{ height: Math.max((v / max) * 40, 3), opacity: 0.3 + (v / max) * 0.7 }}
-          transition={{ duration: 0.6, delay: i * 0.04, ease: "easeOut" }}
-          style={{ backgroundColor: color }}
-        />
-      ))}
-    </div>
-  );
-}
-
-/* ── Recharts Area Chart — 7-day SMS (real data passed via props) ── */
-
+/* ── Chart Tooltip — Nansen flat style ── */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function ChartTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-xl border border-[rgba(0,255,167,0.15)] bg-[var(--bg-base)]/95 px-4 py-3 shadow-xl shadow-[rgba(0,255,167,0.1)]">
-      <p className="text-xs font-semibold text-[var(--text-primary)] mb-2">{label}</p>
+    <div className="rounded-lg border border-[#08283B] bg-[#131415] px-4 py-3 shadow-xl">
+      <p className="text-xs font-semibold text-white mb-2">{label}</p>
       {payload.map((entry: any) => (
         <div key={entry.dataKey} className="flex items-center justify-between gap-4 text-[11px]">
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
-            <span className="text-[var(--text-muted)]">
+            <span className="text-[#9BA1A5]">
               {entry.dataKey === "sms" ? "ทั้งหมด" : entry.dataKey === "delivered" ? "สำเร็จ" : "ล้มเหลว"}
             </span>
           </span>
-          <span className="font-semibold text-[var(--text-primary)]">{entry.value}</span>
+          <span className="font-semibold text-white">{entry.value}</span>
         </div>
       ))}
     </div>
@@ -104,29 +77,30 @@ function ChartTooltip({ active, payload, label }: any) {
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
+/* ── Area Chart — 7-day SMS ── */
 function SmsAreaChart({ chartData }: { chartData: DayStats[] }) {
   const total = chartData.reduce((a, b) => a + b.sms, 0);
   const avg = Math.round(total / (chartData.length || 1));
 
   return (
-    <div className="relative">
-      {/* Summary chips */}
+    <div>
+      {/* Legend */}
       <div className="flex items-center gap-4 mb-4">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-0.5 rounded-full bg-gradient-to-r from-[#00FFA7] to-[#4779FF]" />
-          <span className="text-[11px] text-[var(--text-muted)]">รวม {total.toLocaleString()} ข้อความ</span>
+          <div className="w-3 h-0.5 rounded-full bg-[#00E2B5]" />
+          <span className="text-[11px] text-[#9BA1A5]">รวม {total.toLocaleString()} ข้อความ</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-emerald-400/60" />
-          <span className="text-[11px] text-[var(--text-muted)]">สำเร็จ</span>
+          <div className="w-2 h-2 rounded-full bg-[#3298DA]" />
+          <span className="text-[11px] text-[#9BA1A5]">สำเร็จ</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-red-400/60" />
-          <span className="text-[11px] text-[var(--text-muted)]">ล้มเหลว</span>
+          <div className="w-2 h-2 rounded-full bg-[#EF4444]" />
+          <span className="text-[11px] text-[#9BA1A5]">ล้มเหลว</span>
         </div>
         <div className="flex items-center gap-2 ml-auto">
-          <div className="w-3 h-0.5 rounded-full bg-amber-400/40" />
-          <span className="text-[11px] text-[var(--text-muted)]">เฉลี่ย {avg}/วัน</span>
+          <div className="w-3 h-0.5 rounded-full bg-[#F59E0B]/40" />
+          <span className="text-[11px] text-[#9BA1A5]">เฉลี่ย {avg}/วัน</span>
         </div>
       </div>
 
@@ -134,206 +108,95 @@ function SmsAreaChart({ chartData }: { chartData: DayStats[] }) {
         <RechartsAreaChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
           <defs>
             <linearGradient id="gradSms" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#00FFA7" stopOpacity={0.35} />
-              <stop offset="50%" stopColor="#4779FF" stopOpacity={0.1} />
-              <stop offset="100%" stopColor="#00FFA7" stopOpacity={0} />
+              <stop offset="0%" stopColor="#00E2B5" stopOpacity={0.1} />
+              <stop offset="100%" stopColor="#00E2B5" stopOpacity={0} />
             </linearGradient>
             <linearGradient id="gradDelivered" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#10B981" stopOpacity={0.25} />
-              <stop offset="100%" stopColor="#10B981" stopOpacity={0} />
+              <stop offset="0%" stopColor="#3298DA" stopOpacity={0.1} />
+              <stop offset="100%" stopColor="#3298DA" stopOpacity={0} />
             </linearGradient>
             <linearGradient id="gradFailed" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#EF4444" stopOpacity={0.2} />
+              <stop offset="0%" stopColor="#EF4444" stopOpacity={0.1} />
               <stop offset="100%" stopColor="#EF4444" stopOpacity={0} />
             </linearGradient>
           </defs>
 
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.06)" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
 
           <XAxis
             dataKey="day"
             axisLine={false}
             tickLine={false}
-            tick={{ fill: "rgba(148,163,184,0.6)", fontSize: 11, fontFamily: "'Noto Sans Thai', 'Inter', sans-serif" }}
+            tick={{ fill: "#9BA1A5", fontSize: 12 }}
             dy={8}
           />
           <YAxis
             axisLine={false}
             tickLine={false}
-            tick={{ fill: "rgba(148,163,184,0.5)", fontSize: 9, fontFamily: "'Inter', sans-serif" }}
+            tick={{ fill: "#9BA1A5", fontSize: 9 }}
             width={40}
           />
 
-          <Tooltip content={<ChartTooltip />} cursor={{ stroke: "rgba(0,255,167,0.15)", strokeDasharray: "4 4" }} />
+          <Tooltip content={<ChartTooltip />} cursor={{ stroke: "rgba(255,255,255,0.1)", strokeDasharray: "4 4" }} />
 
           <ReferenceLine y={avg} stroke="rgba(245,158,11,0.25)" strokeDasharray="6 4" label={{ value: "avg", position: "right", fill: "rgba(245,158,11,0.4)", fontSize: 9 }} />
 
-          <Area
-            type="monotone"
-            dataKey="sms"
-            stroke="#00FFA7"
-            strokeWidth={2.5}
-            fill="url(#gradSms)"
-            dot={{ r: 4, fill: "#00FFA7", stroke: "#061019", strokeWidth: 2 }}
-            activeDot={{ r: 6, fill: "#4779FF", stroke: "#061019", strokeWidth: 2 }}
-            animationDuration={1800}
-            animationEasing="ease-in-out"
-          />
-          <Area
-            type="monotone"
-            dataKey="delivered"
-            stroke="#10B981"
-            strokeWidth={1.5}
-            strokeDasharray="4 2"
-            fill="url(#gradDelivered)"
-            dot={false}
-            activeDot={{ r: 4, fill: "#10B981", stroke: "#061019", strokeWidth: 2 }}
-            animationDuration={2000}
-            animationEasing="ease-in-out"
-          />
-          <Area
-            type="monotone"
-            dataKey="failed"
-            stroke="#EF4444"
-            strokeWidth={1}
-            fill="url(#gradFailed)"
-            dot={false}
-            activeDot={{ r: 3, fill: "#EF4444", stroke: "#061019", strokeWidth: 2 }}
-            animationDuration={2200}
-            animationEasing="ease-in-out"
-          />
+          <Area type="monotone" dataKey="sms" stroke="#00E2B5" strokeWidth={2} fill="url(#gradSms)" dot={{ r: 3, fill: "#00E2B5", stroke: "#06080b", strokeWidth: 2 }} activeDot={{ r: 5, fill: "#00E2B5", stroke: "#06080b", strokeWidth: 2 }} />
+          <Area type="monotone" dataKey="delivered" stroke="#3298DA" strokeWidth={1.5} strokeDasharray="4 2" fill="url(#gradDelivered)" dot={false} activeDot={{ r: 4, fill: "#3298DA", stroke: "#06080b", strokeWidth: 2 }} />
+          <Area type="monotone" dataKey="failed" stroke="#EF4444" strokeWidth={1} fill="url(#gradFailed)" dot={false} activeDot={{ r: 3, fill: "#EF4444", stroke: "#06080b", strokeWidth: 2 }} />
         </RechartsAreaChart>
       </ResponsiveContainer>
     </div>
   );
 }
 
-/* ── Activity Ring ── */
-function ActivityRing({ percent, color, size = 56, label }: { percent: number; color: string; size?: number; label?: string }) {
-  const r = (size - 6) / 2;
-  const circ = 2 * Math.PI * r;
-  const offset = circ - (percent / 100) * circ;
-  return (
-    <div className="flex flex-col items-center gap-1.5">
-      <div className="relative">
-        <svg width={size} height={size} className="-rotate-90">
-          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor" strokeWidth="4" className="text-white/[0.04]" />
-          <motion.circle
-            cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth="4" strokeLinecap="round"
-            strokeDasharray={circ} initial={{ strokeDashoffset: circ }} animate={{ strokeDashoffset: offset }}
-            transition={{ duration: 1.4, ease: "easeOut", delay: 0.3 }}
-          />
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-xs font-bold" style={{ color }}>{percent}%</span>
-        </div>
-      </div>
-      {label && <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">{label}</span>}
-    </div>
-  );
-}
+/* ── Status Config ── */
+const statusConfig: Record<string, { badge: string; label: string }> = {
+  delivered: { badge: "bg-[rgba(16,185,129,0.08)] text-[#34D399] border border-[rgba(16,185,129,0.2)]", label: "สำเร็จ" },
+  sent: { badge: "bg-[rgba(0,226,181,0.08)] text-[#00E2B5] border border-[rgba(0,226,181,0.2)]", label: "ส่งแล้ว" },
+  pending: { badge: "bg-[rgba(245,158,11,0.08)] text-[#FBBF24] border border-[rgba(245,158,11,0.2)]", label: "รอส่ง" },
+  failed: { badge: "bg-[rgba(239,68,68,0.08)] text-[#F87171] border border-[rgba(239,68,68,0.2)]", label: "ล้มเหลว" },
+};
 
-/* ── Stat Card Config (styling only — values computed from real data) ── */
-const statCardStyles = [
+/* ── Stat Card Config — Nansen flat style ── */
+const statCards = [
   {
-    label: "เครดิตคงเหลือ", key: "credits" as const, color: "#00FFA7",
-    gradient: "from-[rgba(0,255,167,0.1)] via-[rgba(0,255,167,0.05)] to-transparent",
-    borderGlow: "hover:border-[rgba(0,255,167,0.2)] hover:shadow-[0_0_30px_rgba(0,255,167,0.08)]",
-    iconBg: "from-[rgba(0,255,167,0.2)] to-[rgba(0,255,167,0.05)]",
+    label: "เครดิตคงเหลือ", key: "credits" as const,
+    iconBg: "bg-[rgba(0,226,181,0.08)]", iconColor: "text-[#00E2B5]",
     icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[#00FFA7]">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[#00E2B5]">
         <circle cx="12" cy="12" r="10" /><text x="12" y="16" textAnchor="middle" fill="currentColor" stroke="none" fontSize="12" fontWeight="bold">฿</text>
       </svg>
     ),
   },
   {
-    label: "ส่งวันนี้", key: "sent" as const, color: "#00FFA7",
-    gradient: "from-[rgba(0,255,167,0.1)] via-[rgba(0,255,167,0.05)] to-transparent",
-    borderGlow: "hover:border-[rgba(0,255,167,0.2)] hover:shadow-[0_0_30px_rgba(0,255,167,0.08)]",
-    iconBg: "from-[rgba(0,255,167,0.2)] to-[rgba(0,255,167,0.05)]",
+    label: "ส่งวันนี้", key: "sent" as const,
+    iconBg: "bg-[rgba(50,152,218,0.08)]", iconColor: "text-[#3298DA]",
     icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[#00FFA7]">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[#3298DA]">
         <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
       </svg>
     ),
   },
   {
-    label: "สำเร็จ", key: "delivered" as const, color: "#10B981",
-    gradient: "from-emerald-500/10 via-emerald-400/5 to-transparent",
-    borderGlow: "hover:border-emerald-500/20 hover:shadow-[0_0_30px_rgba(16,185,129,0.08)]",
-    iconBg: "from-emerald-500/20 to-emerald-400/5",
+    label: "สำเร็จ", key: "delivered" as const,
+    iconBg: "bg-[rgba(16,185,129,0.08)]", iconColor: "text-[#10B981]",
     icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-emerald-400">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[#10B981]">
         <path d="M22 11.08V12a10 10 0 11-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
       </svg>
     ),
   },
   {
-    label: "ล้มเหลว", key: "failed" as const, color: "#EF4444",
-    gradient: "from-red-500/10 via-red-400/5 to-transparent",
-    borderGlow: "hover:border-red-500/20 hover:shadow-[0_0_30px_rgba(239,68,68,0.08)]",
-    iconBg: "from-red-500/20 to-red-400/5",
+    label: "ล้มเหลว", key: "failed" as const,
+    iconBg: "bg-[rgba(239,68,68,0.08)]", iconColor: "text-[#EF4444]",
     icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-red-400">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[#EF4444]">
         <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
       </svg>
     ),
   },
 ];
-
-/* ── Quick Action Buttons ── */
-const quickActions = [
-  {
-    label: "ส่ง SMS", href: "/dashboard/send", desc: "ส่งข้อความทันที",
-    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" /></svg>,
-    gradient: "from-[#00FFA7] to-[#4779FF]", shadow: "shadow-[rgba(0,255,167,0.2)]",
-    ring: "ring-[rgba(0,255,167,0.1)]",
-  },
-  {
-    label: "เติมเครดิต", href: "/dashboard/topup", desc: "เพิ่มเครดิตได้เลย",
-    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10" /><text x="12" y="16" textAnchor="middle" fill="currentColor" stroke="none" fontSize="12" fontWeight="bold">฿</text></svg>,
-    gradient: "from-[#4779FF] to-[#00FFA7]", shadow: "shadow-[rgba(50,152,218,0.2)]",
-    ring: "ring-[rgba(50,152,218,0.1)]",
-  },
-  {
-    label: "ดูรายงาน", href: "/dashboard/analytics", desc: "วิเคราะห์ผลลัพธ์",
-    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>,
-    gradient: "from-[#eaa879] to-[#e08850]", shadow: "shadow-[rgba(234,168,121,0.2)]",
-    ring: "ring-[rgba(234,168,121,0.1)]",
-  },
-  {
-    label: "API Docs", href: "/dashboard/api-docs", desc: "คู่มือนักพัฒนา",
-    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" /><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" /></svg>,
-    gradient: "from-amber-500 to-orange-600", shadow: "shadow-amber-500/20",
-    ring: "ring-amber-500/10",
-  },
-];
-
-const stagger = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.06 } },
-};
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 16 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut" as const } },
-};
-
-const statusConfig: Record<string, { dot: string; badge: string; label: string }> = {
-  delivered: { dot: "bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.5)]", badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20", label: "สำเร็จ" },
-  sent: { dot: "bg-[#00FFA7] shadow-[0_0_8px_rgba(0,255,167,0.5)]", badge: "bg-[rgba(0,255,167,0.1)] text-[#00FFA7] border-[rgba(0,255,167,0.2)]", label: "ส่งแล้ว" },
-  pending: { dot: "bg-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.5)]", badge: "bg-amber-500/10 text-amber-400 border-amber-500/20", label: "รอส่ง" },
-  failed: { dot: "bg-red-400 shadow-[0_0_8px_rgba(239,68,68,0.5)]", badge: "bg-red-500/10 text-red-400 border-red-500/20", label: "ล้มเหลว" },
-};
-
-function useCurrentTime() {
-  const [time, setTime] = useState(new Date());
-  useEffect(() => {
-    const interval = setInterval(() => setTime(new Date()), 60_000);
-    return () => clearInterval(interval);
-  }, []);
-  return time;
-}
 
 export default function DashboardContent({ user, stats, senderNames = ["EasySlip"] }: { user: User; stats?: DashboardStats; senderNames?: string[] }) {
   const [phone, setPhone] = useState("");
@@ -341,7 +204,6 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
   const [senderName, setSenderName] = useState(senderNames[0] || "EasySlip");
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState<string | null>(null);
-  const now = useCurrentTime();
 
   const handleQuickSend = useCallback(async () => {
     if (!phone || !message) return;
@@ -366,7 +228,6 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
     failed: (stats?.today.failed ?? 0).toLocaleString(),
   };
 
-  // Compute real deltas (today vs yesterday)
   const calcDelta = (today: number, yesterday: number): { text: string; positive: boolean } => {
     if (yesterday === 0 && today === 0) return { text: "—", positive: true };
     if (yesterday === 0) return { text: `+${today}`, positive: true };
@@ -383,271 +244,117 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
     failed: calcDelta(stats?.today.failed ?? 0, stats?.yesterday?.failed ?? 0),
   };
 
-  // Sparkline from real 7-day data
-  const sparklines = {
-    credits: stats?.last7Days?.map(d => d.sms) ?? [],
-    sent: stats?.last7Days?.map(d => d.sms) ?? [],
-    delivered: stats?.last7Days?.map(d => d.delivered) ?? [],
-    failed: stats?.last7Days?.map(d => d.failed) ?? [],
-  };
-
-  const successRate = stats?.today.total
-    ? Math.round((stats.today.delivered / stats.today.total) * 100)
-    : 0;
-
-  const hour = now.getHours();
-  const greeting = hour < 12 ? "สวัสดีตอนเช้า" : hour < 17 ? "สวัสดีตอนบ่าย" : "สวัสดีตอนเย็น";
-
-  const dateStr = now.toLocaleDateString("th-TH", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
-
   return (
-    <motion.div className="p-4 md:p-8 max-w-[1280px] mx-auto" initial="hidden" animate="show" variants={stagger}>
+    <div className="p-4 md:p-6 space-y-6">
 
-      {/* ═══════════════════════════════════════════════════════
-          WELCOME HERO BANNER
-          ═══════════════════════════════════════════════════════ */}
-      <motion.div variants={fadeUp} className="relative overflow-hidden rounded-3xl mb-8 border border-white/[0.06] group">
-        {/* Flat dark bg */}
-        <div className="absolute inset-0 bg-[var(--bg-surface)]" />
+      {/* ── Page Header ── */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-white">ภาพรวม</h1>
+        <Link href="/dashboard/send">
+          <Button className="bg-[#00E2B5] hover:bg-[#0AE99C] text-[#06080b] font-semibold rounded-[20px] h-11 px-6">
+            ส่ง SMS →
+          </Button>
+        </Link>
+      </div>
 
-        {/* Border accent on hover */}
-        <div className="absolute -inset-[1px] rounded-3xl bg-gradient-to-r from-[rgba(0,255,167,0.15)] via-[rgba(50,152,218,0.1)] to-[rgba(0,255,167,0.15)] opacity-0 group-hover:opacity-100 transition-opacity duration-700 -z-10" />
-
-        <div className="relative px-6 py-8 md:px-10 md:py-12">
-          <div className="flex items-start justify-between gap-6">
-            <div className="flex-1 min-w-0">
-              {/* Date badge */}
-              <motion.div
-                className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] mb-4"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.15 }}
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[#00FFA7]">
-                  <rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
-                </svg>
-                <span className="text-[11px] text-[var(--text-muted)]">{dateStr}</span>
-              </motion.div>
-
-              <motion.p
-                className="text-xs text-[#00FFA7] font-medium uppercase tracking-[0.2em] mb-2"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                {greeting}
-              </motion.p>
-
-              <motion.h1
-                className="text-3xl md:text-4xl font-bold tracking-tight mb-3"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-              >
-                <span className="gradient-text-mixed">{user.name}</span>
-              </motion.h1>
-
-              <motion.div
-                className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-[var(--text-muted)]"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.4 }}
-              >
-                <span className="flex items-center gap-1.5">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[#00FFA7]">
-                    <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
-                  </svg>
-                  วันนี้ส่ง <span className="text-[#00FFA7] font-semibold">{stats?.today.total ?? 0}</span> ข้อความ
-                </span>
-                {successRate > 0 && (
-                  <span className="flex items-center gap-1.5">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-emerald-400">
-                      <path d="M22 11.08V12a10 10 0 11-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
-                    </svg>
-                    อัตราสำเร็จ <span className="text-emerald-400 font-semibold">{successRate}%</span>
-                  </span>
-                )}
-                <span className="flex items-center gap-1.5">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[#00FFA7]">
-                    <circle cx="12" cy="12" r="10" /><text x="12" y="16" textAnchor="middle" fill="currentColor" stroke="none" fontSize="12" fontWeight="bold">฿</text>
-                  </svg>
-                  เครดิต <span className="text-[#00FFA7] font-semibold">{(stats?.user.credits ?? user.credits).toLocaleString()}</span>
-                </span>
-              </motion.div>
-            </div>
-
-            {/* Activity Rings */}
-            <motion.div
-              className="hidden md:flex items-center gap-5"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.5, ...springs.smooth }}
-            >
-              <ActivityRing percent={successRate || 0} color="#10B981" size={80} label="สำเร็จ" />
-              <ActivityRing
-                percent={stats?.today.total ? Math.min(Math.round((stats.today.total / 500) * 100), 100) : 0}
-                color="#00FFA7"
-                size={80}
-                label="วันนี้"
-              />
-            </motion.div>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* ═══════════════════════════════════════════════════════
-          QUICK ACTIONS — Gradient pill buttons
-          ═══════════════════════════════════════════════════════ */}
-      <motion.div variants={fadeUp} className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-        {quickActions.map((action) => (
-          <motion.div key={action.label} whileHover={{ y: -3, scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-            <Link
-              href={action.href}
-              className={`relative flex flex-col gap-1 px-4 py-4 rounded-2xl bg-gradient-to-br ${action.gradient} shadow-lg ${action.shadow} text-white transition-all hover:shadow-xl ring-1 ${action.ring} overflow-hidden group`}
-            >
-              <div className="absolute inset-0 bg-white/0 group-hover:bg-white/5 transition-colors" />
-              <div className="relative flex items-center gap-2.5">
-                <span className="opacity-90">{action.icon}</span>
-                <span className="text-sm font-semibold">{action.label}</span>
-              </div>
-              <span className="relative text-[10px] text-slate-300 pl-[30px]">{action.desc}</span>
-            </Link>
-          </motion.div>
-        ))}
-      </motion.div>
-
-      {/* ═══════════════════════════════════════════════════════
-          STATS GRID — Nansen flat cards
-          ═══════════════════════════════════════════════════════ */}
-      <motion.div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8" variants={stagger}>
-        {statCardStyles.map((stat) => {
+      {/* ── 4 Stat Cards — Nansen flat ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {statCards.map((stat) => {
           const delta = deltas[stat.key];
-          const sparkData = sparklines[stat.key];
           return (
-            <motion.div
-              key={stat.key}
-              variants={fadeUp}
-              whileHover={{ y: -4, transition: springs.bouncy }}
-              className={`relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[var(--bg-elevated)]/80 p-5 group cursor-default transition-all duration-500 ${stat.borderGlow}`}
-            >
-              {/* Gradient overlay */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-60 group-hover:opacity-100 transition-opacity duration-500`} />
-
-              {/* Hover accent */}
-              <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-700" style={{ backgroundColor: stat.color }} />
-
-              <div className="relative z-10">
+            <Card key={stat.key} className="bg-[#131415] border-[#08283B] rounded-[20px] hover:border-[rgba(0,226,181,0.15)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.3)] hover:-translate-y-[2px] transition-all duration-200">
+              <CardContent className="p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${stat.iconBg} border border-white/[0.06] flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                  <div className={`w-9 h-9 rounded-[10px] ${stat.iconBg} flex items-center justify-center`}>
                     {stat.icon}
                   </div>
-                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${delta.positive ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/15" : "bg-red-500/10 text-red-400 border-red-500/15"}`}>
+                  <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${
+                    delta.positive
+                      ? "bg-[rgba(16,185,129,0.08)] text-[#10B981] border-[rgba(16,185,129,0.15)]"
+                      : "bg-[rgba(239,68,68,0.08)] text-[#EF4444] border-[rgba(239,68,68,0.15)]"
+                  }`}>
                     {delta.positive ? "↑" : "↓"} {delta.text}
                   </span>
                 </div>
-
-                <div className="text-3xl font-bold mb-1.5 text-[var(--text-primary)] tracking-tight">
-                  <AnimatedCounter value={statValues[stat.key]} />
+                <div className="text-[28px] font-bold text-white tracking-tight mb-1">
+                  {statValues[stat.key]}
                 </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--text-muted)] font-medium">{stat.label}</span>
-                  {sparkData.length > 0 && <MiniChart data={sparkData} color={stat.color} />}
+                <div className="text-xs font-medium text-[#9BA1A5] uppercase">
+                  {stat.label}
                 </div>
-              </div>
-            </motion.div>
+              </CardContent>
+            </Card>
           );
         })}
-      </motion.div>
+      </div>
 
-      {/* ═══════════════════════════════════════════════════════
-          7-DAY CHART — Interactive area chart
-          ═══════════════════════════════════════════════════════ */}
-      <motion.div variants={fadeUp} className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[var(--bg-elevated)]/80 p-6 mb-8">
-        <div className="absolute inset-0 bg-gradient-to-br from-[rgba(0,255,167,0.03)] via-transparent to-[rgba(50,152,218,0.03)]" />
-
-        <div className="relative z-10">
+      {/* ── 7-Day Chart ── */}
+      <Card className="bg-[#131415] border-[#08283B] rounded-[20px]">
+        <CardContent className="p-5">
           <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[rgba(0,255,167,0.15)] to-[rgba(50,152,218,0.1)] border border-[rgba(0,255,167,0.1)] flex items-center justify-center">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[#00FFA7]">
-                  <path d="M3 3v18h18" /><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-base font-semibold gradient-text-mixed">SMS 7 วันล่าสุด</h3>
-                <p className="text-[11px] text-[var(--text-muted)]">เลื่อนเมาส์ดูรายละเอียดแต่ละวัน</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] text-[var(--text-muted)] px-3 py-1 rounded-full bg-[var(--bg-surface)] border border-[var(--border-subtle)]">7 วัน</span>
-            </div>
+            <h3 className="text-base font-semibold text-white">SMS Volume (7 วัน)</h3>
+            <span className="text-xs text-[#9BA1A5] px-3 py-1 rounded-full bg-[#06080b] border border-[#08283B]">7 วัน</span>
           </div>
-
           <SmsAreaChart chartData={stats?.last7Days ?? []} />
-        </div>
-      </motion.div>
+        </CardContent>
+      </Card>
 
-      {/* ═══════════════════════════════════════════════════════
-          TWO-COLUMN: Quick Send + Recent Messages
-          ═══════════════════════════════════════════════════════ */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
+      {/* ── Two Column: Quick Send + Recent Messages ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
 
         {/* Quick Send — 2 cols */}
-        <motion.div className="lg:col-span-2 relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[var(--bg-elevated)]/80 p-6" variants={fadeUp}>
-          <div className="absolute inset-0 bg-gradient-to-br from-[rgba(0,255,167,0.03)] to-transparent" />
+        <Card className="lg:col-span-2 bg-[#131415] border-[#08283B] rounded-[20px]">
+          <CardContent className="p-5">
+            <h3 className="text-base font-semibold text-white mb-5">ส่งด่วน</h3>
 
-          <div className="relative z-10">
-            <h3 className="text-base font-semibold mb-5 flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[rgba(0,255,167,0.15)] to-[rgba(50,152,218,0.1)] border border-[rgba(0,255,167,0.1)] flex items-center justify-center">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[#00FFA7]">
-                  <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
-                </svg>
-              </div>
-              <span className="gradient-text-mixed">ส่งด่วน</span>
-            </h3>
-
-            <div className="space-y-3.5">
+            <div className="space-y-4">
               <div>
-                <label className="block text-xs text-[var(--text-muted)] mb-1.5 font-medium">ชื่อผู้ส่ง</label>
-                <CustomSelect
-                  value={senderName}
-                  onChange={setSenderName}
-                  options={senderNames.map((name) => ({
-                    value: name,
-                    label: name === "EasySlip" ? "EasySlip (ค่าเริ่มต้น)" : name,
-                  }))}
+                <label className="block text-xs text-[#9BA1A5] mb-1.5 font-medium">ชื่อผู้ส่ง</label>
+                <Select value={senderName} onValueChange={(v) => v && setSenderName(v)}>
+                  <SelectTrigger className="h-11 bg-[#06080b] border-[#08283B] text-white rounded-xl focus:border-[rgba(0,226,181,0.6)] focus:ring-[rgba(0,226,181,0.15)]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#131415] border-[#08283B] rounded-xl">
+                    {senderNames.map((name) => (
+                      <SelectItem key={name} value={name} className="hover:bg-[#000000] text-white">
+                        {name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="block text-xs text-[#9BA1A5] mb-1.5 font-medium">เบอร์ปลายทาง</label>
+                <Input
+                  type="text"
+                  placeholder="0891234567"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="h-11 bg-[#06080b] border-[#08283B] text-white rounded-xl placeholder:text-[#9BA1A5] focus:border-[rgba(0,226,181,0.6)] focus:ring-[rgba(0,226,181,0.15)]"
                 />
               </div>
               <div>
-                <label className="block text-xs text-[var(--text-muted)] mb-1.5 font-medium">เบอร์ปลายทาง</label>
-                <input type="text" className="input-glass" placeholder="0891234567" value={phone} onChange={(e) => setPhone(e.target.value)} />
-              </div>
-              <div>
-                <label className="block text-xs text-[var(--text-muted)] mb-1.5 font-medium">ข้อความ</label>
-                <textarea className="input-glass resize-none" rows={3} placeholder="รหัส OTP ของคุณคือ {code}" value={message} onChange={(e) => setMessage(e.target.value)} />
+                <label className="block text-xs text-[#9BA1A5] mb-1.5 font-medium">ข้อความ</label>
+                <Textarea
+                  rows={3}
+                  placeholder="รหัส OTP ของคุณคือ {code}"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  className="bg-[#06080b] border-[#08283B] text-white rounded-xl resize-none placeholder:text-[#9BA1A5] focus:border-[rgba(0,226,181,0.6)] focus:ring-[rgba(0,226,181,0.15)]"
+                />
               </div>
             </div>
 
-            <AnimatePresence>
-              {sendResult && (
-                <motion.p
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  className={`mt-3 text-xs font-medium ${sendResult.includes("สำเร็จ") ? "text-emerald-400" : "text-red-400"}`}
-                >
-                  {sendResult}
-                </motion.p>
-              )}
-            </AnimatePresence>
+            {sendResult && (
+              <p className={`mt-3 text-xs font-medium transition-opacity duration-200 ${sendResult.includes("สำเร็จ") ? "text-[#10B981]" : "text-[#EF4444]"}`}>
+                {sendResult}
+              </p>
+            )}
 
-            <motion.button
+            <Button
               onClick={handleQuickSend}
               disabled={sending || !phone || !message}
-              className="btn-gradient w-full mt-4 py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.98 }}
+              className="w-full mt-4 h-11 bg-[#00E2B5] hover:bg-[#0AE99C] text-[#06080b] rounded-[20px] font-semibold disabled:opacity-50"
             >
               {sending ? (
                 <span className="flex items-center gap-2">
@@ -655,175 +362,93 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
                   กำลังส่ง...
                 </span>
               ) : (
-                <>
-                  ส่ง SMS
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-                </>
+                <>ส่ง SMS →</>
               )}
-            </motion.button>
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Recent Messages — Nansen Table — 3 cols */}
+        <Card className="lg:col-span-3 bg-[#131415] border-[#08283B] rounded-[20px] overflow-hidden">
+          <div className="flex items-center justify-between px-5 pt-5 pb-4">
+            <h3 className="text-base font-semibold text-white">ข้อความล่าสุด</h3>
+            <Link href="/dashboard/messages" className="text-xs text-[#2060DF] hover:underline transition-colors">
+              ดูทั้งหมด →
+            </Link>
           </div>
-        </motion.div>
 
-        {/* Recent Messages — 3 cols */}
-        <motion.div className="lg:col-span-3 relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[var(--bg-elevated)]/80 p-6" variants={fadeUp}>
-          <div className="absolute inset-0 bg-gradient-to-br from-[rgba(0,255,167,0.03)] to-transparent" />
-
-          <div className="relative z-10">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-base font-semibold flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[rgba(0,255,167,0.15)] to-[rgba(50,152,218,0.1)] border border-[rgba(0,255,167,0.1)] flex items-center justify-center">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[#00FFA7]">
-                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-                  </svg>
-                </div>
-                <span className="gradient-text-cyan">ข้อความล่าสุด</span>
-              </h3>
-              <motion.div whileHover={{ x: 3 }}>
-                <Link href="/dashboard/messages" className="text-xs text-[var(--text-muted)] hover:text-[#00FFA7] transition-colors flex items-center gap-1 px-3 py-1.5 rounded-full bg-[var(--bg-surface)]/50 border border-[var(--border-subtle)] hover:border-[rgba(0,255,167,0.2)]">
-                  ดูทั้งหมด
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-                </Link>
-              </motion.div>
-            </div>
-
-            {stats?.recentMessages && stats.recentMessages.length > 0 ? (
-              <div className="space-y-2">
-                {stats.recentMessages.map((msg, i) => {
+          {stats?.recentMessages && stats.recentMessages.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-[#093A57] border-b border-[#08283B] hover:bg-[#093A57]">
+                  <TableHead className="text-[12px] uppercase text-[#C4C4C4] font-semibold tracking-[0.05em] py-2.5 px-4">เวลา</TableHead>
+                  <TableHead className="text-[12px] uppercase text-[#C4C4C4] font-semibold tracking-[0.05em] py-2.5 px-4">ผู้รับ</TableHead>
+                  <TableHead className="text-[12px] uppercase text-[#C4C4C4] font-semibold tracking-[0.05em] py-2.5 px-4 hidden md:table-cell">ผู้ส่ง</TableHead>
+                  <TableHead className="text-[12px] uppercase text-[#C4C4C4] font-semibold tracking-[0.05em] py-2.5 px-4 text-right">ราคา</TableHead>
+                  <TableHead className="text-[12px] uppercase text-[#C4C4C4] font-semibold tracking-[0.05em] py-2.5 px-4 text-center">สถานะ</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {stats.recentMessages.slice(0, 5).map((msg, i) => {
                   const s = statusConfig[msg.status] || statusConfig.pending;
+                  const time = new Date(msg.createdAt).toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
                   return (
-                    <motion.div
+                    <TableRow
                       key={msg.id}
-                      initial={{ opacity: 0, x: -12 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.04, ease: "easeOut" }}
-                      whileHover={{ x: 4, backgroundColor: "rgba(0,255,167,0.04)" }}
-                      className="flex items-center justify-between py-3 px-4 rounded-xl bg-[var(--bg-surface)]/40 border border-[var(--border-subtle)] hover:border-[rgba(0,255,167,0.15)] transition-all cursor-default group"
+                      className={`border-b border-[#08283B] hover:bg-[#000000] transition-[background] duration-150 h-10 ${
+                        i % 2 === 1 ? "bg-[#042133]" : "bg-transparent"
+                      }`}
                     >
-                      <div className="flex items-center gap-3">
-                        <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${s.dot}`} />
-                        <div>
-                          <span className="text-sm text-[var(--text-secondary)] font-mono group-hover:text-[var(--text-primary)] transition-colors">{msg.recipient}</span>
-                          <span className="text-[11px] text-[var(--text-muted)] ml-2">{msg.senderName}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-[11px] text-[var(--text-muted)] font-mono">฿{msg.creditCost}</span>
-                        <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-semibold border ${s.badge}`}>
+                      <TableCell className="text-sm text-white font-mono py-2 px-4">{time}</TableCell>
+                      <TableCell className="text-sm text-white font-mono py-2 px-4">{msg.recipient}</TableCell>
+                      <TableCell className="text-sm text-[#C4C4C4] py-2 px-4 hidden md:table-cell">{msg.senderName}</TableCell>
+                      <TableCell className="text-sm text-white font-mono py-2 px-4 text-right">฿{msg.creditCost}</TableCell>
+                      <TableCell className="py-2 px-4 text-center">
+                        <span className={`text-[11px] font-medium px-2.5 py-0.5 rounded-full ${s.badge}`}>
                           {s.label}
                         </span>
-                      </div>
-                    </motion.div>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
-              </div>
-            ) : (
-              <motion.div
-                className="text-center py-16"
-                initial={{ opacity: 0, scale: 0.96 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2 }}
-              >
-                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[rgba(0,255,167,0.1)] to-[rgba(50,152,218,0.05)] border border-[var(--border-subtle)] flex items-center justify-center">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="text-[var(--text-muted)]">
-                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-                  </svg>
-                </div>
-                <p className="text-sm text-[var(--text-secondary)] mb-1">ยังไม่มีข้อความ</p>
-                <p className="text-xs text-[var(--text-muted)] mb-5">ส่ง SMS แรกของคุณเลย</p>
-                <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                  <Link href="/dashboard/send" className="btn-primary inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold">
-                    ส่ง SMS
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-                  </Link>
-                </motion.div>
-              </motion.div>
-            )}
-          </div>
-        </motion.div>
+              </TableBody>
+            </Table>
+          ) : (
+            <div className="text-center py-16 px-5">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="text-[#9BA1A5] mx-auto mb-4">
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+              </svg>
+              <p className="text-lg font-semibold text-white mb-1">ยังไม่มีข้อความ</p>
+              <p className="text-sm text-[#9BA1A5] mb-5">ส่ง SMS แรกของคุณเลย</p>
+              <Link href="/dashboard/send">
+                <Button className="bg-[#00E2B5] hover:bg-[#0AE99C] text-[#06080b] font-semibold rounded-[20px] h-11 px-6">
+                  ส่ง SMS →
+                </Button>
+              </Link>
+            </div>
+          )}
+        </Card>
       </div>
 
-      {/* ═══════════════════════════════════════════════════════
-          MONTHLY OVERVIEW — Progress bars with gradient fills
-          ═══════════════════════════════════════════════════════ */}
-      {stats?.thisMonth && stats.thisMonth.total > 0 && (
-        <motion.div variants={fadeUp} className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[var(--bg-elevated)]/80 p-6 mb-8">
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/[0.02] to-transparent" />
-
-          <div className="relative z-10">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-sm font-semibold text-[var(--text-secondary)] flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500/15 to-orange-500/10 border border-amber-500/10 flex items-center justify-center">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-amber-400">
-                    <rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
-                  </svg>
-                </div>
-                สรุปเดือนนี้
-              </h3>
-              <span className="text-xs text-[var(--text-muted)] px-3 py-1 rounded-full bg-[var(--bg-surface)] border border-[var(--border-subtle)]">{stats.thisMonth.total.toLocaleString()} ข้อความ</span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
-              {[
-                { label: "สำเร็จ", value: stats.thisMonth.delivered, color: "bg-gradient-to-r from-emerald-500 to-emerald-400", textColor: "text-emerald-400", pct: Math.round((stats.thisMonth.delivered / stats.thisMonth.total) * 100) },
-                { label: "ส่งแล้ว", value: stats.thisMonth.sent, color: "bg-gradient-to-r from-[#00FFA7] to-[#4779FF]", textColor: "text-[#00FFA7]", pct: Math.round((stats.thisMonth.sent / stats.thisMonth.total) * 100) },
-                { label: "รอดำเนินการ", value: stats.thisMonth.pending, color: "bg-gradient-to-r from-amber-500 to-amber-400", textColor: "text-amber-400", pct: Math.round((stats.thisMonth.pending / stats.thisMonth.total) * 100) },
-                { label: "ล้มเหลว", value: stats.thisMonth.failed, color: "bg-gradient-to-r from-red-500 to-red-400", textColor: "text-red-400", pct: Math.round((stats.thisMonth.failed / stats.thisMonth.total) * 100) },
-              ].map((item) => (
-                <div key={item.label}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-[var(--text-secondary)] font-medium">{item.label}</span>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-xs font-bold ${item.textColor}`}>{item.value.toLocaleString()}</span>
-                      <span className="text-[10px] text-[var(--text-muted)] bg-[var(--bg-surface)] px-1.5 py-0.5 rounded">{item.pct}%</span>
-                    </div>
-                  </div>
-                  <div className="h-2 rounded-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] overflow-hidden">
-                    <motion.div
-                      className={`h-full rounded-full ${item.color}`}
-                      initial={{ width: 0 }}
-                      animate={{ width: `${item.pct}%` }}
-                      transition={{ duration: 1, delay: 0.5, ease: "easeOut" }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </motion.div>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════
-          SYSTEM STATUS — Minimal operational grid
-          ═══════════════════════════════════════════════════════ */}
-      <motion.div variants={fadeUp} className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[var(--bg-elevated)]/80 p-6">
-        <div className="relative z-10">
-          <h3 className="text-sm font-semibold text-[var(--text-secondary)] mb-4 flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500/15 to-green-500/10 border border-emerald-500/10 flex items-center justify-center">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-emerald-400">
-                <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-              </svg>
-            </div>
-            สถานะระบบ
-            <span className="text-[10px] text-emerald-400 font-normal ml-1">ทุกระบบปกติ</span>
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {/* ── System Status ── */}
+      <Card className="bg-[#131415] border-[#08283B] rounded-[20px]">
+        <CardContent className="p-4 px-5">
+          <div className="flex flex-wrap items-center gap-6">
+            <span className="text-sm font-semibold text-white mr-2">System Status</span>
             {[
               { label: "SMS Gateway" },
               { label: "OTP Service" },
               { label: "API Server" },
               { label: "Database" },
             ].map((s) => (
-              <div key={s.label} className="flex items-center gap-2.5 py-3 px-3.5 rounded-xl bg-[var(--bg-surface)]/40 border border-[var(--border-subtle)] hover:border-emerald-500/10 transition-colors group">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.5)] group-hover:shadow-[0_0_12px_rgba(16,185,129,0.7)] transition-shadow" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-[var(--text-secondary)]">{s.label}</p>
-                  <p className="text-[10px] text-emerald-400">Operational</p>
-                </div>
+              <div key={s.label} className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#10B981]" />
+                <span className="text-[13px] text-[#C4C4C4]">{s.label}</span>
               </div>
             ))}
           </div>
-        </div>
-      </motion.div>
-    </motion.div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
