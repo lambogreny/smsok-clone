@@ -54,7 +54,7 @@ export default function ProfileEditForm({ userId, initialName }: Props) {
         <button
           type="submit"
           disabled={isPending || !name.trim() || name.trim().length < 2}
-          className="btn-primary px-6 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 disabled:opacity-40"
+          className="btn-primary px-6 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
         >
           {isPending ? (
             <>

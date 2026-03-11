@@ -1,45 +1,64 @@
 "use client";
 
-import { useState, useTransition, useMemo, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { removeContactFromGroup, bulkRemoveFromGroup } from "@/lib/actions/groups";
+import { useState, useTransition, useMemo, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { removeContactFromGroup, bulkRemoveFromGroup, getContactsNotInGroup } from "@/lib/actions/groups";
 import { importContacts, addContactsToGroup } from "@/lib/actions/contacts";
 import { safeErrorMessage } from "@/lib/error-messages";
-import { useRouter } from "next/navigation";
 import { useToast } from "@/app/components/ui/Toast";
-import { TAG_COLORS, getTagColor, parseTags } from "@/lib/tag-utils";
+import { getTagColor, parseTags } from "@/lib/tag-utils";
+import type { GroupDetailMember, GroupDetailContactStub } from "@/lib/types/api-responses";
+
+// shadcn
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Card } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+// Icons
+import {
+  ArrowLeft,
+  Search,
+  Upload,
+  Plus,
+  X,
+  Trash2,
+  Users,
+  Loader2,
+  UserPlus,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 
 // ==========================================
 // Types
 // ==========================================
 
-type Member = {
-  id: string;
-  contactId: string;
-  name: string;
-  phone: string;
-  email: string | null;
-};
-
-type ContactStub = {
-  id: string;
-  name: string;
-  phone: string;
-  tags: string | null;
-};
+type Member = GroupDetailMember;
+type ContactStub = GroupDetailContactStub;
 
 // ==========================================
 // Constants
 // ==========================================
 
 const PAGE_SIZE = 20;
-
-// ==========================================
-// Animation variants
-// ==========================================
-
-const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.04 } } };
-const rowVariant = { hidden: { opacity: 0, x: -16 }, show: { opacity: 1, x: 0, transition: { duration: 0.35, ease: "easeOut" as const } } };
 
 // ==========================================
 // Main Component
@@ -72,55 +91,96 @@ export default function GroupDetailClient({
   // Selection
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  // Add to Group modal
-  const [showAddModal, setShowAddModal] = useState(false);
+  // Add to Group dialog
+  const [showAddDialog, setShowAddDialog] = useState(false);
   const [addSearch, setAddSearch] = useState("");
   const [addSelectedIds, setAddSelectedIds] = useState<Set<string>>(new Set());
   const [addTagFilters, setAddTagFilters] = useState<Set<string>>(new Set());
 
-  // Import CSV in modal
-  const [showImportPreview, setShowImportPreview] = useState(false);
-  const [importPreviewData, setImportPreviewData] = useState<{ name: string; phone: string; valid: boolean }[]>([]);
+  // Server-side contact search (replaces loading all contacts upfront)
+  const [searchedAvailable, setSearchedAvailable] = useState<ContactStub[]>(availableContacts);
+  const [contactsLoading, setContactsLoading] = useState(false);
 
-  // Import CSV (header level)
+  // Import CSV
+  const [showImportPreview, setShowImportPreview] = useState(false);
+  const [importPreviewData, setImportPreviewData] = useState<
+    { name: string; phone: string; valid: boolean }[]
+  >([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const modalFileInputRef = useRef<HTMLInputElement>(null);
+
+  // ==========================================
+  // Server-side contact search (debounced)
+  // ==========================================
+
+  useEffect(() => {
+    if (!showAddDialog) return;
+
+    // Only fetch from server when user is actively searching
+    if (!addSearch.trim()) {
+      setSearchedAvailable(availableContacts);
+      return;
+    }
+
+    setContactsLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        const results = await getContactsNotInGroup(userId, groupId, addSearch);
+        setSearchedAvailable(results as ContactStub[]);
+      } catch {
+        // fallback to initial data on error
+      } finally {
+        setContactsLoading(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [showAddDialog, addSearch, userId, groupId, availableContacts]);
 
   // ==========================================
   // Derived — Members
   // ==========================================
 
-  const memberContactIds = useMemo(() => new Set(members.map((m) => m.contactId)), [members]);
+  const memberContactIds = useMemo(
+    () => new Set(members.map((m) => m.contactId)),
+    [members],
+  );
 
   const filteredMembers = useMemo(() => {
     if (!search.trim()) return members;
     const q = search.toLowerCase().trim();
-    return members.filter((m) => m.name.toLowerCase().includes(q) || m.phone.includes(q));
+    return members.filter(
+      (m) => m.name.toLowerCase().includes(q) || m.phone.includes(q),
+    );
   }, [members, search]);
 
   const totalPages = Math.ceil(filteredMembers.length / PAGE_SIZE);
-  const paginatedMembers = filteredMembers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const allSelected = paginatedMembers.length > 0 && paginatedMembers.every((m) => selectedIds.has(m.contactId));
+  const paginatedMembers = filteredMembers.slice(
+    (page - 1) * PAGE_SIZE,
+    page * PAGE_SIZE,
+  );
+  const allSelected =
+    paginatedMembers.length > 0 &&
+    paginatedMembers.every((m) => selectedIds.has(m.contactId));
 
   // ==========================================
-  // Derived — Add Modal (tags + filter)
+  // Derived — Add Dialog (tags + filter)
   // ==========================================
 
   const allAvailableTags = useMemo(() => {
     const tagMap = new Map<string, number>();
-    availableContacts.forEach((c) => {
+    searchedAvailable.forEach((c) => {
       parseTags(c.tags).forEach((tag) => {
         tagMap.set(tag, (tagMap.get(tag) || 0) + 1);
       });
     });
     return tagMap;
-  }, [availableContacts]);
+  }, [searchedAvailable]);
 
   const filteredAvailable = useMemo(() => {
-    return availableContacts.filter((c) => {
+    return searchedAvailable.filter((c) => {
       if (memberContactIds.has(c.id)) return false;
 
-      // Tag filter (AND)
       if (addTagFilters.size > 0) {
         const contactTags = parseTags(c.tags);
         for (const tag of addTagFilters) {
@@ -128,50 +188,52 @@ export default function GroupDetailClient({
         }
       }
 
-      // Search
-      if (addSearch.trim()) {
-        const q = addSearch.toLowerCase().trim();
-        if (!c.name.toLowerCase().includes(q) && !c.phone.includes(q)) return false;
-      }
-
       return true;
     });
-  }, [availableContacts, memberContactIds, addSearch, addTagFilters]);
+  }, [searchedAvailable, memberContactIds, addTagFilters]);
 
-  const allAddSelected = filteredAvailable.length > 0 && filteredAvailable.every((c) => addSelectedIds.has(c.id));
+  const allAddSelected =
+    filteredAvailable.length > 0 &&
+    filteredAvailable.every((c) => addSelectedIds.has(c.id));
 
   // ==========================================
   // Handlers — Members
   // ==========================================
 
-  const toggleSelect = (contactId: string) => {
+  function toggleSelect(contactId: string) {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(contactId)) next.delete(contactId); else next.add(contactId);
+      if (next.has(contactId)) next.delete(contactId);
+      else next.add(contactId);
       return next;
     });
-  };
+  }
 
-  const toggleSelectAll = () => {
+  function toggleSelectAll() {
     if (allSelected) setSelectedIds(new Set());
     else setSelectedIds(new Set(paginatedMembers.map((m) => m.contactId)));
-  };
+  }
 
-  const handleBulkRemove = () => {
+  function handleBulkRemove() {
     if (selectedIds.size === 0) return;
     startTransition(async () => {
       try {
         await bulkRemoveFromGroup(userId, groupId, Array.from(selectedIds));
-        setMembers((prev) => prev.filter((m) => !selectedIds.has(m.contactId)));
-        toast("success", `ลบ ${selectedIds.size} รายชื่อออกจากกลุ่มสำเร็จ`);
+        setMembers((prev) =>
+          prev.filter((m) => !selectedIds.has(m.contactId)),
+        );
+        toast(
+          "success",
+          `ลบ ${selectedIds.size} รายชื่อออกจากกลุ่มสำเร็จ`,
+        );
         setSelectedIds(new Set());
       } catch (e) {
         toast("error", safeErrorMessage(e));
       }
     });
-  };
+  }
 
-  const handleRemoveSingle = (member: Member) => {
+  function handleRemoveSingle(member: Member) {
     setMembers((prev) => prev.filter((m) => m.id !== member.id));
     startTransition(async () => {
       try {
@@ -181,49 +243,54 @@ export default function GroupDetailClient({
         toast("error", safeErrorMessage(e));
       }
     });
-  };
+  }
 
   // ==========================================
-  // Handlers — Add Modal
+  // Handlers — Add Dialog
   // ==========================================
 
-  const openAddModal = () => {
-    setShowAddModal(true);
+  function openAddDialog() {
+    setShowAddDialog(true);
     setAddSearch("");
     setAddSelectedIds(new Set());
     setAddTagFilters(new Set());
     setShowImportPreview(false);
     setImportPreviewData([]);
-  };
+  }
 
-  const toggleAddSelect = (id: string) => {
+  function toggleAddSelect(id: string) {
     setAddSelectedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
-  };
+  }
 
-  const toggleAddSelectAll = () => {
+  function toggleAddSelectAll() {
     if (allAddSelected) setAddSelectedIds(new Set());
     else setAddSelectedIds(new Set(filteredAvailable.map((c) => c.id)));
-  };
+  }
 
-  const toggleTagFilter = (tag: string) => {
+  function toggleTagFilter(tag: string) {
     setAddTagFilters((prev) => {
       const next = new Set(prev);
-      if (next.has(tag)) next.delete(tag); else next.add(tag);
+      if (next.has(tag)) next.delete(tag);
+      else next.add(tag);
       return next;
     });
-  };
+  }
 
-  const handleAddToGroup = () => {
+  function handleAddToGroup() {
     if (addSelectedIds.size === 0) return;
     startTransition(async () => {
       try {
         await addContactsToGroup(userId, groupId, Array.from(addSelectedIds));
-        toast("success", `เพิ่ม ${addSelectedIds.size} รายชื่อเข้ากลุ่มสำเร็จ`);
-        setShowAddModal(false);
+        toast(
+          "success",
+          `เพิ่ม ${addSelectedIds.size} รายชื่อเข้ากลุ่มสำเร็จ`,
+        );
+        setShowAddDialog(false);
         setAddSelectedIds(new Set());
         setAddSearch("");
         setAddTagFilters(new Set());
@@ -232,42 +299,59 @@ export default function GroupDetailClient({
         toast("error", safeErrorMessage(e));
       }
     });
-  };
+  }
 
   // ==========================================
-  // Handlers — CSV Import (both header + modal)
+  // Handlers — CSV Import
   // ==========================================
 
-  const parseCSV = (text: string): { name: string; phone: string; valid: boolean }[] => {
+  function parseCSV(
+    text: string,
+  ): { name: string; phone: string; valid: boolean }[] {
     const lines = text.split("\n").filter(Boolean);
     if (lines.length < 2) return [];
 
     const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
-    const nameIdx = headers.findIndex((h) => h === "name" || h === "ชื่อ");
-    const phoneIdx = headers.findIndex((h) => h === "phone" || h === "เบอร์โทร" || h === "tel");
+    const nameIdx = headers.findIndex(
+      (h) => h === "name" || h === "ชื่อ",
+    );
+    const phoneIdx = headers.findIndex(
+      (h) => h === "phone" || h === "เบอร์โทร" || h === "tel",
+    );
     if (nameIdx === -1 || phoneIdx === -1) return [];
 
-    return lines.slice(1).map((line) => {
-      const cols = line.split(",").map((c) => c.trim());
-      const name = cols[nameIdx] || "";
-      const phone = cols[phoneIdx] || "";
-      const valid = !!name && /^0[0-9]{9}$/.test(phone);
-      return { name, phone, valid };
-    }).filter((c) => c.name || c.phone);
-  };
+    return lines
+      .slice(1)
+      .map((line) => {
+        const cols = line.split(",").map((c) => c.trim());
+        const name = cols[nameIdx] || "";
+        const phone = cols[phoneIdx] || "";
+        const valid = !!name && /^0[0-9]{9}$/.test(phone);
+        return { name, phone, valid };
+      })
+      .filter((c) => c.name || c.phone);
+  }
 
-  const handleCSVFile = (e: React.ChangeEvent<HTMLInputElement>, inModal: boolean) => {
+  function handleCSVFile(
+    e: React.ChangeEvent<HTMLInputElement>,
+    inModal: boolean,
+  ) {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = (evt) => {
-      const text = evt.target?.result as string;
+      let text = evt.target?.result as string;
       if (!text) return;
+      // Strip UTF-8 BOM (common in Thai Excel/CSV exports) and normalize line endings
+      text = text.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
 
       const parsed = parseCSV(text);
       if (parsed.length === 0) {
-        toast("error", "ไฟล์ CSV ต้องมีหัวข้อ name, phone และข้อมูลอย่างน้อย 1 แถว");
+        toast(
+          "error",
+          "ไฟล์ CSV ต้องมีหัวข้อ name, phone และข้อมูลอย่างน้อย 1 แถว",
+        );
         return;
       }
 
@@ -275,8 +359,9 @@ export default function GroupDetailClient({
         setImportPreviewData(parsed);
         setShowImportPreview(true);
       } else {
-        // Direct import (header button)
-        const contacts = parsed.filter((c) => c.valid).map((c) => ({ name: c.name, phone: c.phone }));
+        const contacts = parsed
+          .filter((c) => c.valid)
+          .map((c) => ({ name: c.name, phone: c.phone }));
         if (contacts.length === 0) {
           toast("error", "ไม่พบข้อมูลที่ถูกต้อง");
           return;
@@ -284,20 +369,28 @@ export default function GroupDetailClient({
         startTransition(async () => {
           try {
             const result = await importContacts(userId, contacts);
-            toast("success", `นำเข้า ${result.imported} รายชื่อ${result.skipped > 0 ? ` (ซ้ำ ${result.skipped})` : ""}`);
+            toast(
+              "success",
+              `นำเข้า ${result.imported} รายชื่อ${result.skipped > 0 ? ` (ซ้ำ ${result.skipped})` : ""}`,
+            );
             router.refresh();
           } catch (err) {
-            toast("error", err instanceof Error ? err.message : "นำเข้าไม่สำเร็จ");
+            toast(
+              "error",
+              err instanceof Error ? err.message : "นำเข้าไม่สำเร็จ",
+            );
           }
         });
       }
     };
     reader.readAsText(file);
     if (e.target) e.target.value = "";
-  };
+  }
 
-  const handleConfirmImportPreview = () => {
-    const contacts = importPreviewData.filter((c) => c.valid).map((c) => ({ name: c.name, phone: c.phone }));
+  function handleConfirmImportPreview() {
+    const contacts = importPreviewData
+      .filter((c) => c.valid)
+      .map((c) => ({ name: c.name, phone: c.phone }));
     if (contacts.length === 0) {
       toast("error", "ไม่มีรายชื่อที่ถูกต้อง");
       return;
@@ -305,410 +398,619 @@ export default function GroupDetailClient({
     startTransition(async () => {
       try {
         const result = await importContacts(userId, contacts);
-        // Then add them to this group
         if (result.imported > 0) {
-          toast("success", `นำเข้า ${result.imported} รายชื่อเข้ากลุ่มสำเร็จ${result.skipped > 0 ? ` (ซ้ำ ${result.skipped})` : ""}`);
+          toast(
+            "success",
+            `นำเข้า ${result.imported} รายชื่อเข้ากลุ่มสำเร็จ${result.skipped > 0 ? ` (ซ้ำ ${result.skipped})` : ""}`,
+          );
         }
         setShowImportPreview(false);
         setImportPreviewData([]);
-        setShowAddModal(false);
+        setShowAddDialog(false);
         router.refresh();
       } catch (err) {
-        toast("error", err instanceof Error ? err.message : "นำเข้าไม่สำเร็จ");
+        toast(
+          "error",
+          err instanceof Error ? err.message : "นำเข้าไม่สำเร็จ",
+        );
       }
     });
-  };
+  }
 
   // ==========================================
   // Render
   // ==========================================
 
   return (
-    <motion.div
-      className="p-6 md:p-8 max-w-5xl"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-    >
-      {/* Back + Header */}
-      <div className="mb-6">
-        <a href="/dashboard/groups" className="inline-flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-violet-400 transition-colors mb-4">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6" /></svg>
-          กลับไปหน้ากลุ่ม
-        </a>
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-violet-500/[0.08] border border-violet-500/10 flex items-center justify-center text-violet-400">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" /></svg>
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight gradient-text-mixed">{groupName}</h2>
-              <p className="text-sm text-[var(--text-muted)] mt-0.5">
-                {members.length} สมาชิก &middot; สร้างเมื่อ {new Date(createdAt).toLocaleDateString("th-TH", { day: "numeric", month: "long", year: "numeric" })}
-              </p>
-            </div>
+    <div className="p-4 md:p-8 max-w-5xl pb-20 md:pb-8">
+      {/* Back Link */}
+      <Link
+        href="/dashboard/groups"
+        className="inline-flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-white transition-colors mb-4"
+      >
+        <ArrowLeft className="w-3 h-3" />
+        กลับไปหน้ากลุ่ม
+      </Link>
+
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-[rgba(0,255,167,0.08)] border border-[rgba(0,255,167,0.15)] flex items-center justify-center text-[var(--accent)]">
+            <Users className="w-5 h-5" />
           </div>
-          <div className="flex items-center gap-2">
-            <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={(e) => handleCSVFile(e, false)} />
-            <motion.button
-              onClick={() => fileInputRef.current?.click()}
-              className="btn-glass px-3 py-2.5 text-sm rounded-xl inline-flex items-center gap-1.5"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
-              นำเข้า CSV
-            </motion.button>
-            <motion.button
-              onClick={openAddModal}
-              className="btn-primary px-4 py-2.5 text-sm rounded-xl inline-flex items-center gap-2"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-              เพิ่มรายชื่อ
-            </motion.button>
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight text-white">
+              {groupName}
+            </h2>
+            <p className="text-sm text-[var(--text-muted)] mt-0.5">
+              {members.length} สมาชิก &middot; สร้างเมื่อ{" "}
+              {new Date(createdAt).toLocaleDateString("th-TH", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
+            </p>
           </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv"
+            className="hidden"
+            onChange={(e) => handleCSVFile(e, false)}
+          />
+          <Button
+            variant="outline"
+            onClick={() => fileInputRef.current?.click()}
+            className="border-[var(--border-subtle)] bg-transparent text-[var(--text-muted)] hover:text-white hover:border-[rgba(0,255,167,0.3)]"
+          >
+            <Upload className="w-4 h-4 mr-1.5" />
+            นำเข้า CSV
+          </Button>
+          <Button
+            onClick={openAddDialog}
+            className="bg-[var(--accent)] hover:bg-[#0AE99C] text-[var(--bg-base)] font-semibold"
+          >
+            <Plus className="w-4 h-4 mr-1.5" />
+            เพิ่มรายชื่อ
+          </Button>
         </div>
       </div>
 
       {/* Search */}
-      <div className="mb-4">
-        <div className="relative">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
-          <input
-            type="text"
-            className="input-glass !pl-10 w-full"
-            placeholder="ค้นหาชื่อ หรือ เบอร์โทร..."
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          />
-        </div>
+      <div className="relative mb-4">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
+        <Input
+          type="text"
+          placeholder="ค้นหาชื่อ หรือ เบอร์โทร..."
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+          className="pl-10 h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(0,255,167,0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+        />
       </div>
 
-      {/* Bulk Actions */}
-      <AnimatePresence>
-        {selectedIds.size > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            className="glass p-4 mb-4 flex items-center gap-3 flex-wrap"
+      {/* Batch Actions Bar */}
+      {selectedIds.size > 0 && (
+        <Card className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] p-4 mb-4 flex items-center gap-3 flex-wrap">
+          <span className="text-sm text-white font-medium">
+            เลือก {selectedIds.size} รายชื่อ
+          </span>
+          <div className="h-4 w-px bg-[var(--border-subtle)]" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleBulkRemove}
+            disabled={isPending}
+            className="border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/15 hover:text-red-300"
           >
-            <span className="text-sm text-slate-200 font-medium">เลือก {selectedIds.size} รายชื่อ</span>
-            <div className="h-4 w-px bg-white/10" />
-            <motion.button
-              onClick={handleBulkRemove}
-              disabled={isPending}
-              className="px-3 py-1.5 text-xs rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/15 transition-colors disabled:opacity-40 inline-flex items-center gap-1.5"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
-              ลบออกจากกลุ่ม
-            </motion.button>
-            <motion.button
-              onClick={() => setSelectedIds(new Set())}
-              className="btn-glass px-3 py-1.5 text-xs rounded-lg"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              ยกเลิกการเลือก
-            </motion.button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            {isPending ? (
+              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+            ) : (
+              <Trash2 className="w-3 h-3 mr-1" />
+            )}
+            ลบออกจากกลุ่ม
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSelectedIds(new Set())}
+            className="text-[var(--text-muted)] hover:text-white"
+          >
+            ยกเลิก
+          </Button>
+        </Card>
+      )}
 
-      {/* Members Table */}
+      {/* Members Table — Desktop */}
       {paginatedMembers.length > 0 ? (
-        <motion.div className="glass overflow-hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[var(--border-subtle)]">
-                  <th className="w-10 px-3 py-3">
-                    <input type="checkbox" checked={allSelected} onChange={toggleSelectAll} className="w-3.5 h-3.5 rounded accent-violet-500 cursor-pointer" />
-                  </th>
-                  <th className="text-left px-5 py-3 text-xs text-[var(--text-muted)] uppercase tracking-wider font-medium">ชื่อ</th>
-                  <th className="text-left px-5 py-3 text-xs text-[var(--text-muted)] uppercase tracking-wider font-medium">เบอร์โทร</th>
-                  <th className="text-left px-5 py-3 text-xs text-[var(--text-muted)] uppercase tracking-wider font-medium hidden md:table-cell">อีเมล</th>
-                  <th className="w-20 px-5 py-3 text-xs text-[var(--text-muted)] uppercase tracking-wider font-medium text-right">จัดการ</th>
-                </tr>
-              </thead>
-              <motion.tbody variants={stagger} initial="hidden" animate="show">
-                {paginatedMembers.map((m) => (
-                  <motion.tr key={m.id} variants={rowVariant} className={`table-row group ${selectedIds.has(m.contactId) ? "bg-white/[0.03]" : ""}`}>
-                    <td className="px-3 py-3.5">
-                      <input type="checkbox" checked={selectedIds.has(m.contactId)} onChange={() => toggleSelect(m.contactId)} className="w-3.5 h-3.5 rounded accent-violet-500 cursor-pointer" />
-                    </td>
-                    <td className="px-5 py-3.5 text-slate-200">{m.name}</td>
-                    <td className="px-5 py-3.5 text-[var(--text-secondary)] font-mono text-xs">{m.phone}</td>
-                    <td className="px-5 py-3.5 text-[var(--text-muted)] text-xs hidden md:table-cell">{m.email || "—"}</td>
-                    <td className="px-5 py-3.5 text-right">
+        <>
+          <Card className="hidden md:block bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-b border-[var(--border-subtle)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-secondary)]">
+                  <TableHead className="w-10 px-3">
+                    <Checkbox
+                      checked={allSelected}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                  </TableHead>
+                  <TableHead className="text-xs text-[var(--text-secondary)] uppercase tracking-[0.05em] font-semibold">
+                    ชื่อ
+                  </TableHead>
+                  <TableHead className="text-xs text-[var(--text-secondary)] uppercase tracking-[0.05em] font-semibold">
+                    เบอร์โทร
+                  </TableHead>
+                  <TableHead className="text-xs text-[var(--text-secondary)] uppercase tracking-[0.05em] font-semibold">
+                    อีเมล
+                  </TableHead>
+                  <TableHead className="w-20 text-xs text-[var(--text-secondary)] uppercase tracking-[0.05em] font-semibold text-right">
+                    จัดการ
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedMembers.map((m, i) => (
+                  <TableRow
+                    key={m.id}
+                    className={`border-b border-[var(--border-subtle)] hover:bg-[var(--bg-surface-hover)] transition-colors group ${
+                      i % 2 === 1 ? "bg-[var(--bg-muted)]" : "bg-[var(--bg-surface)]"
+                    } ${selectedIds.has(m.contactId) ? "bg-[rgba(0,255,167,0.04)]" : ""}`}
+                  >
+                    <TableCell className="px-3">
+                      <Checkbox
+                        checked={selectedIds.has(m.contactId)}
+                        onCheckedChange={() => toggleSelect(m.contactId)}
+                      />
+                    </TableCell>
+                    <TableCell className="text-sm text-white font-medium">
+                      {m.name}
+                    </TableCell>
+                    <TableCell className="text-sm text-[var(--text-muted)] font-mono">
+                      {m.phone}
+                    </TableCell>
+                    <TableCell className="text-sm text-[var(--text-muted)]">
+                      {m.email || "—"}
+                    </TableCell>
+                    <TableCell className="text-right">
                       <button
                         onClick={() => handleRemoveSingle(m)}
                         disabled={isPending}
-                        className="px-2.5 py-1.5 text-xs rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/15 transition-colors disabled:opacity-40 cursor-pointer opacity-0 group-hover:opacity-100"
+                        className="w-7 h-7 rounded-lg hover:bg-[rgba(239,68,68,0.06)] flex items-center justify-center text-[var(--text-muted)] hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 ml-auto disabled:opacity-50"
                       >
-                        ลบ
+                        <Trash2 className="w-4 h-4" />
                       </button>
-                    </td>
-                  </motion.tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </motion.tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
 
-          {/* Pagination */}
-          {filteredMembers.length > PAGE_SIZE && (
-            <div className="px-5 py-4 border-t border-[var(--border-subtle)] flex items-center justify-between">
-              <span className="text-xs text-[var(--text-muted)]">
-                แสดง {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filteredMembers.length)} จาก {filteredMembers.length}
-              </span>
-              <div className="flex items-center gap-1">
-                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="px-3 py-1.5 text-xs rounded-lg border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-white hover:border-violet-500 disabled:opacity-30 transition-colors">← ก่อนหน้า</button>
-                <span className="px-3 py-1.5 text-xs text-[var(--text-secondary)]">{page}/{totalPages}</span>
-                <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="px-3 py-1.5 text-xs rounded-lg border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-white hover:border-violet-500 disabled:opacity-30 transition-colors">ถัดไป →</button>
+            {/* Pagination */}
+            {filteredMembers.length > PAGE_SIZE && (
+              <div className="px-5 py-4 border-t border-[var(--border-subtle)] flex items-center justify-between">
+                <span className="text-xs text-[var(--text-muted)]">
+                  แสดง {(page - 1) * PAGE_SIZE + 1}–
+                  {Math.min(page * PAGE_SIZE, filteredMembers.length)} จาก{" "}
+                  {filteredMembers.length}
+                </span>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page <= 1}
+                    className="border-[var(--border-subtle)] bg-transparent text-[var(--text-muted)] hover:text-white disabled:opacity-50"
+                  >
+                    <ChevronLeft className="w-3 h-3 mr-1" />
+                    ก่อนหน้า
+                  </Button>
+                  <span className="px-3 py-1.5 text-xs text-[var(--text-muted)]">
+                    {page}/{totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setPage((p) => Math.min(totalPages, p + 1))
+                    }
+                    disabled={page >= totalPages}
+                    className="border-[var(--border-subtle)] bg-transparent text-[var(--text-muted)] hover:text-white disabled:opacity-50"
+                  >
+                    ถัดไป
+                    <ChevronRight className="w-3 h-3 ml-1" />
+                  </Button>
+                </div>
               </div>
-            </div>
-          )}
-        </motion.div>
-      ) : members.length > 0 ? (
-        <motion.div className="glass p-8 text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <p className="text-sm text-[var(--text-muted)]">ไม่พบรายชื่อที่ตรงกับการค้นหา</p>
-          <button onClick={() => setSearch("")} className="text-xs text-violet-400 hover:text-violet-300 mt-2 transition-colors">ล้างตัวกรอง</button>
-        </motion.div>
-      ) : (
-        <motion.div className="glass p-16 text-center" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] flex items-center justify-center">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="text-[var(--text-muted)]"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+            )}
+          </Card>
+
+          {/* Members Cards — Mobile */}
+          <div className="md:hidden space-y-3">
+            {paginatedMembers.map((m) => (
+              <Card
+                key={m.id}
+                className={`bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] p-4 ${
+                  selectedIds.has(m.contactId)
+                    ? "border-[rgba(0,255,167,0.3)]"
+                    : ""
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    checked={selectedIds.has(m.contactId)}
+                    onCheckedChange={() => toggleSelect(m.contactId)}
+                    className="mt-1"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-white">
+                      {m.name}
+                    </div>
+                    <div className="text-xs text-[var(--text-muted)] font-mono mt-0.5">
+                      {m.phone}
+                    </div>
+                    {m.email && (
+                      <div className="text-xs text-[var(--text-muted)] mt-0.5 truncate">
+                        {m.email}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => handleRemoveSingle(m)}
+                    disabled={isPending}
+                    className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--text-muted)] hover:text-red-400 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </Card>
+            ))}
+
+            {/* Mobile pagination */}
+            {filteredMembers.length > PAGE_SIZE && (
+              <div className="flex items-center justify-between pt-2">
+                <span className="text-xs text-[var(--text-muted)]">
+                  {page}/{totalPages}
+                </span>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page <= 1}
+                    className="border-[var(--border-subtle)] bg-transparent text-[var(--text-muted)] disabled:opacity-50"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setPage((p) => Math.min(totalPages, p + 1))
+                    }
+                    disabled={page >= totalPages}
+                    className="border-[var(--border-subtle)] bg-transparent text-[var(--text-muted)] disabled:opacity-50"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
-          <p className="text-sm text-[var(--text-secondary)] mb-1">ยังไม่มีสมาชิก</p>
-          <p className="text-xs text-[var(--text-muted)] mb-6">เพิ่มรายชื่อเข้ากลุ่มเพื่อส่ง SMS เป็นหมวดหมู่</p>
-          <button onClick={openAddModal} className="btn-primary px-6 py-2.5 rounded-xl text-sm inline-flex items-center gap-2 cursor-pointer">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-            เพิ่มรายชื่อ
+        </>
+      ) : members.length > 0 ? (
+        /* Search no results */
+        <Card className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] p-8 text-center">
+          <p className="text-sm text-[var(--text-muted)]">
+            ไม่พบรายชื่อที่ตรงกับการค้นหา
+          </p>
+          <button
+            onClick={() => setSearch("")}
+            className="text-xs text-[var(--accent)] hover:text-[#0AE99C] mt-2 transition-colors"
+          >
+            ล้างตัวกรอง
           </button>
-        </motion.div>
+        </Card>
+      ) : (
+        /* Empty state */
+        <Card className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] p-12 text-center">
+          <div className="w-16 h-16 rounded-full bg-[rgba(0,255,167,0.08)] border border-[rgba(0,255,167,0.15)] flex items-center justify-center mx-auto mb-4">
+            <UserPlus className="w-8 h-8 text-[var(--accent)]" />
+          </div>
+          <h3 className="text-lg font-semibold text-white mb-2">
+            ยังไม่มีสมาชิก
+          </h3>
+          <p className="text-sm text-[var(--text-muted)] mb-6">
+            เพิ่มรายชื่อเข้ากลุ่มเพื่อส่ง SMS เป็นหมวดหมู่
+          </p>
+          <Button
+            onClick={openAddDialog}
+            className="bg-[var(--accent)] hover:bg-[#0AE99C] text-[var(--bg-base)] font-semibold"
+          >
+            <Plus className="w-4 h-4 mr-1.5" />
+            เพิ่มรายชื่อ
+          </Button>
+        </Card>
       )}
 
       {/* ==========================================
-          Add to Group Modal — ENHANCED
+          ADD TO GROUP DIALOG
           ========================================== */}
-      <AnimatePresence>
-        {showAddModal && (
-          <motion.div className="fixed inset-0 z-50 flex items-center justify-center px-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowAddModal(false)} />
-            <motion.div
-              className="relative glass w-full max-w-xl z-10 flex flex-col max-h-[85vh]"
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              {/* Header */}
-              <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--border-subtle)] shrink-0">
-                <div>
-                  <h3 className="text-lg font-bold text-white">เพิ่มรายชื่อเข้ากลุ่ม</h3>
-                  <p className="text-xs text-[var(--text-muted)] mt-0.5">เลือกรายชื่อที่ยังไม่อยู่ใน &ldquo;{groupName}&rdquo;</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {/* Import CSV button inside modal */}
-                  <input ref={modalFileInputRef} type="file" accept=".csv" className="hidden" onChange={(e) => handleCSVFile(e, true)} />
-                  <button
-                    onClick={() => modalFileInputRef.current?.click()}
-                    className="btn-glass px-2.5 py-1.5 text-xs rounded-lg inline-flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
-                    CSV
-                  </button>
-                  <button onClick={() => setShowAddModal(false)} className="w-8 h-8 rounded-lg hover:bg-white/8 flex items-center justify-center text-[var(--text-muted)] hover:text-white transition-colors cursor-pointer">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
-                  </button>
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] sm:max-w-[560px] flex flex-col max-h-[85vh]">
+          <DialogHeader>
+            <DialogTitle className="text-white text-lg">
+              เพิ่มรายชื่อเข้ากลุ่ม
+            </DialogTitle>
+            <DialogDescription className="text-[var(--text-muted)]">
+              เลือกรายชื่อที่ยังไม่อยู่ใน &ldquo;{groupName}&rdquo;
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Import Preview Overlay */}
+          {showImportPreview ? (
+            <div className="flex-1 flex flex-col min-h-0">
+              <div className="pb-3">
+                <h4 className="text-sm font-semibold text-white mb-1">
+                  ตรวจสอบข้อมูล CSV
+                </h4>
+                <div className="flex items-center gap-3 text-xs text-[var(--text-muted)]">
+                  <span className="inline-flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                    ถูกต้อง {importPreviewData.filter((c) => c.valid).length}
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-red-400" />
+                    ไม่ถูกต้อง{" "}
+                    {importPreviewData.filter((c) => !c.valid).length}
+                  </span>
                 </div>
               </div>
-
-              {/* Import Preview Overlay */}
-              {showImportPreview ? (
-                <div className="flex-1 flex flex-col min-h-0">
-                  <div className="px-6 pt-4 pb-3">
-                    <h4 className="text-sm font-semibold text-white mb-1">ตรวจสอบข้อมูล CSV</h4>
-                    <div className="flex items-center gap-3 text-xs text-[var(--text-muted)]">
-                      <span className="inline-flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                        ถูกต้อง {importPreviewData.filter((c) => c.valid).length}
+              <div className="flex-1 overflow-y-auto max-h-[300px] space-y-1">
+                {importPreviewData.map((row, i) => (
+                  <div
+                    key={i}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${
+                      row.valid
+                        ? "bg-[rgba(255,255,255,0.02)]"
+                        : "bg-red-500/5 border border-red-500/10"
+                    }`}
+                  >
+                    <span
+                      className={`w-2 h-2 rounded-full shrink-0 ${row.valid ? "bg-emerald-400" : "bg-red-400"}`}
+                    />
+                    <span className="text-white truncate flex-1">
+                      {row.name || "—"}
+                    </span>
+                    <span className="text-[var(--text-muted)] font-mono text-xs">
+                      {row.phone || "—"}
+                    </span>
+                    {!row.valid && (
+                      <span className="text-[10px] text-red-400 shrink-0">
+                        ไม่ถูกต้อง
                       </span>
-                      <span className="inline-flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-red-400" />
-                        ไม่ถูกต้อง {importPreviewData.filter((c) => !c.valid).length}
-                      </span>
-                    </div>
+                    )}
                   </div>
-                  <div className="flex-1 overflow-y-auto px-6 pb-4">
-                    <div className="space-y-1">
-                      {importPreviewData.map((row, i) => (
-                        <div
-                          key={i}
-                          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${
-                            row.valid ? "bg-white/[0.02]" : "bg-red-500/5 border border-red-500/10"
+                ))}
+              </div>
+              <DialogFooter className="gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowImportPreview(false);
+                    setImportPreviewData([]);
+                  }}
+                  className="border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-white bg-transparent"
+                >
+                  ยกเลิก
+                </Button>
+                <Button
+                  onClick={handleConfirmImportPreview}
+                  disabled={
+                    isPending ||
+                    importPreviewData.filter((c) => c.valid).length === 0
+                  }
+                  className="bg-[var(--accent)] hover:bg-[#0AE99C] text-[var(--bg-base)] font-semibold"
+                >
+                  {isPending ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      กำลังนำเข้า...
+                    </span>
+                  ) : (
+                    `นำเข้า ${importPreviewData.filter((c) => c.valid).length} รายชื่อ`
+                  )}
+                </Button>
+              </DialogFooter>
+            </div>
+          ) : (
+            <>
+              {/* Search + CSV button */}
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
+                  <Input
+                    type="text"
+                    placeholder="ค้นหาชื่อ หรือ เบอร์..."
+                    value={addSearch}
+                    onChange={(e) => setAddSearch(e.target.value)}
+                    autoFocus
+                    className="pl-10 h-10 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg text-sm focus:border-[rgba(0,255,167,0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+                  />
+                </div>
+                <input
+                  ref={modalFileInputRef}
+                  type="file"
+                  accept=".csv"
+                  className="hidden"
+                  onChange={(e) => handleCSVFile(e, true)}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => modalFileInputRef.current?.click()}
+                  className="border-[var(--border-subtle)] bg-transparent text-[var(--text-muted)] hover:text-white shrink-0"
+                >
+                  <Upload className="w-3 h-3 mr-1" />
+                  CSV
+                </Button>
+              </div>
+
+              {/* Tag Filter Chips */}
+              {allAvailableTags.size > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {Array.from(allAvailableTags.entries()).map(
+                    ([tag, count]) => {
+                      const color = getTagColor(tag);
+                      const isActive = addTagFilters.has(tag);
+                      return (
+                        <button
+                          key={tag}
+                          onClick={() => toggleTagFilter(tag)}
+                          className={`inline-flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-full font-semibold uppercase tracking-wider transition-all border ${
+                            isActive
+                              ? `${color.activeBg} ${color.text} ${color.border}`
+                              : "bg-[rgba(255,255,255,0.04)] text-[var(--text-muted)] border-transparent hover:bg-[rgba(255,255,255,0.08)]"
                           }`}
                         >
-                          <span className={`w-2 h-2 rounded-full shrink-0 ${row.valid ? "bg-emerald-400" : "bg-red-400"}`} />
-                          <span className="text-white truncate flex-1">{row.name || "—"}</span>
-                          <span className="text-[var(--text-muted)] font-mono text-xs">{row.phone || "—"}</span>
-                          {!row.valid && <span className="text-[10px] text-red-400 shrink-0">ไม่ถูกต้อง</span>}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="px-6 py-4 border-t border-[var(--border-subtle)] flex gap-3 shrink-0">
-                    <button onClick={() => { setShowImportPreview(false); setImportPreviewData([]); }} className="flex-1 btn-glass py-2.5 rounded-xl text-sm cursor-pointer">ยกเลิก</button>
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${isActive ? color.dot : "bg-[rgba(255,255,255,0.2)]"}`}
+                          />
+                          {tag}
+                          <span className="text-[9px] opacity-60">
+                            {count}
+                          </span>
+                        </button>
+                      );
+                    },
+                  )}
+                  {addTagFilters.size > 0 && (
                     <button
-                      onClick={handleConfirmImportPreview}
-                      disabled={isPending || importPreviewData.filter((c) => c.valid).length === 0}
-                      className="flex-1 btn-primary py-2.5 rounded-xl text-sm disabled:opacity-40 cursor-pointer"
+                      onClick={() => setAddTagFilters(new Set())}
+                      className="text-[10px] px-2 py-1 rounded-full text-[var(--text-muted)] hover:text-white transition-colors"
                     >
-                      {isPending ? "กำลังนำเข้า..." : `นำเข้า ${importPreviewData.filter((c) => c.valid).length} รายชื่อ`}
+                      ล้างทั้งหมด
                     </button>
-                  </div>
+                  )}
                 </div>
-              ) : (
-                <>
-                  {/* Search + Tag Filters */}
-                  <div className="px-6 pt-4 pb-3 shrink-0">
-                    {/* Search */}
-                    <div className="relative">
-                      <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
-                      <input
-                        type="text"
-                        className="input-glass !pl-9 w-full text-sm"
-                        placeholder="ค้นหาชื่อ หรือ เบอร์..."
-                        value={addSearch}
-                        onChange={(e) => setAddSearch(e.target.value)}
-                        autoFocus
-                      />
-                    </div>
-
-                    {/* Tag Filter Chips */}
-                    {allAvailableTags.size > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-3">
-                        {Array.from(allAvailableTags.entries()).map(([tag, count]) => {
-                          const color = getTagColor(tag);
-                          const isActive = addTagFilters.has(tag);
-                          return (
-                            <button
-                              key={tag}
-                              onClick={() => toggleTagFilter(tag)}
-                              className={`inline-flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-full font-semibold uppercase tracking-wider transition-all border ${
-                                isActive
-                                  ? `${color.activeBg} ${color.text} ${color.border}`
-                                  : `bg-white/5 text-[var(--text-muted)] border-transparent hover:bg-white/[0.08] hover:${color.text}`
-                              }`}
-                            >
-                              <span className={`w-1.5 h-1.5 rounded-full ${isActive ? color.text.replace("text-", "bg-") : "bg-white/20"}`} />
-                              {tag}
-                              <span className="text-[9px] opacity-60">{count}</span>
-                            </button>
-                          );
-                        })}
-                        {addTagFilters.size > 0 && (
-                          <button
-                            onClick={() => setAddTagFilters(new Set())}
-                            className="text-[10px] px-2 py-1 rounded-full text-[var(--text-muted)] hover:text-white transition-colors"
-                          >
-                            ล้างทั้งหมด
-                          </button>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Select All + Count */}
-                    {filteredAvailable.length > 0 && (
-                      <div className="flex items-center justify-between mt-3 pt-3 border-t border-[var(--border-subtle)]">
-                        <label className="flex items-center gap-2 text-xs text-[var(--text-muted)] cursor-pointer hover:text-slate-200 transition-colors">
-                          <input type="checkbox" checked={allAddSelected} onChange={toggleAddSelectAll} className="w-3.5 h-3.5 rounded accent-violet-500 cursor-pointer" />
-                          เลือกทั้งหมด ({filteredAvailable.length})
-                        </label>
-                        {addSelectedIds.size > 0 && (
-                          <span className="text-xs font-medium text-violet-400">เลือกแล้ว {addSelectedIds.size} คน</span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Contact List */}
-                  <div className="flex-1 overflow-y-auto px-6 pb-4 space-y-1 min-h-0">
-                    {filteredAvailable.length === 0 ? (
-                      <div className="text-center py-12">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="mx-auto mb-3 text-[var(--text-muted)]"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
-                        <p className="text-xs text-[var(--text-muted)]">
-                          {availableContacts.length === 0 ? "ไม่มีรายชื่อที่สามารถเพิ่มได้" : addTagFilters.size > 0 ? "ไม่พบรายชื่อที่ตรง tag ที่เลือก" : "ไม่พบที่ค้นหา"}
-                        </p>
-                      </div>
-                    ) : (
-                      filteredAvailable.map((c) => {
-                        const contactTags = parseTags(c.tags);
-                        return (
-                          <button
-                            key={c.id}
-                            onClick={() => toggleAddSelect(c.id)}
-                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all text-left ${
-                              addSelectedIds.has(c.id)
-                                ? "bg-violet-500/8 border-violet-500/20"
-                                : "bg-transparent border-transparent hover:bg-white/[0.03] hover:border-[var(--border-subtle)]"
-                            }`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={addSelectedIds.has(c.id)}
-                              onChange={() => toggleAddSelect(c.id)}
-                              className="w-3.5 h-3.5 rounded accent-violet-500 cursor-pointer shrink-0"
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-sm text-white truncate">{c.name}</span>
-                                {/* Tag chips */}
-                                {contactTags.slice(0, 3).map((tag) => {
-                                  const color = getTagColor(tag);
-                                  return (
-                                    <span
-                                      key={tag}
-                                      className={`inline-flex items-center text-[9px] px-1.5 py-0.5 rounded-md font-semibold uppercase tracking-wider ${color.bg} ${color.text}`}
-                                    >
-                                      {tag}
-                                    </span>
-                                  );
-                                })}
-                                {contactTags.length > 3 && (
-                                  <span className="text-[9px] text-[var(--text-muted)]">+{contactTags.length - 3}</span>
-                                )}
-                              </div>
-                              <div className="text-xs text-[var(--text-muted)] font-mono mt-0.5">{c.phone}</div>
-                            </div>
-                          </button>
-                        );
-                      })
-                    )}
-                  </div>
-
-                  {/* Footer */}
-                  <div className="px-6 py-4 border-t border-[var(--border-subtle)] flex gap-3 shrink-0">
-                    <button onClick={() => setShowAddModal(false)} className="flex-1 btn-glass py-2.5 rounded-xl text-sm cursor-pointer">ยกเลิก</button>
-                    <button
-                      onClick={handleAddToGroup}
-                      disabled={isPending || addSelectedIds.size === 0}
-                      className="flex-1 btn-primary py-2.5 rounded-xl text-sm disabled:opacity-40 cursor-pointer"
-                    >
-                      {isPending ? "กำลังเพิ่ม..." : addSelectedIds.size > 0 ? `เพิ่มทั้งหมด (${addSelectedIds.size})` : "เลือกรายชื่อก่อน"}
-                    </button>
-                  </div>
-                </>
               )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+
+              {/* Select All + Count */}
+              {filteredAvailable.length > 0 && (
+                <div className="flex items-center justify-between pt-1 border-t border-[var(--border-subtle)]">
+                  <label className="flex items-center gap-2 text-xs text-[var(--text-muted)] cursor-pointer hover:text-white transition-colors">
+                    <Checkbox
+                      checked={allAddSelected}
+                      onCheckedChange={toggleAddSelectAll}
+                    />
+                    เลือกทั้งหมด ({filteredAvailable.length})
+                  </label>
+                  {addSelectedIds.size > 0 && (
+                    <span className="text-xs font-medium text-[var(--accent)]">
+                      เลือกแล้ว {addSelectedIds.size} คน
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Contact List */}
+              <div className="flex-1 overflow-y-auto max-h-[300px] space-y-1 min-h-0">
+                {filteredAvailable.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Search className="w-6 h-6 mx-auto mb-3 text-[var(--text-muted)]" />
+                    <p className="text-xs text-[var(--text-muted)]">
+                      {availableContacts.length === 0
+                        ? "ไม่มีรายชื่อที่สามารถเพิ่มได้"
+                        : addTagFilters.size > 0
+                          ? "ไม่พบรายชื่อที่ตรง tag ที่เลือก"
+                          : "ไม่พบที่ค้นหา"}
+                    </p>
+                  </div>
+                ) : (
+                  filteredAvailable.map((c) => {
+                    const contactTags = parseTags(c.tags);
+                    return (
+                      <button
+                        key={c.id}
+                        onClick={() => toggleAddSelect(c.id)}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all text-left ${
+                          addSelectedIds.has(c.id)
+                            ? "bg-[rgba(0,255,167,0.06)] border-[rgba(0,255,167,0.2)]"
+                            : "bg-transparent border-transparent hover:bg-[rgba(0,255,167,0.04)] hover:border-[var(--border-subtle)]"
+                        }`}
+                      >
+                        <Checkbox
+                          checked={addSelectedIds.has(c.id)}
+                          onCheckedChange={() => toggleAddSelect(c.id)}
+                          onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                          className="shrink-0"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm text-white truncate">
+                              {c.name}
+                            </span>
+                            {contactTags.slice(0, 3).map((tag) => {
+                              const color = getTagColor(tag);
+                              return (
+                                <span
+                                  key={tag}
+                                  className={`inline-flex items-center text-[9px] px-1.5 py-0.5 rounded-md font-semibold uppercase tracking-wider ${color.bg} ${color.text}`}
+                                >
+                                  {tag}
+                                </span>
+                              );
+                            })}
+                            {contactTags.length > 3 && (
+                              <span className="text-[9px] text-[var(--text-muted)]">
+                                +{contactTags.length - 3}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-[var(--text-muted)] font-mono mt-0.5">
+                            {c.phone}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Footer */}
+              <DialogFooter className="gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowAddDialog(false)}
+                  className="border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-white bg-transparent"
+                >
+                  ยกเลิก
+                </Button>
+                <Button
+                  onClick={handleAddToGroup}
+                  disabled={isPending || addSelectedIds.size === 0}
+                  className="bg-[var(--accent)] hover:bg-[#0AE99C] text-[var(--bg-base)] font-semibold"
+                >
+                  {isPending ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      กำลังเพิ่ม...
+                    </span>
+                  ) : addSelectedIds.size > 0 ? (
+                    `เพิ่มทั้งหมด (${addSelectedIds.size})`
+                  ) : (
+                    "เลือกรายชื่อก่อน"
+                  )}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

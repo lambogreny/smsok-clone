@@ -1,90 +1,248 @@
 "use client";
 
-import { useState, useTransition, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { createGroup, updateGroup, deleteGroup, getGroupContacts, addContactToGroup, removeContactFromGroup } from "@/lib/actions/groups";
+import { useState, useTransition, useMemo, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import Link from "next/link";
+import {
+  createGroup,
+  updateGroup,
+  deleteGroup,
+  getGroupContacts,
+  addContactToGroup,
+  removeContactFromGroup,
+} from "@/lib/actions/groups";
+import { searchContactsBasic } from "@/lib/actions/contacts";
 import { safeErrorMessage } from "@/lib/error-messages";
+import type { GroupItem, GroupContactStub, GroupMember } from "@/lib/types/api-responses";
+import { useToast } from "@/app/components/ui/Toast";
 
-type Group = {
-  id: string;
-  name: string;
-  createdAt: Date;
-  _count: { members: number };
-};
+// shadcn
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
-type ContactStub = {
-  id: string;
-  name: string;
-  phone: string;
-};
+// Icons
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Users,
+  FolderOpen,
+  Search,
+  X,
+  Loader2,
+} from "lucide-react";
 
-type Member = {
-  id: string;
-  groupId: string;
-  contactId: string;
-  contact: ContactStub;
-};
+// ==========================================
+// Types
+// ==========================================
 
-const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };
-const cardVariant = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" as const } } };
+type Group = GroupItem;
+type ContactStub = GroupContactStub;
+type Member = GroupMember;
+
+// ==========================================
+// Zod schema
+// ==========================================
+
+const groupFormSchema = z.object({
+  name: z
+    .string()
+    .min(1, "กรุณากรอกชื่อกลุ่ม")
+    .max(100, "ชื่อกลุ่มต้องไม่เกิน 100 ตัวอักษร"),
+});
+
+type GroupFormValues = z.infer<typeof groupFormSchema>;
+
+// ==========================================
+// Main Component
+// ==========================================
 
 export default function GroupsPageClient({
   userId,
   initialGroups,
-  allContacts,
 }: {
   userId: string;
   initialGroups: Group[];
-  allContacts: ContactStub[];
 }) {
-  const [groups, setGroups] = useState<Group[]>(initialGroups);
+  const router = useRouter();
+  const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
-  const [showForm, setShowForm] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
-  const [name, setName] = useState("");
-  const [error, setError] = useState("");
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
-  // Members modal
+  // Local state for optimistic updates
+  const [groups, setGroups] = useState<Group[]>(initialGroups);
+
+  // Dialog states
+  const [showDialog, setShowDialog] = useState(false);
+  const [editingGroup, setEditingGroup] = useState<Group | null>(null);
+  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+  const [deletingGroup, setDeletingGroup] = useState<Group | null>(null);
+
+  // Members dialog
   const [activeGroup, setActiveGroup] = useState<Group | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [membersLoading, setMembersLoading] = useState(false);
   const [memberSearch, setMemberSearch] = useState("");
   const [addSearch, setAddSearch] = useState("");
-  const [memberError, setMemberError] = useState("");
 
-  function openCreate() { setName(""); setEditId(null); setError(""); setShowForm(true); }
-  function openEdit(g: Group) { setName(g.name); setEditId(g.id); setError(""); setShowForm(true); }
+  // Server-side contact search (replaces loading all contacts upfront)
+  const [searchedContacts, setSearchedContacts] = useState<ContactStub[]>([]);
+  const [contactsLoading, setContactsLoading] = useState(false);
 
-  function handleSave() {
-    if (!name.trim()) { setError("กรุณากรอกชื่อกลุ่ม"); return; }
-    setError("");
+  // Form
+  const form = useForm<GroupFormValues>({
+    resolver: zodResolver(groupFormSchema),
+    defaultValues: { name: "" },
+  });
+
+  // ==========================================
+  // Server-side contact search (debounced)
+  // ==========================================
+
+  useEffect(() => {
+    if (!activeGroup) {
+      setSearchedContacts([]);
+      return;
+    }
+
+    setContactsLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        const results = await searchContactsBasic(userId, addSearch, 50);
+        setSearchedContacts(results as ContactStub[]);
+      } catch {
+        // ignore search errors
+      } finally {
+        setContactsLoading(false);
+      }
+    }, addSearch ? 300 : 0);
+
+    return () => clearTimeout(timer);
+  }, [activeGroup, addSearch, userId]);
+
+  // ==========================================
+  // Derived data for members dialog
+  // ==========================================
+
+  const memberIds = useMemo(
+    () => new Set(members.map((m) => m.contactId)),
+    [members],
+  );
+
+  const filteredMembers = useMemo(
+    () =>
+      members.filter(
+        (m) =>
+          !memberSearch ||
+          m.contact.name.toLowerCase().includes(memberSearch.toLowerCase()) ||
+          m.contact.phone.includes(memberSearch),
+      ),
+    [members, memberSearch],
+  );
+
+  const contactsToAdd = useMemo(
+    () => searchedContacts.filter((c) => !memberIds.has(c.id)),
+    [searchedContacts, memberIds],
+  );
+
+  // ==========================================
+  // Handlers
+  // ==========================================
+
+  function openCreate() {
+    setEditingGroup(null);
+    form.reset({ name: "" });
+    setShowDialog(true);
+  }
+
+  function openEdit(g: Group) {
+    setEditingGroup(g);
+    form.reset({ name: g.name });
+    setShowDialog(true);
+  }
+
+  function handleSubmit(data: GroupFormValues) {
     startTransition(async () => {
       try {
-        if (editId) {
-          const updated = await updateGroup(userId, editId, { name: name.trim() });
-          setGroups(prev => prev.map(g => g.id === editId ? { ...g, name: updated.name } : g));
+        if (editingGroup) {
+          const updated = await updateGroup(userId, editingGroup.id, {
+            name: data.name.trim(),
+          });
+          setGroups((prev) =>
+            prev.map((g) =>
+              g.id === editingGroup.id ? { ...g, name: updated.name } : g,
+            ),
+          );
+          toast("success", "อัปเดตกลุ่มสำเร็จ!");
         } else {
-          const created = await createGroup(userId, { name: name.trim() });
-          setGroups(prev => [{ ...created, _count: { members: 0 } }, ...prev]);
+          const created = await createGroup(userId, {
+            name: data.name.trim(),
+          });
+          setGroups((prev) => [
+            { ...created, _count: { members: 0 } },
+            ...prev,
+          ]);
+          toast("success", "สร้างกลุ่มสำเร็จ!");
         }
-        setShowForm(false);
+        setShowDialog(false);
+        router.refresh();
       } catch (e) {
-        setError(safeErrorMessage(e));
+        toast("error", safeErrorMessage(e));
       }
     });
   }
 
-  function handleDelete(groupId: string) {
+  function handleDeleteConfirm() {
+    if (!deletingGroup) return;
     startTransition(async () => {
       try {
-        await deleteGroup(userId, groupId);
-        setGroups(prev => prev.filter(g => g.id !== groupId));
-        setDeleteConfirm(null);
-        if (activeGroup?.id === groupId) setActiveGroup(null);
+        await deleteGroup(userId, deletingGroup.id);
+        setGroups((prev) => prev.filter((g) => g.id !== deletingGroup.id));
+        if (activeGroup?.id === deletingGroup.id) setActiveGroup(null);
+        toast("success", "ลบกลุ่มสำเร็จ");
+        setShowDeleteAlert(false);
+        setDeletingGroup(null);
+        router.refresh();
       } catch (e) {
-        setDeleteConfirm(null);
-        setError(safeErrorMessage(e));
+        toast("error", safeErrorMessage(e));
       }
     });
   }
@@ -93,13 +251,12 @@ export default function GroupsPageClient({
     setActiveGroup(g);
     setMemberSearch("");
     setAddSearch("");
-    setMemberError("");
     setMembersLoading(true);
     try {
       const data = await getGroupContacts(userId, g.id);
       setMembers(data as Member[]);
     } catch {
-      setMemberError("โหลดสมาชิกไม่สำเร็จ");
+      toast("error", "โหลดสมาชิกไม่สำเร็จ");
     } finally {
       setMembersLoading(false);
     }
@@ -107,296 +264,543 @@ export default function GroupsPageClient({
 
   function handleAddContact(contact: ContactStub) {
     if (!activeGroup) return;
-    // Optimistic
-    const tempMember: Member = { id: `temp-${contact.id}`, groupId: activeGroup.id, contactId: contact.id, contact };
-    setMembers(prev => [...prev, tempMember]);
-    setGroups(prev => prev.map(g => g.id === activeGroup.id ? { ...g, _count: { members: g._count.members + 1 } } : g));
-    setActiveGroup(prev => prev ? { ...prev, _count: { members: prev._count.members + 1 } } : prev);
+    const tempMember: Member = {
+      id: `temp-${contact.id}`,
+      groupId: activeGroup.id,
+      contactId: contact.id,
+      contact,
+    };
+    setMembers((prev) => [...prev, tempMember]);
+    setGroups((prev) =>
+      prev.map((g) =>
+        g.id === activeGroup.id
+          ? { ...g, _count: { members: g._count.members + 1 } }
+          : g,
+      ),
+    );
+    setActiveGroup((prev) =>
+      prev
+        ? { ...prev, _count: { members: prev._count.members + 1 } }
+        : prev,
+    );
 
     startTransition(async () => {
       try {
-        const real = await addContactToGroup(userId, activeGroup.id, contact.id);
-        setMembers(prev => prev.map(m => m.id === tempMember.id ? (real as Member) : m));
+        const real = await addContactToGroup(
+          userId,
+          activeGroup.id,
+          contact.id,
+        );
+        setMembers((prev) =>
+          prev.map((m) => (m.id === tempMember.id ? (real as Member) : m)),
+        );
       } catch (e) {
-        // Rollback
-        setMembers(prev => prev.filter(m => m.id !== tempMember.id));
-        setGroups(prev => prev.map(g => g.id === activeGroup.id ? { ...g, _count: { members: g._count.members - 1 } } : g));
-        setActiveGroup(prev => prev ? { ...prev, _count: { members: prev._count.members - 1 } } : prev);
-        setMemberError(safeErrorMessage(e));
+        setMembers((prev) => prev.filter((m) => m.id !== tempMember.id));
+        setGroups((prev) =>
+          prev.map((g) =>
+            g.id === activeGroup.id
+              ? { ...g, _count: { members: g._count.members - 1 } }
+              : g,
+          ),
+        );
+        setActiveGroup((prev) =>
+          prev
+            ? { ...prev, _count: { members: prev._count.members - 1 } }
+            : prev,
+        );
+        toast("error", safeErrorMessage(e));
       }
     });
   }
 
   function handleRemoveContact(member: Member) {
     if (!activeGroup) return;
-    // Optimistic
-    setMembers(prev => prev.filter(m => m.id !== member.id));
-    setGroups(prev => prev.map(g => g.id === activeGroup.id ? { ...g, _count: { members: Math.max(0, g._count.members - 1) } } : g));
-    setActiveGroup(prev => prev ? { ...prev, _count: { members: Math.max(0, prev._count.members - 1) } } : prev);
+    setMembers((prev) => prev.filter((m) => m.id !== member.id));
+    setGroups((prev) =>
+      prev.map((g) =>
+        g.id === activeGroup.id
+          ? {
+              ...g,
+              _count: { members: Math.max(0, g._count.members - 1) },
+            }
+          : g,
+      ),
+    );
+    setActiveGroup((prev) =>
+      prev
+        ? {
+            ...prev,
+            _count: { members: Math.max(0, prev._count.members - 1) },
+          }
+        : prev,
+    );
 
     startTransition(async () => {
       try {
-        await removeContactFromGroup(userId, activeGroup.id, member.contactId);
+        await removeContactFromGroup(
+          userId,
+          activeGroup.id,
+          member.contactId,
+        );
       } catch (e) {
-        // Rollback
-        setMembers(prev => [...prev, member]);
-        setGroups(prev => prev.map(g => g.id === activeGroup.id ? { ...g, _count: { members: g._count.members + 1 } } : g));
-        setActiveGroup(prev => prev ? { ...prev, _count: { members: prev._count.members + 1 } } : prev);
-        setMemberError(safeErrorMessage(e));
+        setMembers((prev) => [...prev, member]);
+        setGroups((prev) =>
+          prev.map((g) =>
+            g.id === activeGroup.id
+              ? { ...g, _count: { members: g._count.members + 1 } }
+              : g,
+          ),
+        );
+        setActiveGroup((prev) =>
+          prev
+            ? { ...prev, _count: { members: prev._count.members + 1 } }
+            : prev,
+        );
+        toast("error", safeErrorMessage(e));
       }
     });
   }
 
-  const memberIds = useMemo(() => new Set(members.map(m => m.contactId)), [members]);
-
-  const filteredMembers = useMemo(() =>
-    members.filter(m =>
-      !memberSearch ||
-      m.contact.name.toLowerCase().includes(memberSearch.toLowerCase()) ||
-      m.contact.phone.includes(memberSearch)
-    ), [members, memberSearch]);
-
-  const contactsToAdd = useMemo(() =>
-    allContacts.filter(c =>
-      !memberIds.has(c.id) && (
-        !addSearch ||
-        c.name.toLowerCase().includes(addSearch.toLowerCase()) ||
-        c.phone.includes(addSearch)
-      )
-    ), [allContacts, memberIds, addSearch]);
+  // ==========================================
+  // Render
+  // ==========================================
 
   return (
-    <motion.div className="p-6 md:p-8 max-w-5xl" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+    <div className="p-4 md:p-8 max-w-5xl pb-20 md:pb-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight gradient-text-mixed">กลุ่ม</h2>
-          <p className="text-sm text-[var(--text-muted)] mt-1">{groups.length} กลุ่มทั้งหมด</p>
+          <h2 className="text-2xl font-bold tracking-tight text-white">
+            กลุ่ม
+          </h2>
+          <p className="text-sm text-[var(--text-muted)] mt-1">
+            {groups.length} กลุ่มทั้งหมด
+          </p>
         </div>
-        <motion.button
+        <Button
           onClick={openCreate}
-          whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-          className="btn-primary px-5 py-2.5 text-sm rounded-xl inline-flex items-center gap-2 cursor-pointer"
+          className="bg-[var(--accent)] hover:bg-[#0AE99C] text-[var(--bg-base)] font-semibold"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+          <Plus className="w-4 h-4 mr-1.5" />
           สร้างกลุ่ม
-        </motion.button>
+        </Button>
       </div>
 
-      {/* Create / Edit Modal */}
-      <AnimatePresence>
-        {showForm && (
-          <motion.div className="fixed inset-0 z-50 flex items-center justify-center px-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowForm(false)} />
-            <motion.div className="relative glass p-6 w-full max-w-sm z-10" initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} transition={{ duration: 0.2 }}>
-              <h3 className="text-lg font-bold text-white mb-5">{editId ? "แก้ไขกลุ่ม" : "สร้างกลุ่มใหม่"}</h3>
-              {error && <div className="mb-4 p-3 rounded-xl bg-red-500/8 border border-red-500/15 text-red-400 text-sm">{error}</div>}
-              <div>
-                <label className="block text-xs text-white font-medium uppercase tracking-wider mb-2">ชื่อกลุ่ม</label>
-                <input
-                  type="text" maxLength={100} autoFocus
-                  value={name} onChange={e => setName(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && handleSave()}
-                  className="input-glass w-full" placeholder="ชื่อกลุ่ม..."
-                />
-              </div>
-              <div className="flex gap-3 mt-6">
-                <button onClick={() => setShowForm(false)} className="flex-1 btn-glass py-2.5 rounded-xl text-sm cursor-pointer">ยกเลิก</button>
-                <button onClick={handleSave} disabled={isPending} className="flex-1 btn-primary py-2.5 rounded-xl text-sm disabled:opacity-50 cursor-pointer">
-                  {isPending ? "กำลังบันทึก..." : editId ? "บันทึก" : "สร้าง"}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Delete Confirm */}
-      <AnimatePresence>
-        {deleteConfirm && (
-          <motion.div className="fixed inset-0 z-50 flex items-center justify-center px-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setDeleteConfirm(null)} />
-            <motion.div className="relative glass p-6 w-full max-w-sm z-10 text-center" initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} transition={{ duration: 0.2 }}>
-              <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-red-400"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2" /></svg>
-              </div>
-              <h3 className="text-lg font-bold text-white mb-2">ลบกลุ่ม</h3>
-              <p className="text-sm text-[var(--text-muted)] mb-6">รายชื่อสมาชิกในกลุ่มนี้จะถูกถอดออกทั้งหมด</p>
-              <div className="flex gap-3">
-                <button onClick={() => setDeleteConfirm(null)} className="flex-1 btn-glass py-2.5 rounded-xl text-sm cursor-pointer">ยกเลิก</button>
-                <button onClick={() => handleDelete(deleteConfirm)} disabled={isPending} className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/15 transition-colors disabled:opacity-50 cursor-pointer">ลบ</button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Members Modal */}
-      <AnimatePresence>
-        {activeGroup && (
-          <motion.div className="fixed inset-0 z-50 flex items-center justify-center px-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setActiveGroup(null)} />
-            <motion.div
-              className="relative glass w-full max-w-2xl z-10 flex flex-col max-h-[85vh]"
-              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} transition={{ duration: 0.2 }}
-            >
-              {/* Modal Header */}
-              <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--border-subtle)]">
-                <div>
-                  <h3 className="text-lg font-bold text-white">{activeGroup.name}</h3>
-                  <p className="text-xs text-[var(--text-muted)] mt-0.5">{activeGroup._count.members} สมาชิก</p>
-                </div>
-                <button onClick={() => setActiveGroup(null)} className="w-8 h-8 rounded-lg hover:bg-white/8 flex items-center justify-center text-[var(--text-muted)] hover:text-white transition-colors cursor-pointer">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
-                </button>
-              </div>
-
-              {memberError && (
-                <div className="mx-6 mt-4 p-3 rounded-xl bg-red-500/8 border border-red-500/15 text-red-400 text-xs">{memberError}</div>
-              )}
-
-              <div className="flex flex-col md:flex-row gap-0 flex-1 min-h-0 overflow-hidden">
-                {/* Left: current members */}
-                <div className="flex-1 flex flex-col border-b md:border-b-0 md:border-r border-[var(--border-subtle)] min-h-0">
-                  <div className="px-4 pt-4 pb-3">
-                    <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-medium mb-2">สมาชิกในกลุ่ม</p>
-                    <input
-                      type="text"
-                      className="input-glass w-full text-sm py-2"
-                      placeholder="ค้นหาสมาชิก..."
-                      value={memberSearch}
-                      onChange={e => setMemberSearch(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-1">
-                    {membersLoading ? (
-                      <div className="text-center py-8 text-xs text-[var(--text-muted)]">กำลังโหลด...</div>
-                    ) : filteredMembers.length === 0 ? (
-                      <div className="text-center py-8 text-xs text-[var(--text-muted)]">
-                        {members.length === 0 ? "ยังไม่มีสมาชิก" : "ไม่พบที่ค้นหา"}
-                      </div>
-                    ) : filteredMembers.map(m => (
-                      <div key={m.id} className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl hover:bg-white/4 group transition-colors">
-                        <div className="min-w-0">
-                          <div className="text-sm text-white truncate">{m.contact.name}</div>
-                          <div className="text-xs text-[var(--text-muted)] font-mono">{m.contact.phone}</div>
-                        </div>
-                        <button
-                          onClick={() => handleRemoveContact(m)}
-                          disabled={isPending}
-                          className="flex-shrink-0 w-7 h-7 rounded-lg bg-red-500/0 hover:bg-red-500/10 flex items-center justify-center text-[var(--text-muted)] hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all disabled:opacity-30 cursor-pointer"
-                          title="ลบออกจากกลุ่ม"
-                        >
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Right: add contacts */}
-                <div className="flex-1 flex flex-col min-h-0">
-                  <div className="px-4 pt-4 pb-3">
-                    <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-medium mb-2">เพิ่มรายชื่อ</p>
-                    <input
-                      type="text"
-                      className="input-glass w-full text-sm py-2"
-                      placeholder="ค้นหาเพื่อเพิ่ม..."
-                      value={addSearch}
-                      onChange={e => setAddSearch(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-1">
-                    {contactsToAdd.length === 0 ? (
-                      <div className="text-center py-8 text-xs text-[var(--text-muted)]">
-                        {allContacts.length === members.length ? "รายชื่อทั้งหมดอยู่ในกลุ่มแล้ว" : "ไม่พบที่ค้นหา"}
-                      </div>
-                    ) : contactsToAdd.map(c => (
-                      <button
-                        key={c.id}
-                        onClick={() => handleAddContact(c)}
-                        disabled={isPending}
-                        className="w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl hover:bg-violet-500/8 border border-transparent hover:border-violet-500/15 text-left transition-all disabled:opacity-50 cursor-pointer group"
-                      >
-                        <div className="min-w-0">
-                          <div className="text-sm text-white truncate">{c.name}</div>
-                          <div className="text-xs text-[var(--text-muted)] font-mono">{c.phone}</div>
-                        </div>
-                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-violet-500/10 group-hover:bg-violet-500/20 flex items-center justify-center text-violet-400 transition-colors">
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Groups Table */}
+      {/* Groups Table — Desktop */}
       {groups.length > 0 ? (
-        <motion.div className="glass overflow-hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[var(--border-subtle)]">
-                  <th className="text-left px-5 py-3 text-xs text-[var(--text-muted)] uppercase tracking-wider font-medium">ชื่อกลุ่ม</th>
-                  <th className="text-left px-5 py-3 text-xs text-[var(--text-muted)] uppercase tracking-wider font-medium">สมาชิก</th>
-                  <th className="text-left px-5 py-3 text-xs text-[var(--text-muted)] uppercase tracking-wider font-medium hidden md:table-cell">วันที่สร้าง</th>
-                  <th className="w-36 px-5 py-3 text-xs text-[var(--text-muted)] uppercase tracking-wider font-medium text-right">จัดการ</th>
-                </tr>
-              </thead>
-              <motion.tbody variants={stagger} initial="hidden" animate="show">
-                {groups.map(g => (
-                  <motion.tr key={g.id} variants={cardVariant} className="table-row group">
-                    <td className="px-5 py-3.5">
-                      <a href={`/dashboard/groups/${g.id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                        <div className="w-9 h-9 rounded-xl bg-violet-500/[0.08] border border-violet-500/10 flex items-center justify-center text-violet-400 flex-shrink-0 group-hover:bg-violet-500/[0.12] transition-all">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" /></svg>
+        <>
+          <Card className="hidden md:block bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-b-0 hover:bg-transparent">
+                  <TableHead className="bg-[var(--bg-secondary)] text-[var(--text-muted)] text-xs uppercase tracking-wider font-medium h-11">
+                    ชื่อกลุ่ม
+                  </TableHead>
+                  <TableHead className="bg-[var(--bg-secondary)] text-[var(--text-muted)] text-xs uppercase tracking-wider font-medium h-11 w-[100px]">
+                    สมาชิก
+                  </TableHead>
+                  <TableHead className="bg-[var(--bg-secondary)] text-[var(--text-muted)] text-xs uppercase tracking-wider font-medium h-11 w-[120px] hidden lg:table-cell">
+                    วันที่สร้าง
+                  </TableHead>
+                  <TableHead className="bg-[var(--bg-secondary)] text-[var(--text-muted)] text-xs uppercase tracking-wider font-medium h-11 w-[160px] text-right">
+                    จัดการ
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {groups.map((g, idx) => (
+                  <TableRow
+                    key={g.id}
+                    className={`border-b border-[var(--border-subtle)] hover:bg-[var(--bg-surface-hover)] transition-colors ${
+                      idx % 2 === 1 ? "bg-[var(--bg-muted)]" : "bg-transparent"
+                    }`}
+                  >
+                    <TableCell className="py-3.5">
+                      <Link
+                        href={`/dashboard/groups/${g.id}`}
+                        className="flex items-center gap-3 group"
+                      >
+                        <div className="w-9 h-9 rounded-xl bg-[rgba(0,255,167,0.08)] border border-[rgba(0,255,167,0.15)] flex items-center justify-center text-[var(--accent)] flex-shrink-0 group-hover:bg-[rgba(0,255,167,0.12)] transition-all">
+                          <FolderOpen className="w-4 h-4" />
                         </div>
-                        <span className="text-sm font-semibold text-white truncate">{g.name}</span>
-                      </a>
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg bg-white/5 text-[var(--text-secondary)]">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                        <span className="text-sm font-semibold text-white group-hover:text-[var(--accent)] group-hover:underline transition-colors truncate">
+                          {g.name}
+                        </span>
+                      </Link>
+                    </TableCell>
+                    <TableCell className="py-3.5">
+                      <Badge
+                        variant="outline"
+                        className="text-[12px] px-2 py-0.5 bg-[rgba(0,255,167,0.06)] text-[var(--accent)] border-[rgba(0,255,167,0.15)] font-medium rounded-full"
+                      >
                         {g._count.members}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3.5 text-xs text-[var(--text-muted)] hidden md:table-cell">
-                      {new Date(g.createdAt).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "2-digit" })}
-                    </td>
-                    <td className="px-5 py-3.5 text-right">
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="py-3.5 text-xs text-[var(--text-muted)] hidden lg:table-cell">
+                      {new Date(g.createdAt).toLocaleDateString("th-TH", {
+                        day: "numeric",
+                        month: "short",
+                        year: "2-digit",
+                      })}
+                    </TableCell>
+                    <TableCell className="py-3.5 text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        <button onClick={() => openMembers(g)} className="btn-glass px-2.5 py-1.5 text-xs rounded-lg inline-flex items-center gap-1 cursor-pointer">
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-                          สมาชิก
-                        </button>
-                        <button onClick={() => openEdit(g)} className="btn-glass px-2.5 py-1.5 text-xs rounded-lg cursor-pointer">แก้ไข</button>
-                        <button onClick={() => setDeleteConfirm(g.id)} className="px-2.5 py-1.5 text-xs rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/15 transition-colors cursor-pointer">ลบ</button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openMembers(g)}
+                          className="h-8 border-[var(--border-subtle)] bg-transparent text-[var(--text-muted)] hover:text-[var(--accent)] hover:border-[rgba(0,255,167,0.3)]"
+                        >
+                          <Users className="w-3.5 h-3.5 mr-1" />
+                          จัดการสมาชิก
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openEdit(g)}
+                          className="h-8 px-2.5 text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[rgba(0,255,167,0.04)]"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setDeletingGroup(g);
+                            setShowDeleteAlert(true);
+                          }}
+                          className="h-8 px-2.5 text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/5"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
                       </div>
-                    </td>
-                  </motion.tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </motion.tbody>
-            </table>
+              </TableBody>
+            </Table>
+          </Card>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-3">
+            {groups.map((g) => (
+              <Card
+                key={g.id}
+                className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[16px] p-4"
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-[rgba(0,255,167,0.08)] border border-[rgba(0,255,167,0.15)] flex items-center justify-center text-[var(--accent)] flex-shrink-0">
+                    <FolderOpen className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <Link
+                      href={`/dashboard/groups/${g.id}`}
+                      className="text-sm font-semibold text-white hover:text-[var(--accent)] transition-colors truncate block"
+                    >
+                      {g.name}
+                    </Link>
+                    <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                      {g._count.members} สมาชิก
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openMembers(g)}
+                    className="flex-1 min-h-[44px] border-[var(--border-subtle)] bg-transparent text-[var(--text-muted)] hover:text-[var(--accent)] hover:border-[rgba(0,255,167,0.3)]"
+                  >
+                    <Users className="w-4 h-4 mr-1" />
+                    สมาชิก
+                  </Button>
+                  <button
+                    onClick={() => openEdit(g)}
+                    className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setDeletingGroup(g);
+                      setShowDeleteAlert(true);
+                    }}
+                    className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--text-muted)] hover:text-red-400 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </Card>
+            ))}
           </div>
-        </motion.div>
+        </>
       ) : (
-        <motion.div className="glass p-16 text-center" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] flex items-center justify-center">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="text-[var(--text-muted)]"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" /></svg>
+        /* Empty state */
+        <Card className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] p-12 text-center">
+          <div className="w-16 h-16 rounded-full bg-[rgba(0,255,167,0.08)] border border-[rgba(0,255,167,0.15)] flex items-center justify-center mx-auto mb-4">
+            <FolderOpen className="w-8 h-8 text-[var(--accent)]" />
           </div>
-          <p className="text-sm text-[var(--text-secondary)] mb-1">ยังไม่มีกลุ่ม</p>
-          <p className="text-xs text-[var(--text-muted)] mb-6">สร้างกลุ่มเพื่อจัดส่ง SMS เป็นหมวดหมู่</p>
-          <button onClick={openCreate} className="btn-primary px-6 py-2.5 rounded-xl text-sm inline-flex items-center gap-2 cursor-pointer">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+          <h3 className="text-lg font-semibold text-white mb-2">
+            ยังไม่มีกลุ่ม
+          </h3>
+          <p className="text-sm text-[var(--text-muted)] mb-6">
+            สร้างกลุ่มเพื่อจัดส่ง SMS เป็นหมวดหมู่
+          </p>
+          <Button
+            onClick={openCreate}
+            className="bg-[var(--accent)] hover:bg-[#0AE99C] text-[var(--bg-base)] font-semibold"
+          >
+            <Plus className="w-4 h-4 mr-1.5" />
             สร้างกลุ่มแรก
-          </button>
-        </motion.div>
+          </Button>
+        </Card>
       )}
-    </motion.div>
+
+      {/* ==========================================
+          DIALOGS
+          ========================================== */}
+
+      {/* Create / Edit Group Dialog */}
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="text-white text-lg">
+              {editingGroup ? "แก้ไขกลุ่ม" : "สร้างกลุ่มใหม่"}
+            </DialogTitle>
+            <DialogDescription className="text-[var(--text-muted)]">
+              {editingGroup
+                ? "แก้ไขชื่อกลุ่ม"
+                : "ตั้งชื่อสำหรับกลุ่มใหม่"}
+            </DialogDescription>
+          </DialogHeader>
+
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(handleSubmit)}
+              className="space-y-4"
+            >
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-secondary)]">
+                      ชื่อกลุ่ม
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="ชื่อกลุ่ม"
+                        maxLength={100}
+                        autoFocus
+                        className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(0,255,167,0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter className="gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowDialog(false)}
+                  className="border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-white bg-transparent"
+                >
+                  ยกเลิก
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isPending}
+                  className="bg-[var(--accent)] hover:bg-[#0AE99C] text-[var(--bg-base)] font-semibold"
+                >
+                  {isPending ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      กำลังบันทึก...
+                    </span>
+                  ) : (
+                    "บันทึก"
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Group AlertDialog */}
+      <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
+        <AlertDialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">
+              ลบกลุ่ม &ldquo;{deletingGroup?.name}&rdquo;?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-[var(--text-muted)]">
+              สมาชิกในกลุ่มนี้จะถูกถอดออกทั้งหมด รายชื่อจะไม่ถูกลบ
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-white bg-transparent">
+              ยกเลิก
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={isPending}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              {isPending ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  กำลังลบ...
+                </span>
+              ) : (
+                "ลบ"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Members Manager Dialog */}
+      <Dialog
+        open={!!activeGroup}
+        onOpenChange={(open) => {
+          if (!open) setActiveGroup(null);
+        }}
+      >
+        <DialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] sm:max-w-[720px] max-h-[85vh] p-0 overflow-hidden">
+          <DialogHeader className="px-6 pt-6 pb-0">
+            <DialogTitle className="text-white text-lg">
+              จัดการสมาชิก — กลุ่ม &ldquo;{activeGroup?.name}&rdquo; (
+              {activeGroup?._count.members || 0} คน)
+            </DialogTitle>
+            <DialogDescription className="text-[var(--text-muted)]">
+              เพิ่มหรือลบสมาชิกจากกลุ่ม
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col md:flex-row gap-0 flex-1 min-h-0 overflow-hidden">
+            {/* Left: current members */}
+            <div className="flex-1 flex flex-col border-b md:border-b-0 md:border-r border-[var(--border-subtle)] min-h-0">
+              <div className="px-4 pt-4 pb-3">
+                <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-medium mb-2">
+                  สมาชิกปัจจุบัน ({members.length})
+                </p>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-muted)]" />
+                  <Input
+                    type="text"
+                    className="pl-9 h-9 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white text-sm placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(0,255,167,0.6)]"
+                    placeholder="ค้นหา..."
+                    value={memberSearch}
+                    onChange={(e) => setMemberSearch(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-1 max-h-[400px]">
+                {membersLoading ? (
+                  <div className="text-center py-8 text-xs text-[var(--text-muted)] flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    กำลังโหลด...
+                  </div>
+                ) : filteredMembers.length === 0 ? (
+                  <div className="text-center py-8 text-xs text-[var(--text-muted)]">
+                    {members.length === 0
+                      ? "ยังไม่มีสมาชิก"
+                      : "ไม่พบที่ค้นหา"}
+                  </div>
+                ) : (
+                  filteredMembers.map((m) => (
+                    <div
+                      key={m.id}
+                      className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg hover:bg-[rgba(239,68,68,0.04)] group transition-colors"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-[13px] text-white truncate">
+                          {m.contact.name}
+                        </div>
+                        <div className="text-[12px] text-[var(--text-muted)] font-mono">
+                          {m.contact.phone}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleRemoveContact(m)}
+                        disabled={isPending}
+                        className="flex-shrink-0 w-7 h-7 rounded-lg hover:bg-[rgba(239,68,68,0.1)] flex items-center justify-center text-[var(--text-muted)] hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all disabled:opacity-50"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Right: add contacts */}
+            <div className="flex-1 flex flex-col min-h-0 bg-[var(--bg-surface)]">
+              <div className="px-4 pt-4 pb-3">
+                <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-medium mb-2">
+                  เพิ่มรายชื่อ
+                </p>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-muted)]" />
+                  <Input
+                    type="text"
+                    className="pl-9 h-9 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white text-sm placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(0,255,167,0.6)]"
+                    placeholder="ค้นหาเพื่อเพิ่ม..."
+                    value={addSearch}
+                    onChange={(e) => setAddSearch(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-1 max-h-[400px]">
+                {contactsToAdd.length === 0 ? (
+                  <div className="text-center py-8 text-xs text-[var(--text-muted)]">
+                    {contactsLoading
+                      ? "กำลังค้นหา..."
+                      : addSearch
+                        ? "ไม่พบที่ค้นหา"
+                        : "รายชื่อทั้งหมดอยู่ในกลุ่มแล้ว"}
+                  </div>
+                ) : (
+                  contactsToAdd.map((c) => (
+                    <button
+                      key={c.id}
+                      onClick={() => handleAddContact(c)}
+                      disabled={isPending}
+                      className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg hover:bg-[rgba(0,255,167,0.04)] text-left transition-all disabled:opacity-50 cursor-pointer group"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-[13px] text-white truncate">
+                          {c.name}
+                        </div>
+                        <div className="text-[12px] text-[var(--text-muted)] font-mono">
+                          {c.phone}
+                        </div>
+                      </div>
+                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[rgba(0,255,167,0.06)] group-hover:bg-[rgba(0,255,167,0.15)] flex items-center justify-center text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors">
+                        <Plus className="w-3 h-3" />
+                      </span>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="px-6 pb-6 pt-4 border-t border-[var(--border-subtle)]">
+            <Button
+              variant="outline"
+              onClick={() => setActiveGroup(null)}
+              className="border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-white bg-transparent"
+            >
+              ปิด
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

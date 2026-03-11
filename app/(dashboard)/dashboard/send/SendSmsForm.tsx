@@ -1,12 +1,24 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { sendSms, sendBatchSms } from "@/lib/actions/sms";
 import { smsCounterText } from "@/lib/form-utils";
-import { calculateCreditCost, calculateSmsCount } from "@/lib/validations";
-import SenderDropdown from "@/components/ui/SenderDropdown";
+import { calculateCreditCost } from "@/lib/validations";
 import { safeErrorMessage } from "@/lib/error-messages";
+
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+import { Send, ArrowRight, Loader2 } from "lucide-react";
 
 type MsgType = "english" | "thai" | "unicode";
 
@@ -17,7 +29,7 @@ const MSG_LIMITS: Record<MsgType, { single: number; multi: number }> = {
 };
 
 export default function SendSmsForm({ userId, senderNames = ["EasySlip"] }: { userId: string; senderNames?: string[] }) {
-  const [senderName, setSenderName] = useState("EasySlip");
+  const [senderName, setSenderName] = useState(senderNames[0] || "EasySlip");
   const [recipients, setRecipients] = useState("");
   const [message, setMessage] = useState("");
   const [msgType, setMsgType] = useState<MsgType>("thai");
@@ -26,21 +38,21 @@ export default function SendSmsForm({ userId, senderNames = ["EasySlip"] }: { us
 
   const limits = MSG_LIMITS[msgType];
   const charCount = message.length;
-  const smsCount =
-    charCount === 0
-      ? 0
-      : charCount <= limits.single
-        ? 1
-        : Math.ceil(charCount / limits.multi);
+  const smsCount = charCount === 0 ? 0 : charCount <= limits.single ? 1 : Math.ceil(charCount / limits.multi);
 
-  const recipientList = recipients
-    .split(/[,\n]/)
-    .map((r) => r.trim())
-    .filter(Boolean);
+  const recipientList = recipients.split(/[,\n]/).map((r) => r.trim()).filter(Boolean);
   const recipientCount = recipientList.length;
 
-  const invalidPhones = recipientList.filter(r => !/^0[689]\d{8}$/.test(r.replace(/[^0-9]/g, "")));
+  const validPhones = recipientList.filter((r) => /^0[0-9]\d{8}$/.test(r.replace(/[^0-9]/g, "")));
+  const invalidPhones = recipientList.filter((r) => !/^0[0-9]\d{8}$/.test(r.replace(/[^0-9]/g, "")));
   const phoneError = invalidPhones.length > 0 ? `เบอร์ไม่ถูกต้อง: ${invalidPhones.slice(0, 3).join(", ")}${invalidPhones.length > 3 ? ` +${invalidPhones.length - 3} เบอร์` : ""}` : "";
+
+  const creditPerSms = message ? calculateCreditCost(message) : 0;
+  const totalCredit = creditPerSms * recipientCount;
+
+  // Character counter progress
+  const maxChars = limits.single;
+  const charProgress = Math.min((charCount / maxChars) * 100, 100);
 
   const handleSend = () => {
     if (!recipients.trim() || !message.trim()) return;
@@ -49,226 +61,215 @@ export default function SendSmsForm({ userId, senderNames = ["EasySlip"] }: { us
     startTransition(async () => {
       try {
         if (recipientCount === 1) {
-          await sendSms(userId, {
-            senderName,
-            recipient: recipientList[0],
-            message,
-          });
+          await sendSms(userId, { senderName, recipient: recipientList[0], message });
         } else {
-          await sendBatchSms(userId, {
-            senderName,
-            recipients: recipientList,
-            message,
-          });
+          await sendBatchSms(userId, { senderName, recipients: recipientList, message });
         }
         setResult({ type: "success", text: `ส่งสำเร็จ ${recipientCount} เบอร์!` });
         setRecipients("");
         setMessage("");
       } catch (e) {
-        setResult({
-          type: "error",
-          text: safeErrorMessage(e),
-        });
+        setResult({ type: "error", text: safeErrorMessage(e) });
       }
     });
   };
 
   return (
-    <motion.div
-      className="p-6 md:p-8 max-w-6xl"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-    >
-      <h2 className="text-2xl font-bold mb-1 tracking-tight gradient-text-mixed">ส่ง SMS</h2>
-      <p className="text-sm text-slate-300 mb-8">ส่งข้อความ SMS ถึงผู้รับ</p>
+    <div className="p-6 md:p-8 pb-20 md:pb-8 max-w-6xl space-y-6">
+      <h1 className="text-2xl font-bold text-white">ส่ง SMS</h1>
 
       {/* Feedback */}
-      <AnimatePresence>
-        {result && (
-          <motion.div
-            initial={{ opacity: 0, y: -10, height: 0 }}
-            animate={{ opacity: 1, y: 0, height: "auto" }}
-            exit={{ opacity: 0, y: -10, height: 0 }}
-            className={`mb-6 p-4 rounded-xl border text-sm font-medium ${
-              result.type === "success"
-                ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-                : "bg-red-500/10 border-red-500/20 text-red-400"
-            }`}
-          >
-            {result.text}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {result && (
+        <div className={`p-3 rounded-xl text-sm font-medium border transition-opacity duration-200 ${
+          result.type === "success"
+            ? "bg-[rgba(16,185,129,0.06)] border-[rgba(16,185,129,0.15)] text-[#10B981]"
+            : "bg-[rgba(239,68,68,0.06)] border-[rgba(239,68,68,0.15)] text-[#F87171]"
+        }`}>
+          {result.text}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {/* Compose */}
-        <motion.div
-          className="lg:col-span-3 glass p-6 md:p-8"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.1, duration: 0.5 }}
-        >
-          <h3 className="text-base font-semibold text-white mb-5 flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500/[0.12] to-cyan-500/[0.08] border border-violet-500/10 flex items-center justify-center">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-violet-400">
-                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
-              </svg>
-            </div>
-            <span className="gradient-text-mixed">เขียนข้อความ</span>
-          </h3>
-
-          <div className="space-y-5">
-            {/* Sender Name */}
-            <div>
-              <label className="block text-xs text-slate-300 uppercase tracking-wider mb-2">ชื่อผู้ส่ง</label>
-              <SenderDropdown
-                value={senderName}
-                onChange={setSenderName}
-                senderNames={senderNames}
-              />
-            </div>
-
-            {/* Message Type */}
-            <div>
-              <label className="block text-xs text-slate-300 uppercase tracking-wider mb-2">ประเภทข้อความ</label>
-              <div className="flex gap-2">
-                {(["english", "thai", "unicode"] as MsgType[]).map((type) => (
-                  <motion.button
-                    key={type}
-                    onClick={() => setMsgType(type)}
-                    className={`px-4 py-2 rounded-lg text-xs font-medium transition-all ${
-                      msgType === type
-                        ? "btn-primary"
-                        : "btn-glass"
-                    }`}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    {type === "english" ? "อังกฤษ (160)" : type === "thai" ? "ภาษาไทย (70)" : "Unicode (70)"}
-                  </motion.button>
-                ))}
+        {/* ── Compose Panel ── */}
+        <Card className="lg:col-span-3 bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px]">
+          <CardContent className="p-6 md:p-8">
+            <h3 className="text-base font-semibold text-white mb-5 flex items-center gap-2">
+              <div className="w-8 h-8 rounded-[10px] bg-[rgba(0,255,167,0.08)] flex items-center justify-center">
+                <Send className="w-4 h-4 text-[var(--accent)]" />
               </div>
-            </div>
+              เขียนข้อความ
+            </h3>
 
-            {/* Recipients */}
-            <div>
-              <label className="block text-xs text-slate-300 uppercase tracking-wider mb-2">ผู้รับ</label>
-              <textarea
-                value={recipients}
-                onChange={(e) => setRecipients(e.target.value)}
-                className={`input-glass resize-none${phoneError ? " border-red-500/60" : recipientCount > 0 && !phoneError ? " border-emerald-500/40" : ""}`}
-                rows={3}
-                placeholder={"0891234567\n0891234568, 0891234569"}
-              />
-              {phoneError
-                ? <p className="text-red-400 text-xs mt-1">{phoneError}</p>
-                : <p className="text-[11px] text-[var(--text-muted)] mt-1">{recipientCount} เบอร์ — คั่นด้วยจุลภาค หรือขึ้นบรรทัดใหม่</p>
-              }
-            </div>
+            <div className="space-y-5">
+              {/* Sender */}
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-secondary)] mb-1.5">ผู้ส่ง</label>
+                <Select value={senderName} onValueChange={(v) => v && setSenderName(v)}>
+                  <SelectTrigger className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white rounded-lg">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)]">
+                    {senderNames.map((name) => (
+                      <SelectItem key={name} value={name} className="hover:bg-[var(--bg-surface-hover)]">
+                        {name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            {/* Message */}
-            <div>
-              <label className="block text-xs text-slate-300 uppercase tracking-wider mb-2">ข้อความ</label>
-              <textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                className="input-glass resize-none"
-                rows={5}
-                placeholder="พิมพ์ข้อความ SMS ที่นี่..."
-                maxLength={1000}
-              />
-              <div className="flex items-center justify-between mt-1.5">
-                <p className="text-[11px] text-[var(--text-muted)]">
-                  {smsCounterText(message) || `0 ตัวอักษร • 0 SMS (${msgType === "english" ? "EN: 160/SMS" : "Thai: 70/SMS"})`}
-                </p>
-                {message.length > 0 && (
-                  <p className="text-[11px] text-amber-400 font-medium">
-                    💳 จะใช้ {calculateCreditCost(message)} เครดิต
+              {/* Message Type */}
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-secondary)] mb-1.5">ประเภทข้อความ</label>
+                <Tabs value={msgType} onValueChange={(v) => setMsgType(v as MsgType)}>
+                  <TabsList className="h-9 bg-transparent gap-2 p-0">
+                    {([
+                      { value: "thai", label: "ภาษาไทย (70)" },
+                      { value: "english", label: "English (160)" },
+                      { value: "unicode", label: "Unicode (70)" },
+                    ] as const).map((tab) => (
+                      <TabsTrigger
+                        key={tab.value}
+                        value={tab.value}
+                        className="h-9 px-4 rounded-lg text-xs font-medium border border-[var(--border-subtle)] text-[var(--text-secondary)] data-[state=active]:bg-[rgba(0,255,167,0.08)] data-[state=active]:border-[rgba(0,255,167,0.3)] data-[state=active]:text-[var(--accent)]"
+                      >
+                        {tab.label}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                </Tabs>
+              </div>
+
+              {/* Recipients */}
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-secondary)] mb-1.5">ผู้รับ</label>
+                <Textarea
+                  value={recipients}
+                  onChange={(e) => setRecipients(e.target.value)}
+                  className={`bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-secondary)] rounded-lg resize-none focus:border-[rgba(0,255,167,0.6)] focus:ring-[rgba(0,255,167,0.12)] ${phoneError ? "border-[rgba(239,68,68,0.6)]" : validPhones.length > 0 ? "border-[rgba(16,185,129,0.4)]" : ""}`}
+                  rows={4}
+                  placeholder={"กรอกเบอร์โทร (คั่นด้วย Enter หรือ comma)\n0891234567\n0891234568"}
+                />
+                {phoneError ? (
+                  <p className="text-[#F87171] text-xs mt-1">{phoneError}</p>
+                ) : (
+                  <p className="text-xs text-[var(--text-secondary)] mt-1">
+                    {validPhones.length > 0 ? (
+                      <><span className="text-[#10B981]">{validPhones.length} เบอร์ถูกต้อง</span>{invalidPhones.length > 0 && <>, <span className="text-[#F87171]">{invalidPhones.length} ไม่ถูกต้อง</span></>}</>
+                    ) : (
+                      `${recipientCount} เบอร์ — คั่นด้วยจุลภาค หรือขึ้นบรรทัดใหม่`
+                    )}
                   </p>
                 )}
               </div>
-            </div>
-          </div>
-        </motion.div>
 
-        {/* Preview & Cost */}
-        <motion.div
-          className="lg:col-span-2 space-y-6"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-        >
+              {/* Message */}
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-secondary)] mb-1.5">ข้อความ</label>
+                <Textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  className="bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-secondary)] rounded-lg resize-none focus:border-[rgba(0,255,167,0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+                  rows={5}
+                  placeholder="พิมพ์ข้อความ SMS ที่นี่..."
+                  maxLength={1000}
+                />
+                <div className="flex items-center justify-between mt-1.5">
+                  <p className="text-xs text-[var(--text-secondary)]">
+                    {smsCounterText(message) || `0/${limits.single} ตัวอักษร · 0 SMS`}
+                  </p>
+                  {message.length > 0 && (
+                    <p className="text-xs text-[#F59E0B] font-medium">
+                      {creditPerSms} เครดิต/SMS
+                    </p>
+                  )}
+                </div>
+                {/* Progress bar */}
+                <div className="h-0.5 mt-1 rounded-full bg-[var(--border-subtle)] overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-[var(--accent)] transition-all duration-200"
+                    style={{ width: `${charProgress}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ── Preview & Cost Panel ── */}
+        <div className="lg:col-span-2 space-y-6 lg:sticky lg:top-[80px] lg:self-start pb-20 lg:pb-0">
           {/* Preview */}
-          <div className="glass p-6">
-            <h3 className="text-xs text-slate-300 uppercase tracking-wider mb-4">ตัวอย่าง</h3>
-            <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4 min-h-[120px]">
-              <div className="text-xs text-cyan-400 mb-2">จาก: {senderName || "EasySlip"}</div>
-              <p className="text-sm text-slate-200 whitespace-pre-wrap">
-                {message || "ข้อความจะแสดงที่นี่..."}
-              </p>
-            </div>
-            <div className="flex justify-between text-xs text-slate-300 mt-3">
-              <span>{charCount} ตัวอักษร</span>
-              <span>{smsCount} ส่วน SMS</span>
-            </div>
-          </div>
-
-          {/* Cost Summary */}
-          <div className="glass p-6">
-            <h3 className="text-xs text-slate-300 uppercase tracking-wider mb-4">สรุปเครดิตที่ใช้</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between text-slate-300">
-                <span>จำนวนผู้รับ</span>
-                <span className="text-white">{recipientCount}</span>
-              </div>
-              <div className="flex justify-between text-slate-300">
-                <span>เครดิต/เบอร์</span>
-                <span className="text-white">{message ? calculateCreditCost(message) : 0}</span>
-              </div>
-              <div className="border-t border-white/5 pt-2 mt-2 flex justify-between font-semibold">
-                <span className="text-white">รวมเครดิต</span>
-                <span className="text-amber-400 text-lg font-bold">
-                  {message && recipientCount > 0 ? calculateCreditCost(message) * recipientCount : 0} เครดิต
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 pt-1">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[var(--text-muted)] flex-shrink-0"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
-                <p className="text-[11px] text-[var(--text-muted)]">
-                  {/[\u0E00-\u0E7F]/.test(message) ? "ไทย: 70 ตัว/SMS" : "EN: 160 ตัว/SMS"} • 1 เครดิต = 1 SMS part
+          <Card className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px]">
+            <CardContent className="p-5">
+              <h3 className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-secondary)] mb-4">ตัวอย่าง</h3>
+              <div className="bg-[var(--bg-base)] border border-[var(--border-subtle)] rounded-xl p-4 min-h-[120px]">
+                <div className="text-xs text-[var(--accent)] mb-2">From: {senderName || "EasySlip"}</div>
+                <p className="text-sm text-white whitespace-pre-wrap">
+                  {message || <span className="text-[var(--text-secondary)]">ข้อความจะแสดงที่นี่...</span>}
                 </p>
               </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            <div className="mt-5">
-              <motion.button
+          {/* Cost Summary */}
+          <Card className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px]">
+            <CardContent className="p-5">
+              <h3 className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-secondary)] mb-4">สรุปค่าใช้จ่าย</h3>
+              <div className="space-y-2.5">
+                <div className="flex justify-between text-[13px] border-b border-[var(--border-subtle)] pb-2.5">
+                  <span className="text-[var(--text-secondary)]">ผู้รับ</span>
+                  <span className="text-white">{recipientCount} เบอร์</span>
+                </div>
+                <div className="flex justify-between text-[13px] border-b border-[var(--border-subtle)] pb-2.5">
+                  <span className="text-[var(--text-secondary)]">SMS/เบอร์</span>
+                  <span className="text-white">{smsCount}</span>
+                </div>
+                <div className="flex justify-between text-[13px] border-b border-[var(--border-subtle)] pb-2.5">
+                  <span className="text-[var(--text-secondary)]">เครดิต/SMS</span>
+                  <span className="text-white">{creditPerSms}</span>
+                </div>
+                <div className="flex justify-between pt-1">
+                  <span className="text-base font-bold text-white">รวม</span>
+                  <span className="text-base font-bold text-[var(--accent)]">{totalCredit} เครดิต</span>
+                </div>
+              </div>
+
+              <Button
                 onClick={handleSend}
                 disabled={isPending || !recipients.trim() || !message.trim() || !!phoneError}
-                className="w-full btn-primary py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-40"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                className="w-full mt-4 h-12 bg-[var(--accent)] hover:bg-[#0AE99C] text-[var(--bg-base)] rounded-xl font-semibold"
               >
                 {isPending ? (
-                  <span className="flex items-center gap-2">
-                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    กำลังส่ง...
-                  </span>
+                  <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />กำลังส่ง...</span>
                 ) : (
-                  <>
-                    ส่งเลย
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M5 12h14M12 5l7 7-7 7" />
-                    </svg>
-                  </>
+                  <span className="flex items-center gap-2">ส่ง SMS <ArrowRight className="w-4 h-4" /></span>
                 )}
-              </motion.button>
-            </div>
-          </div>
-        </motion.div>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </motion.div>
+
+      {/* Mobile Sticky CTA */}
+      <div className="lg:hidden fixed bottom-16 left-0 right-0 z-40 bg-[var(--bg-base)] border-t border-[var(--border-subtle)] px-4 py-3 safe-area-bottom">
+        <div className="flex items-center justify-between gap-4">
+          <div className="text-sm">
+            <span className="text-[var(--text-secondary)]">รวม: </span>
+            <span className="text-base font-bold text-[var(--accent)]">{totalCredit} เครดิต</span>
+          </div>
+          <Button
+            onClick={handleSend}
+            disabled={isPending || !recipients.trim() || !message.trim() || !!phoneError}
+            className="h-11 px-6 bg-[var(--accent)] hover:bg-[#0AE99C] text-[var(--bg-base)] rounded-xl font-semibold"
+          >
+            {isPending ? (
+              <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />ส่ง...</span>
+            ) : (
+              <span className="flex items-center gap-2">ส่ง SMS <ArrowRight className="w-4 h-4" /></span>
+            )}
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }

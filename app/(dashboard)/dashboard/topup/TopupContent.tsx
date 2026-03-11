@@ -1,8 +1,18 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import EmptyState from "@/app/components/ui/EmptyState";
+import { Coins, Upload, CreditCard, Building2, QrCode, ChevronRight, Copy, Check, Loader2, ArrowRight, Zap } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
 import { safeErrorMessage } from "@/lib/error-messages";
 
 type Package = {
@@ -23,6 +33,15 @@ type User = {
   credits: number;
   role: string;
 };
+
+const QUICK_AMOUNTS = [500, 1000, 3000, 5000, 10000];
+
+const PRICING_TIERS = [
+  { name: "Starter", range: "1 - 10,000", price: "฿0.50", perSms: 0.5 },
+  { name: "Growth", range: "10,001 - 50,000", price: "฿0.40", perSms: 0.4 },
+  { name: "Pro", range: "50,001 - 200,000", price: "฿0.30", perSms: 0.3 },
+  { name: "Enterprise", range: "200,001+", price: "ติดต่อ", perSms: 0.25 },
+];
 
 function formatPrice(satang: number): string {
   return (satang / 100).toLocaleString("th-TH");
@@ -81,98 +100,59 @@ function SlipUploadSection({ userId }: { userId: string }) {
   }
 
   return (
-    <motion.div
-      className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[var(--bg-elevated)]/80 backdrop-blur-xl p-6 mb-8"
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.15 }}
-    >
-      <div className="absolute inset-0 bg-gradient-to-br from-violet-500/[0.03] via-transparent to-cyan-500/[0.03]" />
-
-      <div className="relative z-10">
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/15 to-cyan-500/10 border border-violet-500/10 flex items-center justify-center flex-shrink-0">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-violet-400">
-              <rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" />
-            </svg>
-          </div>
-          <div>
-            <h2 className="text-base font-semibold gradient-text-mixed">วิธีเติมเครดิต</h2>
-            <p className="text-[11px] text-[var(--text-muted)]">โอนเงินแล้วแนบสลิปเพื่อรับเครดิตทันที</p>
-          </div>
-        </div>
-
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Building2 className="w-4 h-4 text-[var(--accent)]" />
+          โอนเงิน (Bank Transfer)
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Bank Details */}
           <div className="space-y-3">
-            <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">บัญชีรับโอน</p>
-
-            <div className="rounded-xl bg-[var(--bg-surface)]/60 border border-[var(--border-subtle)] p-4 space-y-3">
-              {/* Bank */}
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">บัญชีรับโอน</p>
+            <div className="rounded-lg bg-[var(--bg-base)] border border-border p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-[var(--text-muted)]">ธนาคาร</span>
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-full bg-violet-600 flex items-center justify-center">
-                    <span className="text-[9px] font-bold text-white">S</span>
-                  </div>
-                  <span className="text-sm font-semibold text-[var(--text-primary)]">ไทยพาณิชย์ (SCB)</span>
-                </div>
+                <span className="text-xs text-muted-foreground">ธนาคาร</span>
+                <span className="text-sm font-semibold">ไทยพาณิชย์ (SCB)</span>
               </div>
-              {/* Account Number */}
               <div className="flex items-center justify-between">
-                <span className="text-xs text-[var(--text-muted)]">เลขบัญชี</span>
+                <span className="text-xs text-muted-foreground">เลขบัญชี</span>
                 <button
                   type="button"
                   onClick={() => navigator.clipboard.writeText("4078240476")}
-                  className="flex items-center gap-1.5 text-sm font-mono font-semibold text-cyan-400 hover:text-cyan-300 transition-colors group"
+                  className="text-sm font-mono font-semibold text-[var(--accent)] hover:opacity-80 transition-opacity"
                 >
                   407-8-24047-6
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                    <rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-                  </svg>
                 </button>
               </div>
-              {/* Name */}
               <div className="flex items-center justify-between">
-                <span className="text-xs text-[var(--text-muted)]">ชื่อบัญชี</span>
-                <span className="text-sm text-[var(--text-secondary)]">นายภูมิชนะ อุดแก้ว</span>
+                <span className="text-xs text-muted-foreground">ชื่อบัญชี</span>
+                <span className="text-sm text-muted-foreground">นายภูมิชนะ อุดแก้ว</span>
               </div>
             </div>
-
-            <p className="text-[11px] text-[var(--text-muted)] leading-relaxed px-1">
-              โอนเงินแล้วถ่ายสลิปอัพโหลดด้านขวา ระบบจะตรวจสอบและเพิ่มเครดิตอัตโนมัติภายใน 1-5 นาที
-            </p>
           </div>
 
           {/* Slip Upload */}
           <div className="space-y-3">
-            <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">อัพโหลดสลิป</p>
-
-            {/* Drop Zone */}
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">อัพโหลดสลิป</p>
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="w-full rounded-xl border-2 border-dashed border-[var(--border-subtle)] hover:border-violet-500/30 bg-[var(--bg-surface)]/40 hover:bg-violet-500/[0.03] transition-all cursor-pointer group overflow-hidden"
-              style={{ minHeight: "140px" }}
+              className="w-full rounded-lg border-2 border-dashed border-border hover:border-[var(--accent)]/30 bg-[var(--bg-base)] hover:bg-[var(--accent)]/5 transition-all cursor-pointer"
+              style={{ minHeight: "120px" }}
             >
               {preview ? (
                 <div className="relative">
-                  {/* biome-ignore lint/performance/noImgElement: slip preview */}
-                  <img src={preview} alt="slip" className="w-full h-36 object-cover" />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <span className="text-xs text-white font-medium">เปลี่ยนรูป</span>
-                  </div>
+                  {/* biome-ignore lint/a11y/useAltText: slip preview */}
+                  <img src={preview} alt="slip" className="w-full h-32 object-cover rounded-lg" />
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center py-8 gap-2">
-                  <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/10 flex items-center justify-center group-hover:bg-violet-500/15 transition-colors">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-violet-400">
-                      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
-                    </svg>
-                  </div>
-                  <span className="text-xs text-[var(--text-muted)] group-hover:text-[var(--text-secondary)] transition-colors">คลิกหรือลากไฟล์มาวาง</span>
-                  <span className="text-[10px] text-[var(--text-muted)]/60">PNG, JPG, WEBP — สูงสุด 10MB</span>
+                <div className="flex flex-col items-center justify-center py-6 gap-2">
+                  <Upload className="w-5 h-5 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">คลิกหรือลากไฟล์มาวาง</span>
+                  <span className="text-[10px] text-muted-foreground">PNG, JPG, WEBP — สูงสุด 10MB</span>
                 </div>
               )}
             </button>
@@ -184,188 +164,293 @@ function SlipUploadSection({ userId }: { userId: string }) {
               onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
             />
 
-            {file && (
-              <p className="text-[11px] text-[var(--text-muted)] truncate px-1">
-                <span className="text-violet-400">✓</span> {file.name}
-              </p>
-            )}
-
-            {/* Submit */}
-            <motion.button
-              type="button"
+            <Button
               onClick={handleSubmit}
               disabled={!file || status === "loading" || status === "success"}
-              className="btn-gradient w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
-              whileHover={{ scale: status === "idle" && file ? 1.01 : 1 }}
-              whileTap={{ scale: 0.98 }}
+              className="w-full"
             >
               {status === "loading" ? (
-                <>
-                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-                  กำลังตรวจสอบ...
-                </>
+                <><Loader2 className="w-4 h-4 animate-spin" /> กำลังตรวจสอบ...</>
               ) : status === "success" ? (
-                <>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
-                  ยืนยันแล้ว
-                </>
+                <><Check className="w-4 h-4" /> ยืนยันแล้ว</>
               ) : (
-                <>
-                  ยืนยันการโอน
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-                </>
+                <>ยืนยันการโอน <ArrowRight className="w-4 h-4" /></>
               )}
-            </motion.button>
+            </Button>
 
-            {/* Result */}
-            <AnimatePresence>
-              {message && (
-                <motion.div
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  className={`rounded-xl px-4 py-3 text-sm font-medium border ${
-                    status === "success"
-                      ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-                      : "bg-red-500/10 border-red-500/20 text-red-400"
-                  }`}
-                >
-                  {status === "success" && credits !== null && (
-                    <span className="block text-xs text-emerald-300 mb-0.5">เครดิตใหม่: {credits.toLocaleString()} เครดิต</span>
-                  )}
-                  {message}
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {message && (
+              <div className={`rounded-lg px-4 py-3 text-sm border ${
+                status === "success"
+                  ? "bg-[var(--success)]/10 border-[var(--success)]/20 text-[var(--success)]"
+                  : "bg-[var(--error)]/10 border-[var(--error)]/20 text-[var(--error)]"
+              }`}>
+                {status === "success" && credits !== null && (
+                  <span className="block text-xs mb-0.5">เครดิตใหม่: {credits.toLocaleString()}</span>
+                )}
+                {message}
+              </div>
+            )}
           </div>
         </div>
-      </div>
-    </motion.div>
+      </CardContent>
+    </Card>
   );
 }
 
 export default function TopupContent({ user, packages }: { user: User; packages: Package[] }) {
-  return (
-    <motion.div className="p-6 md:p-8 max-w-6xl" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }}>
-      <h1 className="text-2xl font-bold tracking-tight mb-1">
-        <span className="gradient-text-cyan">เติมเงิน</span>
-      </h1>
-      <p className="text-sm text-[var(--text-muted)] mb-8">เลือกแพ็กเกจเพื่อเติมเครดิต SMS</p>
+  const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
+  const [customAmount, setCustomAmount] = useState("");
+  const [autoTopup, setAutoTopup] = useState(false);
 
-      {/* Current Credits */}
-      <div className="glass-cyan p-6 mb-8">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-cyan-500/[0.08] border border-cyan-500/10 flex items-center justify-center">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-cyan-400">
-                <circle cx="12" cy="12" r="10" /><text x="12" y="16" textAnchor="middle" fill="currentColor" stroke="none" fontSize="12" fontWeight="bold">฿</text>
-              </svg>
+  const currentRate = 0.5; // ฿ per SMS (starter tier)
+  const estimatedSms = Math.floor(user.credits / currentRate);
+
+  return (
+    <div className="p-6 md:p-8 space-y-6">
+      {/* Page Header */}
+      <div className="page-header">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-[var(--accent)]/10 border border-[var(--accent)]/15 flex items-center justify-center">
+            <Coins className="w-5 h-5 text-[var(--accent)]" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold">เติมเครดิต</h1>
+            <p className="text-sm text-muted-foreground">จัดการยอดเงินและเติมเครดิตสำหรับส่ง SMS</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Balance Card (Hero) */}
+      <Card className="border-[var(--accent)]/20">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-xl bg-[var(--accent)]/10 border border-[var(--accent)]/15 flex items-center justify-center">
+                <Coins className="w-7 h-7 text-[var(--accent)]" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">เครดิตคงเหลือ</p>
+                <p className="text-3xl font-bold text-[var(--accent)]">฿{user.credits.toLocaleString()}</p>
+              </div>
+            </div>
+            <div className="text-right space-y-1">
+              <p className="text-xs text-muted-foreground">ประมาณ</p>
+              <p className="text-lg font-semibold">{estimatedSms.toLocaleString()} SMS</p>
+              <p className="text-[10px] text-muted-foreground">ที่อัตรา ฿{currentRate}/SMS</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Quick Top-up */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Zap className="w-4 h-4 text-[var(--accent)]" />
+            เติมเงินด่วน
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
+            {QUICK_AMOUNTS.map((amount) => (
+              <Button
+                key={amount}
+                variant={selectedAmount === amount ? "default" : "outline"}
+                className="h-12"
+                onClick={() => { setSelectedAmount(amount); setCustomAmount(""); }}
+              >
+                ฿{amount.toLocaleString()}
+              </Button>
+            ))}
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex-1">
+              <Input
+                type="number"
+                placeholder="จำนวนเงินอื่น (ขั้นต่ำ ฿100)"
+                value={customAmount}
+                onChange={(e) => { setCustomAmount(e.target.value); setSelectedAmount(null); }}
+                min={100}
+              />
+            </div>
+            <Button disabled={!selectedAmount && !customAmount}>
+              ดำเนินการ <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Payment Methods */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="cursor-pointer hover:border-[var(--accent)]/30 transition-colors">
+          <CardContent className="p-5 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center flex-shrink-0">
+              <QrCode className="w-5 h-5 text-[var(--accent)]" />
             </div>
             <div>
-              <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider font-medium">เครดิตคงเหลือ</p>
-              <p className="text-3xl font-bold gradient-text-cyan">{user.credits.toLocaleString()}</p>
+              <p className="text-sm font-semibold">PromptPay QR</p>
+              <p className="text-xs text-muted-foreground">สแกนจ่ายทันที</p>
             </div>
-          </div>
-          <div className="text-right">
-            <p className="text-xs text-[var(--text-muted)]">ประมาณ</p>
-            <p className="text-sm text-[var(--text-secondary)]">{user.credits.toLocaleString()} SMS</p>
-          </div>
-        </div>
+            <Badge className="ml-auto">แนะนำ</Badge>
+          </CardContent>
+        </Card>
+        <Card className="cursor-pointer hover:border-[var(--accent)]/30 transition-colors">
+          <CardContent className="p-5 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-lg bg-[var(--accent-secondary)]/10 flex items-center justify-center flex-shrink-0">
+              <CreditCard className="w-5 h-5 text-[var(--accent-secondary)]" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold">บัตรเครดิต/เดบิต</p>
+              <p className="text-xs text-muted-foreground">Visa, Mastercard</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="cursor-pointer hover:border-[var(--accent)]/30 transition-colors">
+          <CardContent className="p-5 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-lg bg-[var(--accent-warm)]/10 flex items-center justify-center flex-shrink-0">
+              <Building2 className="w-5 h-5 text-[var(--accent-warm)]" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold">โอนเงิน</p>
+              <p className="text-xs text-muted-foreground">แนบสลิปยืนยัน</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Slip Upload */}
+      {/* Bank Transfer / Slip Upload */}
       <SlipUploadSection userId={user.id} />
 
-      {/* Credit Rate Info Box */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-5 mb-6">
-        <h3 className="text-sm font-semibold text-white mb-3">💡 การคิดเครดิต</h3>
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div className="space-y-2">
-            <p className="text-[var(--text-muted)] text-xs uppercase tracking-wide">ส่ง SMS</p>
-            <div className="flex justify-between"><span className="text-slate-300 text-xs">EN ≤160 ตัวอักษร</span><span className="text-amber-400 text-xs">1 เครดิต</span></div>
-            <div className="flex justify-between"><span className="text-slate-300 text-xs">EN 161-320 ตัวอักษร</span><span className="text-amber-400 text-xs">2 เครดิต</span></div>
-            <div className="flex justify-between"><span className="text-slate-300 text-xs">ไทย ≤70 ตัวอักษร</span><span className="text-amber-400 text-xs">1 เครดิต</span></div>
-            <div className="flex justify-between"><span className="text-slate-300 text-xs">ไทย 71-140 ตัวอักษร</span><span className="text-amber-400 text-xs">2 เครดิต</span></div>
+      {/* Pricing Tiers */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">อัตราค่าบริการ</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ระดับ</TableHead>
+                <TableHead>จำนวน SMS</TableHead>
+                <TableHead>ราคาต่อ SMS</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {PRICING_TIERS.map((tier) => (
+                <TableRow key={tier.name}>
+                  <TableCell className="font-semibold">{tier.name}</TableCell>
+                  <TableCell className="text-muted-foreground">{tier.range}</TableCell>
+                  <TableCell>
+                    <Badge variant={tier.name === "Pro" ? "default" : "secondary"}>
+                      {tier.price}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          <p className="text-xs text-muted-foreground mt-3">ราคารวม VAT 7%</p>
+        </CardContent>
+      </Card>
+
+      {/* Auto Top-up */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Zap className="w-4 h-4 text-[var(--accent)]" />
+              เติมเงินอัตโนมัติ
+            </CardTitle>
+            <Switch checked={autoTopup} onCheckedChange={setAutoTopup} />
           </div>
-          <div className="space-y-2">
-            <p className="text-[var(--text-muted)] text-xs uppercase tracking-wide">บริการอื่น</p>
-            <div className="flex justify-between"><span className="text-slate-300 text-xs">OTP SMS</span><span className="text-amber-400 text-xs">1 เครดิต</span></div>
-            <div className="flex justify-between mt-2"><span className="text-[var(--text-muted)] text-xs">เครดิตไม่หมดอายุ</span><span className="text-emerald-400 text-xs">✓</span></div>
+        </CardHeader>
+        {autoTopup && (
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-1.5 block">
+                  เติมเมื่อเหลือต่ำกว่า (฿)
+                </label>
+                <Input type="number" placeholder="500" min={100} />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-1.5 block">
+                  เติมครั้งละ (฿)
+                </label>
+                <Input type="number" placeholder="1000" min={100} />
+              </div>
+            </div>
+            <Button variant="outline" className="w-full sm:w-auto">
+              บันทึกการตั้งค่า
+            </Button>
+          </CardContent>
+        )}
+      </Card>
+
+      {/* Credit Packages */}
+      {packages.length > 0 && (
+        <div>
+          <h2 className="text-base font-semibold mb-4">แพ็กเกจเครดิต</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {packages.map((pkg, i) => (
+              <Card
+                key={pkg.id ?? i}
+                className={pkg.isBestSeller ? "border-[var(--accent)]/30" : ""}
+              >
+                <CardContent className="p-5 flex flex-col h-full">
+                  {pkg.isBestSeller && (
+                    <Badge className="w-fit mb-3">BEST SELLER</Badge>
+                  )}
+                  <h3 className="text-lg font-bold mb-1">{pkg.name}</h3>
+                  <p className="text-2xl font-bold text-[var(--accent)] mb-4">฿{formatPrice(pkg.price)}</p>
+                  <div className="space-y-2 mb-4 flex-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">เครดิต</span>
+                      <span className="font-semibold">{pkg.totalCredits.toLocaleString()}</span>
+                    </div>
+                    {pkg.bonusPercent > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">โบนัส</span>
+                        <span className="text-[var(--success)] font-semibold">+{pkg.bonusPercent}%</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">ระยะเวลา</span>
+                      <span>{formatDuration(pkg.durationDays)}</span>
+                    </div>
+                  </div>
+                  <Button variant={pkg.isBestSeller ? "default" : "outline"} className="w-full">
+                    ซื้อแพ็กเกจ <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
-      </div>
-
-      {/* Packages Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 stagger-children">
-        {packages.map((pkg, i) => (
-          <motion.div
-            key={pkg.id ?? i}
-            className={`glass card-hover p-6 flex flex-col ${pkg.isBestSeller ? "glass-cyan border-cyan-500/30 shadow-[0_0_30px_rgba(34,211,238,0.08)]" : ""}`}
-            whileHover={{ y: -6, transition: { duration: 0.3 } }}
-          >
-            {/* Best Seller Badge */}
-            {pkg.isBestSeller && (
-              <div className="mb-3">
-                <span className="badge-glow-info text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-md">BEST SELLER</span>
-              </div>
-            )}
-
-            {/* Package Name */}
-            <h3 className="text-lg font-bold text-white mb-1">{pkg.name}</h3>
-
-            {/* Price */}
-            <div className="mb-4">
-              <span className="text-2xl font-bold gradient-text-cyan">฿{formatPrice(pkg.price)}</span>
-            </div>
-
-            {/* Details */}
-            <div className="space-y-2.5 mb-6 flex-1">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-[var(--text-muted)]">เครดิต</span>
-                <span className="text-white font-semibold">{pkg.totalCredits.toLocaleString()}</span>
-              </div>
-              {pkg.bonusPercent > 0 && (
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-[var(--text-muted)]">โบนัส</span>
-                  <span className="text-emerald-400 font-semibold">+{pkg.bonusPercent}%</span>
-                </div>
-              )}
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-[var(--text-muted)]">ระยะเวลา</span>
-                <span className="text-[var(--text-secondary)]">{formatDuration(pkg.durationDays)}</span>
-              </div>
-              {pkg.maxSenders !== undefined && (
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-[var(--text-muted)]">ชื่อผู้ส่ง</span>
-                  <span className="text-[var(--text-secondary)]">{pkg.maxSenders === -1 ? "ไม่จำกัด" : pkg.maxSenders}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Buy Button */}
-            <motion.button
-              className={`w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 ${
-                pkg.isBestSeller ? "btn-primary" : "btn-glass"
-              }`}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              ซื้อแพ็กเกจ
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </motion.button>
-          </motion.div>
-        ))}
-      </div>
-
-      {packages.length === 0 && (
-        <EmptyState
-          icon={<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><circle cx="12" cy="12" r="10" /><text x="12" y="16" textAnchor="middle" fill="currentColor" stroke="none" fontSize="12" fontWeight="bold">฿</text></svg>}
-          title="ยังไม่มีแพ็กเกจ"
-          description="แพ็กเกจจะแสดงที่นี่เมื่อพร้อมใช้งาน"
-        />
       )}
-    </motion.div>
+
+      {/* Credit Rate Info */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">การคิดเครดิต</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-6 text-sm">
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">ส่ง SMS</p>
+              <div className="flex justify-between"><span className="text-muted-foreground">EN ≤160 ตัวอักษร</span><span className="text-[var(--accent-warm)]">1 เครดิต</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">EN 161-320 ตัวอักษร</span><span className="text-[var(--accent-warm)]">2 เครดิต</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">ไทย ≤70 ตัวอักษร</span><span className="text-[var(--accent-warm)]">1 เครดิต</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">ไทย 71-140 ตัวอักษร</span><span className="text-[var(--accent-warm)]">2 เครดิต</span></div>
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">บริการอื่น</p>
+              <div className="flex justify-between"><span className="text-muted-foreground">OTP SMS</span><span className="text-[var(--accent-warm)]">1 เครดิต</span></div>
+              <div className="flex justify-between mt-2"><span className="text-muted-foreground">เครดิตไม่หมดอายุ</span><Badge variant="secondary">✓</Badge></div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

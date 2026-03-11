@@ -102,7 +102,7 @@ export default function PasswordChangeForm() {
         <button
           type="submit"
           disabled={!isValid || loading}
-          className="btn-primary px-6 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 disabled:opacity-40"
+          className="btn-primary px-6 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
         >
           {loading ? (
             <span className="flex items-center gap-2">

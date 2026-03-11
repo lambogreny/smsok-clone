@@ -19,7 +19,7 @@ type ConfirmDialogProps = {
 const variantConfig: Record<Variant, { icon: string; iconBg: string; iconBorder: string; btnBg: string }> = {
   danger: { icon: "text-red-400", iconBg: "bg-red-500/[0.08]", iconBorder: "border-red-500/10", btnBg: "bg-red-500 hover:bg-red-600" },
   warning: { icon: "text-amber-400", iconBg: "bg-amber-500/[0.08]", iconBorder: "border-amber-500/10", btnBg: "bg-amber-500 hover:bg-amber-600" },
-  info: { icon: "text-cyan-400", iconBg: "bg-cyan-500/[0.08]", iconBorder: "border-cyan-500/10", btnBg: "bg-cyan-500 hover:bg-cyan-600" },
+  info: { icon: "text-[#00FFA7]", iconBg: "bg-[rgba(0,255,167,0.1)]", iconBorder: "border-[rgba(0,255,167,0.15)]", btnBg: "bg-[#00FFA7] hover:bg-[#00C9A0]" },
 };
 
 export default function ConfirmDialog({
@@ -40,14 +40,14 @@ export default function ConfirmDialog({
       {open && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
           <motion.div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/80"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
           />
           <motion.div
-            className="glass-elevated relative max-w-sm w-full p-6 rounded-2xl"
+            className="surface-elevated relative max-w-sm w-full p-6 rounded-2xl"
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -66,7 +66,7 @@ export default function ConfirmDialog({
               )}
             </div>
             <h3 className="text-lg font-semibold text-white text-center mb-2">{title}</h3>
-            <p className="text-sm text-white/40 text-center mb-6">{description}</p>
+            <p className="text-sm text-[var(--text-secondary)] text-center mb-6">{description}</p>
             <div className="flex gap-3">
               <button
                 onClick={onClose}
@@ -78,7 +78,7 @@ export default function ConfirmDialog({
               <motion.button
                 onClick={onConfirm}
                 disabled={loading}
-                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold text-white ${config.btnBg} transition-colors disabled:opacity-40`}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold text-white ${config.btnBg} transition-colors disabled:opacity-50`}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >

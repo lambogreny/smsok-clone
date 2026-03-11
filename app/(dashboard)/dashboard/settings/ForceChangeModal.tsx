@@ -33,9 +33,9 @@ export default function ForceChangeModal({ userId }: { userId: string }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
       <div className="glass w-full max-w-md p-8 relative overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-500 via-cyan-400 to-violet-500" />
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#00FFA7] via-[#4779FF] to-[#00FFA7]" />
 
         <div className="text-center mb-6">
           <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-4">
@@ -46,7 +46,7 @@ export default function ForceChangeModal({ userId }: { userId: string }) {
             </svg>
           </div>
           <h2 className="text-lg font-semibold text-white mb-1">ต้องเปลี่ยนรหัสผ่าน</h2>
-          <p className="text-sm text-white/40">คุณกำลังใช้รหัสผ่านชั่วคราว กรุณาตั้งรหัสผ่านใหม่ก่อนดำเนินการต่อ</p>
+          <p className="text-sm text-[var(--text-secondary)]">คุณกำลังใช้รหัสผ่านชั่วคราว กรุณาตั้งรหัสผ่านใหม่ก่อนดำเนินการต่อ</p>
         </div>
 
         {error && (
@@ -57,7 +57,7 @@ export default function ForceChangeModal({ userId }: { userId: string }) {
 
         <div className="space-y-4">
           <div>
-            <label className="block text-xs text-white/40 uppercase tracking-wider mb-2 font-medium">รหัสผ่านใหม่</label>
+            <label className="block text-xs text-[var(--text-secondary)] uppercase tracking-wider mb-2 font-medium">รหัสผ่านใหม่</label>
             <input
               type="password"
               value={newPassword}
@@ -72,7 +72,7 @@ export default function ForceChangeModal({ userId }: { userId: string }) {
             {newPassword.length > 0 && (
               <div className="flex gap-1 mt-1.5">
                 {[{ re: /.{8}/, label: "8+ ตัว" }, { re: /[A-Z]/, label: "A-Z" }, { re: /[0-9]/, label: "0-9" }].map(({ re, label }) => (
-                  <span key={label} className={`text-[10px] px-1.5 py-0.5 rounded ${re.test(newPassword) ? "bg-emerald-500/20 text-emerald-400" : "bg-white/5 text-white/30"}`}>
+                  <span key={label} className={`text-[10px] px-1.5 py-0.5 rounded ${re.test(newPassword) ? "bg-emerald-500/20 text-emerald-400" : "bg-white/5 text-[var(--text-secondary)]"}`}>
                     {label}
                   </span>
                 ))}
@@ -81,7 +81,7 @@ export default function ForceChangeModal({ userId }: { userId: string }) {
           </div>
 
           <div>
-            <label className="block text-xs text-white/40 uppercase tracking-wider mb-2 font-medium">ยืนยันรหัสผ่านใหม่</label>
+            <label className="block text-xs text-[var(--text-secondary)] uppercase tracking-wider mb-2 font-medium">ยืนยันรหัสผ่านใหม่</label>
             <input
               type="password"
               value={confirmPassword}

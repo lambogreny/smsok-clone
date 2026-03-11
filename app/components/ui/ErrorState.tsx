@@ -26,14 +26,14 @@ export default function ErrorState({
         animate={{ scale: 1 }}
         transition={{ delay: 0.2, type: "spring", stiffness: 300 }}
       >
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="text-red-400/40">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="text-red-400/60">
           <circle cx="12" cy="12" r="10" />
           <line x1="12" y1="8" x2="12" y2="12" />
           <line x1="12" y1="16" x2="12.01" y2="16" />
         </svg>
       </motion.div>
-      <p className="text-sm text-white/30 mb-1">{title}</p>
-      <p className="text-xs text-white/15 mb-5">{description}</p>
+      <p className="text-sm text-[var(--text-primary)] mb-1">{title}</p>
+      <p className="text-xs text-[var(--text-secondary)] mb-5">{description}</p>
       {onRetry && (
         <motion.button
           onClick={onRetry}

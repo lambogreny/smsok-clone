@@ -79,7 +79,7 @@ export default function SenderNameForm({ userId }: { userId: string }) {
         <motion.button
           type="submit"
           disabled={!isValid || loading}
-          className="btn-primary px-6 py-3 rounded-xl text-sm font-semibold flex items-center gap-2 disabled:opacity-40 whitespace-nowrap"
+          className="btn-primary px-6 py-3 rounded-xl text-sm font-semibold flex items-center gap-2 disabled:opacity-50 whitespace-nowrap"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >

@@ -1,12 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Key, Plus, Copy, Check, Trash2, Power, PowerOff, BookOpen, ShieldCheck, AlertTriangle } from "lucide-react";
 import { createApiKey, toggleApiKey, deleteApiKey } from "@/lib/actions/api-keys";
-import EmptyState from "@/app/components/ui/EmptyState";
-import ConfirmDialog from "@/app/components/ui/ConfirmDialog";
-import { fieldCls } from "@/lib/form-utils";
 import { safeErrorMessage } from "@/lib/error-messages";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type ApiKey = {
   id: string;
@@ -17,44 +29,48 @@ type ApiKey = {
   createdAt: string;
 };
 
+const PERMISSIONS = [
+  { id: "send_sms", label: "ส่ง SMS", description: "POST /api/v1/sms/send" },
+  { id: "read_contacts", label: "อ่านรายชื่อ", description: "GET /api/v1/contacts" },
+  { id: "manage_contacts", label: "จัดการรายชื่อ", description: "POST/PUT/DELETE contacts" },
+  { id: "manage_groups", label: "จัดการกลุ่ม", description: "CRUD groups" },
+  { id: "read_analytics", label: "ดูสถิติ", description: "GET analytics/stats" },
+  { id: "manage_templates", label: "จัดการ template", description: "CRUD templates" },
+];
+
 function maskKey(key: string): string {
   if (key.length <= 12) return key;
-  return key.substring(0, 8) + "..." + key.substring(key.length - 4);
+  return `${key.substring(0, 8)}...${key.substring(key.length - 4)}`;
 }
-
-const stagger = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.04 } },
-};
-
-const rowVariant = {
-  hidden: { opacity: 0, x: -16 },
-  show: { opacity: 1, x: 0, transition: { duration: 0.35, ease: "easeOut" as const } },
-};
 
 export default function ApiKeysContent({ userId, apiKeys: initialKeys }: { userId: string; apiKeys: ApiKey[] }) {
   const [apiKeys, setApiKeys] = useState(initialKeys);
-  const [showForm, setShowForm] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [keyName, setKeyName] = useState("");
+  const [selectedPermissions, setSelectedPermissions] = useState<string[]>(["send_sms", "read_contacts"]);
   const [creating, setCreating] = useState(false);
   const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [copiedSecret, setCopiedSecret] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [secretConfirmed, setSecretConfirmed] = useState(false);
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreate = async () => {
     if (!keyName.trim()) return;
-
     setCreating(true);
     setError(null);
-
     try {
       const newKey = await createApiKey(userId, { name: keyName });
-      setApiKeys((prev) => [{ ...newKey, isActive: true, lastUsed: null, createdAt: new Date().toISOString() } as ApiKey, ...prev]);
+      setApiKeys((prev) => [
+        { ...newKey, isActive: true, lastUsed: null, createdAt: new Date().toISOString() } as ApiKey,
+        ...prev,
+      ]);
       setNewlyCreatedKey(newKey.key);
       setKeyName("");
-      setShowForm(false);
+      setSelectedPermissions(["send_sms", "read_contacts"]);
+      setShowCreateDialog(false);
+      setSecretConfirmed(false);
     } catch (e) {
       setError(safeErrorMessage(e));
     } finally {
@@ -71,10 +87,6 @@ export default function ApiKeysContent({ userId, apiKeys: initialKeys }: { userI
     }
   };
 
-  const handleDelete = (keyId: string) => {
-    setDeleteTarget(keyId);
-  };
-
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     try {
@@ -87,237 +99,267 @@ export default function ApiKeysContent({ userId, apiKeys: initialKeys }: { userI
     }
   };
 
-  const handleCopy = async (text: string) => {
+  const handleCopy = async (text: string, type: "secret" | "id") => {
     await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (type === "secret") {
+      setCopiedSecret(true);
+      setTimeout(() => setCopiedSecret(false), 2000);
+    } else {
+      setCopiedId(text);
+      setTimeout(() => setCopiedId(null), 2000);
+    }
+  };
+
+  const togglePermission = (permId: string) => {
+    setSelectedPermissions((prev) =>
+      prev.includes(permId) ? prev.filter((p) => p !== permId) : [...prev, permId]
+    );
   };
 
   return (
-    <motion.div
-      className="p-6 md:p-8 max-w-6xl"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-    >
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight gradient-text-cyan">คีย์ API</h1>
-          <p className="text-sm text-[var(--text-muted)] mt-1">จัดการ API Keys สำหรับเชื่อมต่อระบบ</p>
+    <div className="p-6 md:p-8 space-y-6">
+      {/* Page Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-[var(--accent-warm)]/10 border border-[var(--accent-warm)]/15 flex items-center justify-center">
+            <Key className="w-5 h-5 text-[var(--accent-warm)]" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold">API Keys</h1>
+            <p className="text-sm text-muted-foreground">จัดการ API keys สำหรับเชื่อมต่อระบบภายนอก</p>
+          </div>
         </div>
-        <motion.button
-          onClick={() => setShowForm(!showForm)}
-          className="btn-primary px-5 py-2.5 text-sm rounded-xl inline-flex items-center gap-2"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          สร้างคีย์ใหม่
-        </motion.button>
+        <Button onClick={() => setShowCreateDialog(true)}>
+          <Plus className="w-4 h-4" /> สร้างคีย์ใหม่
+        </Button>
       </div>
 
-      <AnimatePresence>
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="glass p-4 mb-6 border-red-500/20"
-          >
-            <p className="text-sm text-red-400">{error}</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Error */}
+      {error && (
+        <Card className="border-[var(--error)]/20">
+          <CardContent className="p-4 flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-[var(--error)]" />
+            <p className="text-sm text-[var(--error)]">{error}</p>
+            <Button variant="ghost" size="sm" className="ml-auto" onClick={() => setError(null)}>ปิด</Button>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Newly Created Key Warning */}
-      <AnimatePresence>
-        {newlyCreatedKey && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="glass p-6 mb-6 border-emerald-500/20"
-          >
+      {/* Newly Created Key - ONE TIME SECRET */}
+      {newlyCreatedKey && (
+        <Card className="border-[var(--success)]/20">
+          <CardContent className="p-6 space-y-4">
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/[0.08] border border-emerald-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-400">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-emerald-400 mb-1">API Key สร้างเรียบร้อยแล้ว</p>
-                <p className="text-xs text-[var(--text-muted)] mb-3">กรุณาคัดลอกเก็บไว้ — คุณจะไม่สามารถเห็น Key เต็มได้อีก</p>
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-lg px-4 py-2.5 text-sm text-cyan-300 font-mono break-all">
-                    {newlyCreatedKey}
-                  </code>
-                  <motion.button
-                    onClick={() => handleCopy(newlyCreatedKey)}
-                    className="btn-glass px-4 py-2.5 rounded-lg text-xs flex-shrink-0 flex items-center gap-1.5"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    {copied ? (
-                      <>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-400"><polyline points="20 6 9 17 4 12" /></svg>
-                        คัดลอกแล้ว
-                      </>
-                    ) : (
-                      <>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" /></svg>
-                        คัดลอก
-                      </>
-                    )}
-                  </motion.button>
-                </div>
+              <ShieldCheck className="w-5 h-5 text-[var(--success)] mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-[var(--success)]">API Key สร้างเรียบร้อยแล้ว</p>
+                <p className="text-xs text-muted-foreground mt-1">คัดลอก Secret Key ตอนนี้เลย — จะไม่แสดงอีกหลังจากปิด</p>
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
-      {/* Create Form */}
-      <AnimatePresence>
-        {showForm && (
-          <motion.div
-            className="glass p-6 mb-6"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <h2 className="text-base font-semibold text-white mb-4">สร้าง API Key ใหม่</h2>
-            <form onSubmit={handleCreate} className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <label className="block text-xs text-[var(--text-muted)] uppercase tracking-wider mb-2 font-medium">ชื่อ API Key</label>
-                <input
-                  type="text"
-                  className={fieldCls(undefined, keyName)}
-                  placeholder="เช่น Production, Staging, My App"
-                  value={keyName}
-                  onChange={(e) => setKeyName(e.target.value)}
-                  maxLength={50}
-                />
+            <div className="space-y-2">
+              <label className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Secret Key</label>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 bg-[var(--bg-base)] border border-border rounded-lg px-4 py-2.5 text-sm text-[var(--accent)] font-mono break-all">
+                  {newlyCreatedKey}
+                </code>
+                <Button variant="outline" size="sm" onClick={() => handleCopy(newlyCreatedKey, "secret")}>
+                  {copiedSecret ? <><Check className="w-4 h-4" /> คัดลอกแล้ว</> : <><Copy className="w-4 h-4" /> คัดลอก</>}
+                </Button>
               </div>
-              <div className="flex items-end gap-2">
-                <motion.button
-                  type="submit"
-                  disabled={!keyName.trim() || creating}
-                  className="btn-primary px-6 py-3 rounded-xl text-sm font-semibold flex items-center gap-2 disabled:opacity-40 whitespace-nowrap"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  {creating ? "กำลังสร้าง..." : "สร้าง Key"}
-                </motion.button>
-                <button
-                  type="button"
-                  onClick={() => { setShowForm(false); setKeyName(""); }}
-                  className="btn-glass px-4 py-3 rounded-xl text-sm"
-                >
-                  ยกเลิก
-                </button>
-              </div>
-            </form>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </div>
 
-      {/* API Keys List */}
-      <div className="glass overflow-hidden">
-        {apiKeys.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[var(--border-subtle)]">
-                  <th className="text-left px-5 py-3 text-xs text-[var(--text-muted)] uppercase tracking-wider font-medium">ชื่อ</th>
-                  <th className="text-left px-5 py-3 text-xs text-[var(--text-muted)] uppercase tracking-wider font-medium">Key</th>
-                  <th className="text-left px-5 py-3 text-xs text-[var(--text-muted)] uppercase tracking-wider font-medium">สถานะ</th>
-                  <th className="text-left px-5 py-3 text-xs text-[var(--text-muted)] uppercase tracking-wider font-medium hidden md:table-cell">สร้างเมื่อ</th>
-                  <th className="text-left px-5 py-3 text-xs text-[var(--text-muted)] uppercase tracking-wider font-medium hidden md:table-cell">ใช้ล่าสุด</th>
-                  <th className="text-right px-5 py-3 text-xs text-[var(--text-muted)] uppercase tracking-wider font-medium">จัดการ</th>
-                </tr>
-              </thead>
-              <motion.tbody variants={stagger} initial="hidden" animate="show">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={secretConfirmed}
+                onCheckedChange={(v) => setSecretConfirmed(!!v)}
+              />
+              <span className="text-xs text-muted-foreground">ฉันคัดลอก Secret Key แล้ว</span>
+            </div>
+
+            <Button
+              variant="outline"
+              disabled={!secretConfirmed}
+              onClick={() => setNewlyCreatedKey(null)}
+            >
+              ปิด
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* API Keys Table */}
+      <Card>
+        <CardContent className="p-0">
+          {apiKeys.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>ชื่อ</TableHead>
+                  <TableHead>Key</TableHead>
+                  <TableHead>สถานะ</TableHead>
+                  <TableHead className="hidden md:table-cell">สร้างเมื่อ</TableHead>
+                  <TableHead className="hidden md:table-cell">ใช้ล่าสุด</TableHead>
+                  <TableHead className="text-right">จัดการ</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {apiKeys.map((key) => (
-                  <motion.tr key={key.id} variants={rowVariant} className="table-row">
-                    <td className="px-5 py-3.5 text-slate-200 font-semibold">{key.name}</td>
-                    <td className="px-5 py-3.5">
-                      <code className="text-xs text-cyan-300 font-mono bg-[var(--bg-surface)] px-2 py-1 rounded">{maskKey(key.key)}</code>
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <span className={`text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-md ${key.isActive ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"}`}>
-                        {key.isActive ? "ใช้งาน" : "ปิดใช้งาน"}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3.5 text-[var(--text-muted)] text-xs hidden md:table-cell">{new Date(key.createdAt).toLocaleDateString("th-TH")}</td>
-                    <td className="px-5 py-3.5 text-[var(--text-muted)] text-xs hidden md:table-cell">{key.lastUsed ? new Date(key.lastUsed).toLocaleDateString("th-TH") : "ยังไม่เคยใช้"}</td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center justify-end gap-2">
-                        <motion.button
-                          onClick={() => handleToggle(key.id)}
-                          className="btn-glass px-3 py-1.5 rounded-lg text-xs"
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
+                  <TableRow key={key.id}>
+                    <TableCell className="font-semibold">{key.name}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5">
+                        <code className="text-xs text-[var(--accent)] font-mono bg-[var(--bg-base)] px-2 py-1 rounded">
+                          {maskKey(key.key)}
+                        </code>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={() => handleCopy(key.key, "id")}
                         >
-                          {key.isActive ? "ปิดใช้งาน" : "เปิดใช้งาน"}
-                        </motion.button>
-                        <motion.button
-                          onClick={() => handleDelete(key.id)}
-                          className="btn-danger px-3 py-1.5 rounded-lg text-xs"
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          ลบ
-                        </motion.button>
+                          {copiedId === key.key ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                        </Button>
                       </div>
-                    </td>
-                  </motion.tr>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={key.isActive ? "default" : "destructive"}>
+                        {key.isActive ? "ใช้งาน" : "ปิดใช้งาน"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-xs hidden md:table-cell">
+                      {new Date(key.createdAt).toLocaleDateString("th-TH")}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-xs hidden md:table-cell">
+                      {key.lastUsed ? new Date(key.lastUsed).toLocaleDateString("th-TH") : "ยังไม่เคยใช้"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => handleToggle(key.id)}>
+                          {key.isActive ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(key.id)}>
+                          <Trash2 className="w-4 h-4 text-[var(--error)]" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </motion.tbody>
-            </table>
-          </div>
-        ) : (
-          <EmptyState
-            icon={<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" /></svg>}
-            title="ยังไม่มีคีย์ API"
-            description="สร้างคีย์ API เพื่อเชื่อมต่อระบบของคุณ"
-            action={{ label: "สร้างคีย์ใหม่", onClick: () => setShowForm(true) }}
-          />
-        )}
-      </div>
+              </TableBody>
+            </Table>
+          ) : (
+            <div className="p-12 text-center">
+              <Key className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+              <p className="text-sm font-medium mb-1">ยังไม่มีคีย์ API</p>
+              <p className="text-xs text-muted-foreground mb-4">สร้างคีย์ API เพื่อเชื่อมต่อระบบของคุณ</p>
+              <Button onClick={() => setShowCreateDialog(true)}>
+                <Plus className="w-4 h-4" /> สร้างคีย์ใหม่
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-      {/* API Documentation Hint */}
-      <motion.div
-        className="glass p-6 mt-6"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-      >
-        <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-violet-400">
-            <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
-          </svg>
-          การใช้งาน API
-        </h3>
-        <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl p-4">
-          <code className="text-xs text-cyan-300 font-mono block whitespace-pre">{`curl -X POST https://api.smsok.com/v1/sms/send \\
+      {/* API Docs Quick Link */}
+      <Card>
+        <CardContent className="p-5 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-lg bg-[var(--accent-secondary)]/10 flex items-center justify-center flex-shrink-0">
+            <BookOpen className="w-5 h-5 text-[var(--accent-secondary)]" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold">API Documentation</p>
+            <p className="text-xs text-muted-foreground">เรียนรู้การใช้งาน API สำหรับนักพัฒนา</p>
+          </div>
+          <a href="/dashboard/api-docs">
+            <Button variant="outline" size="sm">ดูเอกสาร</Button>
+          </a>
+        </CardContent>
+      </Card>
+
+      {/* API Usage Example */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">ตัวอย่างการใช้งาน</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="bg-[var(--bg-base)] border border-border rounded-lg p-4">
+            <code className="text-xs text-[var(--accent)] font-mono block whitespace-pre">{`curl -X POST https://api.smsok.com/v1/sms/send \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{"to": "0812345678", "message": "Hello!"}'`}</code>
-        </div>
-      </motion.div>
+          </div>
+        </CardContent>
+      </Card>
 
-      <ConfirmDialog
-        open={!!deleteTarget}
-        title="ต้องการลบคีย์ API นี้?"
-        description="ระบบที่ใช้คีย์นี้จะไม่สามารถเชื่อมต่อได้อีก"
-        confirmLabel="ยืนยันลบ"
-        variant="danger"
-        onConfirm={confirmDelete}
-        onClose={() => setDeleteTarget(null)}
-      />
-    </motion.div>
+      {/* Create Key Dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Key className="w-4 h-4" /> สร้าง API Key ใหม่
+            </DialogTitle>
+            <DialogDescription>
+              กำหนดชื่อและสิทธิ์การใช้งานสำหรับ API Key
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <label className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-1.5 block">
+                ชื่อ Key
+              </label>
+              <Input
+                placeholder="เช่น Production, Staging, My App"
+                value={keyName}
+                onChange={(e) => setKeyName(e.target.value)}
+                maxLength={50}
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-2 block">
+                สิทธิ์การใช้งาน
+              </label>
+              <div className="space-y-2">
+                {PERMISSIONS.map((perm) => (
+                  <label key={perm.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent/50 cursor-pointer">
+                    <Checkbox
+                      checked={selectedPermissions.includes(perm.id)}
+                      onCheckedChange={() => togglePermission(perm.id)}
+                    />
+                    <div>
+                      <p className="text-sm font-medium">{perm.label}</p>
+                      <p className="text-xs text-muted-foreground">{perm.description}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>ยกเลิก</Button>
+            <Button onClick={handleCreate} disabled={!keyName.trim() || creating}>
+              {creating ? "กำลังสร้าง..." : "สร้าง Key"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>ต้องการลบคีย์ API นี้?</AlertDialogTitle>
+            <AlertDialogDescription>
+              ระบบที่ใช้คีย์นี้จะไม่สามารถเชื่อมต่อได้อีก การดำเนินการนี้ไม่สามารถย้อนกลับได้
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-[var(--error)] hover:bg-[var(--error)]/90">
+              ยืนยันลบ
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 }

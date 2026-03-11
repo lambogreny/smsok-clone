@@ -75,20 +75,31 @@ function ProgressBar({ sent, total }: { sent: number; total: number }) {
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-[10px] text-[var(--text-muted)]">
+        <span className="text-[10px] text-[var(--text-subdued)]">
           {sent.toLocaleString()} / {total.toLocaleString()}
         </span>
-        <span className="text-[10px] font-semibold text-cyan-400">{pct}%</span>
+        <span className="text-[10px] font-semibold text-[#00FFA7]">{pct}%</span>
       </div>
-      <div className="h-1.5 rounded-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] overflow-hidden">
+      <div className="h-1.5 rounded-full bg-[var(--bg-muted)] overflow-hidden">
         <motion.div
-          className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-violet-500"
+          className="h-full rounded-full bg-[#00FFA7]"
           initial={{ width: 0 }}
           animate={{ width: `${pct}%` }}
           transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
         />
       </div>
     </div>
+  );
+}
+
+function DeliveryBar({ pct }: { pct: number }) {
+  return (
+    <span className="inline-flex items-center gap-2">
+      <span className="text-sm">{pct}%</span>
+      <span className="delivery-bar">
+        <span className="fill" style={{ width: `${pct}%` }} />
+      </span>
+    </span>
   );
 }
 
@@ -293,53 +304,10 @@ export default function CampaignsClient({
   };
 
   const statCards = [
-    {
-      label: "แคมเปญทั้งหมด",
-      value: totalCampaigns,
-      glass: "glass-violet",
-      color: "text-violet-400",
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-violet-400">
-          <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
-        </svg>
-      ),
-    },
-    {
-      label: "กำลังดำเนินการ",
-      value: activeCampaigns,
-      glass: "glass-cyan",
-      color: "text-cyan-400",
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-cyan-400">
-          <circle cx="12" cy="12" r="10" />
-          <polyline points="12 6 12 12 16 14" />
-        </svg>
-      ),
-    },
-    {
-      label: "เสร็จสิ้น",
-      value: completedCampaigns,
-      glass: "glass-emerald",
-      color: "text-emerald-400",
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-emerald-400">
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-      ),
-    },
-    {
-      label: "SMS ส่งแล้ว",
-      value: totalSmsSent.toLocaleString(),
-      glass: "glass-rose",
-      color: "text-amber-400",
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-amber-400">
-          <line x1="18" y1="20" x2="18" y2="10" />
-          <line x1="12" y1="20" x2="12" y2="4" />
-          <line x1="6" y1="20" x2="6" y2="14" />
-        </svg>
-      ),
-    },
+    { label: "แคมเปญทั้งหมด", value: totalCampaigns, sub: "campaigns" },
+    { label: "กำลังดำเนินการ", value: activeCampaigns, sub: "active" },
+    { label: "เสร็จสิ้น", value: completedCampaigns, sub: "completed" },
+    { label: "SMS ส่งแล้ว", value: totalSmsSent.toLocaleString(), sub: "messages" },
   ];
 
   const filterTabs: { key: CampaignStatus | "all"; label: string }[] = [
@@ -354,15 +322,12 @@ export default function CampaignsClient({
   ];
 
   return (
-    <motion.div className="p-6 md:p-8 max-w-6xl" initial="hidden" animate="show" variants={stagger}>
-      {/* Header */}
-      <motion.div
-        variants={fadeUp}
-        className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8"
-      >
+    <motion.div initial="hidden" animate="show" variants={stagger} style={{ padding: "var(--content-padding-y) var(--content-padding-x)" }}>
+      {/* Page Header — DNA Part 1 */}
+      <motion.div variants={fadeUp} className="page-header">
         <div>
-          <h1 className="text-2xl font-bold gradient-text-mixed mb-1">แคมเปญ SMS</h1>
-          <p className="text-sm text-[var(--text-muted)]">สร้างและจัดการแคมเปญส่ง SMS จำนวนมาก</p>
+          <h1 className="page-title">แคมเปญ SMS</h1>
+          <p className="page-description">สร้างและจัดการแคมเปญส่ง SMS จำนวนมาก</p>
         </div>
         <motion.button
           onClick={() => {
@@ -393,24 +358,15 @@ export default function CampaignsClient({
         </motion.button>
       </motion.div>
 
-      {/* Stats Grid */}
-      <motion.div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8" variants={stagger}>
+      {/* Stats Grid — DNA Part 4 + Part 9 */}
+      <motion.div className="stats-grid" variants={stagger}>
         {statCards.map((stat) => (
-          <motion.div
-            key={stat.label}
-            variants={fadeUp}
-            whileHover={{ y: -4 }}
-            className={`${stat.glass} card-hover p-5`}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wider">
-                {stat.label}
-              </span>
-              {stat.icon}
-            </div>
-            <p className={`text-2xl md:text-3xl font-bold ${stat.color}`}>
+          <motion.div key={stat.label} variants={fadeUp} className="nansen-stat-card">
+            <div className="label">{stat.label}</div>
+            <div className="value">
               {typeof stat.value === "number" ? stat.value.toLocaleString() : stat.value}
-            </p>
+            </div>
+            <div className="text-xs text-[var(--text-subdued)] mt-1">{stat.sub}</div>
           </motion.div>
         ))}
       </motion.div>
@@ -426,12 +382,12 @@ export default function CampaignsClient({
             transition={{ duration: 0.3 }}
           >
             <h3 className="text-base font-semibold text-white mb-5 flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500/[0.12] to-cyan-500/[0.08] border border-violet-500/10 flex items-center justify-center">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-violet-400">
+              <div className="w-8 h-8 rounded-lg bg-[rgba(0,255,167,0.08)] border border-[rgba(0,255,167,0.15)] flex items-center justify-center">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#00FFA7]">
                   <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
                 </svg>
               </div>
-              <span className="gradient-text-mixed">สร้างแคมเปญใหม่</span>
+              <span className="text-white">สร้างแคมเปญใหม่</span>
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -549,7 +505,7 @@ export default function CampaignsClient({
               <motion.button
                 onClick={handleCreate}
                 disabled={!formName.trim() || !formGroup || !formTemplate}
-                className="btn-primary px-6 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 disabled:opacity-40"
+                className="btn-primary px-6 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
@@ -597,35 +553,35 @@ export default function CampaignsClient({
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
-              <div className="p-3 rounded-xl bg-[var(--bg-surface)]/50 border border-[var(--border-subtle)]">
-                <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">
+              <div className="p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-default)]">
+                <p className="text-[10px] text-[var(--text-subdued)] uppercase tracking-wider mb-1">
                   ผู้รับทั้งหมด
                 </p>
-                <p className="text-lg font-bold text-violet-400">
+                <p className="text-lg font-bold text-white">
                   {selectedCampaign.totalRecipients.toLocaleString()}
                 </p>
               </div>
-              <div className="p-3 rounded-xl bg-[var(--bg-surface)]/50 border border-[var(--border-subtle)]">
-                <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">
+              <div className="p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-default)]">
+                <p className="text-[10px] text-[var(--text-subdued)] uppercase tracking-wider mb-1">
                   ส่งแล้ว
                 </p>
-                <p className="text-lg font-bold text-cyan-400">
+                <p className="text-lg font-bold text-[#4779FF]">
                   {selectedCampaign.sentCount.toLocaleString()}
                 </p>
               </div>
-              <div className="p-3 rounded-xl bg-[var(--bg-surface)]/50 border border-[var(--border-subtle)]">
-                <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">
+              <div className="p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-default)]">
+                <p className="text-[10px] text-[var(--text-subdued)] uppercase tracking-wider mb-1">
                   สำเร็จ
                 </p>
-                <p className="text-lg font-bold text-emerald-400">
+                <p className="text-lg font-bold text-[#00FFA7]">
                   {selectedCampaign.deliveredCount.toLocaleString()}
                 </p>
               </div>
-              <div className="p-3 rounded-xl bg-[var(--bg-surface)]/50 border border-[var(--border-subtle)]">
-                <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">
+              <div className="p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-default)]">
+                <p className="text-[10px] text-[var(--text-subdued)] uppercase tracking-wider mb-1">
                   ล้มเหลว
                 </p>
-                <p className="text-lg font-bold text-red-400">
+                <p className="text-lg font-bold text-[#ef4444]">
                   {selectedCampaign.failedCount.toLocaleString()}
                 </p>
               </div>
@@ -716,16 +672,16 @@ export default function CampaignsClient({
         )}
       </AnimatePresence>
 
-      {/* Filter Tabs */}
-      <motion.div variants={fadeUp} className="flex items-center gap-2 mb-6 flex-wrap">
+      {/* Filter Tabs — Nansen teal */}
+      <motion.div variants={fadeUp} className="filter-bar flex-wrap">
         {filterTabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setFilterStatus(tab.key)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
               filterStatus === tab.key
-                ? "bg-violet-500/20 text-violet-300 border border-violet-500/30"
-                : "bg-[var(--bg-surface)] text-[var(--text-muted)] border border-[var(--border-subtle)] hover:text-white"
+                ? "bg-[rgba(0,255,167,0.12)] text-[#00FFA7] border border-[rgba(0,255,167,0.25)]"
+                : "bg-[var(--bg-surface)] text-[var(--text-subdued)] border border-[var(--border-default)] hover:text-white"
             }`}
           >
             {tab.label}
@@ -738,43 +694,27 @@ export default function CampaignsClient({
         ))}
       </motion.div>
 
-      {/* Campaign List */}
+      {/* Campaign List — DNA Part 2 */}
       {filtered.length > 0 ? (
         <motion.div
-          className="glass overflow-hidden"
+          className="overflow-hidden rounded-[var(--radius-xl)] border border-[var(--border-default)]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.15 }}
         >
           {/* Desktop Table */}
           <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="nansen-table">
               <thead>
-                <tr className="border-b border-[var(--border-subtle)]">
-                  <th className="text-left px-5 py-3 text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-medium">
-                    แคมเปญ
-                  </th>
-                  <th className="text-left px-5 py-3 text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-medium">
-                    สถานะ
-                  </th>
-                  <th className="text-left px-5 py-3 text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-medium">
-                    กลุ่ม
-                  </th>
-                  <th className="text-left px-5 py-3 text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-medium">
-                    เทมเพลต
-                  </th>
-                  <th className="text-left px-5 py-3 text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-medium">
-                    กำหนดส่ง
-                  </th>
-                  <th className="text-left px-5 py-3 text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-medium w-40">
-                    ความคืบหน้า
-                  </th>
-                  <th className="text-left px-5 py-3 text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-medium">
-                    ผลลัพธ์
-                  </th>
-                  <th className="w-24 px-5 py-3 text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-medium text-right">
-                    จัดการ
-                  </th>
+                <tr>
+                  <th>แคมเปญ</th>
+                  <th>สถานะ</th>
+                  <th>กลุ่ม</th>
+                  <th>เทมเพลต</th>
+                  <th>กำหนดส่ง</th>
+                  <th style={{ width: 160 }}>ความคืบหน้า</th>
+                  <th>ผลลัพธ์</th>
+                  <th className="text-right" style={{ width: 96 }}>จัดการ</th>
                 </tr>
               </thead>
               <motion.tbody variants={stagger} initial="hidden" animate="show">
@@ -782,45 +722,45 @@ export default function CampaignsClient({
                   <motion.tr
                     key={campaign.id}
                     variants={rowVariant}
-                    className="table-row cursor-pointer"
+                    className="cursor-pointer group"
                     onClick={() => {
                       setSelectedCampaign(campaign);
                       setShowForm(false);
                     }}
                   >
-                    <td className="px-5 py-3.5">
-                      <p className="text-slate-200 font-medium text-sm">{campaign.name}</p>
-                      <p className="text-[10px] text-[var(--text-muted)] font-mono mt-0.5">
+                    <td>
+                      <p className="font-medium text-sm text-white">{campaign.name}</p>
+                      <p className="text-[10px] text-[var(--text-subdued)] font-mono mt-0.5">
                         {campaign.senderName}
                       </p>
                     </td>
-                    <td className="px-5 py-3.5">
+                    <td>
                       <StatusBadge status={campaign.status} />
                     </td>
-                    <td className="px-5 py-3.5 text-[var(--text-secondary)] text-xs">
+                    <td className="text-[var(--text-secondary)] text-xs">
                       {campaign.groupName}
                     </td>
-                    <td className="px-5 py-3.5 text-[var(--text-secondary)] text-xs">
+                    <td className="text-[var(--text-secondary)] text-xs">
                       {campaign.templateName}
                     </td>
-                    <td className="px-5 py-3.5 text-[var(--text-muted)] text-xs">
+                    <td className="text-[var(--text-subdued)] text-xs">
                       {formatDate(campaign.scheduledAt)}
                     </td>
-                    <td className="px-5 py-3.5">
+                    <td>
                       <ProgressBar sent={campaign.sentCount} total={campaign.totalRecipients} />
                     </td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-2 text-[10px]">
-                        <span className="text-emerald-400">
+                    <td>
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="positive">
                           {campaign.deliveredCount.toLocaleString()}
                         </span>
-                        <span className="text-[var(--text-muted)]">/</span>
-                        <span className="text-red-400">
+                        <span className="text-[var(--text-subdued)]">/</span>
+                        <span className="negative">
                           {campaign.failedCount.toLocaleString()}
                         </span>
                       </div>
                     </td>
-                    <td className="px-5 py-3.5 text-right">
+                    <td className="text-right">
                       <div
                         className="flex items-center gap-1.5 justify-end"
                         onClick={(e) => e.stopPropagation()}
@@ -829,7 +769,7 @@ export default function CampaignsClient({
                           <motion.button
                             onClick={() => handleSend(campaign.id)}
                             disabled={sendingIds.has(campaign.id)}
-                            className="px-2.5 py-1 rounded-md text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/15 hover:bg-emerald-500/20 transition-colors disabled:opacity-40"
+                            className="px-2.5 py-1 rounded-md text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/15 hover:bg-emerald-500/20 transition-colors disabled:opacity-50"
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                           >
@@ -923,7 +863,7 @@ export default function CampaignsClient({
                       <motion.button
                         onClick={() => handleSend(campaign.id)}
                         disabled={sendingIds.has(campaign.id)}
-                        className="px-3 py-1.5 rounded-lg text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/15 disabled:opacity-40"
+                        className="px-3 py-1.5 rounded-lg text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/15 disabled:opacity-50"
                         whileTap={{ scale: 0.95 }}
                       >
                         ส่งทันที
@@ -952,9 +892,9 @@ export default function CampaignsClient({
           </div>
         </motion.div>
       ) : (
-        <motion.div variants={fadeUp} className="glass p-12 text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-violet-500/10 to-cyan-500/10 border border-violet-500/10 flex items-center justify-center">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-violet-400">
+        <motion.div variants={fadeUp} className="nansen-card p-12 text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[rgba(0,255,167,0.08)] border border-[rgba(0,255,167,0.15)] flex items-center justify-center">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-[#00FFA7]">
               <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
             </svg>
           </div>

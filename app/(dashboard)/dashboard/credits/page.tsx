@@ -104,8 +104,8 @@ export default function CreditsPage() {
         {/* Balance Card — Prepaid Style */}
         <motion.div variants={fadeUp} className="mb-6">
           <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-br from-[#0d1117] via-[#161b22] to-[#0d1117] p-6 md:p-8">
-            <div className="absolute inset-0 bg-gradient-to-r from-violet-500/[0.06] via-transparent to-cyan-500/[0.06]" />
-            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/40 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[rgba(0,255,167,0.06)] via-transparent to-[rgba(50,152,218,0.06)]" />
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#00FFA7] to-transparent" />
             <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider font-medium mb-2">ยอดเครดิตคงเหลือ</p>
@@ -133,8 +133,8 @@ export default function CreditsPage() {
         </motion.div>
 
         {/* Filters */}
-        <motion.div variants={fadeUp} className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[var(--bg-elevated)]/80 backdrop-blur-xl p-4 mb-6">
-          <div className="absolute inset-0 bg-gradient-to-r from-violet-500/[0.02] to-cyan-500/[0.02]" />
+        <motion.div variants={fadeUp} className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[var(--bg-elevated)]/80 p-4 mb-6">
+          <div className="absolute inset-0 bg-gradient-to-r from-[rgba(0,255,167,0.02)] to-[rgba(50,152,218,0.02)]" />
           <div className="relative z-10 flex flex-wrap gap-3 items-end">
             <div>
               <label className="block text-[11px] text-[var(--text-muted)] mb-1.5 font-medium uppercase tracking-wider">ตั้งแต่วันที่</label>
@@ -190,8 +190,8 @@ export default function CreditsPage() {
         </motion.div>
 
         {/* Table */}
-        <motion.div variants={fadeUp} className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[var(--bg-elevated)]/80 backdrop-blur-xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-violet-500/[0.02] to-transparent" />
+        <motion.div variants={fadeUp} className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[var(--bg-elevated)]/80">
+          <div className="absolute inset-0 bg-gradient-to-br from-[rgba(0,255,167,0.02)] to-transparent" />
 
           <div className="relative z-10">
             {/* Table Header */}
@@ -209,7 +209,7 @@ export default function CreditsPage() {
                 <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                   className="flex items-center justify-center py-16 gap-3"
                 >
-                  <svg className="animate-spin h-5 w-5 text-violet-400" viewBox="0 0 24 24">
+                  <svg className="animate-spin h-5 w-5 text-[#00FFA7]" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
@@ -227,7 +227,7 @@ export default function CreditsPage() {
                     </svg>
                   </div>
                   <p className="text-sm text-red-400">{error}</p>
-                  <button type="button" onClick={fetchHistory} className="text-xs text-violet-400 hover:text-violet-300 transition-colors">ลองใหม่</button>
+                  <button type="button" onClick={fetchHistory} className="text-xs text-[#00FFA7] hover:text-[#4779FF] transition-colors">ลองใหม่</button>
                 </motion.div>
               )}
 
@@ -235,7 +235,7 @@ export default function CreditsPage() {
                 <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                   className="flex flex-col items-center justify-center py-16 gap-3"
                 >
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500/10 to-cyan-500/5 border border-[var(--border-subtle)] flex items-center justify-center">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[rgba(0,255,167,0.1)] to-[rgba(50,152,218,0.05)] border border-[var(--border-subtle)] flex items-center justify-center">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="text-[var(--text-muted)]">
                       <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
                     </svg>
@@ -297,7 +297,7 @@ export default function CreditsPage() {
                       type="button"
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={page === 1}
-                      className="w-7 h-7 rounded-lg border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:border-violet-500/20 hover:text-violet-400 disabled:opacity-30 disabled:cursor-not-allowed transition-all text-xs"
+                      className="w-7 h-7 rounded-lg border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:border-[rgba(0,255,167,0.15)] hover:text-[#00FFA7] disabled:opacity-50 disabled:cursor-not-allowed transition-all text-xs"
                     >
                       ‹
                     </button>
@@ -306,7 +306,7 @@ export default function CreditsPage() {
                       type="button"
                       onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                       disabled={page === totalPages}
-                      className="w-7 h-7 rounded-lg border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:border-violet-500/20 hover:text-violet-400 disabled:opacity-30 disabled:cursor-not-allowed transition-all text-xs"
+                      className="w-7 h-7 rounded-lg border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:border-[rgba(0,255,167,0.15)] hover:text-[#00FFA7] disabled:opacity-50 disabled:cursor-not-allowed transition-all text-xs"
                     >
                       ›
                     </button>

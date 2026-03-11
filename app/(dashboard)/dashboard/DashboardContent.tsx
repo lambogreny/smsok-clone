@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { springs } from "@/lib/motion";
 import Link from "next/link";
 import {
   AreaChart as RechartsAreaChart,
@@ -85,7 +86,7 @@ function MiniChart({ data, color }: { data: number[]; color: string }) {
 function ChartTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-xl border border-violet-500/20 bg-[#0B1120]/95 backdrop-blur-xl px-4 py-3 shadow-xl shadow-violet-500/10">
+    <div className="rounded-xl border border-[rgba(0,255,167,0.15)] bg-[var(--bg-base)]/95 px-4 py-3 shadow-xl shadow-[rgba(0,255,167,0.1)]">
       <p className="text-xs font-semibold text-[var(--text-primary)] mb-2">{label}</p>
       {payload.map((entry: any) => (
         <div key={entry.dataKey} className="flex items-center justify-between gap-4 text-[11px]">
@@ -112,7 +113,7 @@ function SmsAreaChart({ chartData }: { chartData: DayStats[] }) {
       {/* Summary chips */}
       <div className="flex items-center gap-4 mb-4">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-0.5 rounded-full bg-gradient-to-r from-cyan-400 to-violet-500" />
+          <div className="w-3 h-0.5 rounded-full bg-gradient-to-r from-[#00FFA7] to-[#4779FF]" />
           <span className="text-[11px] text-[var(--text-muted)]">รวม {total.toLocaleString()} ข้อความ</span>
         </div>
         <div className="flex items-center gap-2">
@@ -133,9 +134,9 @@ function SmsAreaChart({ chartData }: { chartData: DayStats[] }) {
         <RechartsAreaChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
           <defs>
             <linearGradient id="gradSms" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.35} />
-              <stop offset="50%" stopColor="#22D3EE" stopOpacity={0.1} />
-              <stop offset="100%" stopColor="#8B5CF6" stopOpacity={0} />
+              <stop offset="0%" stopColor="#00FFA7" stopOpacity={0.35} />
+              <stop offset="50%" stopColor="#4779FF" stopOpacity={0.1} />
+              <stop offset="100%" stopColor="#00FFA7" stopOpacity={0} />
             </linearGradient>
             <linearGradient id="gradDelivered" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#10B981" stopOpacity={0.25} />
@@ -163,18 +164,18 @@ function SmsAreaChart({ chartData }: { chartData: DayStats[] }) {
             width={40}
           />
 
-          <Tooltip content={<ChartTooltip />} cursor={{ stroke: "rgba(139,92,246,0.15)", strokeDasharray: "4 4" }} />
+          <Tooltip content={<ChartTooltip />} cursor={{ stroke: "rgba(0,255,167,0.15)", strokeDasharray: "4 4" }} />
 
           <ReferenceLine y={avg} stroke="rgba(245,158,11,0.25)" strokeDasharray="6 4" label={{ value: "avg", position: "right", fill: "rgba(245,158,11,0.4)", fontSize: 9 }} />
 
           <Area
             type="monotone"
             dataKey="sms"
-            stroke="#8B5CF6"
+            stroke="#00FFA7"
             strokeWidth={2.5}
             fill="url(#gradSms)"
-            dot={{ r: 4, fill: "#8B5CF6", stroke: "#0B1120", strokeWidth: 2 }}
-            activeDot={{ r: 6, fill: "#EC4899", stroke: "#0B1120", strokeWidth: 2 }}
+            dot={{ r: 4, fill: "#00FFA7", stroke: "#061019", strokeWidth: 2 }}
+            activeDot={{ r: 6, fill: "#4779FF", stroke: "#061019", strokeWidth: 2 }}
             animationDuration={1800}
             animationEasing="ease-in-out"
           />
@@ -186,7 +187,7 @@ function SmsAreaChart({ chartData }: { chartData: DayStats[] }) {
             strokeDasharray="4 2"
             fill="url(#gradDelivered)"
             dot={false}
-            activeDot={{ r: 4, fill: "#10B981", stroke: "#0B1120", strokeWidth: 2 }}
+            activeDot={{ r: 4, fill: "#10B981", stroke: "#061019", strokeWidth: 2 }}
             animationDuration={2000}
             animationEasing="ease-in-out"
           />
@@ -197,7 +198,7 @@ function SmsAreaChart({ chartData }: { chartData: DayStats[] }) {
             strokeWidth={1}
             fill="url(#gradFailed)"
             dot={false}
-            activeDot={{ r: 3, fill: "#EF4444", stroke: "#0B1120", strokeWidth: 2 }}
+            activeDot={{ r: 3, fill: "#EF4444", stroke: "#061019", strokeWidth: 2 }}
             animationDuration={2200}
             animationEasing="ease-in-out"
           />
@@ -235,23 +236,23 @@ function ActivityRing({ percent, color, size = 56, label }: { percent: number; c
 /* ── Stat Card Config (styling only — values computed from real data) ── */
 const statCardStyles = [
   {
-    label: "เครดิตคงเหลือ", key: "credits" as const, color: "#22D3EE",
-    gradient: "from-cyan-500/10 via-cyan-400/5 to-transparent",
-    borderGlow: "hover:border-cyan-500/20 hover:shadow-[0_0_30px_rgba(34,211,238,0.08)]",
-    iconBg: "from-cyan-500/20 to-cyan-400/5",
+    label: "เครดิตคงเหลือ", key: "credits" as const, color: "#00FFA7",
+    gradient: "from-[rgba(0,255,167,0.1)] via-[rgba(0,255,167,0.05)] to-transparent",
+    borderGlow: "hover:border-[rgba(0,255,167,0.2)] hover:shadow-[0_0_30px_rgba(0,255,167,0.08)]",
+    iconBg: "from-[rgba(0,255,167,0.2)] to-[rgba(0,255,167,0.05)]",
     icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-cyan-400">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[#00FFA7]">
         <circle cx="12" cy="12" r="10" /><text x="12" y="16" textAnchor="middle" fill="currentColor" stroke="none" fontSize="12" fontWeight="bold">฿</text>
       </svg>
     ),
   },
   {
-    label: "ส่งวันนี้", key: "sent" as const, color: "#8B5CF6",
-    gradient: "from-violet-500/10 via-violet-400/5 to-transparent",
-    borderGlow: "hover:border-violet-500/20 hover:shadow-[0_0_30px_rgba(139,92,246,0.08)]",
-    iconBg: "from-violet-500/20 to-violet-400/5",
+    label: "ส่งวันนี้", key: "sent" as const, color: "#00FFA7",
+    gradient: "from-[rgba(0,255,167,0.1)] via-[rgba(0,255,167,0.05)] to-transparent",
+    borderGlow: "hover:border-[rgba(0,255,167,0.2)] hover:shadow-[0_0_30px_rgba(0,255,167,0.08)]",
+    iconBg: "from-[rgba(0,255,167,0.2)] to-[rgba(0,255,167,0.05)]",
     icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-violet-400">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[#00FFA7]">
         <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
       </svg>
     ),
@@ -285,20 +286,20 @@ const quickActions = [
   {
     label: "ส่ง SMS", href: "/dashboard/send", desc: "ส่งข้อความทันที",
     icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" /></svg>,
-    gradient: "from-violet-500 to-purple-600", shadow: "shadow-violet-500/20",
-    ring: "ring-violet-500/10",
+    gradient: "from-[#00FFA7] to-[#4779FF]", shadow: "shadow-[rgba(0,255,167,0.2)]",
+    ring: "ring-[rgba(0,255,167,0.1)]",
   },
   {
     label: "เติมเครดิต", href: "/dashboard/topup", desc: "เพิ่มเครดิตได้เลย",
     icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10" /><text x="12" y="16" textAnchor="middle" fill="currentColor" stroke="none" fontSize="12" fontWeight="bold">฿</text></svg>,
-    gradient: "from-cyan-500 to-teal-600", shadow: "shadow-cyan-500/20",
-    ring: "ring-cyan-500/10",
+    gradient: "from-[#4779FF] to-[#00FFA7]", shadow: "shadow-[rgba(50,152,218,0.2)]",
+    ring: "ring-[rgba(50,152,218,0.1)]",
   },
   {
     label: "ดูรายงาน", href: "/dashboard/analytics", desc: "วิเคราะห์ผลลัพธ์",
     icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>,
-    gradient: "from-pink-500 to-rose-600", shadow: "shadow-pink-500/20",
-    ring: "ring-pink-500/10",
+    gradient: "from-[#eaa879] to-[#e08850]", shadow: "shadow-[rgba(234,168,121,0.2)]",
+    ring: "ring-[rgba(234,168,121,0.1)]",
   },
   {
     label: "API Docs", href: "/dashboard/api-docs", desc: "คู่มือนักพัฒนา",
@@ -320,7 +321,7 @@ const fadeUp = {
 
 const statusConfig: Record<string, { dot: string; badge: string; label: string }> = {
   delivered: { dot: "bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.5)]", badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20", label: "สำเร็จ" },
-  sent: { dot: "bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.5)]", badge: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20", label: "ส่งแล้ว" },
+  sent: { dot: "bg-[#00FFA7] shadow-[0_0_8px_rgba(0,255,167,0.5)]", badge: "bg-[rgba(0,255,167,0.1)] text-[#00FFA7] border-[rgba(0,255,167,0.2)]", label: "ส่งแล้ว" },
   pending: { dot: "bg-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.5)]", badge: "bg-amber-500/10 text-amber-400 border-amber-500/20", label: "รอส่ง" },
   failed: { dot: "bg-red-400 shadow-[0_0_8px_rgba(239,68,68,0.5)]", badge: "bg-red-500/10 text-red-400 border-red-500/20", label: "ล้มเหลว" },
 };
@@ -403,20 +404,14 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
     <motion.div className="p-4 md:p-8 max-w-[1280px] mx-auto" initial="hidden" animate="show" variants={stagger}>
 
       {/* ═══════════════════════════════════════════════════════
-          WELCOME HERO BANNER — Premium glassmorphism
+          WELCOME HERO BANNER
           ═══════════════════════════════════════════════════════ */}
       <motion.div variants={fadeUp} className="relative overflow-hidden rounded-3xl mb-8 border border-white/[0.06] group">
-        {/* Animated mesh gradient bg */}
-        <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-gradient-to-br from-violet-600/30 via-[var(--bg-base)] to-cyan-600/20" />
-          <div className="absolute top-[-20%] right-[-10%] w-[400px] h-[400px] rounded-full bg-violet-500/20 blur-[100px] animate-pulse" style={{ animationDuration: "4s" }} />
-          <div className="absolute bottom-[-20%] left-[-5%] w-[350px] h-[350px] rounded-full bg-cyan-500/20 blur-[100px] animate-pulse" style={{ animationDuration: "6s" }} />
-          <div className="absolute top-[20%] left-[40%] w-[250px] h-[250px] rounded-full bg-pink-500/15 blur-[80px] animate-pulse" style={{ animationDuration: "8s" }} />
-          <div className="absolute inset-0 bg-[var(--bg-base)]/40 backdrop-blur-sm" />
-        </div>
+        {/* Flat dark bg */}
+        <div className="absolute inset-0 bg-[var(--bg-surface)]" />
 
-        {/* Border glow on hover */}
-        <div className="absolute -inset-[1px] rounded-3xl bg-gradient-to-r from-violet-500/30 via-cyan-500/20 to-pink-500/30 opacity-0 group-hover:opacity-100 transition-opacity duration-700 -z-10 blur-[1px]" />
+        {/* Border accent on hover */}
+        <div className="absolute -inset-[1px] rounded-3xl bg-gradient-to-r from-[rgba(0,255,167,0.15)] via-[rgba(50,152,218,0.1)] to-[rgba(0,255,167,0.15)] opacity-0 group-hover:opacity-100 transition-opacity duration-700 -z-10" />
 
         <div className="relative px-6 py-8 md:px-10 md:py-12">
           <div className="flex items-start justify-between gap-6">
@@ -428,14 +423,14 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.15 }}
               >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-cyan-400">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[#00FFA7]">
                   <rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
                 </svg>
                 <span className="text-[11px] text-[var(--text-muted)]">{dateStr}</span>
               </motion.div>
 
               <motion.p
-                className="text-xs text-cyan-300 font-medium uppercase tracking-[0.2em] mb-2"
+                className="text-xs text-[#00FFA7] font-medium uppercase tracking-[0.2em] mb-2"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2 }}
@@ -459,10 +454,10 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
                 transition={{ delay: 0.4 }}
               >
                 <span className="flex items-center gap-1.5">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-violet-400">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[#00FFA7]">
                     <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
                   </svg>
-                  วันนี้ส่ง <span className="text-violet-400 font-semibold">{stats?.today.total ?? 0}</span> ข้อความ
+                  วันนี้ส่ง <span className="text-[#00FFA7] font-semibold">{stats?.today.total ?? 0}</span> ข้อความ
                 </span>
                 {successRate > 0 && (
                   <span className="flex items-center gap-1.5">
@@ -473,10 +468,10 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
                   </span>
                 )}
                 <span className="flex items-center gap-1.5">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-cyan-400">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[#00FFA7]">
                     <circle cx="12" cy="12" r="10" /><text x="12" y="16" textAnchor="middle" fill="currentColor" stroke="none" fontSize="12" fontWeight="bold">฿</text>
                   </svg>
-                  เครดิต <span className="text-cyan-400 font-semibold">{(stats?.user.credits ?? user.credits).toLocaleString()}</span>
+                  เครดิต <span className="text-[#00FFA7] font-semibold">{(stats?.user.credits ?? user.credits).toLocaleString()}</span>
                 </span>
               </motion.div>
             </div>
@@ -486,12 +481,12 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
               className="hidden md:flex items-center gap-5"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
+              transition={{ delay: 0.5, ...springs.smooth }}
             >
               <ActivityRing percent={successRate || 0} color="#10B981" size={80} label="สำเร็จ" />
               <ActivityRing
                 percent={stats?.today.total ? Math.min(Math.round((stats.today.total / 500) * 100), 100) : 0}
-                color="#8B5CF6"
+                color="#00FFA7"
                 size={80}
                 label="วันนี้"
               />
@@ -522,7 +517,7 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
       </motion.div>
 
       {/* ═══════════════════════════════════════════════════════
-          STATS GRID — Premium gradient glow cards
+          STATS GRID — Nansen flat cards
           ═══════════════════════════════════════════════════════ */}
       <motion.div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8" variants={stagger}>
         {statCardStyles.map((stat) => {
@@ -532,14 +527,14 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
             <motion.div
               key={stat.key}
               variants={fadeUp}
-              whileHover={{ y: -4, transition: { type: "spring", stiffness: 300, damping: 20 } }}
-              className={`relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[var(--bg-elevated)]/80 backdrop-blur-xl p-5 group cursor-default transition-all duration-500 ${stat.borderGlow}`}
+              whileHover={{ y: -4, transition: springs.bouncy }}
+              className={`relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[var(--bg-elevated)]/80 p-5 group cursor-default transition-all duration-500 ${stat.borderGlow}`}
             >
               {/* Gradient overlay */}
               <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-60 group-hover:opacity-100 transition-opacity duration-500`} />
 
-              {/* Animated glow orb */}
-              <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-[40px]" style={{ backgroundColor: stat.color + "30" }} />
+              {/* Hover accent */}
+              <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-700" style={{ backgroundColor: stat.color }} />
 
               <div className="relative z-10">
                 <div className="flex items-center justify-between mb-4">
@@ -568,14 +563,14 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
       {/* ═══════════════════════════════════════════════════════
           7-DAY CHART — Interactive area chart
           ═══════════════════════════════════════════════════════ */}
-      <motion.div variants={fadeUp} className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[var(--bg-elevated)]/80 backdrop-blur-xl p-6 mb-8">
-        <div className="absolute inset-0 bg-gradient-to-br from-violet-500/[0.03] via-transparent to-cyan-500/[0.03]" />
+      <motion.div variants={fadeUp} className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[var(--bg-elevated)]/80 p-6 mb-8">
+        <div className="absolute inset-0 bg-gradient-to-br from-[rgba(0,255,167,0.03)] via-transparent to-[rgba(50,152,218,0.03)]" />
 
         <div className="relative z-10">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/15 to-pink-500/10 border border-violet-500/10 flex items-center justify-center">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-violet-400">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[rgba(0,255,167,0.15)] to-[rgba(50,152,218,0.1)] border border-[rgba(0,255,167,0.1)] flex items-center justify-center">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[#00FFA7]">
                   <path d="M3 3v18h18" /><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3" />
                 </svg>
               </div>
@@ -599,13 +594,13 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
 
         {/* Quick Send — 2 cols */}
-        <motion.div className="lg:col-span-2 relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[var(--bg-elevated)]/80 backdrop-blur-xl p-6" variants={fadeUp}>
-          <div className="absolute inset-0 bg-gradient-to-br from-violet-500/[0.03] to-transparent" />
+        <motion.div className="lg:col-span-2 relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[var(--bg-elevated)]/80 p-6" variants={fadeUp}>
+          <div className="absolute inset-0 bg-gradient-to-br from-[rgba(0,255,167,0.03)] to-transparent" />
 
           <div className="relative z-10">
             <h3 className="text-base font-semibold mb-5 flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500/15 to-cyan-500/10 border border-violet-500/10 flex items-center justify-center">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-violet-400">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[rgba(0,255,167,0.15)] to-[rgba(50,152,218,0.1)] border border-[rgba(0,255,167,0.1)] flex items-center justify-center">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[#00FFA7]">
                   <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
                 </svg>
               </div>
@@ -650,7 +645,7 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
             <motion.button
               onClick={handleQuickSend}
               disabled={sending || !phone || !message}
-              className="btn-gradient w-full mt-4 py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-40"
+              className="btn-gradient w-full mt-4 py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.98 }}
             >
@@ -670,21 +665,21 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
         </motion.div>
 
         {/* Recent Messages — 3 cols */}
-        <motion.div className="lg:col-span-3 relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[var(--bg-elevated)]/80 backdrop-blur-xl p-6" variants={fadeUp}>
-          <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/[0.03] to-transparent" />
+        <motion.div className="lg:col-span-3 relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[var(--bg-elevated)]/80 p-6" variants={fadeUp}>
+          <div className="absolute inset-0 bg-gradient-to-br from-[rgba(0,255,167,0.03)] to-transparent" />
 
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-base font-semibold flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500/15 to-violet-500/10 border border-cyan-500/10 flex items-center justify-center">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-cyan-400">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[rgba(0,255,167,0.15)] to-[rgba(50,152,218,0.1)] border border-[rgba(0,255,167,0.1)] flex items-center justify-center">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[#00FFA7]">
                     <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
                   </svg>
                 </div>
                 <span className="gradient-text-cyan">ข้อความล่าสุด</span>
               </h3>
               <motion.div whileHover={{ x: 3 }}>
-                <Link href="/dashboard/messages" className="text-xs text-[var(--text-muted)] hover:text-violet-400 transition-colors flex items-center gap-1 px-3 py-1.5 rounded-full bg-[var(--bg-surface)]/50 border border-[var(--border-subtle)] hover:border-violet-500/20">
+                <Link href="/dashboard/messages" className="text-xs text-[var(--text-muted)] hover:text-[#00FFA7] transition-colors flex items-center gap-1 px-3 py-1.5 rounded-full bg-[var(--bg-surface)]/50 border border-[var(--border-subtle)] hover:border-[rgba(0,255,167,0.2)]">
                   ดูทั้งหมด
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
                 </Link>
@@ -701,8 +696,8 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
                       initial={{ opacity: 0, x: -12 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.04, ease: "easeOut" }}
-                      whileHover={{ x: 4, backgroundColor: "rgba(139,92,246,0.04)" }}
-                      className="flex items-center justify-between py-3 px-4 rounded-xl bg-[var(--bg-surface)]/40 border border-[var(--border-subtle)] hover:border-violet-500/15 transition-all cursor-default group"
+                      whileHover={{ x: 4, backgroundColor: "rgba(0,255,167,0.04)" }}
+                      className="flex items-center justify-between py-3 px-4 rounded-xl bg-[var(--bg-surface)]/40 border border-[var(--border-subtle)] hover:border-[rgba(0,255,167,0.15)] transition-all cursor-default group"
                     >
                       <div className="flex items-center gap-3">
                         <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${s.dot}`} />
@@ -728,7 +723,7 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2 }}
               >
-                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-violet-500/10 to-cyan-500/5 border border-[var(--border-subtle)] flex items-center justify-center">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[rgba(0,255,167,0.1)] to-[rgba(50,152,218,0.05)] border border-[var(--border-subtle)] flex items-center justify-center">
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="text-[var(--text-muted)]">
                     <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
                   </svg>
@@ -751,7 +746,7 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
           MONTHLY OVERVIEW — Progress bars with gradient fills
           ═══════════════════════════════════════════════════════ */}
       {stats?.thisMonth && stats.thisMonth.total > 0 && (
-        <motion.div variants={fadeUp} className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[var(--bg-elevated)]/80 backdrop-blur-xl p-6 mb-8">
+        <motion.div variants={fadeUp} className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[var(--bg-elevated)]/80 p-6 mb-8">
           <div className="absolute inset-0 bg-gradient-to-br from-amber-500/[0.02] to-transparent" />
 
           <div className="relative z-10">
@@ -770,7 +765,7 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
               {[
                 { label: "สำเร็จ", value: stats.thisMonth.delivered, color: "bg-gradient-to-r from-emerald-500 to-emerald-400", textColor: "text-emerald-400", pct: Math.round((stats.thisMonth.delivered / stats.thisMonth.total) * 100) },
-                { label: "ส่งแล้ว", value: stats.thisMonth.sent, color: "bg-gradient-to-r from-cyan-500 to-cyan-400", textColor: "text-cyan-400", pct: Math.round((stats.thisMonth.sent / stats.thisMonth.total) * 100) },
+                { label: "ส่งแล้ว", value: stats.thisMonth.sent, color: "bg-gradient-to-r from-[#00FFA7] to-[#4779FF]", textColor: "text-[#00FFA7]", pct: Math.round((stats.thisMonth.sent / stats.thisMonth.total) * 100) },
                 { label: "รอดำเนินการ", value: stats.thisMonth.pending, color: "bg-gradient-to-r from-amber-500 to-amber-400", textColor: "text-amber-400", pct: Math.round((stats.thisMonth.pending / stats.thisMonth.total) * 100) },
                 { label: "ล้มเหลว", value: stats.thisMonth.failed, color: "bg-gradient-to-r from-red-500 to-red-400", textColor: "text-red-400", pct: Math.round((stats.thisMonth.failed / stats.thisMonth.total) * 100) },
               ].map((item) => (
@@ -800,7 +795,7 @@ export default function DashboardContent({ user, stats, senderNames = ["EasySlip
       {/* ═══════════════════════════════════════════════════════
           SYSTEM STATUS — Minimal operational grid
           ═══════════════════════════════════════════════════════ */}
-      <motion.div variants={fadeUp} className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[var(--bg-elevated)]/80 backdrop-blur-xl p-6">
+      <motion.div variants={fadeUp} className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[var(--bg-elevated)]/80 p-6">
         <div className="relative z-10">
           <h3 className="text-sm font-semibold text-[var(--text-secondary)] mb-4 flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500/15 to-green-500/10 border border-emerald-500/10 flex items-center justify-center">
