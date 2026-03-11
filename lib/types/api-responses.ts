@@ -174,6 +174,28 @@ export type AutoTopupResponse = {
   }
 }
 
+// ── Settings Responses ──────────────────────────────────
+
+export type WorkspaceSettingsResponse = {
+  name: string
+  timezone: string
+  language: string
+}
+
+export type NotificationPrefsResponse = {
+  emailCreditLow: boolean
+  emailCampaignDone: boolean
+  emailWeeklyReport: boolean
+  smsCreditLow: boolean
+  smsCampaignDone: boolean
+}
+
+export type TwoFactorStatusResponse = {
+  enabled: boolean
+  setupAt: Date | null
+  remainingRecoveryCodes: number
+}
+
 // ── Contact Responses ───────────────────────────────────
 
 export type ContactItem = {

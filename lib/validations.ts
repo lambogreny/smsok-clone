@@ -156,6 +156,28 @@ export const updateProfileSchema = z.object({
 });
 
 // ==========================================
+// Workspace Settings Validations
+// ==========================================
+
+export const updateWorkspaceSchema = z.object({
+  name: sanitizedNameSchema(1, 100, "กรุณาตั้งชื่อ Workspace", "ชื่อ Workspace ต้องไม่เกิน 100 ตัวอักษร").optional(),
+  timezone: z.string().min(1).max(50).optional(),
+  language: z.enum(["th", "en"]).optional(),
+});
+
+// ==========================================
+// Notification Preferences Validations
+// ==========================================
+
+export const updateNotificationPrefsSchema = z.object({
+  emailCreditLow: z.boolean().optional(),
+  emailCampaignDone: z.boolean().optional(),
+  emailWeeklyReport: z.boolean().optional(),
+  smsCreditLow: z.boolean().optional(),
+  smsCampaignDone: z.boolean().optional(),
+});
+
+// ==========================================
 // 2FA Validations
 // ==========================================
 

@@ -2,7 +2,12 @@
 
 import { prisma as db } from "../db";
 import { revalidatePath } from "next/cache";
-import { changePasswordSchema, updateProfileSchema } from "../validations";
+import {
+  changePasswordSchema,
+  updateProfileSchema,
+  updateWorkspaceSchema,
+  updateNotificationPrefsSchema,
+} from "../validations";
 import { getSession, hashPassword, verifyPassword } from "../auth";
 
 // ==========================================
@@ -78,4 +83,90 @@ export async function getProfile(userId: string) {
       createdAt: true,
     },
   });
+}
+
+// ==========================================
+// Workspace settings
+// ==========================================
+
+export async function getWorkspaceSettings(userId: string) {
+  const settings = await db.workspaceSettings.findUnique({
+    where: { userId },
+  });
+
+  return settings || {
+    name: "My Workspace",
+    timezone: "Asia/Bangkok",
+    language: "th",
+  };
+}
+
+export async function updateWorkspaceSettings(userId: string, data: unknown) {
+  const input = updateWorkspaceSchema.parse(data);
+
+  const settings = await db.workspaceSettings.upsert({
+    where: { userId },
+    create: {
+      userId,
+      name: input.name ?? "My Workspace",
+      timezone: input.timezone ?? "Asia/Bangkok",
+      language: input.language ?? "th",
+    },
+    update: {
+      ...(input.name !== undefined && { name: input.name }),
+      ...(input.timezone !== undefined && { timezone: input.timezone }),
+      ...(input.language !== undefined && { language: input.language }),
+    },
+  });
+
+  revalidatePath("/dashboard/settings");
+  return settings;
+}
+
+// ==========================================
+// Notification preferences
+// ==========================================
+
+export async function getNotificationPrefs(userId: string) {
+  const prefs = await db.notificationPrefs.findUnique({
+    where: { userId },
+    select: {
+      emailCreditLow: true,
+      emailCampaignDone: true,
+      emailWeeklyReport: true,
+      smsCreditLow: true,
+      smsCampaignDone: true,
+    },
+  });
+
+  return prefs || {
+    emailCreditLow: true,
+    emailCampaignDone: true,
+    emailWeeklyReport: false,
+    smsCreditLow: false,
+    smsCampaignDone: false,
+  };
+}
+
+export async function updateNotificationPrefs(userId: string, data: unknown) {
+  const input = updateNotificationPrefsSchema.parse(data);
+
+  const prefs = await db.notificationPrefs.upsert({
+    where: { userId },
+    create: {
+      userId,
+      ...input,
+    },
+    update: input,
+    select: {
+      emailCreditLow: true,
+      emailCampaignDone: true,
+      emailWeeklyReport: true,
+      smsCreditLow: true,
+      smsCampaignDone: true,
+    },
+  });
+
+  revalidatePath("/dashboard/settings");
+  return prefs;
 }

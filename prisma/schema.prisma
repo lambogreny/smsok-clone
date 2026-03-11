@@ -44,6 +44,8 @@ model User {
   twoFactorAuth       TwoFactorAuth?
   webhooks            Webhook[]
   whtCertificates     WhtCertificate[]
+  workspaceSettings   WorkspaceSettings?
+  notificationPrefs   NotificationPrefs?
 
   @@map("users")
 }
@@ -573,6 +575,34 @@ model AutoTopup {
   user          User          @relation(fields: [userId], references: [id])
 
   @@map("auto_topups")
+}
+
+model WorkspaceSettings {
+  id        String   @id @default(cuid())
+  userId    String   @unique @map("user_id")
+  name      String   @default("My Workspace") @map("workspace_name")
+  timezone  String   @default("Asia/Bangkok")
+  language  String   @default("th")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("workspace_settings")
+}
+
+model NotificationPrefs {
+  id                String   @id @default(cuid())
+  userId            String   @unique @map("user_id")
+  emailCreditLow    Boolean  @default(true) @map("email_credit_low")
+  emailCampaignDone Boolean  @default(true) @map("email_campaign_done")
+  emailWeeklyReport Boolean  @default(false) @map("email_weekly_report")
+  smsCreditLow      Boolean  @default(false) @map("sms_credit_low")
+  smsCampaignDone   Boolean  @default(false) @map("sms_campaign_done")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  user              User     @relation(fields: [userId], references: [id])
+
+  @@map("notification_prefs")
 }
 
 enum MessageType {
