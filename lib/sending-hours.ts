@@ -6,6 +6,7 @@
  */
 
 import { prisma as db } from "./db";
+import { ApiError } from "./api-auth";
 
 const DEFAULT_START = 8;  // 08:00
 const DEFAULT_END = 20;   // 20:00
@@ -82,7 +83,7 @@ export async function checkSendingHours(orgId?: string): Promise<{
 export async function assertSendingHours(orgId?: string): Promise<void> {
   const result = await checkSendingHours(orgId);
   if (!result.allowed) {
-    throw new Error(result.reason);
+    throw new ApiError(400, result.reason ?? "ไม่สามารถส่ง SMS นอกเวลาที่กำหนด");
   }
 }
 
