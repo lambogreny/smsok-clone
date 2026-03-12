@@ -33,7 +33,7 @@ export function createSingleWorker() {
           await prisma.message.update({
             where: { id },
             data: { status: "failed", errorCode: result.error || "SEND_FAILED" },
-          }).catch(() => {})
+          }).catch((err) => { console.error(`[Single Worker] Failed to update message status to failed: messageId=${id}`, err); throw err })
         }
 
         // Dispatch webhook for failure
@@ -60,7 +60,7 @@ export function createSingleWorker() {
             sentAt: new Date(),
             gatewayId: result.jobId || null,
           },
-        }).catch(() => {})
+        }).catch((err) => { console.error(`[Single Worker] Failed to update message status to sent: messageId=${id}`, err); throw err })
       }
 
       // Dispatch webhook for success

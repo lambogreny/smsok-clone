@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { authenticateApiKey, apiResponse, apiError } from "@/lib/api-auth";
+import { authenticateRequest, apiResponse, apiError } from "@/lib/api-auth";
+import { requireApiPermission } from "@/lib/rbac";
 import {
   createScheduledSms,
   getScheduledSms,
@@ -11,7 +12,11 @@ import { scheduledSmsCancelSchema, scheduledSmsCreateSchema } from "@/lib/valida
 // GET /api/v1/sms/scheduled — list scheduled messages
 export async function GET(req: NextRequest) {
   try {
-    const user = await authenticateApiKey(req);
+    const user = await authenticateRequest(req);
+
+    const denied = await requireApiPermission(user.id, "read", "sms");
+    if (denied) return denied;
+
     const scheduled = await getScheduledSms(user.id);
     return apiResponse({ scheduled, total: scheduled.length });
   } catch (error) {
@@ -22,7 +27,11 @@ export async function GET(req: NextRequest) {
 // POST /api/v1/sms/scheduled — create or cancel scheduled message
 export async function POST(req: NextRequest) {
   try {
-    const user = await authenticateApiKey(req);
+    const user = await authenticateRequest(req);
+
+    const denied = await requireApiPermission(user.id, "create", "sms");
+    if (denied) return denied;
+
     const body = await req.json();
 
     // Cancel
@@ -33,7 +42,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Create — rate limited
-    const limit = checkRateLimit(user.id, "sms");
+    const limit = await checkRateLimit(user.id, "sms");
     if (!limit.allowed) return rateLimitResponse(limit.resetIn);
 
     const input = scheduledSmsCreateSchema.parse(body);

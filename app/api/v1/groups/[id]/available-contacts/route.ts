@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { authenticateApiKey, apiResponse, apiError } from "@/lib/api-auth";
+import { authenticateRequest, apiResponse, apiError } from "@/lib/api-auth";
 import { prisma } from "@/lib/db";
 
 // GET /api/v1/groups/:id/available-contacts?search=xxx&tags=vip,bangkok
@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await authenticateApiKey(req);
+    const user = await authenticateRequest(req);
     const { id: groupId } = await params;
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search") || undefined;

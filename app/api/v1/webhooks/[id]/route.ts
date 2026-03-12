@@ -1,13 +1,14 @@
 import { NextRequest } from "next/server"
-import { authenticateApiKey, ApiError, apiError, apiResponse } from "@/lib/api-auth"
+import { authenticateRequest, ApiError, apiError, apiResponse } from "@/lib/api-auth"
 import { updateWebhook, deleteWebhook, testWebhook } from "@/lib/actions/webhooks"
+import { updateWebhookSchema, webhookTestActionSchema } from "@/lib/validations"
 
 type Params = { params: Promise<{ id: string }> }
 
 // PUT /api/v1/webhooks/:id — Update webhook
 export async function PUT(req: NextRequest, { params }: Params) {
   try {
-    await authenticateApiKey(req)
+    await authenticateRequest(req)
     const { id } = await params
 
     let body: unknown
@@ -17,13 +18,9 @@ export async function PUT(req: NextRequest, { params }: Params) {
       throw new ApiError(400, "กรุณาส่งข้อมูล JSON")
     }
 
-    const { url, events, active } = body as {
-      url?: string
-      events?: string[]
-      active?: boolean
-    }
+    const data = updateWebhookSchema.parse(body)
 
-    const webhook = await updateWebhook(id, { url, events, active })
+    const webhook = await updateWebhook(id, data)
     return apiResponse({ webhook })
   } catch (error) {
     return apiError(error)
@@ -33,7 +30,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
 // DELETE /api/v1/webhooks/:id — Delete webhook
 export async function DELETE(req: NextRequest, { params }: Params) {
   try {
-    await authenticateApiKey(req)
+    await authenticateRequest(req)
     const { id } = await params
     await deleteWebhook(id)
     return apiResponse({ success: true })
@@ -46,7 +43,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
 // Using PATCH as test action
 export async function PATCH(req: NextRequest, { params }: Params) {
   try {
-    await authenticateApiKey(req)
+    await authenticateRequest(req)
     const { id } = await params
 
     let body: unknown
@@ -56,13 +53,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       body = {}
     }
 
-    const { action } = (body as { action?: string }) || {}
-    if (action === "test") {
-      const result = await testWebhook(id)
-      return apiResponse(result)
-    }
-
-    throw new ApiError(400, "กรุณาระบุ action: test")
+    const { action } = webhookTestActionSchema.parse(body)
+    const result = await testWebhook(id)
+    return apiResponse(result)
   } catch (error) {
     return apiError(error)
   }

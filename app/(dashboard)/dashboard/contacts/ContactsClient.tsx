@@ -18,6 +18,8 @@ import {
 } from "@/lib/actions/contacts";
 import { useToast } from "@/app/components/ui/Toast";
 import ImportWizard from "./ImportWizard";
+import EmptyState from "@/components/EmptyState";
+import CustomSelect from "@/components/ui/CustomSelect";
 import { TAG_PRESETS, MAX_VISIBLE_TAGS, getTagColor, parseTags } from "@/lib/tag-utils";
 import type { ContactItem, ContactGroupItem, PaginationMeta } from "@/lib/types/api-responses";
 
@@ -117,9 +119,23 @@ const contactFormSchema = z.object({
 
 type ContactFormValues = z.infer<typeof contactFormSchema>;
 
+const THAI_PHONE_REGEX = /^(0[689]\d{8}|\+66[689]\d{8})$/;
+
 const quickAddSchema = z.object({
   name: z.string().min(1, "กรุณากรอกชื่อ"),
-  phones: z.string().min(1, "กรุณากรอกเบอร์โทร"),
+  phones: z
+    .string()
+    .min(1, "กรุณากรอกเบอร์โทร")
+    .refine(
+      (val) => {
+        const list = val
+          .split(/[,\n\r]+/)
+          .map((p) => p.trim())
+          .filter(Boolean);
+        return list.length > 0 && list.every((p) => THAI_PHONE_REGEX.test(p));
+      },
+      "เบอร์โทรไม่ถูกต้อง — ใช้รูปแบบ 0XXXXXXXXX (เช่น 0891234567)",
+    ),
 });
 
 type QuickAddValues = z.infer<typeof quickAddSchema>;
@@ -209,7 +225,7 @@ function TagInput({
   return (
     <div className="relative">
       <div
-        className="flex flex-wrap gap-1.5 min-h-[42px] items-center py-1.5 px-3 rounded-lg bg-[var(--bg-base)] border border-[var(--border-subtle)] cursor-text focus-within:border-[rgba(0,255,167,0.6)]"
+        className="flex flex-wrap gap-1.5 min-h-[42px] items-center py-1.5 px-3 rounded-lg bg-[var(--bg-base)] border border-[var(--border-default)] cursor-text focus-within:border-[rgba(var(--accent-rgb),0.6)]"
         onClick={() => inputRef.current?.focus()}
       >
         {tags.map((tag) => (
@@ -218,7 +234,7 @@ function TagInput({
         <input
           ref={inputRef}
           type="text"
-          className="bg-transparent outline-none text-sm text-white placeholder:text-[var(--text-muted)] flex-1 min-w-[80px]"
+          className="bg-transparent outline-none text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] flex-1 min-w-[80px]"
           placeholder={tags.length === 0 ? "พิมพ์แล้วกด Enter..." : ""}
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
@@ -241,7 +257,7 @@ function TagInput({
               key={preset}
               type="button"
               onClick={() => addTag(preset)}
-              className="text-[10px] px-2 py-0.5 rounded-md bg-[rgba(0,255,167,0.06)] text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors border border-[var(--border-subtle)]"
+              className="text-[10px] px-2 py-0.5 rounded-md bg-[rgba(var(--accent-rgb),0.06)] text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors border border-[var(--border-default)]"
             >
               + {preset}
             </button>
@@ -251,13 +267,13 @@ function TagInput({
 
       {/* Suggestions dropdown */}
       {suggestions.length > 0 && (
-        <div className="absolute z-50 top-full left-0 right-0 mt-1 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-xl overflow-hidden">
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 rounded-xl border border-[var(--border-default)] bg-[var(--bg-surface)] shadow-xl overflow-hidden">
           {suggestions.map((s) => (
             <button
               key={s}
               type="button"
               onClick={() => addTag(s)}
-              className="w-full text-left px-3 py-2 text-sm text-white hover:bg-[rgba(0,255,167,0.04)] transition-colors flex items-center gap-2"
+              className="w-full text-left px-3 py-2 text-sm text-[var(--text-primary)] hover:bg-[rgba(var(--accent-rgb),0.04)] transition-colors flex items-center gap-2"
             >
               <TagChip tag={s} size="xs" />
             </button>
@@ -325,11 +341,13 @@ export default function ContactsClient({
   // ==========================================
 
   const contactForm = useForm<ContactFormValues>({
+    mode: "onChange",
     resolver: zodResolver(contactFormSchema),
     defaultValues: { name: "", phone: "", email: "", tags: "" },
   });
 
   const quickAddForm = useForm<QuickAddValues>({
+    mode: "onChange",
     resolver: zodResolver(quickAddSchema),
     defaultValues: { name: "Quick Import", phones: "" },
   });
@@ -701,7 +719,7 @@ export default function ContactsClient({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-white">
+          <h2 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">
             รายชื่อผู้ติดต่อ
           </h2>
           <p className="text-sm text-[var(--text-muted)] mt-1">
@@ -714,7 +732,7 @@ export default function ContactsClient({
             variant="outline"
             size="sm"
             onClick={handleDownloadTemplate}
-            className="border-[var(--border-subtle)] bg-transparent text-[var(--text-muted)] hover:text-white hover:bg-[rgba(0,255,167,0.04)] hover:border-[rgba(0,255,167,0.3)]"
+            className="border-[var(--border-default)] bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(var(--accent-rgb),0.04)] hover:border-[rgba(var(--accent-rgb),0.3)]"
           >
             <FileText className="w-4 h-4 mr-1.5" />
             <span className="hidden sm:inline">Template</span>
@@ -731,7 +749,7 @@ export default function ContactsClient({
             variant="outline"
             size="sm"
             onClick={() => fileInputRef.current?.click()}
-            className="border-[var(--border-subtle)] bg-transparent text-[var(--text-muted)] hover:text-white hover:bg-[rgba(0,255,167,0.04)] hover:border-[rgba(0,255,167,0.3)]"
+            className="border-[var(--border-default)] bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(var(--accent-rgb),0.04)] hover:border-[rgba(var(--accent-rgb),0.3)]"
           >
             <Upload className="w-4 h-4 mr-1.5" />
             <span className="hidden sm:inline">นำเข้า</span>
@@ -741,7 +759,7 @@ export default function ContactsClient({
             variant="outline"
             size="sm"
             onClick={() => setShowImportWizard(true)}
-            className="border-[var(--border-subtle)] bg-transparent text-[var(--text-muted)] hover:text-white hover:bg-[rgba(0,255,167,0.04)] hover:border-[rgba(0,255,167,0.3)]"
+            className="border-[var(--border-default)] bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(var(--accent-rgb),0.04)] hover:border-[rgba(var(--accent-rgb),0.3)]"
           >
             <FileSpreadsheet className="w-4 h-4 mr-1.5" />
             <span className="hidden sm:inline">Excel</span>
@@ -752,7 +770,7 @@ export default function ContactsClient({
             size="sm"
             onClick={handleExport}
             disabled={isPending}
-            className="border-[var(--border-subtle)] bg-transparent text-[var(--text-muted)] hover:text-white hover:bg-[rgba(0,255,167,0.04)] hover:border-[rgba(0,255,167,0.3)]"
+            className="border-[var(--border-default)] bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(var(--accent-rgb),0.04)] hover:border-[rgba(var(--accent-rgb),0.3)]"
           >
             <Download className="w-4 h-4 mr-1.5" />
             <span className="hidden sm:inline">ส่งออก</span>
@@ -762,7 +780,7 @@ export default function ContactsClient({
             variant="outline"
             size="sm"
             onClick={() => setShowQuickAdd(true)}
-            className="border-[var(--border-subtle)] bg-transparent text-[var(--text-muted)] hover:text-white hover:bg-[rgba(0,255,167,0.04)] hover:border-[rgba(0,255,167,0.3)]"
+            className="border-[var(--border-default)] bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(var(--accent-rgb),0.04)] hover:border-[rgba(var(--accent-rgb),0.3)]"
           >
             <UserPlus className="w-4 h-4 mr-1.5" />
             <span className="hidden sm:inline">Quick Add</span>
@@ -785,7 +803,7 @@ export default function ContactsClient({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
           <Input
             type="text"
-            className="pl-10 h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(0,255,167,0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+            className="pl-10 h-11 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]"
             placeholder="ค้นหาชื่อ, เบอร์โทร, อีเมล หรือแท็ก..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -793,7 +811,7 @@ export default function ContactsClient({
           {searchQuery && (
             <button
               onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-white transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -812,8 +830,8 @@ export default function ContactsClient({
               onClick={() => setActiveGroupFilter(null)}
               className={`text-xs px-3 py-1.5 rounded-full font-medium transition-all border min-h-[32px] ${
                 activeGroupFilter === null
-                  ? "bg-[rgba(0,255,167,0.1)] text-[var(--accent)] border-[rgba(0,255,167,0.2)]"
-                  : "bg-transparent text-[var(--text-muted)] border-[var(--border-subtle)] hover:text-white hover:border-[rgba(0,255,167,0.2)]"
+                  ? "bg-[rgba(var(--accent-rgb),0.1)] text-[var(--accent)] border-[rgba(var(--accent-rgb),0.2)]"
+                  : "bg-transparent text-[var(--text-muted)] border-[var(--border-default)] hover:text-[var(--text-primary)] hover:border-[rgba(var(--accent-rgb),0.2)]"
               }`}
             >
               ทั้งหมด
@@ -826,13 +844,13 @@ export default function ContactsClient({
                 }
                 className={`text-xs px-3 py-1.5 rounded-full font-medium transition-all border inline-flex items-center gap-1.5 min-h-[32px] ${
                   activeGroupFilter === g.id
-                    ? "bg-[rgba(0,255,167,0.1)] text-[var(--accent)] border-[rgba(0,255,167,0.2)]"
-                    : "bg-transparent text-[var(--text-muted)] border-[var(--border-subtle)] hover:text-white hover:border-[rgba(0,255,167,0.2)]"
+                    ? "bg-[rgba(var(--accent-rgb),0.1)] text-[var(--accent)] border-[rgba(var(--accent-rgb),0.2)]"
+                    : "bg-transparent text-[var(--text-muted)] border-[var(--border-default)] hover:text-[var(--text-primary)] hover:border-[rgba(var(--accent-rgb),0.2)]"
                 }`}
               >
                 <Users className="w-3 h-3" />
                 {g.name}
-                <span className="text-[10px] bg-[rgba(0,255,167,0.06)] px-1.5 rounded-full">
+                <span className="text-[10px] bg-[rgba(var(--accent-rgb),0.06)] px-1.5 rounded-full">
                   {g.memberCount}
                 </span>
               </button>
@@ -848,12 +866,12 @@ export default function ContactsClient({
             onClick={() => setActiveTagFilter(null)}
             className={`inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-medium transition-all border min-h-[32px] ${
               activeTagFilter === null
-                ? "bg-[rgba(0,255,167,0.1)] text-[var(--accent)] border-[rgba(0,255,167,0.2)]"
-                : "bg-transparent text-[var(--text-muted)] border-[var(--border-subtle)] hover:text-white hover:border-[rgba(0,255,167,0.2)]"
+                ? "bg-[rgba(var(--accent-rgb),0.1)] text-[var(--accent)] border-[rgba(var(--accent-rgb),0.2)]"
+                : "bg-transparent text-[var(--text-muted)] border-[var(--border-default)] hover:text-[var(--text-primary)] hover:border-[rgba(var(--accent-rgb),0.2)]"
             }`}
           >
             ทั้งหมด
-            <span className="text-[10px] bg-[rgba(0,255,167,0.06)] px-1.5 rounded-full">
+            <span className="text-[10px] bg-[rgba(var(--accent-rgb),0.06)] px-1.5 rounded-full">
               {totalContacts}
             </span>
           </button>
@@ -867,12 +885,12 @@ export default function ContactsClient({
                 className={`inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-semibold uppercase tracking-wider transition-all border min-h-[32px] ${
                   isActive
                     ? `${color.activeBg} ${color.text} ${color.border}`
-                    : `bg-transparent text-[var(--text-muted)] border-[var(--border-subtle)] hover:text-white hover:border-[rgba(0,255,167,0.2)]`
+                    : `bg-transparent text-[var(--text-muted)] border-[var(--border-default)] hover:text-[var(--text-primary)] hover:border-[rgba(var(--accent-rgb),0.2)]`
                 }`}
               >
                 <span className={`w-1.5 h-1.5 rounded-full ${color.dot}`} />
                 {tag}
-                <span className="text-[10px] bg-[rgba(0,255,167,0.06)] px-1.5 rounded-full">
+                <span className="text-[10px] bg-[rgba(var(--accent-rgb),0.06)] px-1.5 rounded-full">
                   {count}
                 </span>
               </button>
@@ -883,9 +901,9 @@ export default function ContactsClient({
 
       {/* Batch Actions Toolbar */}
       {hasSelection && (
-        <Card className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[16px] p-4 mb-4">
+        <Card className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-xl p-4 mb-4">
           <div className="flex items-center gap-3 flex-wrap">
-            <span className="text-sm text-white font-medium">
+            <span className="text-sm text-[var(--text-primary)] font-medium">
               เลือก {selectedIds.size} รายชื่อ
             </span>
             <div className="h-4 w-px bg-[var(--border-subtle)]" />
@@ -898,7 +916,7 @@ export default function ContactsClient({
                   !showBatchTagInput || batchAction !== "add",
                 );
               }}
-              className="border-[var(--border-subtle)] bg-transparent text-[var(--text-muted)] hover:text-[var(--accent)] hover:border-[rgba(0,255,167,0.3)]"
+              className="border-[var(--border-default)] bg-transparent text-[var(--text-muted)] hover:text-[var(--accent)] hover:border-[rgba(var(--accent-rgb),0.3)]"
             >
               <Plus className="w-3 h-3 mr-1" />
               เพิ่มแท็ก
@@ -912,7 +930,7 @@ export default function ContactsClient({
                   !showBatchTagInput || batchAction !== "remove",
                 );
               }}
-              className="border-[var(--border-subtle)] bg-transparent text-[var(--text-muted)] hover:text-[var(--accent)] hover:border-[rgba(0,255,167,0.3)]"
+              className="border-[var(--border-default)] bg-transparent text-[var(--text-muted)] hover:text-[var(--accent)] hover:border-[rgba(var(--accent-rgb),0.3)]"
             >
               <Minus className="w-3 h-3 mr-1" />
               ลบแท็ก
@@ -922,7 +940,7 @@ export default function ContactsClient({
               size="sm"
               onClick={() => setShowBulkDeleteAlert(true)}
               disabled={isPending}
-              className="border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/15 hover:border-red-500/30"
+              className="border-[rgba(var(--error-rgb,239,68,68),0.2)] bg-[rgba(var(--error-rgb,239,68,68),0.1)] text-[var(--error)] hover:bg-[rgba(var(--error-rgb,239,68,68),0.15)] hover:border-[rgba(var(--error-rgb,239,68,68),0.3)]"
             >
               <Trash2 className="w-3 h-3 mr-1" />
               ลบ
@@ -932,7 +950,7 @@ export default function ContactsClient({
                 variant="outline"
                 size="sm"
                 onClick={() => setShowAddToGroup(true)}
-                className="border-[var(--border-subtle)] bg-transparent text-[var(--text-muted)] hover:text-[var(--accent)] hover:border-[rgba(0,255,167,0.3)]"
+                className="border-[var(--border-default)] bg-transparent text-[var(--text-muted)] hover:text-[var(--accent)] hover:border-[rgba(var(--accent-rgb),0.3)]"
               >
                 <FolderPlus className="w-3 h-3 mr-1" />
                 เพิ่มเข้ากลุ่ม
@@ -945,7 +963,7 @@ export default function ContactsClient({
                 setSelectedIds(new Set());
                 setShowBatchTagInput(false);
               }}
-              className="text-[var(--text-muted)] hover:text-white"
+              className="text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             >
               ยกเลิก
             </Button>
@@ -954,7 +972,7 @@ export default function ContactsClient({
               <div className="flex items-center gap-2">
                 <Input
                   type="text"
-                  className="h-8 w-36 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white text-xs placeholder:text-[var(--text-muted)] focus:border-[rgba(0,255,167,0.6)]"
+                  className="h-8 w-36 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] text-xs placeholder:text-[var(--text-muted)] focus:border-[rgba(var(--accent-rgb),0.6)]"
                   placeholder={
                     batchAction === "add"
                       ? "แท็กที่จะเพิ่ม..."
@@ -985,7 +1003,7 @@ export default function ContactsClient({
       {filteredContacts.length > 0 ? (
         <>
           {/* Desktop Table */}
-          <Card className="hidden md:block bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] overflow-hidden">
+          <Card className="hidden md:block bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow className="border-b-0 hover:bg-transparent">
@@ -993,7 +1011,7 @@ export default function ContactsClient({
                     <Checkbox
                       checked={allSelected}
                       onCheckedChange={toggleSelectAll}
-                      className="border-[rgba(0,255,167,0.4)] data-[state=checked]:bg-[var(--accent)] data-[state=checked]:border-[var(--accent)] data-[state=checked]:text-[var(--bg-base)]"
+                      className="border-[rgba(var(--accent-rgb),0.4)] data-[state=checked]:bg-[var(--accent)] data-[state=checked]:border-[var(--accent)] data-[state=checked]:text-[var(--bg-base)]"
                     />
                   </TableHead>
                   <TableHead className="bg-[var(--bg-secondary)] text-[var(--text-muted)] text-xs uppercase tracking-wider font-medium h-11">
@@ -1025,18 +1043,18 @@ export default function ContactsClient({
                   return (
                     <TableRow
                       key={contact.id}
-                      className={`border-b border-[var(--border-subtle)] hover:bg-[var(--bg-surface-hover)] transition-colors ${
+                      className={`border-b border-[var(--border-default)] hover:bg-[var(--bg-surface-hover)] transition-colors ${
                         idx % 2 === 1 ? "bg-[var(--bg-muted)]" : "bg-transparent"
-                      } ${selectedIds.has(contact.id) ? "bg-[rgba(0,255,167,0.04)]" : ""}`}
+                      } ${selectedIds.has(contact.id) ? "bg-[rgba(var(--accent-rgb),0.04)]" : ""}`}
                     >
                       <TableCell className="py-3.5">
                         <Checkbox
                           checked={selectedIds.has(contact.id)}
                           onCheckedChange={() => toggleSelect(contact.id)}
-                          className="border-[rgba(0,255,167,0.4)] data-[state=checked]:bg-[var(--accent)] data-[state=checked]:border-[var(--accent)] data-[state=checked]:text-[var(--bg-base)]"
+                          className="border-[rgba(var(--accent-rgb),0.4)] data-[state=checked]:bg-[var(--accent)] data-[state=checked]:border-[var(--accent)] data-[state=checked]:text-[var(--bg-base)]"
                         />
                       </TableCell>
-                      <TableCell className="py-3.5 text-white font-medium">
+                      <TableCell className="py-3.5 text-[var(--text-primary)] font-medium">
                         <a href={`/dashboard/contacts/${contact.id}`} className="hover:text-[var(--accent)] hover:underline transition-colors">
                           {contact.name}
                         </a>
@@ -1051,7 +1069,7 @@ export default function ContactsClient({
                               <Badge
                                 key={g.id}
                                 variant="outline"
-                                className="text-[10px] px-2 py-0.5 bg-[rgba(0,255,167,0.06)] text-[var(--accent)] border-[rgba(0,255,167,0.15)] font-medium"
+                                className="text-[10px] px-2 py-0.5 bg-[rgba(var(--accent-rgb),0.06)] text-[var(--accent)] border-[rgba(var(--accent-rgb),0.15)] font-medium"
                               >
                                 <Users className="w-2.5 h-2.5 mr-1" />
                                 {g.name}
@@ -1080,15 +1098,15 @@ export default function ContactsClient({
                           {/* Quick tag picker */}
                           <Popover>
                             <PopoverTrigger
-                              className="w-5 h-5 rounded-md bg-[rgba(0,255,167,0.04)] hover:bg-[rgba(0,255,167,0.1)] border border-[var(--border-subtle)] hover:border-[rgba(0,255,167,0.3)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--accent)] transition-all cursor-pointer"
+                              className="w-5 h-5 rounded-md bg-[rgba(var(--accent-rgb),0.04)] hover:bg-[rgba(var(--accent-rgb),0.1)] border border-[var(--border-default)] hover:border-[rgba(var(--accent-rgb),0.3)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--accent)] transition-all cursor-pointer"
                             >
                               <Plus className="w-2.5 h-2.5" />
                             </PopoverTrigger>
                             <PopoverContent
-                              className="w-52 p-0 bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-xl shadow-xl"
+                              className="w-52 p-0 bg-[var(--bg-surface)] border-[var(--border-default)] rounded-xl shadow-xl"
                               align="start"
                             >
-                              <div className="px-3 py-2.5 border-b border-[var(--border-subtle)]">
+                              <div className="px-3 py-2.5 border-b border-[var(--border-default)]">
                                 <span className="text-[10px] text-[var(--accent)] uppercase tracking-wider font-semibold">
                                   เพิ่ม/ลบแท็ก
                                 </span>
@@ -1106,7 +1124,7 @@ export default function ContactsClient({
                                       onClick={() =>
                                         handleQuickTagToggle(contact.id, tag)
                                       }
-                                      className={`w-full flex items-center justify-between px-3 py-2 text-xs hover:bg-[rgba(0,255,167,0.04)] transition-colors ${
+                                      className={`w-full flex items-center justify-between px-3 py-2 text-xs hover:bg-[rgba(var(--accent-rgb),0.04)] transition-colors ${
                                         active ? color.text : "text-[var(--text-muted)]"
                                       }`}
                                     >
@@ -1143,7 +1161,7 @@ export default function ContactsClient({
                             variant="ghost"
                             size="sm"
                             onClick={() => openEditDialog(contact)}
-                            className="h-8 px-2.5 text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[rgba(0,255,167,0.04)]"
+                            className="h-8 px-2.5 text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[rgba(var(--accent-rgb),0.04)]"
                           >
                             <Pencil className="w-3.5 h-3.5" />
                           </Button>
@@ -1154,7 +1172,7 @@ export default function ContactsClient({
                               setDeletingContact(contact);
                               setShowDeleteAlert(true);
                             }}
-                            className="h-8 px-2.5 text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/5"
+                            className="h-8 px-2.5 text-[var(--text-muted)] hover:text-[var(--error)] hover:bg-[rgba(var(--error-rgb,239,68,68),0.05)]"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </Button>
@@ -1168,7 +1186,7 @@ export default function ContactsClient({
 
             {/* Filter info */}
             {(activeTagFilter || searchQuery) && (
-              <div className="px-5 py-3 border-t border-[var(--border-subtle)] text-xs text-[var(--text-muted)]">
+              <div className="px-5 py-3 border-t border-[var(--border-default)] text-xs text-[var(--text-muted)]">
                 แสดง {filteredContacts.length} จาก {initialContacts.length}{" "}
                 รายชื่อ
                 {activeTagFilter && (
@@ -1190,30 +1208,30 @@ export default function ContactsClient({
 
             {/* Pagination */}
             {!activeTagFilter && !searchQuery && totalContacts > initialLimit && (
-              <div className="px-5 py-4 border-t border-[var(--border-subtle)] flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="px-5 py-4 border-t border-[var(--border-default)] flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="flex items-center gap-3 text-xs text-[var(--text-muted)]">
                   <span>
                     แสดง{" "}
-                    <span className="text-white font-medium">
+                    <span className="text-[var(--text-primary)] font-medium">
                       {(initialPage - 1) * initialLimit + 1}–
                       {Math.min(initialPage * initialLimit, totalContacts)}
                     </span>{" "}
                     จาก{" "}
-                    <span className="text-white font-medium">
+                    <span className="text-[var(--text-primary)] font-medium">
                       {totalContacts}
                     </span>{" "}
                     รายชื่อ
                   </span>
-                  <select
-                    value={initialLimit}
-                    onChange={(e) => navigatePage(1, Number(e.target.value))}
-                    disabled={isPending}
-                    className="bg-[var(--bg-base)] border border-[var(--border-subtle)] text-white text-xs rounded-lg px-2 py-1 focus:outline-none focus:border-[rgba(0,255,167,0.6)] disabled:opacity-50"
-                  >
-                    <option value={20}>20 / หน้า</option>
-                    <option value={50}>50 / หน้า</option>
-                    <option value={100}>100 / หน้า</option>
-                  </select>
+                  <CustomSelect
+                    value={String(initialLimit)}
+                    onChange={(v) => navigatePage(1, Number(v))}
+                    options={[
+                      { value: "20", label: "20 / หน้า" },
+                      { value: "50", label: "50 / หน้า" },
+                      { value: "100", label: "100 / หน้า" },
+                    ]}
+                    placeholder="ต่อหน้า"
+                  />
                 </div>
                 <div className="flex items-center gap-1">
                   <Button
@@ -1221,7 +1239,7 @@ export default function ContactsClient({
                     size="sm"
                     onClick={() => navigatePage(initialPage - 1)}
                     disabled={isPending || initialPage <= 1}
-                    className="h-9 border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-white hover:border-[rgba(0,255,167,0.3)] disabled:opacity-50"
+                    className="h-9 border-[var(--border-default)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[rgba(var(--accent-rgb),0.3)] disabled:opacity-50"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
@@ -1257,8 +1275,8 @@ export default function ContactsClient({
                           disabled={isPending || p === cur}
                           className={`h-9 w-9 p-0 ${
                             p === cur
-                              ? "border-[rgba(0,255,167,0.4)] bg-[rgba(0,255,167,0.1)] text-[var(--accent)] font-medium"
-                              : "border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-white hover:border-[rgba(0,255,167,0.3)] disabled:opacity-50"
+                              ? "border-[rgba(var(--accent-rgb),0.4)] bg-[rgba(var(--accent-rgb),0.1)] text-[var(--accent)] font-medium"
+                              : "border-[var(--border-default)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[rgba(var(--accent-rgb),0.3)] disabled:opacity-50"
                           }`}
                         >
                           {p}
@@ -1271,7 +1289,7 @@ export default function ContactsClient({
                     size="sm"
                     onClick={() => navigatePage(initialPage + 1)}
                     disabled={isPending || initialPage >= totalPages}
-                    className="h-9 border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-white hover:border-[rgba(0,255,167,0.3)] disabled:opacity-50"
+                    className="h-9 border-[var(--border-default)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[rgba(var(--accent-rgb),0.3)] disabled:opacity-50"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </Button>
@@ -1287,7 +1305,7 @@ export default function ContactsClient({
               <Checkbox
                 checked={allSelected}
                 onCheckedChange={toggleSelectAll}
-                className="border-[rgba(0,255,167,0.4)] data-[state=checked]:bg-[var(--accent)] data-[state=checked]:border-[var(--accent)] data-[state=checked]:text-[var(--bg-base)]"
+                className="border-[rgba(var(--accent-rgb),0.4)] data-[state=checked]:bg-[var(--accent)] data-[state=checked]:border-[var(--accent)] data-[state=checked]:text-[var(--bg-base)]"
               />
               <span className="text-xs text-[var(--text-muted)]">
                 เลือกทั้งหมด ({filteredContacts.length})
@@ -1299,9 +1317,9 @@ export default function ContactsClient({
               return (
                 <Card
                   key={contact.id}
-                  className={`bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[16px] p-4 ${
+                  className={`bg-[var(--bg-surface)] border-[var(--border-default)] rounded-xl p-4 ${
                     selectedIds.has(contact.id)
-                      ? "border-[rgba(0,255,167,0.3)] bg-[rgba(0,255,167,0.02)]"
+                      ? "border-[rgba(var(--accent-rgb),0.3)] bg-[rgba(var(--accent-rgb),0.02)]"
                       : ""
                   }`}
                 >
@@ -1309,11 +1327,11 @@ export default function ContactsClient({
                     <Checkbox
                       checked={selectedIds.has(contact.id)}
                       onCheckedChange={() => toggleSelect(contact.id)}
-                      className="mt-1 border-[rgba(0,255,167,0.4)] data-[state=checked]:bg-[var(--accent)] data-[state=checked]:border-[var(--accent)] data-[state=checked]:text-[var(--bg-base)]"
+                      className="mt-1 border-[rgba(var(--accent-rgb),0.4)] data-[state=checked]:bg-[var(--accent)] data-[state=checked]:border-[var(--accent)] data-[state=checked]:text-[var(--bg-base)]"
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <a href={`/dashboard/contacts/${contact.id}`} className="text-sm font-medium text-white truncate hover:text-[var(--accent)] hover:underline transition-colors">
+                        <a href={`/dashboard/contacts/${contact.id}`} className="text-sm font-medium text-[var(--text-primary)] truncate hover:text-[var(--accent)] hover:underline transition-colors">
                           {contact.name}
                         </a>
                         <div className="flex items-center gap-1 shrink-0 ml-2">
@@ -1328,7 +1346,7 @@ export default function ContactsClient({
                               setDeletingContact(contact);
                               setShowDeleteAlert(true);
                             }}
-                            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--text-muted)] hover:text-red-400 transition-colors"
+                            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--error)] transition-colors"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -1349,7 +1367,7 @@ export default function ContactsClient({
                             <Badge
                               key={g.id}
                               variant="outline"
-                              className="text-[10px] px-2 py-0.5 bg-[rgba(0,255,167,0.06)] text-[var(--accent)] border-[rgba(0,255,167,0.15)] font-medium"
+                              className="text-[10px] px-2 py-0.5 bg-[rgba(var(--accent-rgb),0.06)] text-[var(--accent)] border-[rgba(var(--accent-rgb),0.15)] font-medium"
                             >
                               <Users className="w-2.5 h-2.5 mr-1" />
                               {g.name}
@@ -1401,7 +1419,7 @@ export default function ContactsClient({
                       size="sm"
                       onClick={() => navigatePage(initialPage - 1)}
                       disabled={isPending || initialPage <= 1}
-                      className="min-w-[44px] min-h-[44px] border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-white disabled:opacity-50"
+                      className="min-w-[44px] min-h-[44px] border-[var(--border-default)] text-[var(--text-muted)] hover:text-[var(--text-primary)] disabled:opacity-50"
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </Button>
@@ -1410,7 +1428,7 @@ export default function ContactsClient({
                       size="sm"
                       onClick={() => navigatePage(initialPage + 1)}
                       disabled={isPending || initialPage >= totalPages}
-                      className="min-w-[44px] min-h-[44px] border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-white disabled:opacity-50"
+                      className="min-w-[44px] min-h-[44px] border-[var(--border-default)] text-[var(--text-muted)] hover:text-[var(--text-primary)] disabled:opacity-50"
                     >
                       <ChevronRight className="w-4 h-4" />
                     </Button>
@@ -1421,7 +1439,7 @@ export default function ContactsClient({
         </>
       ) : initialContacts.length > 0 ? (
         /* No results after filtering */
-        <Card className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] p-8 text-center">
+        <Card className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg p-8 text-center">
           <Search className="mx-auto mb-3 text-[var(--text-muted)] w-8 h-8" />
           <p className="text-sm text-[var(--text-muted)]">
             ไม่พบรายชื่อที่ตรงกับการค้นหา
@@ -1439,24 +1457,18 @@ export default function ContactsClient({
         </Card>
       ) : (
         /* Empty state */
-        <Card className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] p-12 text-center">
-          <div className="w-16 h-16 rounded-full bg-[rgba(0,255,167,0.08)] border border-[rgba(0,255,167,0.15)] flex items-center justify-center mx-auto mb-4">
-            <Users className="w-8 h-8 text-[var(--accent)]" />
-          </div>
-          <h3 className="text-lg font-semibold text-white mb-2">
-            ยังไม่มีรายชื่อ
-          </h3>
-          <p className="text-sm text-[var(--text-muted)] mb-6">
-            เพิ่มรายชื่อผู้ติดต่อเพื่อส่งข้อความได้ง่ายขึ้น
-          </p>
-          <Button
-            onClick={openAddDialog}
-            className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] font-semibold"
-          >
-            <Plus className="w-4 h-4 mr-1.5" />
-            เพิ่มรายชื่อ
-          </Button>
-        </Card>
+        <EmptyState
+          icon={Users}
+          iconColor="var(--accent)"
+          iconBg="rgba(var(--accent-rgb),0.06)"
+          iconBorder="rgba(var(--accent-rgb),0.1)"
+          title="ยังไม่มีรายชื่อผู้ติดต่อ"
+          description={"เพิ่มผู้ติดต่อเพื่อเริ่มส่ง SMS\nนำเข้าจากไฟล์ CSV หรือเพิ่มทีละคน"}
+          ctaLabel="+ เพิ่มผู้ติดต่อ"
+          ctaAction={openAddDialog}
+          ctaSecondaryLabel="📤 นำเข้า CSV"
+          ctaSecondaryAction={() => setShowImportWizard(true)}
+        />
       )}
 
       {/* ==========================================
@@ -1465,9 +1477,9 @@ export default function ContactsClient({
 
       {/* Add/Edit Contact Dialog */}
       <Dialog open={showContactDialog} onOpenChange={setShowContactDialog}>
-        <DialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] sm:max-w-[480px]">
+        <DialogContent className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg sm:max-w-[480px]">
           <DialogHeader>
-            <DialogTitle className="text-white text-lg">
+            <DialogTitle className="text-[var(--text-primary)] text-lg">
               {editingContact ? "แก้ไขรายชื่อ" : "เพิ่มรายชื่อใหม่"}
             </DialogTitle>
             <DialogDescription className="text-[var(--text-muted)]">
@@ -1493,7 +1505,7 @@ export default function ContactsClient({
                     <FormControl>
                       <Input
                         placeholder="ชื่อ-นามสกุล"
-                        className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(0,255,167,0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+                        className="h-11 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]"
                         {...field}
                       />
                     </FormControl>
@@ -1516,7 +1528,7 @@ export default function ContactsClient({
                         inputMode="numeric"
                         maxLength={10}
                         placeholder="0891234567"
-                        className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg font-mono focus:border-[rgba(0,255,167,0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+                        className="h-11 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg font-mono focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]"
                         {...field}
                       />
                     </FormControl>
@@ -1537,7 +1549,7 @@ export default function ContactsClient({
                       <Input
                         type="email"
                         placeholder="email@example.com"
-                        className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(0,255,167,0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+                        className="h-11 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]"
                         {...field}
                       />
                     </FormControl>
@@ -1562,7 +1574,7 @@ export default function ContactsClient({
                   type="button"
                   variant="outline"
                   onClick={() => setShowContactDialog(false)}
-                  className="border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-white bg-transparent"
+                  className="border-[var(--border-default)] text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-transparent"
                 >
                   ยกเลิก
                 </Button>
@@ -1590,9 +1602,9 @@ export default function ContactsClient({
 
       {/* Quick Add Dialog */}
       <Dialog open={showQuickAdd} onOpenChange={setShowQuickAdd}>
-        <DialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] sm:max-w-[440px]">
+        <DialogContent className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg sm:max-w-[440px]">
           <DialogHeader>
-            <DialogTitle className="text-white text-lg">Quick Add</DialogTitle>
+            <DialogTitle className="text-[var(--text-primary)] text-lg">Quick Add</DialogTitle>
             <DialogDescription className="text-[var(--text-muted)]">
               พิมพ์หลายเบอร์ คั่นด้วย , หรือ Enter
             </DialogDescription>
@@ -1614,7 +1626,7 @@ export default function ContactsClient({
                     <FormControl>
                       <Input
                         placeholder="เช่น Import 10 มี.ค."
-                        className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(0,255,167,0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+                        className="h-11 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]"
                         {...field}
                       />
                     </FormControl>
@@ -1633,7 +1645,7 @@ export default function ContactsClient({
                     </FormLabel>
                     <FormControl>
                       <textarea
-                        className="flex w-full rounded-lg bg-[var(--bg-base)] border border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] font-mono text-sm min-h-[120px] px-3 py-2 focus:border-[rgba(0,255,167,0.6)] focus:ring-[rgba(0,255,167,0.12)] focus:outline-none"
+                        className="flex w-full rounded-lg bg-[var(--bg-base)] border border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] font-mono text-sm min-h-[120px] px-3 py-2 focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)] focus:outline-none"
                         placeholder={"0891234567\n0812345678\n0823456789"}
                         {...field}
                       />
@@ -1656,7 +1668,7 @@ export default function ContactsClient({
                   type="button"
                   variant="outline"
                   onClick={() => setShowQuickAdd(false)}
-                  className="border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-white bg-transparent"
+                  className="border-[var(--border-default)] text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-transparent"
                 >
                   ยกเลิก
                 </Button>
@@ -1682,9 +1694,9 @@ export default function ContactsClient({
 
       {/* Delete Single Contact AlertDialog */}
       <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
-        <AlertDialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px]">
+        <AlertDialogContent className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">
+            <AlertDialogTitle className="text-[var(--text-primary)]">
               ลบรายชื่อ &ldquo;{deletingContact?.name}&rdquo;?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-[var(--text-muted)]">
@@ -1692,13 +1704,13 @@ export default function ContactsClient({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-white bg-transparent">
+            <AlertDialogCancel className="border-[var(--border-default)] text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-transparent">
               ยกเลิก
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               disabled={isPending}
-              className="bg-red-500 hover:bg-red-600 text-white"
+              className="bg-[rgba(var(--error-rgb,239,68,68),0.06)]0 hover:bg-[var(--error)] text-[var(--text-primary)]"
             >
               {isPending ? (
                 <span className="flex items-center gap-2">
@@ -1718,9 +1730,9 @@ export default function ContactsClient({
         open={showBulkDeleteAlert}
         onOpenChange={setShowBulkDeleteAlert}
       >
-        <AlertDialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px]">
+        <AlertDialogContent className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">
+            <AlertDialogTitle className="text-[var(--text-primary)]">
               ลบ {selectedIds.size} รายชื่อ?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-[var(--text-muted)]">
@@ -1728,13 +1740,13 @@ export default function ContactsClient({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-white bg-transparent">
+            <AlertDialogCancel className="border-[var(--border-default)] text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-transparent">
               ยกเลิก
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleBulkDeleteConfirm}
               disabled={isPending}
-              className="bg-red-500 hover:bg-red-600 text-white"
+              className="bg-[rgba(var(--error-rgb,239,68,68),0.06)]0 hover:bg-[var(--error)] text-[var(--text-primary)]"
             >
               {isPending ? (
                 <span className="flex items-center gap-2">
@@ -1751,9 +1763,9 @@ export default function ContactsClient({
 
       {/* Add to Group Dialog */}
       <Dialog open={showAddToGroup} onOpenChange={setShowAddToGroup}>
-        <DialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] sm:max-w-[400px]">
+        <DialogContent className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg sm:max-w-[400px]">
           <DialogHeader>
-            <DialogTitle className="text-white text-lg">
+            <DialogTitle className="text-[var(--text-primary)] text-lg">
               เพิ่มเข้ากลุ่ม
             </DialogTitle>
             <DialogDescription className="text-[var(--text-muted)]">
@@ -1768,15 +1780,15 @@ export default function ContactsClient({
                 onClick={() => setAddToGroupId(g.id)}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left ${
                   addToGroupId === g.id
-                    ? "bg-[rgba(0,255,167,0.06)] border-[rgba(0,255,167,0.3)] text-white"
-                    : "bg-transparent border-[var(--border-subtle)] text-[var(--text-muted)] hover:bg-[rgba(0,255,167,0.02)] hover:border-[rgba(0,255,167,0.15)]"
+                    ? "bg-[rgba(var(--accent-rgb),0.06)] border-[rgba(var(--accent-rgb),0.3)] text-[var(--text-primary)]"
+                    : "bg-transparent border-[var(--border-default)] text-[var(--text-muted)] hover:bg-[rgba(var(--accent-rgb),0.02)] hover:border-[rgba(var(--accent-rgb),0.15)]"
                 }`}
               >
                 <div
                   className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                     addToGroupId === g.id
-                      ? "bg-[rgba(0,255,167,0.15)] text-[var(--accent)]"
-                      : "bg-[rgba(0,255,167,0.04)] text-[var(--text-muted)]"
+                      ? "bg-[rgba(var(--accent-rgb),0.15)] text-[var(--accent)]"
+                      : "bg-[rgba(var(--accent-rgb),0.04)] text-[var(--text-muted)]"
                   }`}
                 >
                   <Users className="w-4 h-4" />
@@ -1802,7 +1814,7 @@ export default function ContactsClient({
                 setShowAddToGroup(false);
                 setAddToGroupId("");
               }}
-              className="border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-white bg-transparent"
+              className="border-[var(--border-default)] text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-transparent"
             >
               ยกเลิก
             </Button>

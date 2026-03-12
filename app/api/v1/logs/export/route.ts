@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { authenticateApiKey, apiError, ApiError } from "@/lib/api-auth";
+import { authenticateRequest, apiError, ApiError } from "@/lib/api-auth";
 import { startApiLog, finishApiLog } from "@/lib/api-log";
 import { prisma } from "@/lib/db";
 
@@ -17,7 +17,7 @@ function escapeCsv(value: string | null | undefined): string {
 // GET /api/v1/logs/export?format=csv&from=2026-03-01&to=2026-03-10&status=400&endpoint=/sms/send
 export async function GET(req: NextRequest) {
   try {
-    const user = await authenticateApiKey(req);
+    const user = await authenticateRequest(req);
     const { searchParams } = new URL(req.url);
 
     const format = searchParams.get("format") || "csv";

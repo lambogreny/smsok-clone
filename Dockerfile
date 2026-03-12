@@ -12,7 +12,11 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY package.json bun.lock* next.config.ts tsconfig.json next-env.d.ts postcss.config.mjs ./
 COPY middleware.ts ./middleware.ts
 COPY app ./app
+COPY components ./components
+COPY hooks ./hooks
 COPY lib ./lib
+COPY providers ./providers
+COPY stores ./stores
 COPY prisma ./prisma
 COPY public ./public
 RUN bunx prisma generate && bun run build

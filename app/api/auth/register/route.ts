@@ -3,6 +3,7 @@ import { ApiError, apiError, apiResponse } from "@/lib/api-auth";
 import { registerWithOtp } from "@/lib/actions";
 import { startApiLog } from "@/lib/api-log";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { registerRouteSchema } from "@/lib/validations";
 
 function getClientIp(req: NextRequest) {
   return (
@@ -17,7 +18,7 @@ export async function POST(req: NextRequest) {
 
   // Rate limit BEFORE processing — prevents spam registration
   const ip = getClientIp(req);
-  const limit = checkRateLimit(ip, "auth");
+  const limit = await checkRateLimit(ip, "auth_register");
   if (!limit.allowed) {
     return rateLimitResponse(limit.resetIn);
   }
@@ -30,23 +31,7 @@ export async function POST(req: NextRequest) {
       throw new ApiError(400, "กรุณาส่งข้อมูล JSON");
     }
 
-    const data = body as {
-      name?: string;
-      email?: string;
-      phone?: string;
-      password?: string;
-      otpRef?: string;
-      otpCode?: string;
-      acceptTerms?: boolean;
-    };
-
-    if (!data.name || !data.email || !data.phone || !data.password || !data.otpRef || !data.otpCode) {
-      throw new ApiError(400, "กรุณากรอกข้อมูลให้ครบถ้วน");
-    }
-
-    if (!data.acceptTerms) {
-      throw new ApiError(400, "กรุณายอมรับเงื่อนไขการใช้งานและนโยบายความเป็นส่วนตัว");
-    }
+    const data = registerRouteSchema.parse(body);
 
     await registerWithOtp({
       name: data.name,
@@ -55,7 +40,7 @@ export async function POST(req: NextRequest) {
       password: data.password,
       otpRef: data.otpRef,
       otpCode: data.otpCode,
-      acceptTerms: data.acceptTerms,
+      acceptTerms: data.acceptTerms as boolean,
     });
 
     return apiResponse({ success: true, redirectTo: "/dashboard" }, 201);

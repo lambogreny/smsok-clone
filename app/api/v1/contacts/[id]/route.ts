@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { authenticateApiKey, ApiError, apiResponse, apiError } from "@/lib/api-auth";
+import { authenticateRequest, ApiError, apiResponse, apiError } from "@/lib/api-auth";
+import { requireApiPermission } from "@/lib/rbac";
 import { updateContact, deleteContact } from "@/lib/actions/contacts";
 import { updateContactSchema } from "@/lib/validations";
 import { prisma } from "@/lib/db";
@@ -11,7 +12,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await authenticateApiKey(req);
+    const user = await authenticateRequest(req);
+
+    const denied = await requireApiPermission(user.id, "read", "contact");
+    if (denied) return denied;
+
     const { id } = await params;
 
     const contact = await prisma.contact.findFirst({
@@ -45,7 +50,11 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await authenticateApiKey(req);
+    const user = await authenticateRequest(req);
+
+    const denied = await requireApiPermission(user.id, "update", "contact");
+    if (denied) return denied;
+
     const { id } = await params;
     const body = await req.json();
     const input = updateContactSchema.parse(body);
@@ -64,7 +73,11 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await authenticateApiKey(req);
+    const user = await authenticateRequest(req);
+
+    const denied = await requireApiPermission(user.id, "delete", "contact");
+    if (denied) return denied;
+
     const { id } = await params;
     await deleteContact(user.id, id);
     return apiResponse({ success: true });
@@ -81,7 +94,11 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await authenticateApiKey(req);
+    const user = await authenticateRequest(req);
+
+    const denied = await requireApiPermission(user.id, "update", "contact");
+    if (denied) return denied;
+
     const { id } = await params;
 
     let body: Record<string, unknown>;

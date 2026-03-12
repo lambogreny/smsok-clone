@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { authenticateApiKey, apiResponse, apiError } from "@/lib/api-auth";
+import { authenticateRequest, apiResponse, apiError } from "@/lib/api-auth";
+import { requireApiPermission } from "@/lib/rbac";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
@@ -25,8 +26,12 @@ const bulkDeleteSchema = z.object({
 // POST /api/v1/contacts/bulk — Quick add multiple contacts
 export async function POST(req: NextRequest) {
   try {
-    const user = await authenticateApiKey(req);
-    const limit = checkRateLimit(user.id, "import");
+    const user = await authenticateRequest(req);
+
+    const denied = await requireApiPermission(user.id, "create", "contact");
+    if (denied) return denied;
+
+    const limit = await checkRateLimit(user.id, "import");
     if (!limit.allowed) return rateLimitResponse(limit.resetIn);
 
     const body = await req.json();
@@ -95,7 +100,11 @@ export async function POST(req: NextRequest) {
 // DELETE /api/v1/contacts/bulk — Bulk delete contacts
 export async function DELETE(req: NextRequest) {
   try {
-    const user = await authenticateApiKey(req);
+    const user = await authenticateRequest(req);
+
+    const denied = await requireApiPermission(user.id, "delete", "contact");
+    if (denied) return denied;
+
     const body = await req.json();
     const input = bulkDeleteSchema.parse(body);
 

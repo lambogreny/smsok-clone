@@ -1,23 +1,19 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { generateOtpForSession, verifyOtpForSession } from "@/lib/actions/otp";
 import { blockNonNumeric } from "@/lib/form-utils";
 import { safeErrorMessage } from "@/lib/error-messages";
+import { toast } from "sonner";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -26,62 +22,203 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import CustomSelect from "@/components/ui/CustomSelect";
 
 import {
   Lock,
+  Send,
+  CheckCircle2,
   Clock,
-  Shield,
-  AlertTriangle,
-  ArrowRight,
-  Key,
+  Timer,
   BookOpen,
   Loader2,
   Copy,
   Check,
-  RotateCcw,
-  Send,
+  Search,
+  Download,
+  ChevronLeft,
+  ChevronRight,
+  AlertTriangle,
 } from "lucide-react";
 
-/* ── Feature Cards Data ── */
-const features = [
-  { icon: Lock, title: "ปลอดภัยสูงสุด", desc: "รหัส 6 หลัก สุ่มด้วย crypto-safe algorithm", iconBg: "bg-[rgba(0,255,167,0.08)]", iconColor: "text-[var(--accent)]" },
-  { icon: Clock, title: "หมดอายุ 5 นาที", desc: "TTL 300 วินาที ป้องกันการใช้ซ้ำ", iconBg: "bg-[rgba(var(--accent-secondary-rgb,50,152,218),0.08)]", iconColor: "text-[var(--accent-secondary)]" },
-  { icon: Shield, title: "Rate Limited", desc: "3 req/5min per phone + IP dual-key protection", iconBg: "bg-[rgba(16,185,129,0.08)]", iconColor: "text-[#10B981]" },
-  { icon: AlertTriangle, title: "ล็อกเอาท์อัตโนมัติ", desc: "ลองผิด 5 ครั้ง = ต้องขอรหัสใหม่", iconBg: "bg-[rgba(245,158,11,0.08)]", iconColor: "text-[#F59E0B]" },
-];
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts";
 
-/* ── Code Block ── */
-function CodeBlock({ title, code }: { title: string; code: string }) {
-  const [copied, setCopied] = useState(false);
+/* ══════════════════════════════════════════════════
+   TYPES
+   ══════════════════════════════════════════════════ */
+
+interface OtpChartPoint {
+  day: string;
+  sent: number;
+  verified: number;
+  expired: number;
+}
+
+interface OtpRecentItem {
+  id: number;
+  phone: string;
+  ref: string;
+  status: string;
+  time: string;
+}
+
+interface OtpHistoryItem {
+  id: number;
+  phone: string;
+  ref: string;
+  otp: string;
+  status: string;
+  verifyTime: string;
+  time: string;
+}
+
+interface OtpStats {
+  sentToday: number;
+  verifiedToday: number;
+  expiredToday: number;
+  avgVerifyTime: number;
+  sentDelta: string;
+  verifyRate: string;
+  expireRate: string;
+  timeDelta: string;
+}
+
+interface OtpStatsResponse {
+  stats: OtpStats;
+  chart: OtpChartPoint[];
+  recentOtps: OtpRecentItem[];
+  history: OtpHistoryItem[];
+}
+
+/* ══════════════════════════════════════════════════
+   FALLBACK DEFAULTS
+   ══════════════════════════════════════════════════ */
+
+const DEFAULT_STATS: OtpStats = {
+  sentToday: 0,
+  verifiedToday: 0,
+  expiredToday: 0,
+  avgVerifyTime: 0,
+  sentDelta: "0%",
+  verifyRate: "0%",
+  expireRate: "0%",
+  timeDelta: "—",
+};
+
+/* ══════════════════════════════════════════════════
+   NORMALIZE API RESPONSE (flat or nested)
+   ══════════════════════════════════════════════════ */
+
+function normalizeResponse(data: Record<string, unknown>): OtpStatsResponse {
+  /* Handle nested: { data: { stats, chart, ... } } */
+  const root = (data.data && typeof data.data === "object" ? data.data : data) as Record<string, unknown>;
+
+  const stats: OtpStats = {
+    sentToday: Number((root.stats as Record<string, unknown>)?.sentToday ?? root.sentToday ?? 0),
+    verifiedToday: Number((root.stats as Record<string, unknown>)?.verifiedToday ?? root.verifiedToday ?? 0),
+    expiredToday: Number((root.stats as Record<string, unknown>)?.expiredToday ?? root.expiredToday ?? 0),
+    avgVerifyTime: Number((root.stats as Record<string, unknown>)?.avgVerifyTime ?? root.avgVerifyTime ?? 0),
+    sentDelta: String((root.stats as Record<string, unknown>)?.sentDelta ?? root.sentDelta ?? "0%"),
+    verifyRate: String((root.stats as Record<string, unknown>)?.verifyRate ?? root.verifyRate ?? "0%"),
+    expireRate: String((root.stats as Record<string, unknown>)?.expireRate ?? root.expireRate ?? "0%"),
+    timeDelta: String((root.stats as Record<string, unknown>)?.timeDelta ?? root.timeDelta ?? "—"),
+  };
+
+  const chart = (Array.isArray(root.chart) ? root.chart : []) as OtpChartPoint[];
+  const recentOtps = (Array.isArray(root.recentOtps) ? root.recentOtps : Array.isArray(root.recent) ? root.recent : []) as OtpRecentItem[];
+  const history = (Array.isArray(root.history) ? root.history : []) as OtpHistoryItem[];
+
+  return { stats, chart, recentOtps, history };
+}
+
+/* ══════════════════════════════════════════════════
+   STATUS BADGE
+   ══════════════════════════════════════════════════ */
+
+const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
+  verified: { label: "ยืนยันแล้ว", color: "var(--success)", bg: "var(--success-bg)" },
+  pending: { label: "รอยืนยัน", color: "var(--info)", bg: "var(--info-bg)" },
+  expired: { label: "หมดอายุ", color: "var(--warning)", bg: "var(--warning-bg)" },
+  wrong_otp: { label: "รหัสผิด", color: "var(--error)", bg: "var(--danger-bg)" },
+};
+
+function StatusBadge({ status }: { status: string }) {
+  const s = STATUS_MAP[status] ?? STATUS_MAP.pending;
   return (
-    <div>
-      <div className="flex items-center justify-between px-4 py-2 rounded-t-xl border border-b-0 border-[var(--border-subtle)] bg-[var(--bg-surface)]">
-        <span className="text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-wider">{title}</span>
-        <button
-          onClick={() => { navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
-          className="p-1 rounded-md hover:bg-white/5 transition-colors cursor-pointer"
-        >
-          {copied ? <Check className="w-3 h-3 text-[#10B981]" /> : <Copy className="w-3 h-3 text-[var(--text-muted)]" />}
-        </button>
-      </div>
-      <pre className="rounded-b-xl p-4 overflow-x-auto text-[12px] font-mono text-[var(--accent)] bg-[var(--bg-base)] border border-t-0 border-[var(--border-subtle)]">
-        {code}
-      </pre>
+    <Badge
+      className="rounded-full text-[11px] font-medium border-0"
+      style={{ color: s.color, backgroundColor: s.bg }}
+    >
+      {s.label}
+    </Badge>
+  );
+}
+
+/* ══════════════════════════════════════════════════
+   CUSTOM TOOLTIP FOR CHART
+   ══════════════════════════════════════════════════ */
+
+function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: string }) {
+  if (!active || !payload) return null;
+  return (
+    <div
+      className="rounded-xl px-3 py-2 text-xs border border-[var(--border-default)]"
+      style={{ backgroundColor: "var(--table-header)" }}
+    >
+      <p className="text-[var(--text-muted)] mb-1 font-medium">{label}</p>
+      {payload.map((p) => (
+        <div key={p.name} className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
+          <span className="text-[var(--text-muted)]">{p.name}:</span>
+          <span className="text-[var(--text-primary)] font-medium">{p.value}</span>
+        </div>
+      ))}
     </div>
   );
 }
 
-/* ── OTP Test Panel ── */
-function OtpTestPanel() {
+/* ══════════════════════════════════════════════════
+   QUICK TEST PANEL
+   ══════════════════════════════════════════════════ */
+
+function QuickTestPanel() {
   const [phone, setPhone] = useState("");
-  const [purpose, setPurpose] = useState("verify");
-  const [code, setCode] = useState("");
-  const [ref, setRef] = useState("");
-  const [step, setStep] = useState<"generate" | "verify">("generate");
+  const [otpCode, setOtpCode] = useState("");
+  const [refCode, setRefCode] = useState("");
+  const [verifyInput, setVerifyInput] = useState("");
+  const [step, setStep] = useState<"idle" | "sent" | "success" | "error">("idle");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [verifyLoading, setVerifyLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const [feedback, setFeedback] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [smsRemaining, setSmsRemaining] = useState<number | null>(null);
+
+  // Fetch credit balance — graceful fallback chain
+  useEffect(() => {
+    async function fetchBalance() {
+      try {
+        const res = await fetch("/api/v1/credits/balance");
+        if (res.ok) {
+          const data = await res.json();
+          const remaining = data.smsRemaining ?? data.remaining ?? data.balance;
+          if (typeof remaining === "number") { setSmsRemaining(remaining); return; }
+        }
+      } catch { /* endpoint may not exist yet */ }
+    }
+    fetchBalance();
+  }, []);
+
+  const hasNoCredits = smsRemaining !== null && smsRemaining <= 0;
 
   useEffect(() => {
     if (countdown <= 0) return;
@@ -89,19 +226,36 @@ function OtpTestPanel() {
     return () => clearInterval(t);
   }, [countdown]);
 
-  const handleGenerate = async () => {
-    if (!phone) return;
-    setResult(null);
+  const copyText = useCallback((text: string, field: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 1500);
+  }, []);
+
+  const handleSend = async () => {
+    if (!phone || countdown > 0) return;
     setLoading(true);
+    setFeedback(null);
     startTransition(async () => {
       try {
-        const data = await generateOtpForSession({ phone, purpose });
-        setRef(data.ref || "");
-        setStep("verify");
-        setCountdown(data.expiresIn ?? 300);
-        setResult({ ok: true, msg: `OTP sent! Ref: ${data.ref || "N/A"}` });
+        const data = await generateOtpForSession({ phone, purpose: "verify" });
+
+        // Check for structured insufficient credits error (returned, not thrown)
+        if (data && typeof data === "object" && "error" in data && (data as { error: string }).error === "INSUFFICIENT_CREDITS") {
+          const err = data as { creditsRemaining: number; creditsRequired: number };
+          const detail = `เครดิตไม่พอ — เหลือ ${err.creditsRemaining} ต้องการ ${err.creditsRequired}`;
+          setFeedback({ ok: false, msg: detail });
+          setSmsRemaining(err.creditsRemaining);
+          return;
+        }
+
+        const otpData = data as { ref?: string; debugCode?: string };
+        setRefCode(otpData.ref || "REF-DEMO");
+        setOtpCode(otpData.debugCode || "123456");
+        setStep("sent");
+        setCountdown(30);
       } catch (error) {
-        setResult({ ok: false, msg: safeErrorMessage(error) });
+        setFeedback({ ok: false, msg: safeErrorMessage(error) });
       } finally {
         setLoading(false);
       }
@@ -109,144 +263,179 @@ function OtpTestPanel() {
   };
 
   const handleVerify = async () => {
-    if (!code) return;
-    setResult(null);
-    setLoading(true);
+    if (!verifyInput) return;
+    setVerifyLoading(true);
+    setFeedback(null);
     startTransition(async () => {
       try {
-        const data = await verifyOtpForSession({ ref, code });
+        const data = await verifyOtpForSession({ ref: refCode, code: verifyInput });
         if (data.verified) {
-          setResult({ ok: true, msg: "OTP ถูกต้อง!" });
-          setStep("generate");
-          setCode("");
-          setRef("");
-          setCountdown(0);
+          setStep("success");
+          setFeedback({ ok: true, msg: "OTP ถูกต้อง! ยืนยันสำเร็จ" });
         } else {
-          setResult({ ok: false, msg: "OTP ไม่ถูกต้อง" });
+          setStep("error");
+          setFeedback({ ok: false, msg: "OTP ไม่ถูกต้อง กรุณาลองใหม่" });
         }
       } catch (error) {
-        setResult({ ok: false, msg: safeErrorMessage(error) });
+        setStep("error");
+        setFeedback({ ok: false, msg: safeErrorMessage(error) });
       } finally {
-        setLoading(false);
+        setVerifyLoading(false);
       }
     });
   };
 
-  const mins = Math.floor(countdown / 60);
+  const handleReset = () => {
+    setStep("idle");
+    setPhone("");
+    setOtpCode("");
+    setRefCode("");
+    setVerifyInput("");
+    setCountdown(0);
+    setFeedback(null);
+  };
+
   const secs = countdown % 60;
+  const mins = Math.floor(countdown / 60);
 
   return (
-    <Card className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px]">
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-base font-semibold text-white flex items-center gap-2">
-            <div className="w-8 h-8 rounded-[10px] bg-[rgba(245,158,11,0.08)] flex items-center justify-center">
-              <Send className="w-4 h-4 text-[#F59E0B]" />
-            </div>
-            ทดสอบ OTP
-          </h2>
-          {countdown > 0 && (
-            <Badge variant="outline" className={`text-xs font-mono border ${countdown < 60 ? "text-[#EF4444] border-[rgba(239,68,68,0.2)]" : "text-[#F59E0B] border-[rgba(245,158,11,0.2)]"}`}>
-              หมดอายุใน {mins}:{secs.toString().padStart(2, "0")}
-            </Badge>
-          )}
-        </div>
+    <Card className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg">
+      <CardContent className="p-5">
+        <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-4">ทดสอบ OTP</h3>
 
-        {/* Step indicator */}
-        <div className="flex items-center gap-3 mb-5">
-          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium ${step === "generate" ? "bg-[rgba(0,255,167,0.08)] text-[var(--accent)] border border-[rgba(0,255,167,0.15)]" : "text-[var(--text-muted)]"}`}>
-            <span className="w-5 h-5 rounded-full bg-[rgba(0,255,167,0.15)] flex items-center justify-center text-[10px] font-bold">1</span>
-            Generate
-          </div>
-          <ArrowRight className="w-4 h-4 text-[var(--text-muted)]" />
-          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium ${step === "verify" ? "bg-[rgba(16,185,129,0.08)] text-[#10B981] border border-[rgba(16,185,129,0.15)]" : "text-[var(--text-muted)]"}`}>
-            <span className="w-5 h-5 rounded-full bg-[rgba(16,185,129,0.15)] flex items-center justify-center text-[10px] font-bold">2</span>
-            Verify
-          </div>
-        </div>
-
-        {step === "generate" ? (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="block text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1.5 font-medium">เบอร์โทร</label>
-              <Input
-                type="tel"
-                inputMode="numeric"
-                maxLength={10}
-                onKeyDown={blockNonNumeric}
-                placeholder="0891234567"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className={`h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white rounded-lg ${phone && !/^0[0-9]\d{8}$/.test(phone) ? "border-[rgba(239,68,68,0.6)]" : ""}`}
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1.5 font-medium">Purpose</label>
-              <Select value={purpose} onValueChange={(v) => v && setPurpose(v)}>
-                <SelectTrigger className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white rounded-lg">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)]">
-                  <SelectItem value="verify">verify</SelectItem>
-                  <SelectItem value="login">login</SelectItem>
-                  <SelectItem value="transaction">transaction</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col">
-              <label className="block text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1.5 font-medium">&nbsp;</label>
-              <Button
-                onClick={handleGenerate}
-                disabled={loading || isPending || !phone}
-                className="h-11 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] rounded-lg font-semibold"
-              >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                <span className="ml-1.5">Generate OTP</span>
-              </Button>
-              <p className="text-xs text-[var(--text-muted)] text-center mt-1.5">ใช้ <span className="text-[#F59E0B]">1 เครดิต</span></p>
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="block text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1.5 font-medium">Ref Code</label>
-              <div className="h-11 bg-[var(--bg-base)] border border-[var(--border-subtle)] rounded-lg px-3 flex items-center text-[var(--accent)] font-mono text-sm">{ref || "—"}</div>
-            </div>
-            <div>
-              <label className="block text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1.5 font-medium">OTP Code</label>
-              <Input
-                type="text"
-                inputMode="numeric"
-                className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white rounded-lg font-mono text-center text-lg tracking-[0.3em]"
-                placeholder="000000"
-                maxLength={6}
-                value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-              />
-            </div>
-            <div className="flex items-end gap-2">
-              <Button
-                onClick={handleVerify}
-                disabled={loading || isPending || code.length !== 6}
-                className="flex-1 h-11 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] rounded-lg font-semibold"
-              >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                <span className="ml-1.5">Verify</span>
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => { setStep("generate"); setCode(""); setRef(""); setCountdown(0); setResult(null); }}
-                className="h-11 w-11 p-0 border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-white rounded-lg"
-              >
-                <RotateCcw className="w-4 h-4" />
-              </Button>
-            </div>
+        {/* Credit warning */}
+        {hasNoCredits && (
+          <div className="flex items-center gap-2 rounded-lg border border-[rgba(var(--warning-rgb),0.3)] bg-[rgba(var(--warning-rgb),0.1)] px-3 py-2 mb-3">
+            <AlertTriangle className="w-4 h-4 text-[var(--warning)] shrink-0" />
+            <span className="text-xs text-[var(--warning)]">เครดิต SMS หมด — ไม่สามารถส่ง OTP ได้</span>
+            <Link href="/dashboard/credits" className="ml-auto text-xs font-semibold text-[var(--accent)] hover:underline whitespace-nowrap">
+              เติมเครดิต &rarr;
+            </Link>
           </div>
         )}
 
-        {result && (
-          <div className={`mt-4 px-4 py-3 rounded-xl text-sm font-medium border ${result.ok ? "bg-[rgba(16,185,129,0.06)] border-[rgba(16,185,129,0.15)] text-[#10B981]" : "bg-[rgba(239,68,68,0.06)] border-[rgba(239,68,68,0.15)] text-[#F87171]"}`}>
-            {result.ok ? "✓" : "✗"} {result.msg}
+        {/* Phone input + send */}
+        <div className="space-y-3">
+          <Input
+            type="tel"
+            inputMode="numeric"
+            maxLength={10}
+            onKeyDown={blockNonNumeric}
+            placeholder="0891234567"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            disabled={step === "sent"}
+            className="h-9 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] rounded-xl"
+          />
+          <Button
+            onClick={handleSend}
+            disabled={loading || isPending || !phone || countdown > 0 || hasNoCredits}
+            className="h-9 w-full bg-[var(--accent)] hover:opacity-90 text-[var(--bg-base)] rounded-xl font-semibold text-sm"
+          >
+            {loading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : countdown > 0 ? (
+              `รอ ${mins}:${String(secs).padStart(2, "0")}`
+            ) : (
+              <>
+                <Send className="w-3.5 h-3.5 mr-1.5" />
+                ส่ง OTP ทดสอบ
+              </>
+            )}
+          </Button>
+        </div>
+
+        {/* OTP + Ref display */}
+        {step !== "idle" && (
+          <div className="mt-4 space-y-2">
+            <div className="flex items-center justify-between rounded-xl bg-[var(--bg-base)] border border-[var(--border-default)] px-3 py-2">
+              <div>
+                <span className="text-[10px] uppercase text-[var(--text-muted)] tracking-wider">OTP</span>
+                <p className="text-lg font-semibold text-[var(--text-primary)]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
+                  {otpCode}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => copyText(otpCode, "otp")}
+                className="p-1.5 rounded-lg hover:bg-white/5 transition-colors"
+              >
+                {copiedField === "otp" ? (
+                  <Check className="w-3.5 h-3.5 text-[var(--success)]" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+                )}
+              </button>
+            </div>
+            <div className="flex items-center justify-between rounded-xl bg-[var(--bg-base)] border border-[var(--border-default)] px-3 py-2">
+              <div>
+                <span className="text-[10px] uppercase text-[var(--text-muted)] tracking-wider">Ref</span>
+                <p className="text-sm text-[var(--text-primary)]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
+                  {refCode}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => copyText(refCode, "ref")}
+                className="p-1.5 rounded-lg hover:bg-white/5 transition-colors"
+              >
+                {copiedField === "ref" ? (
+                  <Check className="w-3.5 h-3.5 text-[var(--success)]" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+                )}
+              </button>
+            </div>
+
+            {countdown > 0 && (
+              <p className="text-xs text-[var(--text-muted)] text-center">
+                หมดอายุใน {mins}:{String(secs).padStart(2, "0")}
+              </p>
+            )}
+
+            {/* Verify section */}
+            <div className="pt-2 space-y-2">
+              <Input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="กรอก OTP"
+                value={verifyInput}
+                onChange={(e) => setVerifyInput(e.target.value.replace(/\D/g, ""))}
+                className="h-9 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] rounded-xl text-center tracking-[0.3em]"
+                style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+              />
+              <Button
+                onClick={handleVerify}
+                disabled={verifyLoading || isPending || verifyInput.length < 4}
+                className="h-9 w-full bg-[var(--success)] hover:opacity-90 text-[var(--text-primary)] rounded-xl font-semibold text-sm"
+              >
+                {verifyLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "ยืนยัน OTP"}
+              </Button>
+            </div>
+
+            {/* Feedback */}
+            {feedback && (
+              <div
+                className={`mt-2 px-3 py-2 rounded-xl text-xs font-medium border ${
+                  feedback.ok
+                    ? "bg-[var(--success-bg)] border-[var(--success-bg)] text-[var(--success)]"
+                    : "bg-[var(--danger-bg)] border-[var(--danger-bg)] text-[var(--error)]"
+                }`}
+              >
+                {feedback.msg}
+              </div>
+            )}
+
+            {(step === "success" || step === "error") && (
+              <Button
+                variant="outline"
+                onClick={handleReset}
+                className="h-9 w-full mt-1 border-[var(--border-default)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-xl text-sm"
+              >
+                ทดสอบใหม่
+              </Button>
+            )}
           </div>
         )}
       </CardContent>
@@ -254,259 +443,704 @@ function OtpTestPanel() {
   );
 }
 
-/* ── Main OTP Page ── */
-export default function OtpPage() {
-  return (
-    <div className="p-4 md:p-8 pb-20 md:pb-8 max-w-6xl space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white">OTP API</h1>
-          <p className="text-sm text-[var(--text-muted)] mt-1">สร้างและยืนยันรหัส OTP 6 หลักผ่าน REST API — ใช้ 1 เครดิต/OTP</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link href="/dashboard/api-keys">
-            <Button className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] rounded-xl font-semibold gap-2">
-              <Key className="w-4 h-4" /> API Key
-            </Button>
-          </Link>
-          <Link href="/dashboard/docs">
-            <Button variant="outline" className="border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white rounded-xl">
-              <BookOpen className="w-4 h-4" /> API Docs
-            </Button>
-          </Link>
-        </div>
-      </div>
+/* ══════════════════════════════════════════════════
+   TAB: ภาพรวม (Overview)
+   ══════════════════════════════════════════════════ */
 
-      {/* Feature Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {features.map((f) => {
-          const Icon = f.icon;
+function OverviewTab({
+  onViewAll,
+  stats,
+  chartData,
+  recentOtps,
+}: {
+  onViewAll: () => void;
+  stats: OtpStats;
+  chartData: OtpChartPoint[];
+  recentOtps: OtpRecentItem[];
+}) {
+
+  const statCards = [
+    {
+      label: "OTP ส่งวันนี้",
+      value: stats.sentToday,
+      delta: `↑ ${stats.sentDelta.replace("+", "")}`,
+      icon: Send,
+      color: "var(--accent)",
+      bg: "rgba(0,226,181,0.08)",
+    },
+    {
+      label: "ยืนยันแล้ว",
+      value: stats.verifiedToday,
+      delta: stats.verifyRate,
+      icon: CheckCircle2,
+      color: "var(--success)",
+      bg: "var(--success-bg)",
+    },
+    {
+      label: "หมดอายุ",
+      value: stats.expiredToday,
+      delta: stats.expireRate,
+      icon: Clock,
+      color: "var(--warning)",
+      bg: "var(--warning-bg)",
+    },
+    {
+      label: "เวลาเฉลี่ยยืนยัน",
+      value: `${stats.avgVerifyTime} วิ`,
+      delta: stats.timeDelta,
+      icon: Timer,
+      color: "var(--info)",
+      bg: "var(--info-bg)",
+    },
+  ];
+
+  return (
+    <div className="space-y-4 p-4">
+      {/* Stat Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {statCards.map((s) => {
+          const Icon = s.icon;
           return (
-            <Card key={f.title} className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px]">
+            <Card
+              key={s.label}
+              className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg"
+            >
               <CardContent className="p-4">
-                <div className={`w-10 h-10 rounded-[10px] ${f.iconBg} flex items-center justify-center mb-3`}>
-                  <Icon className={`w-5 h-5 ${f.iconColor}`} />
+                <div className="flex items-center gap-2 mb-3">
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: s.bg }}
+                  >
+                    <Icon className="w-4 h-4" style={{ color: s.color }} />
+                  </div>
+                  <span className="text-[11px] text-[var(--text-muted)]">{s.label}</span>
                 </div>
-                <h3 className="text-sm font-semibold text-white mb-1">{f.title}</h3>
-                <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">{f.desc}</p>
+                <p className="text-xl font-semibold text-[var(--text-primary)]">{s.value}</p>
+                <p className="text-[11px] text-[var(--text-muted)] mt-0.5">{s.delta}</p>
               </CardContent>
             </Card>
           );
         })}
       </div>
 
-      {/* Flow Diagram */}
-      <Card className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px]">
-        <CardContent className="p-5">
-          <h2 className="text-base font-semibold text-white mb-5">ขั้นตอนการใช้งาน</h2>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-center gap-3 sm:gap-0">
-            {[
-              { step: "1", label: "สร้าง API Key", desc: "จากหน้า API Keys" },
-              { step: "2", label: "Generate OTP", desc: "POST /otp/send" },
-              { step: "3", label: "ผู้ใช้รับ SMS", desc: "รหัส 6 หลัก" },
-              { step: "4", label: "Verify OTP", desc: "POST /otp/verify" },
-            ].map((s, i) => (
-              <div key={s.step} className="flex items-center gap-3 sm:flex-1">
-                <div className="flex items-center gap-3 flex-1">
-                  <div className="w-9 h-9 rounded-full bg-[rgba(0,255,167,0.08)] border border-[rgba(0,255,167,0.15)] flex items-center justify-center shrink-0">
-                    <span className="text-sm font-bold text-[var(--accent)]">{s.step}</span>
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-white">{s.label}</p>
-                    <p className="text-[10px] text-[var(--text-muted)]">{s.desc}</p>
-                  </div>
-                </div>
-                {i < 3 && <ArrowRight className="w-4 h-4 text-[var(--border-subtle)] hidden sm:block shrink-0 mx-2" />}
-              </div>
-            ))}
+      {/* Chart + Quick Test */}
+      <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-3">
+        {/* Chart */}
+        <Card className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg">
+          <CardContent className="p-5">
+            <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-4">
+              OTP 7 วันล่าสุด
+            </h3>
+            <div style={{ width: "100%", height: 200 }}>
+              <ResponsiveContainer>
+                <BarChart data={chartData} barGap={2}>
+                  <XAxis
+                    dataKey="day"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "var(--text-muted)", fontSize: 11 }}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "var(--text-muted)", fontSize: 11 }}
+                    width={30}
+                  />
+                  <Tooltip content={<ChartTooltip />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
+                  <Bar dataKey="sent" name="ส่ง" fill="var(--accent)" radius={[3, 3, 0, 0]} stackId="a" />
+                  <Bar dataKey="expired" name="หมดอายุ" fill="var(--warning)" radius={[3, 3, 0, 0]} stackId="b" />
+                  <Legend
+                    formatter={(value: string) => (
+                      <span className="text-[11px] text-[var(--text-muted)]">{value}</span>
+                    )}
+                    iconType="circle"
+                    iconSize={8}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Quick Test */}
+        <QuickTestPanel />
+      </div>
+
+      {/* Recent OTPs Table */}
+      <Card className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg">
+        <CardContent className="p-0">
+          <div className="flex items-center justify-between px-5 py-4">
+            <h3 className="text-sm font-semibold text-[var(--text-primary)]">OTP ล่าสุด</h3>
+            <button
+              type="button"
+              onClick={onViewAll}
+              className="text-xs text-[var(--accent)] hover:underline"
+            >
+              ดูทั้งหมด →
+            </button>
           </div>
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-[var(--table-header)] border-b border-[var(--border-default)] hover:bg-transparent">
+                <TableHead className="text-[12px] uppercase text-[var(--text-secondary)] font-semibold tracking-[0.05em]">
+                  เบอร์โทร
+                </TableHead>
+                <TableHead className="text-[12px] uppercase text-[var(--text-secondary)] font-semibold tracking-[0.05em]">
+                  Ref
+                </TableHead>
+                <TableHead className="text-[12px] uppercase text-[var(--text-secondary)] font-semibold tracking-[0.05em]">
+                  สถานะ
+                </TableHead>
+                <TableHead className="text-[12px] uppercase text-[var(--text-secondary)] font-semibold tracking-[0.05em] text-right">
+                  เวลา
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {recentOtps.map((row) => (
+                <TableRow
+                  key={row.id}
+                  className={`border-b border-[var(--border-default)] hover:bg-black ${row.id % 2 === 0 ? "bg-[var(--table-alt-row)]" : ""}`}
+                >
+                  <TableCell
+                    className="text-xs text-[var(--text-primary)]"
+                    style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+                  >
+                    {row.phone}
+                  </TableCell>
+                  <TableCell
+                    className="text-xs text-[var(--text-muted)]"
+                    style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+                  >
+                    {row.ref}
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge status={row.status} />
+                  </TableCell>
+                  <TableCell className="text-xs text-[var(--text-muted)] text-right">
+                    {row.time}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
+    </div>
+  );
+}
 
-      {/* Purpose Types */}
-      <Card className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px]">
-        <CardContent className="p-5">
-          <h2 className="text-base font-semibold text-white mb-4">ประเภท OTP (purpose)</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {[
-              { value: "verify", label: "ยืนยันตัวตน", desc: "สมัครสมาชิก, ยืนยันเบอร์โทร" },
-              { value: "login", label: "เข้าสู่ระบบ", desc: "2FA login, passwordless auth" },
-              { value: "transaction", label: "ยืนยันธุรกรรม", desc: "โอนเงิน, เปลี่ยนรหัสผ่าน" },
-            ].map((p) => (
-              <div key={p.value} className="rounded-xl p-4 bg-[var(--bg-base)] border border-[var(--border-subtle)]">
-                <Badge variant="outline" className="text-xs font-mono text-[var(--accent)] bg-[rgba(0,255,167,0.08)] border-[rgba(0,255,167,0.2)]">{p.value}</Badge>
-                <p className="text-sm font-medium text-white mt-2">{p.label}</p>
-                <p className="text-[11px] text-[var(--text-muted)] mt-1">{p.desc}</p>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+/* ══════════════════════════════════════════════════
+   TAB: ประวัติ (History)
+   ══════════════════════════════════════════════════ */
 
-      {/* API Tabs */}
-      <Card className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] overflow-hidden">
-        <Tabs defaultValue="generate">
-          <div className="border-b border-[var(--border-subtle)]">
-            <TabsList className="bg-transparent h-auto p-0 w-full">
-              <TabsTrigger value="generate" className="flex-1 py-3.5 text-sm font-medium rounded-none border-b-2 border-transparent text-[var(--text-muted)] data-[state=active]:text-[var(--accent)] data-[state=active]:border-[var(--accent)] data-[state=active]:bg-transparent">
-                Generate OTP
-              </TabsTrigger>
-              <TabsTrigger value="verify" className="flex-1 py-3.5 text-sm font-medium rounded-none border-b-2 border-transparent text-[var(--text-muted)] data-[state=active]:text-[var(--accent)] data-[state=active]:border-[var(--accent)] data-[state=active]:bg-transparent">
-                Verify OTP
-              </TabsTrigger>
-            </TabsList>
-          </div>
+function HistoryTab({ historyData }: { historyData: OtpHistoryItem[] }) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const perPage = 20;
 
-          <TabsContent value="generate" className="p-6 space-y-4 mt-0">
-            <div className="flex items-center gap-3 mb-4">
-              <Badge className="text-[10px] font-bold uppercase bg-[rgba(0,255,167,0.08)] text-[var(--accent)] border-[rgba(0,255,167,0.2)]">POST</Badge>
-              <code className="text-sm font-mono text-white">/api/v1/otp/send</code>
-              <Badge variant="outline" className="text-[10px] text-[#FBBF24] border-[rgba(245,158,11,0.2)] ml-auto">3 req/5min</Badge>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <CodeBlock title="Request" code={`curl -X POST https://api.smsok.com/api/v1/otp/send \\
-  -H "Authorization: Bearer YOUR_API_KEY" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "phone": "0891234567",
-    "purpose": "verify"
-  }'`} />
-              <CodeBlock title="Response 201" code={`{
-  "ref": "ABC123EF",
-  "phone": "+66891234567",
-  "purpose": "verify",
-  "expiresAt": "2026-03-09T10:35:00Z",
-  "creditUsed": 1
-}`} />
-            </div>
+  const statusOptions = [
+    { value: "all", label: "ทั้งหมด" },
+    { value: "verified", label: "ยืนยันแล้ว" },
+    { value: "pending", label: "รอยืนยัน" },
+    { value: "expired", label: "หมดอายุ" },
+    { value: "wrong_otp", label: "รหัสผิด" },
+  ];
 
-            {/* Parameters Table */}
-            <Card className="bg-[var(--bg-base)] border-[var(--border-subtle)] rounded-xl overflow-hidden">
-              <p className="text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-wider px-4 pt-3 pb-2">Parameters</p>
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-[var(--bg-secondary)] border-none hover:bg-[var(--bg-secondary)]">
-                    <TableHead className="text-xs uppercase text-[var(--text-secondary)] font-semibold">Field</TableHead>
-                    <TableHead className="text-xs uppercase text-[var(--text-secondary)] font-semibold">Type</TableHead>
-                    <TableHead className="text-xs uppercase text-[var(--text-secondary)] font-semibold">Required</TableHead>
-                    <TableHead className="text-xs uppercase text-[var(--text-secondary)] font-semibold">Description</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow className="border-b border-[var(--border-subtle)]">
-                    <TableCell className="font-mono text-[var(--accent-secondary)] text-xs">phone</TableCell>
-                    <TableCell className="text-xs text-[var(--text-muted)]">string</TableCell>
-                    <TableCell className="text-xs text-[#10B981]">Yes</TableCell>
-                    <TableCell className="text-xs text-[var(--text-muted)]">เบอร์โทร (08x/09x/06x)</TableCell>
-                  </TableRow>
-                  <TableRow className="bg-[var(--bg-muted)]">
-                    <TableCell className="font-mono text-[var(--accent-secondary)] text-xs">purpose</TableCell>
-                    <TableCell className="text-xs text-[var(--text-muted)]">string</TableCell>
-                    <TableCell className="text-xs text-[var(--text-muted)]">No</TableCell>
-                    <TableCell className="text-xs text-[var(--text-muted)]">verify | login | transaction</TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </Card>
-          </TabsContent>
+  const filtered = historyData.filter((row) => {
+    const matchStatus = statusFilter === "all" || row.status === statusFilter;
+    const matchSearch =
+      !searchQuery ||
+      row.phone.includes(searchQuery) ||
+      row.ref.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchStatus && matchSearch;
+  });
 
-          <TabsContent value="verify" className="p-6 space-y-4 mt-0">
-            <div className="flex items-center gap-3 mb-4">
-              <Badge className="text-[10px] font-bold uppercase bg-[rgba(0,255,167,0.08)] text-[var(--accent)] border-[rgba(0,255,167,0.2)]">POST</Badge>
-              <code className="text-sm font-mono text-white">/api/v1/otp/verify</code>
-              <Badge variant="outline" className="text-[10px] text-[#FBBF24] border-[rgba(245,158,11,0.2)] ml-auto">5 attempts max</Badge>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <CodeBlock title="Request" code={`curl -X POST https://api.smsok.com/api/v1/otp/verify \\
-  -H "Authorization: Bearer YOUR_API_KEY" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "ref": "ABC123EF",
-    "code": "123456"
-  }'`} />
-              <CodeBlock title="Response 200" code={`{
-  "valid": true,
-  "verified": true,
-  "ref": "ABC123EF",
-  "phone": "+66891234567",
-  "purpose": "verify"
-}`} />
-            </div>
+  const totalPages = Math.ceil(filtered.length / perPage);
+  const paged = filtered.slice((currentPage - 1) * perPage, currentPage * perPage);
 
-            {/* Error Responses */}
-            <Card className="bg-[var(--bg-base)] border-[var(--border-subtle)] rounded-xl">
-              <CardContent className="p-4">
-                <p className="text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-wider mb-3">Error Responses</p>
-                <div className="space-y-2 text-xs">
-                  {[
-                    { code: "400", msg: "OTP ไม่ถูกต้อง (เหลือ N ครั้ง)" },
-                    { code: "400", msg: "ไม่พบ OTP นี้ หรือ OTP หมดอายุแล้ว" },
-                    { code: "400", msg: "OTP ถูกล็อคแล้ว กรุณาขอรหัสใหม่" },
-                    { code: "429", msg: "Too many requests (rate limited)" },
-                  ].map((err, i) => (
-                    <div key={i} className="flex items-center gap-3 py-2 border-b border-[var(--border-subtle)] last:border-0">
-                      <span className={`font-mono font-bold ${err.code === "429" ? "text-[#F59E0B]" : "text-[#F87171]"}`}>{err.code}</span>
-                      <span className="text-[var(--text-muted)]">{err.msg}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </Card>
+  const handleExport = (format: "csv" | "json") => {
+    const data = format === "json" ? JSON.stringify(filtered, null, 2) : [
+      "phone,ref,otp,status,verifyTime,time",
+      ...filtered.map((r) => `${r.phone},${r.ref},${r.otp},${r.status},${r.verifyTime},${r.time}`),
+    ].join("\n");
+    const blob = new Blob([data], { type: format === "json" ? "application/json" : "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `otp-history.${format}`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
-      {/* Live Test Panel */}
-      <OtpTestPanel />
-
-      {/* Quick Start */}
-      <Card className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px]">
-        <CardContent className="p-6">
-          <h2 className="text-base font-semibold text-white mb-4">Quick Start — Node.js</h2>
-          <CodeBlock title="JavaScript / Node.js" code={`const API_KEY = "sk_live_your_key";
-const BASE = "https://api.smsok.com/api/v1";
-
-// 1. Generate OTP
-const gen = await fetch(BASE + "/otp/send", {
-  method: "POST",
-  headers: {
-    "Authorization": "Bearer " + API_KEY,
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({ phone: "0891234567", purpose: "verify" })
-});
-const { ref, expiresAt } = await gen.json();
-
-// 2. User enters code from SMS...
-const userCode = "123456";
-
-// 3. Verify OTP
-const verify = await fetch(BASE + "/otp/verify", {
-  method: "POST",
-  headers: {
-    "Authorization": "Bearer " + API_KEY,
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({ ref, code: userCode })
-});
-const { valid } = await verify.json();
-console.log(valid ? "OTP correct!" : "Invalid OTP");`} />
-        </CardContent>
-      </Card>
-
-      {/* CTA */}
-      <div className="flex items-center gap-3">
-        <Link href="/dashboard/api-keys">
-          <Button className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] rounded-xl font-semibold gap-2">
-            สร้าง API Key เลย <ArrowRight className="w-4 h-4" />
+  return (
+    <div className="space-y-4 p-4">
+      {/* Filter Bar */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative" style={{ width: 260 }}>
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-muted)]" />
+          <Input
+            placeholder="ค้นหาเบอร์โทร, Ref..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="h-9 pl-9 bg-[var(--bg-surface)] border-[var(--border-default)] text-[var(--text-primary)] rounded-xl text-sm"
+          />
+        </div>
+        <div style={{ width: 160 }}>
+          <CustomSelect
+            value={statusFilter}
+            onChange={(v) => {
+              setStatusFilter(v);
+              setCurrentPage(1);
+            }}
+            options={statusOptions}
+            placeholder="สถานะ"
+          />
+        </div>
+        <div className="ml-auto flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => handleExport("csv")}
+            className="h-9 border-[var(--border-default)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-xl text-xs gap-1.5"
+          >
+            <Download className="w-3.5 h-3.5" /> CSV
           </Button>
-        </Link>
+          <Button
+            variant="outline"
+            onClick={() => handleExport("json")}
+            className="h-9 border-[var(--border-default)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-xl text-xs gap-1.5"
+          >
+            <Download className="w-3.5 h-3.5" /> JSON
+          </Button>
+        </div>
+      </div>
+
+      {/* History Table */}
+      <Card className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-[var(--table-header)] border-b border-[var(--border-default)] hover:bg-transparent">
+              <TableHead className="text-[12px] uppercase text-[var(--text-secondary)] font-semibold tracking-[0.05em]">เบอร์โทร</TableHead>
+              <TableHead className="text-[12px] uppercase text-[var(--text-secondary)] font-semibold tracking-[0.05em]">Ref</TableHead>
+              <TableHead className="text-[12px] uppercase text-[var(--text-secondary)] font-semibold tracking-[0.05em]">OTP</TableHead>
+              <TableHead className="text-[12px] uppercase text-[var(--text-secondary)] font-semibold tracking-[0.05em]">สถานะ</TableHead>
+              <TableHead className="text-[12px] uppercase text-[var(--text-secondary)] font-semibold tracking-[0.05em]">เวลายืนยัน</TableHead>
+              <TableHead className="text-[12px] uppercase text-[var(--text-secondary)] font-semibold tracking-[0.05em] text-right">เวลา</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {paged.map((row) => (
+              <TableRow
+                key={row.id}
+                className={`border-b border-[var(--border-default)] hover:bg-black ${row.id % 2 === 0 ? "bg-[var(--table-alt-row)]" : ""}`}
+              >
+                <TableCell
+                  className="text-xs text-[var(--text-primary)]"
+                  style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+                >
+                  {row.phone}
+                </TableCell>
+                <TableCell
+                  className="text-xs text-[var(--text-muted)]"
+                  style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+                >
+                  {row.ref}
+                </TableCell>
+                <TableCell
+                  className="text-xs text-[var(--text-muted)]"
+                  style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+                >
+                  {row.otp}
+                </TableCell>
+                <TableCell>
+                  <StatusBadge status={row.status} />
+                </TableCell>
+                <TableCell className="text-xs text-[var(--text-muted)]">{row.verifyTime}</TableCell>
+                <TableCell className="text-xs text-[var(--text-muted)] text-right">{row.time}</TableCell>
+              </TableRow>
+            ))}
+            {paged.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center text-xs text-[var(--text-muted)] py-8">
+                  ไม่พบข้อมูล
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-5 py-3 border-t border-[var(--border-default)]">
+            <p className="text-xs text-[var(--text-muted)]">
+              แสดง {(currentPage - 1) * perPage + 1}-{Math.min(currentPage * perPage, filtered.length)} จาก {filtered.length}
+            </p>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="h-7 w-7 p-0 border-[var(--border-default)] text-[var(--text-muted)] rounded-lg"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </Button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <Button
+                  key={page}
+                  variant={page === currentPage ? "default" : "outline"}
+                  onClick={() => setCurrentPage(page)}
+                  className={`h-7 w-7 p-0 rounded-lg text-xs ${
+                    page === currentPage
+                      ? "bg-[var(--accent)] text-[var(--bg-base)]"
+                      : "border-[var(--border-default)] text-[var(--text-muted)]"
+                  }`}
+                >
+                  {page}
+                </Button>
+              ))}
+              <Button
+                variant="outline"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="h-7 w-7 p-0 border-[var(--border-default)] text-[var(--text-muted)] rounded-lg"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════
+   TAB: ตั้งค่า (Settings)
+   ══════════════════════════════════════════════════ */
+
+function SettingsTab() {
+  const [otpLength, setOtpLength] = useState("6");
+  const [expiry, setExpiry] = useState("300");
+  const [rateLimit, setRateLimit] = useState("5");
+  const [template, setTemplate] = useState(
+    "รหัส OTP ของคุณคือ {{otp}} (Ref: {{ref}}) หมดอายุใน {{expiry_minutes}} นาที"
+  );
+  const [blockDuplicate, setBlockDuplicate] = useState(true);
+  const [alertRateLimit, setAlertRateLimit] = useState(true);
+  const [forceVerify, setForceVerify] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const templateRef = useRef<HTMLTextAreaElement>(null);
+
+  const otpLengthOptions = [
+    { value: "4", label: "4 หลัก" },
+    { value: "6", label: "6 หลัก" },
+    { value: "8", label: "8 หลัก" },
+  ];
+
+  const expiryMinutes = Math.floor(Number(expiry) / 60);
+
+  const variables = [
+    { key: "{{otp}}", label: "OTP" },
+    { key: "{{ref}}", label: "Ref" },
+    { key: "{{expiry_minutes}}", label: "นาที" },
+    { key: "{{phone}}", label: "เบอร์โทร" },
+  ];
+
+  const insertVariable = (varKey: string) => {
+    if (!templateRef.current) return;
+    const el = templateRef.current;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const newVal = template.slice(0, start) + varKey + template.slice(end);
+    setTemplate(newVal);
+    setTimeout(() => {
+      el.focus();
+      el.setSelectionRange(start + varKey.length, start + varKey.length);
+    }, 0);
+  };
+
+  const previewText = template
+    .replace("{{otp}}", "482916")
+    .replace("{{ref}}", "AB1234")
+    .replace("{{expiry_minutes}}", String(expiryMinutes))
+    .replace("{{phone}}", "089xxx5678");
+
+  const handleSave = () => {
+    setSaving(true);
+    setTimeout(() => setSaving(false), 1000);
+  };
+
+  return (
+    <div className="space-y-4 p-4">
+      {/* General Settings */}
+      <Card className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg">
+        <CardContent className="p-5 space-y-5">
+          <h3 className="text-sm font-semibold text-[var(--text-primary)]">ตั้งค่าทั่วไป</h3>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* OTP Length */}
+            <div>
+              <label className="block text-xs text-[var(--text-muted)] mb-1.5">ความยาว OTP</label>
+              <CustomSelect
+                value={otpLength}
+                onChange={setOtpLength}
+                options={otpLengthOptions}
+                placeholder="เลือก..."
+              />
+            </div>
+
+            {/* Expiry */}
+            <div>
+              <label className="block text-xs text-[var(--text-muted)] mb-1.5">
+                อายุ OTP (วินาที)
+              </label>
+              <Input
+                type="number"
+                min={60}
+                max={600}
+                value={expiry}
+                onChange={(e) => setExpiry(e.target.value)}
+                className="h-9 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] rounded-xl"
+              />
+              <p className="text-[11px] text-[var(--text-muted)] mt-1">= {expiryMinutes} นาที</p>
+            </div>
+
+            {/* Rate Limit */}
+            <div>
+              <label className="block text-xs text-[var(--text-muted)] mb-1.5">Rate Limit</label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={rateLimit}
+                  onChange={(e) => setRateLimit(e.target.value)}
+                  className="h-9 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] rounded-xl pr-24"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-[var(--text-muted)] pointer-events-none">
+                  ครั้งต่อชั่วโมง
+                </span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Message Template */}
+      <Card className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg">
+        <CardContent className="p-5 space-y-4">
+          <h3 className="text-sm font-semibold text-[var(--text-primary)]">ข้อความ SMS</h3>
+
+          <Textarea
+            ref={templateRef}
+            value={template}
+            onChange={(e) => setTemplate(e.target.value)}
+            rows={3}
+            className="bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] rounded-xl text-sm resize-none"
+          />
+
+          {/* Variable chips */}
+          <div className="flex flex-wrap gap-2">
+            {variables.map((v) => (
+              <button
+                key={v.key}
+                type="button"
+                onClick={() => insertVariable(v.key)}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-[var(--bg-base)] border border-[var(--border-default)] text-[var(--accent)] hover:border-[var(--accent)] transition-colors"
+              >
+                <span style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{v.key}</span>
+                <span className="text-[var(--text-muted)]">{v.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Preview */}
+          <div className="rounded-xl bg-[var(--bg-base)] border border-[var(--border-default)] p-4">
+            <p className="text-[10px] uppercase text-[var(--text-muted)] tracking-wider mb-2 font-medium">
+              ตัวอย่างข้อความ
+            </p>
+            <p className="text-sm text-[var(--text-primary)] leading-relaxed">{previewText}</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Security */}
+      <Card className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg">
+        <CardContent className="p-5 space-y-4">
+          <h3 className="text-sm font-semibold text-[var(--text-primary)]">ความปลอดภัย</h3>
+
+          <div className="space-y-3">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <Checkbox
+                checked={blockDuplicate}
+                onCheckedChange={(v) => setBlockDuplicate(!!v)}
+              />
+              <div>
+                <p className="text-sm text-[var(--text-primary)]">บล็อก OTP ซ้ำ</p>
+                <p className="text-[11px] text-[var(--text-muted)]">
+                  ป้องกันการส่ง OTP ซ้ำไปยังเบอร์เดิมก่อนหมดอายุ
+                </p>
+              </div>
+            </label>
+
+            <label className="flex items-center gap-3 cursor-pointer">
+              <Checkbox
+                checked={alertRateLimit}
+                onCheckedChange={(v) => setAlertRateLimit(!!v)}
+              />
+              <div>
+                <p className="text-sm text-[var(--text-primary)]">แจ้งเตือนเมื่อ rate limit เกิน</p>
+                <p className="text-[11px] text-[var(--text-muted)]">
+                  ส่ง notification เมื่อมีการเรียกใช้เกินจำนวนที่กำหนด
+                </p>
+              </div>
+            </label>
+
+            <label className="flex items-center gap-3 cursor-pointer">
+              <Checkbox
+                checked={forceVerify}
+                onCheckedChange={(v) => setForceVerify(!!v)}
+              />
+              <div>
+                <p className="text-sm text-[var(--text-primary)]">บังคับ verify ก่อนส่งใหม่</p>
+                <p className="text-[11px] text-[var(--text-muted)]">
+                  ต้อง verify OTP ก่อนจึงจะส่งรหัสใหม่ได้
+                </p>
+              </div>
+            </label>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Footer buttons */}
+      <div className="flex items-center justify-end gap-3">
+        <Button
+          variant="outline"
+          className="h-9 border-[var(--border-default)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-xl"
+        >
+          ยกเลิก
+        </Button>
+        <Button
+          onClick={handleSave}
+          disabled={saving}
+          className="h-9 bg-[var(--accent)] hover:opacity-90 text-[var(--bg-base)] rounded-xl font-semibold"
+        >
+          {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : null}
+          บันทึกการตั้งค่า
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════
+   MAIN PAGE
+   ══════════════════════════════════════════════════ */
+
+export default function OtpPage() {
+  const [activeTab, setActiveTab] = useState("overview");
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<OtpStats>(DEFAULT_STATS);
+  const [chartData, setChartData] = useState<OtpChartPoint[]>([]);
+  const [recentOtps, setRecentOtps] = useState<OtpRecentItem[]>([]);
+  const [historyData, setHistoryData] = useState<OtpHistoryItem[]>([]);
+
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/v1/otp/stats");
+      if (!res.ok) {
+        throw new Error(`API error: ${res.status}`);
+      }
+      const json = await res.json();
+      const normalized = normalizeResponse(json);
+      setStats(normalized.stats);
+      setChartData(normalized.chart);
+      setRecentOtps(normalized.recentOtps);
+      setHistoryData(normalized.history);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "ไม่สามารถโหลดข้อมูล OTP ได้";
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-6 h-6 animate-spin" style={{ color: "var(--accent)" }} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4 md:p-8 pb-20 md:pb-8 max-w-6xl space-y-5">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Lock className="w-5 h-5" style={{ color: "var(--accent)" }} />
+          <div>
+            <h1 className="text-[20px] font-semibold text-[var(--text-primary)]">บริการ OTP</h1>
+            <p className="text-[13px] text-[var(--text-muted)]">
+              จัดการ OTP สำหรับระบบยืนยันตัวตน
+            </p>
+          </div>
+        </div>
         <Link href="/dashboard/docs">
-          <Button variant="outline" className="border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white rounded-xl">
-            ดู API Docs ทั้งหมด
+          <Button
+            variant="outline"
+            className="h-9 border-[var(--border-default)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg text-sm gap-1.5"
+          >
+            <BookOpen className="w-4 h-4" /> API Docs →
           </Button>
         </Link>
+      </div>
+
+      {/* Tabs */}
+      <div>
+        <div className="border-b border-[var(--border-default)]">
+          <div className="flex gap-6">
+            {[
+              { value: "overview", label: "ภาพรวม" },
+              { value: "history", label: "ประวัติ" },
+              { value: "settings", label: "ตั้งค่า" },
+            ].map((tab) => (
+              <button
+                key={tab.value}
+                type="button"
+                onClick={() => setActiveTab(tab.value)}
+                className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === tab.value
+                    ? "text-[var(--text-primary)] border-[var(--accent)]"
+                    : "text-[var(--text-muted)] border-transparent hover:text-[var(--text-primary)]"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === "overview" && (
+          <OverviewTab
+            onViewAll={() => setActiveTab("history")}
+            stats={stats}
+            chartData={chartData}
+            recentOtps={recentOtps}
+          />
+        )}
+        {activeTab === "history" && <HistoryTab historyData={historyData} />}
+        {activeTab === "settings" && <SettingsTab />}
       </div>
     </div>
   );

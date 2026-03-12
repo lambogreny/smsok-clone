@@ -19,10 +19,10 @@ export default function AuthError({
 
   return (
     <div className="min-h-screen flex items-center justify-center px-6 bg-[var(--bg-base)]">
-      <Card className="max-w-md w-full bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] shadow-none">
+      <Card className="max-w-md w-full bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-lg shadow-none">
         <CardContent className="p-10 sm:p-14 text-center">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.15)] flex items-center justify-center">
-            <AlertCircle className="w-10 h-10 text-[#F87171]" />
+          <div className="w-20 h-20 mx-auto mb-6 rounded-lg bg-[rgba(var(--error-rgb),0.08)] border border-[rgba(var(--error-rgb),0.15)] flex items-center justify-center">
+            <AlertCircle className="w-10 h-10 text-[var(--error)]" />
           </div>
 
           <h1 className="text-2xl font-bold text-white mb-2">เกิดข้อผิดพลาด</h1>

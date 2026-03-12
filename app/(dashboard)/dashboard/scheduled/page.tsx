@@ -1,10 +1,13 @@
-import { getSession } from "@/lib/auth";
-import { redirect } from "next/navigation";
-import Link from "next/link";
+"use client";
 
-export default async function ScheduledPage() {
-  const user = await getSession();
-  if (!user) redirect("/login");
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { CalendarClock } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import EmptyState from "@/components/EmptyState";
+
+export default function ScheduledPage() {
+  const router = useRouter();
 
   return (
     <div className="p-6 md:p-8 max-w-6xl animate-fade-in-up">
@@ -23,14 +26,14 @@ export default async function ScheduledPage() {
         </div>
         <Link
           href="/dashboard"
-          className="bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] rounded-xl hover:border-[rgba(0,255,167,0.3)] hover:bg-[rgba(0,255,167,0.04)] px-4 py-2 text-sm font-medium"
+          className="bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] rounded-xl hover:border-[rgba(var(--accent-rgb),0.3)] hover:bg-[rgba(var(--accent-rgb),0.04)] px-4 py-2 text-sm font-medium"
         >
           กลับแดชบอร์ด
         </Link>
       </div>
 
       {/* Schedule Form */}
-      <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-[20px] p-6 mb-8">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg p-6 mb-8">
         <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-6">
           ตั้งเวลาส่งข้อความใหม่
         </h2>
@@ -81,7 +84,7 @@ export default async function ScheduledPage() {
               <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
                 วันที่
               </label>
-              <input type="date" className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none px-3 py-2 w-full" disabled />
+              <Input type="date" className="w-full" disabled />
             </div>
 
             {/* Time Picker */}
@@ -89,7 +92,7 @@ export default async function ScheduledPage() {
               <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
                 เวลา
               </label>
-              <input type="time" className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none px-3 py-2 w-full" disabled />
+              <Input type="time" className="w-full" disabled />
             </div>
           </div>
 
@@ -106,13 +109,13 @@ export default async function ScheduledPage() {
       </div>
 
       {/* Scheduled Messages Table */}
-      <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-[20px] p-6">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg p-6">
         <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-6">
           รายการตั้งเวลา
         </h2>
 
         {/* Table Header */}
-        <div className="hidden md:grid grid-cols-6 gap-4 px-4 py-3 text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border-subtle)]">
+        <div className="hidden md:grid grid-cols-6 gap-4 px-4 py-3 text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border-default)]">
           <div>ชื่อผู้ส่ง</div>
           <div>เบอร์ปลายทาง</div>
           <div>ข้อความ</div>
@@ -122,32 +125,18 @@ export default async function ScheduledPage() {
         </div>
 
         {/* Empty State */}
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="w-16 h-16 rounded-full bg-[var(--bg-surface)] flex items-center justify-center mb-4">
-            <svg
-              className="w-8 h-8 text-[var(--text-muted)]"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1.5}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-          </div>
-          <p className="text-[var(--text-secondary)] text-sm font-medium mb-1">
-            ยังไม่มีข้อความตั้งเวลา
-          </p>
-          <p className="text-[var(--text-muted)] text-xs">
-            ฟีเจอร์นี้จะเปิดให้ใช้งานเร็วๆ นี้
-          </p>
-        </div>
+        <EmptyState
+          icon={CalendarClock}
+          iconColor="var(--accent)"
+          iconBg="rgba(var(--accent-rgb), 0.1)"
+          title="ยังไม่มีข้อความตั้งเวลา"
+          description="ตั้งเวลาส่ง SMS ล่วงหน้าเพื่อเข้าถึงลูกค้าในเวลาที่เหมาะสม"
+          ctaLabel="ตั้งเวลาส่ง SMS"
+          ctaAction={() => router.push("/dashboard/send")}
+        />
 
         {/* Legend */}
-        <div className="flex items-center gap-4 pt-4 border-t border-[var(--border-subtle)]">
+        <div className="flex items-center gap-4 pt-4 border-t border-[var(--border-default)]">
           <span className="text-xs text-[var(--text-muted)]">สถานะ:</span>
           <span className="badge badge-warning">รอส่ง</span>
           <span className="badge badge-success">ส่งแล้ว</span>

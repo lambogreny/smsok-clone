@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs"
 import { env } from "./env"
 
 const APP_NAME = "SMSOK"
-const RECOVERY_CODE_COUNT = 8
+const RECOVERY_CODE_COUNT = 10
 const RECOVERY_CODE_LENGTH = 8 // 8 hex chars = 4 bytes
 
 // ── Rate Limiting (in-memory) ───────────────────────────
@@ -55,24 +55,16 @@ setInterval(() => {
 }, 30 * 60 * 1000).unref()
 
 // ── Encryption (AES-256-GCM) ────────────────────────────
-// Uses dedicated TWO_FA_ENCRYPTION_KEY (separate from JWT_SECRET)
-// Falls back to derived key from JWT_SECRET only in dev if env not set
+// Uses dedicated TWO_FA_ENCRYPTION_KEY — MUST be set (no fallback)
 
 function getEncryptionKey(): Buffer {
   const keySource = env.TWO_FA_ENCRYPTION_KEY
-  if (keySource) {
-    return createHmac("sha256", keySource)
-      .update("smsok-2fa-encryption-key-v2")
-      .digest()
+  if (!keySource) {
+    throw new Error("TWO_FA_ENCRYPTION_KEY is required — set it in .env")
   }
 
-  // Fallback for dev only — production MUST set TWO_FA_ENCRYPTION_KEY
-  if (env.NODE_ENV === "production") {
-    throw new Error("TWO_FA_ENCRYPTION_KEY is required in production")
-  }
-
-  return createHmac("sha256", env.JWT_SECRET)
-    .update("smsok-2fa-encryption-key-dev-fallback")
+  return createHmac("sha256", keySource)
+    .update("smsok-2fa-encryption-key-v2")
     .digest()
 }
 

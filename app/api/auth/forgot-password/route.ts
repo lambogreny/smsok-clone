@@ -16,7 +16,7 @@ function getClientIp(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
-  const limit = checkRateLimit(ip, "password");
+  const limit = await checkRateLimit(ip, "password");
 
   if (limit.allowed) {
     try {

@@ -31,7 +31,7 @@ export function createCampaignWorker() {
         await prisma.campaign.update({
           where: { id: campaignId },
           data: { status: "sending" },
-        }).catch(() => {})
+        }).catch((err) => { console.error(`[Campaign Worker] Failed to update status to sending: campaignId=${campaignId}`, err); throw err })
       }
 
       const { sendSingleSms } = await import("../../sms-gateway")
@@ -67,31 +67,27 @@ export function createCampaignWorker() {
             creditUsed: sent,
             completedAt: new Date(),
           },
-        }).catch(() => {})
+        }).catch((err) => { console.error(`[Campaign Worker] Failed to update completion metrics: campaignId=${campaignId}`, err); throw err })
       }
 
-      // Refund credits for failed sends
+      // Refund package quota for failed sends (tier D+ only)
       if (failed > 0 && userId) {
-        await prisma.$transaction([
-          prisma.user.update({
-            where: { id: userId },
-            data: { credits: { increment: failed } },
-          }),
-          prisma.creditTransaction.create({
-            data: {
-              userId,
-              amount: failed,
-              balance: 0, // will be set correctly by trigger/next read
-              type: "REFUND",
-              description: `Campaign refund: ${failed} failed SMS`,
-              refId: campaignId,
-            },
-          }),
-        ]).catch(() => {})
+        const { refundQuotaIfEligible } = await import("../../package/quota")
+        const quota = await import("../../package/quota").then(m => m.getRemainingQuota(userId))
+        if (quota.packages.length > 0) {
+          const pkg = quota.packages[0]
+          await prisma.$transaction(async (tx) => {
+            await refundQuotaIfEligible(tx, pkg.id, failed)
+          }).catch((err) => {
+            console.error(`[Campaign Worker] CRITICAL: Refund failed! userId=${userId} amount=${failed} packageId=${pkg.id}`, err)
+            // Re-throw so BullMQ retries this job — financial data must not be lost
+            throw err
+          })
+        }
       }
 
       // Dispatch webhook
-      dispatchWebhookEvent(userId, "sms.sent", {
+      dispatchWebhookEvent(userId, "campaign.completed", {
         campaignId,
         sent,
         failed,

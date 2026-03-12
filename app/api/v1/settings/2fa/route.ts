@@ -1,26 +1,14 @@
-import { NextRequest } from "next/server";
-import { authenticateApiKey, apiResponse, apiError } from "@/lib/api-auth";
-import { prisma } from "@/lib/db";
+import { ApiError, apiResponse, apiError } from "@/lib/api-auth";
+import { getSession } from "@/lib/auth";
+import { get2FAStatus } from "@/lib/actions/two-factor";
 
 // GET /api/v1/settings/2fa — get 2FA status
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
-    const user = await authenticateApiKey(req);
+    const session = await getSession();
+    if (!session?.id) throw new ApiError(401, "Unauthorized");
 
-    const tfa = await prisma.twoFactorAuth.findUnique({
-      where: { userId: user.id },
-      select: {
-        enabled: true,
-        createdAt: true,
-        recoveryCodes: true,
-      },
-    });
-
-    return apiResponse({
-      enabled: tfa?.enabled ?? false,
-      setupAt: tfa?.createdAt ?? null,
-      remainingRecoveryCodes: tfa ? tfa.recoveryCodes.filter((c: string) => c !== "").length : 0,
-    });
+    return apiResponse(await get2FAStatus());
   } catch (error) {
     return apiError(error);
   }

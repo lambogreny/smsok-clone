@@ -28,7 +28,7 @@ export async function getContactActivity(
   const activities: ActivityItem[] = [];
 
   // Query relevant tables in parallel
-  const [messages, otps, credits] = await Promise.all([
+  const [messages, otps] = await Promise.all([
     !typeFilter || typeFilter === "sms"
       ? prisma.message.findMany({
           where: { userId, recipient: contact.phone },
@@ -53,20 +53,6 @@ export async function getContactActivity(
             purpose: true,
             verified: true,
             expiresAt: true,
-            createdAt: true,
-          },
-          orderBy: { createdAt: "desc" },
-          take: 50,
-        })
-      : [],
-    !typeFilter || typeFilter === "credit"
-      ? prisma.creditTransaction.findMany({
-          where: { userId, description: { contains: contact.phone } },
-          select: {
-            id: true,
-            amount: true,
-            type: true,
-            description: true,
             createdAt: true,
           },
           orderBy: { createdAt: "desc" },
@@ -99,19 +85,6 @@ export async function getContactActivity(
         purpose: o.purpose,
         verified: o.verified,
         expiresAt: o.expiresAt.toISOString(),
-      },
-    });
-  }
-
-  for (const c of credits) {
-    activities.push({
-      type: "credit",
-      id: c.id,
-      timestamp: c.createdAt.toISOString(),
-      data: {
-        amount: c.amount,
-        transactionType: c.type,
-        description: c.description,
       },
     });
   }

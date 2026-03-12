@@ -426,7 +426,7 @@ export default function GroupDetailClient({
       {/* Back Link */}
       <Link
         href="/dashboard/groups"
-        className="inline-flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-white transition-colors mb-4"
+        className="inline-flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors mb-4"
       >
         <ArrowLeft className="w-3 h-3" />
         กลับไปหน้ากลุ่ม
@@ -435,11 +435,11 @@ export default function GroupDetailClient({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-[rgba(0,255,167,0.08)] border border-[rgba(0,255,167,0.15)] flex items-center justify-center text-[var(--accent)]">
+          <div className="w-12 h-12 rounded-lg bg-[rgba(var(--accent-rgb),0.08)] border border-[rgba(var(--accent-rgb),0.15)] flex items-center justify-center text-[var(--accent)]">
             <Users className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold tracking-tight text-white">
+            <h2 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">
               {groupName}
             </h2>
             <p className="text-sm text-[var(--text-muted)] mt-0.5">
@@ -463,7 +463,7 @@ export default function GroupDetailClient({
           <Button
             variant="outline"
             onClick={() => fileInputRef.current?.click()}
-            className="border-[var(--border-subtle)] bg-transparent text-[var(--text-muted)] hover:text-white hover:border-[rgba(0,255,167,0.3)]"
+            className="border-[var(--border-default)] bg-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[rgba(var(--accent-rgb),0.3)]"
           >
             <Upload className="w-4 h-4 mr-1.5" />
             นำเข้า CSV
@@ -489,14 +489,14 @@ export default function GroupDetailClient({
             setSearch(e.target.value);
             setPage(1);
           }}
-          className="pl-10 h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(0,255,167,0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+          className="pl-10 h-11 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]"
         />
       </div>
 
       {/* Batch Actions Bar */}
       {selectedIds.size > 0 && (
-        <Card className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] p-4 mb-4 flex items-center gap-3 flex-wrap">
-          <span className="text-sm text-white font-medium">
+        <Card className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg p-4 mb-4 flex items-center gap-3 flex-wrap">
+          <span className="text-sm text-[var(--text-primary)] font-medium">
             เลือก {selectedIds.size} รายชื่อ
           </span>
           <div className="h-4 w-px bg-[var(--border-subtle)]" />
@@ -505,7 +505,7 @@ export default function GroupDetailClient({
             size="sm"
             onClick={handleBulkRemove}
             disabled={isPending}
-            className="border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/15 hover:text-red-300"
+            className="border-[rgba(var(--error-rgb,239,68,68),0.2)] bg-[rgba(var(--error-rgb,239,68,68),0.1)] text-[var(--error)] hover:bg-[rgba(var(--error-rgb,239,68,68),0.15)] hover:text-[var(--error)]"
           >
             {isPending ? (
               <Loader2 className="w-3 h-3 mr-1 animate-spin" />
@@ -518,7 +518,7 @@ export default function GroupDetailClient({
             variant="ghost"
             size="sm"
             onClick={() => setSelectedIds(new Set())}
-            className="text-[var(--text-muted)] hover:text-white"
+            className="text-[var(--text-muted)] hover:text-[var(--text-primary)]"
           >
             ยกเลิก
           </Button>
@@ -528,10 +528,10 @@ export default function GroupDetailClient({
       {/* Members Table — Desktop */}
       {paginatedMembers.length > 0 ? (
         <>
-          <Card className="hidden md:block bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] overflow-hidden">
+          <Card className="hidden md:block bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow className="border-b border-[var(--border-subtle)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-secondary)]">
+                <TableRow className="border-b border-[var(--border-default)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-secondary)]">
                   <TableHead className="w-10 px-3">
                     <Checkbox
                       checked={allSelected}
@@ -556,9 +556,9 @@ export default function GroupDetailClient({
                 {paginatedMembers.map((m, i) => (
                   <TableRow
                     key={m.id}
-                    className={`border-b border-[var(--border-subtle)] hover:bg-[var(--bg-surface-hover)] transition-colors group ${
+                    className={`border-b border-[var(--border-default)] hover:bg-[var(--bg-surface-hover)] transition-colors group ${
                       i % 2 === 1 ? "bg-[var(--bg-muted)]" : "bg-[var(--bg-surface)]"
-                    } ${selectedIds.has(m.contactId) ? "bg-[rgba(0,255,167,0.04)]" : ""}`}
+                    } ${selectedIds.has(m.contactId) ? "bg-[rgba(var(--accent-rgb),0.04)]" : ""}`}
                   >
                     <TableCell className="px-3">
                       <Checkbox
@@ -566,7 +566,7 @@ export default function GroupDetailClient({
                         onCheckedChange={() => toggleSelect(m.contactId)}
                       />
                     </TableCell>
-                    <TableCell className="text-sm text-white font-medium">
+                    <TableCell className="text-sm text-[var(--text-primary)] font-medium">
                       {m.name}
                     </TableCell>
                     <TableCell className="text-sm text-[var(--text-muted)] font-mono">
@@ -579,7 +579,7 @@ export default function GroupDetailClient({
                       <button
                         onClick={() => handleRemoveSingle(m)}
                         disabled={isPending}
-                        className="w-7 h-7 rounded-lg hover:bg-[rgba(239,68,68,0.06)] flex items-center justify-center text-[var(--text-muted)] hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 ml-auto disabled:opacity-50"
+                        className="w-7 h-7 rounded-lg hover:bg-[rgba(var(--error-rgb,239,68,68),0.06)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--error)] transition-colors opacity-0 group-hover:opacity-100 ml-auto disabled:opacity-50"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -591,7 +591,7 @@ export default function GroupDetailClient({
 
             {/* Pagination */}
             {filteredMembers.length > PAGE_SIZE && (
-              <div className="px-5 py-4 border-t border-[var(--border-subtle)] flex items-center justify-between">
+              <div className="px-5 py-4 border-t border-[var(--border-default)] flex items-center justify-between">
                 <span className="text-xs text-[var(--text-muted)]">
                   แสดง {(page - 1) * PAGE_SIZE + 1}–
                   {Math.min(page * PAGE_SIZE, filteredMembers.length)} จาก{" "}
@@ -603,7 +603,7 @@ export default function GroupDetailClient({
                     size="sm"
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page <= 1}
-                    className="border-[var(--border-subtle)] bg-transparent text-[var(--text-muted)] hover:text-white disabled:opacity-50"
+                    className="border-[var(--border-default)] bg-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] disabled:opacity-50"
                   >
                     <ChevronLeft className="w-3 h-3 mr-1" />
                     ก่อนหน้า
@@ -618,7 +618,7 @@ export default function GroupDetailClient({
                       setPage((p) => Math.min(totalPages, p + 1))
                     }
                     disabled={page >= totalPages}
-                    className="border-[var(--border-subtle)] bg-transparent text-[var(--text-muted)] hover:text-white disabled:opacity-50"
+                    className="border-[var(--border-default)] bg-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] disabled:opacity-50"
                   >
                     ถัดไป
                     <ChevronRight className="w-3 h-3 ml-1" />
@@ -633,9 +633,9 @@ export default function GroupDetailClient({
             {paginatedMembers.map((m) => (
               <Card
                 key={m.id}
-                className={`bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] p-4 ${
+                className={`bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg p-4 ${
                   selectedIds.has(m.contactId)
-                    ? "border-[rgba(0,255,167,0.3)]"
+                    ? "border-[rgba(var(--accent-rgb),0.3)]"
                     : ""
                 }`}
               >
@@ -646,7 +646,7 @@ export default function GroupDetailClient({
                     className="mt-1"
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold text-white">
+                    <div className="text-sm font-semibold text-[var(--text-primary)]">
                       {m.name}
                     </div>
                     <div className="text-xs text-[var(--text-muted)] font-mono mt-0.5">
@@ -661,7 +661,7 @@ export default function GroupDetailClient({
                   <button
                     onClick={() => handleRemoveSingle(m)}
                     disabled={isPending}
-                    className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--text-muted)] hover:text-red-400 transition-colors"
+                    className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--error)] transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -681,7 +681,7 @@ export default function GroupDetailClient({
                     size="sm"
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page <= 1}
-                    className="border-[var(--border-subtle)] bg-transparent text-[var(--text-muted)] disabled:opacity-50"
+                    className="border-[var(--border-default)] bg-transparent text-[var(--text-muted)] disabled:opacity-50"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
@@ -692,7 +692,7 @@ export default function GroupDetailClient({
                       setPage((p) => Math.min(totalPages, p + 1))
                     }
                     disabled={page >= totalPages}
-                    className="border-[var(--border-subtle)] bg-transparent text-[var(--text-muted)] disabled:opacity-50"
+                    className="border-[var(--border-default)] bg-transparent text-[var(--text-muted)] disabled:opacity-50"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </Button>
@@ -703,7 +703,7 @@ export default function GroupDetailClient({
         </>
       ) : members.length > 0 ? (
         /* Search no results */
-        <Card className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] p-8 text-center">
+        <Card className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg p-8 text-center">
           <p className="text-sm text-[var(--text-muted)]">
             ไม่พบรายชื่อที่ตรงกับการค้นหา
           </p>
@@ -716,11 +716,11 @@ export default function GroupDetailClient({
         </Card>
       ) : (
         /* Empty state */
-        <Card className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] p-12 text-center">
-          <div className="w-16 h-16 rounded-full bg-[rgba(0,255,167,0.08)] border border-[rgba(0,255,167,0.15)] flex items-center justify-center mx-auto mb-4">
+        <Card className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg p-12 text-center">
+          <div className="w-16 h-16 rounded-full bg-[rgba(var(--accent-rgb),0.08)] border border-[rgba(var(--accent-rgb),0.15)] flex items-center justify-center mx-auto mb-4">
             <UserPlus className="w-8 h-8 text-[var(--accent)]" />
           </div>
-          <h3 className="text-lg font-semibold text-white mb-2">
+          <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">
             ยังไม่มีสมาชิก
           </h3>
           <p className="text-sm text-[var(--text-muted)] mb-6">
@@ -740,9 +740,9 @@ export default function GroupDetailClient({
           ADD TO GROUP DIALOG
           ========================================== */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] sm:max-w-[560px] flex flex-col max-h-[85vh]">
+        <DialogContent className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg sm:max-w-[560px] flex flex-col max-h-[85vh]">
           <DialogHeader>
-            <DialogTitle className="text-white text-lg">
+            <DialogTitle className="text-[var(--text-primary)] text-lg">
               เพิ่มรายชื่อเข้ากลุ่ม
             </DialogTitle>
             <DialogDescription className="text-[var(--text-muted)]">
@@ -754,7 +754,7 @@ export default function GroupDetailClient({
           {showImportPreview ? (
             <div className="flex-1 flex flex-col min-h-0">
               <div className="pb-3">
-                <h4 className="text-sm font-semibold text-white mb-1">
+                <h4 className="text-sm font-semibold text-[var(--text-primary)] mb-1">
                   ตรวจสอบข้อมูล CSV
                 </h4>
                 <div className="flex items-center gap-3 text-xs text-[var(--text-muted)]">
@@ -763,7 +763,7 @@ export default function GroupDetailClient({
                     ถูกต้อง {importPreviewData.filter((c) => c.valid).length}
                   </span>
                   <span className="inline-flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-red-400" />
+                    <span className="w-2 h-2 rounded-full bg-[var(--error)]" />
                     ไม่ถูกต้อง{" "}
                     {importPreviewData.filter((c) => !c.valid).length}
                   </span>
@@ -776,20 +776,20 @@ export default function GroupDetailClient({
                     className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${
                       row.valid
                         ? "bg-[rgba(255,255,255,0.02)]"
-                        : "bg-red-500/5 border border-red-500/10"
+                        : "bg-[rgba(var(--error-rgb,239,68,68),0.05)] border border-[rgba(var(--error-rgb,239,68,68),0.1)]"
                     }`}
                   >
                     <span
-                      className={`w-2 h-2 rounded-full shrink-0 ${row.valid ? "bg-emerald-400" : "bg-red-400"}`}
+                      className={`w-2 h-2 rounded-full shrink-0 ${row.valid ? "bg-emerald-400" : "bg-[var(--error)]"}`}
                     />
-                    <span className="text-white truncate flex-1">
+                    <span className="text-[var(--text-primary)] truncate flex-1">
                       {row.name || "—"}
                     </span>
                     <span className="text-[var(--text-muted)] font-mono text-xs">
                       {row.phone || "—"}
                     </span>
                     {!row.valid && (
-                      <span className="text-[10px] text-red-400 shrink-0">
+                      <span className="text-[10px] text-[var(--error)] shrink-0">
                         ไม่ถูกต้อง
                       </span>
                     )}
@@ -803,7 +803,7 @@ export default function GroupDetailClient({
                     setShowImportPreview(false);
                     setImportPreviewData([]);
                   }}
-                  className="border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-white bg-transparent"
+                  className="border-[var(--border-default)] text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-transparent"
                 >
                   ยกเลิก
                 </Button>
@@ -838,7 +838,7 @@ export default function GroupDetailClient({
                     value={addSearch}
                     onChange={(e) => setAddSearch(e.target.value)}
                     autoFocus
-                    className="pl-10 h-10 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg text-sm focus:border-[rgba(0,255,167,0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+                    className="pl-10 h-10 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg text-sm focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]"
                   />
                 </div>
                 <input
@@ -852,7 +852,7 @@ export default function GroupDetailClient({
                   variant="outline"
                   size="sm"
                   onClick={() => modalFileInputRef.current?.click()}
-                  className="border-[var(--border-subtle)] bg-transparent text-[var(--text-muted)] hover:text-white shrink-0"
+                  className="border-[var(--border-default)] bg-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] shrink-0"
                 >
                   <Upload className="w-3 h-3 mr-1" />
                   CSV
@@ -890,7 +890,7 @@ export default function GroupDetailClient({
                   {addTagFilters.size > 0 && (
                     <button
                       onClick={() => setAddTagFilters(new Set())}
-                      className="text-[10px] px-2 py-1 rounded-full text-[var(--text-muted)] hover:text-white transition-colors"
+                      className="text-[10px] px-2 py-1 rounded-full text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
                     >
                       ล้างทั้งหมด
                     </button>
@@ -900,8 +900,8 @@ export default function GroupDetailClient({
 
               {/* Select All + Count */}
               {filteredAvailable.length > 0 && (
-                <div className="flex items-center justify-between pt-1 border-t border-[var(--border-subtle)]">
-                  <label className="flex items-center gap-2 text-xs text-[var(--text-muted)] cursor-pointer hover:text-white transition-colors">
+                <div className="flex items-center justify-between pt-1 border-t border-[var(--border-default)]">
+                  <label className="flex items-center gap-2 text-xs text-[var(--text-muted)] cursor-pointer hover:text-[var(--text-primary)] transition-colors">
                     <Checkbox
                       checked={allAddSelected}
                       onCheckedChange={toggleAddSelectAll}
@@ -938,8 +938,8 @@ export default function GroupDetailClient({
                         onClick={() => toggleAddSelect(c.id)}
                         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all text-left ${
                           addSelectedIds.has(c.id)
-                            ? "bg-[rgba(0,255,167,0.06)] border-[rgba(0,255,167,0.2)]"
-                            : "bg-transparent border-transparent hover:bg-[rgba(0,255,167,0.04)] hover:border-[var(--border-subtle)]"
+                            ? "bg-[rgba(var(--accent-rgb),0.06)] border-[rgba(var(--accent-rgb),0.2)]"
+                            : "bg-transparent border-transparent hover:bg-[rgba(var(--accent-rgb),0.04)] hover:border-[var(--border-default)]"
                         }`}
                       >
                         <Checkbox
@@ -950,7 +950,7 @@ export default function GroupDetailClient({
                         />
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-sm text-white truncate">
+                            <span className="text-sm text-[var(--text-primary)] truncate">
                               {c.name}
                             </span>
                             {contactTags.slice(0, 3).map((tag) => {
@@ -986,7 +986,7 @@ export default function GroupDetailClient({
                   type="button"
                   variant="outline"
                   onClick={() => setShowAddDialog(false)}
-                  className="border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-white bg-transparent"
+                  className="border-[var(--border-default)] text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-transparent"
                 >
                   ยกเลิก
                 </Button>

@@ -79,14 +79,14 @@ export function createWebhookWorker() {
           latency,
           success,
         },
-      }).catch(() => {})
+      }).catch((err) => console.error(`[Webhook Worker] Failed to log delivery: webhookId=${webhookId}`, err))
 
       if (success) {
         // Reset fail count on success
         await prisma.webhook.update({
           where: { id: webhookId },
           data: { failCount: 0 },
-        }).catch(() => {})
+        }).catch((err) => console.error(`[Webhook Worker] Failed to reset failCount: webhookId=${webhookId}`, err))
 
         console.log(
           `[Webhook Worker] ✓ correlationId=${correlationId} event=${event} status=${statusCode} latency=${latency}ms jobId=${job.id}`
@@ -100,14 +100,14 @@ export function createWebhookWorker() {
         where: { id: webhookId },
         data: { failCount: { increment: 1 } },
         select: { failCount: true },
-      }).catch(() => null)
+      }).catch((err) => { console.error(`[Webhook Worker] Failed to increment failCount: webhookId=${webhookId}`, err); return null })
 
       // Auto-disable after 10 consecutive failures
       if (webhook && webhook.failCount >= 10) {
         await prisma.webhook.update({
           where: { id: webhookId },
           data: { active: false },
-        }).catch(() => {})
+        }).catch((err) => console.error(`[Webhook Worker] Failed to auto-disable: webhookId=${webhookId}`, err))
         console.warn(`[Webhook Worker] ⚠ Webhook ${webhookId} auto-disabled after ${webhook.failCount} failures`)
       }
 

@@ -4,8 +4,8 @@ node_modules
 .github
 .husky
 .vscode
-*.md
 .env*
+!.env.production.template
 .DS_Store
 scripts
 tests
@@ -13,4 +13,8 @@ docker-compose*.yml
 biome.json
 tsconfig.base.json
 turbo.json
-ψ/
+README.md
+DEPLOY-CHECKLIST.md
+QA-REPORT.md
+REVIEW.md
+qa

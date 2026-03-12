@@ -31,10 +31,13 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { Send, ArrowLeft, ArrowRight, Eye, EyeOff, Loader2, Smartphone, Check } from "lucide-react";
+import { clearLogoutMarker } from "@/components/AuthGuard";
 
 const formSchema = registerSchema.extend({
   confirmPassword: z.string(),
-  acceptTerms: z.literal(true, { error: "กรุณายอมรับเงื่อนไข" }),
+  consentService: z.literal(true, { error: "กรุณายอมรับข้อกำหนดการใช้งาน" }),
+  consentThirdParty: z.literal(true, { error: "กรุณายอมรับการส่งข้อมูลให้ผู้ให้บริการภายนอก" }),
+  consentMarketing: z.boolean(),
 }).refine((d) => d.password === d.confirmPassword, {
   message: "รหัสผ่านไม่ตรงกัน",
   path: ["confirmPassword"],
@@ -71,8 +74,11 @@ export default function RegisterPage() {
       phone: "",
       password: "",
       confirmPassword: "",
-      acceptTerms: false as unknown as true,
+      consentService: false as unknown as true,
+      consentThirdParty: false as unknown as true,
+      consentMarketing: false,
     },
+    mode: "onChange",
   });
 
   const password = form.watch("password");
@@ -107,7 +113,7 @@ export default function RegisterPage() {
         setDebugCode(result.debugCode ?? null);
       }
     } catch (e) {
-      setFormError(safeErrorMessage(e));
+      setFormError(safeErrorMessage(e) || "เกิดข้อผิดพลาด กรุณาลองใหม่");
     }
   }
 
@@ -145,10 +151,14 @@ export default function RegisterPage() {
         otpRef,
         otpCode,
         acceptTerms: true,
+        consentService: true,
+        consentThirdParty: true,
+        consentMarketing: v.consentMarketing,
       });
+      clearLogoutMarker();
       router.push("/dashboard");
     } catch (e) {
-      setOtpError(safeErrorMessage(e));
+      setOtpError(safeErrorMessage(e) || "เกิดข้อผิดพลาด กรุณาลองใหม่");
     } finally {
       setOtpPending(false);
     }
@@ -194,7 +204,7 @@ export default function RegisterPage() {
           ))}
         </div>
 
-        <Card className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] shadow-none">
+        <Card className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-lg shadow-none">
           {step === "form" ? (
             <>
               <CardHeader className="text-center pb-0 pt-8 px-8">
@@ -210,7 +220,7 @@ export default function RegisterPage() {
 
               <CardContent className="px-8 pt-6 pb-2">
                 {formError && (
-                  <div className="mb-4 p-3 rounded-lg bg-[rgba(239,68,68,0.06)] border border-[rgba(239,68,68,0.15)] text-[#F87171] text-[13px] text-center">
+                  <div className="mb-4 p-3 rounded-lg bg-[rgba(239,68,68,0.06)] border border-[rgba(239,68,68,0.15)] text-[var(--error)] text-[13px] text-center">
                     {formError}
                   </div>
                 )}
@@ -225,7 +235,7 @@ export default function RegisterPage() {
                           <FormItem>
                             <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-secondary)]">ชื่อ</FormLabel>
                             <FormControl>
-                              <Input placeholder="สมชาย" className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(0,255,167,0.6)] focus:ring-[rgba(0,255,167,0.12)]" {...field} />
+                              <Input placeholder="สมชาย" className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -238,7 +248,7 @@ export default function RegisterPage() {
                           <FormItem>
                             <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-secondary)]">นามสกุล</FormLabel>
                             <FormControl>
-                              <Input placeholder="ใจดี" className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(0,255,167,0.6)] focus:ring-[rgba(0,255,167,0.12)]" {...field} />
+                              <Input placeholder="ใจดี" className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -253,7 +263,7 @@ export default function RegisterPage() {
                         <FormItem>
                           <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-secondary)]">อีเมล</FormLabel>
                           <FormControl>
-                            <Input type="email" placeholder="you@example.com" onKeyDown={blockThai} className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(0,255,167,0.6)] focus:ring-[rgba(0,255,167,0.12)]" {...field} />
+                            <Input type="email" placeholder="you@example.com" onKeyDown={blockThai} className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -269,7 +279,7 @@ export default function RegisterPage() {
                             เบอร์โทร <span className="text-[var(--accent)] text-[10px] normal-case">*ใช้รับ OTP</span>
                           </FormLabel>
                           <FormControl>
-                            <Input type="tel" inputMode="numeric" maxLength={10} placeholder="0891234567" onKeyDown={blockNonNumeric} className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(0,255,167,0.6)] focus:ring-[rgba(0,255,167,0.12)]" {...field} />
+                            <Input type="tel" inputMode="numeric" maxLength={10} placeholder="0891234567" onKeyDown={blockNonNumeric} className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -284,7 +294,7 @@ export default function RegisterPage() {
                           <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-secondary)]">รหัสผ่าน</FormLabel>
                           <FormControl>
                             <div className="relative">
-                              <Input type={showPassword ? "text" : "password"} placeholder="••••••••" className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg pr-11 focus:border-[rgba(0,255,167,0.6)] focus:ring-[rgba(0,255,167,0.12)]" {...field} />
+                              <Input type={showPassword ? "text" : "password"} placeholder="••••••••" className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg pr-11 focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]" {...field} />
                               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors duration-150">
                                 {showPassword ? <EyeOff className="w-[18px] h-[18px]" /> : <Eye className="w-[18px] h-[18px]" />}
                               </button>
@@ -300,10 +310,10 @@ export default function RegisterPage() {
                                     className={`h-[3px] flex-1 rounded-full transition-colors duration-200 ${
                                       i < strengthCount
                                         ? strengthCount === 1
-                                          ? "bg-[#EF4444]"
+                                          ? "bg-[var(--error)]"
                                           : strengthCount === 2
-                                          ? "bg-[#F59E0B]"
-                                          : "bg-[#10B981]"
+                                          ? "bg-[var(--warning)]"
+                                          : "bg-[var(--success)]"
                                         : "bg-[var(--border-subtle)]"
                                     }`}
                                   />
@@ -311,7 +321,7 @@ export default function RegisterPage() {
                               </div>
                               <div className="space-y-0.5 mt-1">
                                 {passwordChecks.map((c) => (
-                                  <p key={c.label} className={`text-[11px] ${c.pass ? "text-[#10B981]" : "text-[var(--text-muted)]"}`}>
+                                  <p key={c.label} className={`text-[11px] ${c.pass ? "text-[var(--success)]" : "text-[var(--text-muted)]"}`}>
                                     {c.pass ? "✓" : "○"} {c.label}
                                   </p>
                                 ))}
@@ -330,7 +340,7 @@ export default function RegisterPage() {
                           <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-secondary)]">ยืนยันรหัสผ่าน</FormLabel>
                           <FormControl>
                             <div className="relative">
-                              <Input type={showConfirm ? "text" : "password"} placeholder="••••••••" className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg pr-11 focus:border-[rgba(0,255,167,0.6)] focus:ring-[rgba(0,255,167,0.12)]" {...field} />
+                              <Input type={showConfirm ? "text" : "password"} placeholder="••••••••" className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg pr-11 focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]" {...field} />
                               <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors duration-150">
                                 {showConfirm ? <EyeOff className="w-[18px] h-[18px]" /> : <Eye className="w-[18px] h-[18px]" />}
                               </button>
@@ -341,37 +351,94 @@ export default function RegisterPage() {
                       )}
                     />
 
-                    <FormField
-                      control={form.control}
-                      name="acceptTerms"
-                      render={({ field }) => (
-                        <FormItem className="flex items-start gap-2 space-y-0">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                              className="mt-0.5 border-[var(--border-subtle)] data-[state=checked]:bg-[var(--accent)] data-[state=checked]:border-[var(--accent)]"
-                            />
-                          </FormControl>
-                          <FormLabel className="text-[13px] text-[var(--text-secondary)] font-normal leading-snug">
-                            ยอมรับ{" "}
-                            <Link href="/terms" className="text-[var(--accent-blue)] hover:underline">
-                              เงื่อนไขการใช้งาน
-                            </Link>{" "}
-                            และ{" "}
-                            <Link href="/privacy" className="text-[var(--accent-blue)] hover:underline">
-                              นโยบายความเป็นส่วนตัว
-                            </Link>
-                          </FormLabel>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    {/* PDPA Consent Checkboxes */}
+                    <div className="space-y-3 pt-1">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[var(--text-secondary)]">ความยินยอม PDPA</p>
+
+                      {/* Service Consent — Required */}
+                      <FormField
+                        control={form.control}
+                        name="consentService"
+                        render={({ field }) => (
+                          <FormItem className="flex items-start gap-2.5 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                className="mt-0.5 border-[var(--border-subtle)] data-[state=checked]:bg-[var(--accent)] data-[state=checked]:border-[var(--accent)]"
+                              />
+                            </FormControl>
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-[13px] text-[var(--text-secondary)] font-normal leading-snug">
+                                ฉันยอมรับ{" "}
+                                <Link href="/terms" className="text-[var(--accent-blue)] hover:underline" target="_blank">
+                                  ข้อกำหนดการใช้งาน
+                                </Link>{" "}
+                                และ{" "}
+                                <Link href="/privacy" className="text-[var(--accent-blue)] hover:underline" target="_blank">
+                                  นโยบายความเป็นส่วนตัว
+                                </Link>{" "}
+                                <span className="text-[var(--error)] text-[11px]">*</span>
+                              </FormLabel>
+                              <FormMessage />
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* Third-party Consent — Required */}
+                      <FormField
+                        control={form.control}
+                        name="consentThirdParty"
+                        render={({ field }) => (
+                          <FormItem className="flex items-start gap-2.5 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                className="mt-0.5 border-[var(--border-subtle)] data-[state=checked]:bg-[var(--accent)] data-[state=checked]:border-[var(--accent)]"
+                              />
+                            </FormControl>
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-[13px] text-[var(--text-secondary)] font-normal leading-snug">
+                                ฉันยินยอมให้ส่งข้อมูลไปยังผู้ให้บริการ SMS ภายนอก{" "}
+                                <span className="text-[var(--error)] text-[11px]">*</span>
+                              </FormLabel>
+                              <FormMessage />
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* Marketing Consent — Optional */}
+                      <FormField
+                        control={form.control}
+                        name="consentMarketing"
+                        render={({ field }) => (
+                          <FormItem className="flex items-start gap-2.5 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                className="mt-0.5 border-[var(--border-subtle)] data-[state=checked]:bg-[var(--accent)] data-[state=checked]:border-[var(--accent)]"
+                              />
+                            </FormControl>
+                            <FormLabel className="text-[13px] text-[var(--text-muted)] font-normal leading-snug">
+                              ฉันยินยอมรับ SMS/Email โปรโมชั่นและข่าวสารจาก SMSOK
+                            </FormLabel>
+                          </FormItem>
+                        )}
+                      />
+
+                      <p className="text-[11px] text-[var(--text-muted)]">
+                        <span className="text-[var(--error)]">*</span> จำเป็น
+                      </p>
+                    </div>
 
                     <Button
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full h-12 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] rounded-xl text-[15px] font-semibold transition-all duration-200 hover:shadow-[0_4px_16px_rgba(0,255,167,0.25)] group"
+                      className="w-full h-11 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] rounded-xl text-[15px] font-semibold transition-all duration-200 hover:shadow-[0_4px_16px_rgba(0,255,167,0.25)] group disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isSubmitting ? (
                         <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />กำลังส่ง OTP...</span>
@@ -399,7 +466,7 @@ export default function RegisterPage() {
                 >
                   <ArrowLeft className="w-3.5 h-3.5" /> แก้ไขข้อมูล
                 </button>
-                <div className="w-12 h-12 rounded-full bg-[rgba(0,255,167,0.08)] border border-[rgba(0,255,167,0.15)] flex items-center justify-center mx-auto mb-4">
+                <div className="w-12 h-12 rounded-full bg-[rgba(var(--accent-rgb),0.08)] border border-[rgba(var(--accent-rgb),0.15)] flex items-center justify-center mx-auto mb-4">
                   <Smartphone className="w-6 h-6 text-[var(--accent)]" />
                 </div>
                 <h1 className="text-2xl font-bold text-white">ยืนยันเบอร์โทรศัพท์</h1>
@@ -415,7 +482,7 @@ export default function RegisterPage() {
                   </div>
                 )}
                 {otpError && (
-                  <div className="mb-4 p-3 rounded-lg bg-[rgba(239,68,68,0.06)] border border-[rgba(239,68,68,0.15)] text-[#F87171] text-[13px] text-center">
+                  <div className="mb-4 p-3 rounded-lg bg-[rgba(239,68,68,0.06)] border border-[rgba(239,68,68,0.15)] text-[var(--error)] text-[13px] text-center">
                     {otpError}
                   </div>
                 )}
@@ -459,7 +526,7 @@ export default function RegisterPage() {
                   <Button
                     onClick={handleVerifyOtp}
                     disabled={otpPending || otpCode.length < 6 || countdown === 0}
-                    className="w-full h-12 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] rounded-xl text-[15px] font-semibold transition-all duration-200 hover:shadow-[0_4px_16px_rgba(0,255,167,0.25)] group"
+                    className="w-full h-11 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] rounded-xl text-[15px] font-semibold transition-all duration-200 hover:shadow-[0_4px_16px_rgba(0,255,167,0.25)] group"
                   >
                     {otpPending ? (
                       <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />กำลังยืนยัน...</span>

@@ -7,6 +7,7 @@ import { startApiLog, setApiLogUser } from "@/lib/api-log"
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit"
 import { env } from "@/lib/env"
 import { useRecoveryCode } from "@/lib/actions/two-factor"
+import { recovery2FASchema } from "@/lib/validations"
 
 function getClientIp(req: NextRequest) {
   return (
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
 
   // Rate limit BEFORE auth — prevents recovery code brute-force
   const ip = getClientIp(req)
-  const limit = checkRateLimit(ip, "auth")
+  const limit = await checkRateLimit(ip, "auth")
   if (!limit.allowed) {
     return rateLimitResponse(limit.resetIn)
   }
@@ -34,9 +35,7 @@ export async function POST(req: NextRequest) {
       throw new ApiError(400, "กรุณาส่งข้อมูล JSON")
     }
 
-    const { challengeToken, recoveryCode } = body as { challengeToken?: string; recoveryCode?: string }
-    if (!challengeToken) throw new ApiError(400, "กรุณาส่ง challengeToken")
-    if (!recoveryCode) throw new ApiError(400, "กรุณาส่ง Recovery Code")
+    const { challengeToken, recoveryCode } = recovery2FASchema.parse(body)
 
     // Verify challenge token
     let payload: { userId: string; purpose: string }
@@ -66,7 +65,7 @@ export async function POST(req: NextRequest) {
     if (!user) throw new ApiError(404, "ไม่พบผู้ใช้")
 
     // Set session after recovery code verified
-    await setSession(user.id)
+    await setSession(user.id, { headers: req.headers })
     setApiLogUser(user.id)
 
     return apiResponse({

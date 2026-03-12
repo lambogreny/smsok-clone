@@ -1,15 +1,31 @@
 'use client'
 
-import { createContext, useState, useContext, type ReactNode } from 'react'
+import { createContext, useState, useContext, useEffect, type ReactNode } from 'react'
 import { useStore } from 'zustand'
 import { createUiStore, type UiStore } from '@/stores/ui-store'
 
 type UiStoreApi = ReturnType<typeof createUiStore>
+
 const UiStoreContext = createContext<UiStoreApi | undefined>(undefined)
+const UiHydratedContext = createContext(false)
 
 export const UiStoreProvider = ({ children }: { children: ReactNode }) => {
   const [store] = useState(() => createUiStore())
-  return <UiStoreContext.Provider value={store}>{children}</UiStoreContext.Provider>
+  const [isHydrated, setIsHydrated] = useState(false)
+
+  useEffect(() => {
+    // Manual rehydrate from localStorage after mount (skipHydration: true)
+    store.persist.rehydrate()
+    setIsHydrated(true)
+  }, [store])
+
+  return (
+    <UiStoreContext.Provider value={store}>
+      <UiHydratedContext.Provider value={isHydrated}>
+        {children}
+      </UiHydratedContext.Provider>
+    </UiStoreContext.Provider>
+  )
 }
 
 export const useUiStore = <T,>(selector: (s: UiStore) => T): T => {
@@ -17,3 +33,5 @@ export const useUiStore = <T,>(selector: (s: UiStore) => T): T => {
   if (!ctx) throw new Error('useUiStore must be used within UiStoreProvider')
   return useStore(ctx, selector)
 }
+
+export const useUiStoreHydrated = () => useContext(UiHydratedContext)

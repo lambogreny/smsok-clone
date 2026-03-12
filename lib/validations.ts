@@ -173,6 +173,9 @@ export const updateNotificationPrefsSchema = z.object({
   emailCreditLow: z.boolean().optional(),
   emailCampaignDone: z.boolean().optional(),
   emailWeeklyReport: z.boolean().optional(),
+  emailPackageExpiry: z.boolean().optional(),
+  emailInvoice: z.boolean().optional(),
+  emailSecurity: z.boolean().optional(),
   smsCreditLow: z.boolean().optional(),
   smsCampaignDone: z.boolean().optional(),
 });
@@ -197,6 +200,17 @@ export const challenge2FASchema = z.object({
 export const recovery2FASchema = z.object({
   challengeToken: z.string().min(1, "กรุณาส่ง challengeToken"),
   recoveryCode: z.string().min(1, "กรุณาส่ง Recovery Code"),
+});
+
+// Registration route schema (different from registerSchema — includes OTP + terms)
+export const registerRouteSchema = z.object({
+  name: sanitizedNameSchema(1, 100, "กรุณากรอกชื่อ", "ชื่อต้องไม่เกิน 100 ตัวอักษร"),
+  email: emailSchema,
+  phone: phoneSchema,
+  password: passwordSchema,
+  otpRef: z.string().min(1, "กรุณาส่ง otpRef"),
+  otpCode: z.string().regex(/^\d{6}$/, "รหัส OTP ไม่ถูกต้อง"),
+  acceptTerms: z.literal(true, { message: "กรุณายอมรับเงื่อนไขการใช้งาน" }),
 });
 
 // ==========================================
@@ -264,8 +278,14 @@ const webhookEventSchema = z.enum([
   "sms.sent",
   "sms.delivered",
   "sms.failed",
+  "sms.clicked",
   "otp.verified",
   "credit.low",
+  "campaign.completed",
+  "campaign.started",
+  "campaign.failed",
+  "contact.opted_out",
+  "credits.depleted",
 ])
 
 export const createWebhookSchema = z.object({
@@ -277,6 +297,27 @@ export const updateWebhookSchema = z.object({
   url: z.string().url("URL ไม่ถูกต้อง").optional(),
   events: z.array(webhookEventSchema).min(1).optional(),
   active: z.boolean().optional(),
+})
+
+export const webhookTestActionSchema = z.object({
+  action: z.literal("test"),
+})
+
+export const stopWebhookBodySchema = z.object({
+  phone: z.string().min(1, "กรุณาระบุเบอร์โทร"),
+})
+
+export const testNotificationSchema = z.object({
+  template: z.string().min(1, "กรุณาระบุ template"),
+  to: z.string().email("อีเมลไม่ถูกต้อง"),
+  data: z.record(z.string(), z.unknown()).optional().default({}),
+})
+
+export const customFieldValuesSchema = z.object({
+  values: z.array(z.object({
+    fieldId: z.string().min(1, "กรุณาระบุ fieldId"),
+    value: z.string(),
+  })).min(1, "กรุณาส่ง values อย่างน้อย 1 รายการ"),
 })
 
 // ==========================================
@@ -344,9 +385,8 @@ export const requestSenderNameSchema = z.object({
         .string()
         .min(3, "ชื่อผู้ส่งต้องมีอย่างน้อย 3 ตัวอักษร")
         .max(11, "ชื่อผู้ส่งต้องไม่เกิน 11 ตัวอักษร")
-        .regex(/^[A-Za-z0-9 ]+$/, "ต้องเป็นตัวอักษรภาษาอังกฤษ ตัวเลข หรือช่องว่างเท่านั้น")
+        .regex(/^[A-Za-z0-9.\-_ ]+$/, "ต้องเป็น A-Z, 0-9, .-_ หรือช่องว่างเท่านั้น (กสทช.)")
     )
-    .refine((value) => !INVALID_NAME_CHAR_REGEX.test(value), "ชื่อมีอักขระไม่อนุญาต")
     .transform((value: string) => value.toUpperCase()),
 });
 
@@ -368,6 +408,12 @@ export const purchasePackageSchema = z.object({
 export const uploadSlipSchema = z.object({
   transactionId: z.string().cuid(),
   slipUrl: z.string().url("URL สลิปไม่ถูกต้อง"),
+});
+
+export const adminVerifyTransactionSchema = z.object({
+  transactionId: z.string().cuid(),
+  action: z.enum(["verify", "reject"]),
+  rejectNote: z.string().max(500, "หมายเหตุต้องไม่เกิน 500 ตัวอักษร").optional(),
 });
 
 export const verifyTopupSlipSchema = z
@@ -426,15 +472,48 @@ export const scheduledSmsCancelSchema = z.object({
 // API Key Validations
 // ==========================================
 
+const VALID_API_PERMISSIONS = [
+  "sms:send", "sms:read",
+  "contacts:read", "contacts:write",
+  "campaigns:read", "campaigns:write",
+  "templates:read", "templates:write",
+  "groups:read", "groups:write",
+  "webhooks:read", "webhooks:write",
+  "billing:read",
+] as const;
+
 export const createApiKeySchema = z.object({
   name: sanitizedNameSchema(1, 100, "กรุณาตั้งชื่อ API Key", "ชื่อ API Key ต้องไม่เกิน 100 ตัวอักษร"),
+  permissions: z.array(z.enum(VALID_API_PERMISSIONS)).optional(),
 });
 
-export const updateAutoTopupSchema = z.object({
-  enabled: z.boolean(),
-  threshold: z.number().int().min(0, "Threshold ต้องไม่ต่ำกว่า 0"),
-  packageId: z.string().cuid("กรุณาเลือกแพ็กเกจ"),
-  maxPerMonth: z.number().int().min(1).max(50).default(5),
+export const createOrganizationSchema = z.object({
+  name: z.string().min(1, "กรุณากรอกชื่อองค์กร").max(100),
+});
+
+// ==========================================
+// Invoice / Accounting Validations
+// ==========================================
+
+export const invoiceItemSchema = z.object({
+  description: z.string().min(1, "กรุณากรอกรายละเอียด"),
+  quantity: z.number().int().min(1),
+  unitPrice: z.number().min(0),
+  amount: z.number().min(0),
+});
+
+export const createInvoiceSchema = z.object({
+  type: z.enum(["TAX_INVOICE", "RECEIPT", "TAX_INVOICE_RECEIPT", "INVOICE"]).default("TAX_INVOICE"),
+  items: z.array(invoiceItemSchema).min(1, "ต้องมีรายการอย่างน้อย 1 รายการ"),
+  subtotal: z.number().min(0),
+  applyWht: z.boolean().default(false),
+  dueDate: z.string().optional(),
+  notes: z.string().max(500).optional(),
+  transactionId: z.string().optional(),
+});
+
+export const updateInvoiceStatusSchema = z.object({
+  status: z.enum(["SENT", "PAID", "OVERDUE", "VOIDED"]),
 });
 
 export const createCampaignSchema = z.object({
@@ -525,14 +604,24 @@ export const reportFilterSchema = z
 // SMS Utility Functions
 // ==========================================
 
-/** Calculate SMS count based on message content */
+/**
+ * Calculate SMS segment count — synced with backend (lib/package/quota.ts)
+ * Uses multipart segment sizes: Thai/UCS-2 = 70/67, GSM-7 = 160/153
+ * Emoji and non-ASCII/non-Thai chars force UCS-2 encoding
+ */
 export function calculateSmsCount(message: string): number {
+  if (!message) return 0;
   const hasThai = /[\u0E00-\u0E7F]/.test(message);
-  const maxPerSms = hasThai ? 70 : 160;
-  return Math.ceil(message.length / maxPerSms);
+  const hasNonGsm = /[^\x00-\x7F]/.test(message);
+  const isUcs2 = hasThai || hasNonGsm;
+
+  if (isUcs2) {
+    return message.length <= 70 ? 1 : Math.ceil(message.length / 67);
+  }
+  return message.length <= 160 ? 1 : Math.ceil(message.length / 153);
 }
 
-/** Calculate credit cost for a message */
+/** Calculate credit cost for a message — alias for calculateSmsCount */
 export function calculateCreditCost(message: string): number {
   return calculateSmsCount(message);
 }

@@ -3,50 +3,9 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-const PACKAGES = [
-  { name: "SMSOK A", price: 50000, bonusPercent: 0, totalCredits: 2273, maxSenders: 5, durationDays: 180 },
-  { name: "SMSOK B", price: 100000, bonusPercent: 10, totalCredits: 5000, maxSenders: 10, durationDays: 365 },
-  { name: "SMSOK C", price: 1000000, bonusPercent: 15, totalCredits: 52273, maxSenders: 15, durationDays: 730, isBestSeller: true },
-  { name: "SMSOK D", price: 5000000, bonusPercent: 20, totalCredits: 272727, maxSenders: 20, durationDays: 730 },
-  { name: "SMSOK E", price: 10000000, bonusPercent: 25, totalCredits: 568182, maxSenders: -1, durationDays: 1095 },
-  { name: "SMSOK F", price: 30000000, bonusPercent: 30, totalCredits: 1772727, maxSenders: -1, durationDays: 1095 },
-  { name: "SMSOK G", price: 50000000, bonusPercent: 40, totalCredits: 3181818, maxSenders: -1, durationDays: 1095 },
-  { name: "SMSOK H", price: 100000000, bonusPercent: 50, totalCredits: 6818182, maxSenders: -1, durationDays: 1095 },
-];
-
 const SEED_MESSAGE_PREFIX = "[smsok-seed]";
 const DEFAULT_SEED_EMAIL = "demo@smsok.local";
 const DEFAULT_SEED_PASSWORD = "Password123!";
-
-async function ensurePackages() {
-  for (const pkg of PACKAGES) {
-    const id = pkg.name.replace(" ", "-").toLowerCase();
-    await prisma.package.upsert({
-      where: { id },
-      update: {
-        name: pkg.name,
-        price: pkg.price,
-        bonusPercent: pkg.bonusPercent,
-        totalCredits: pkg.totalCredits,
-        maxSenders: pkg.maxSenders,
-        durationDays: pkg.durationDays,
-        isBestSeller: pkg.isBestSeller ?? false,
-        isActive: true,
-      },
-      create: {
-        id,
-        name: pkg.name,
-        price: pkg.price,
-        bonusPercent: pkg.bonusPercent,
-        totalCredits: pkg.totalCredits,
-        maxSenders: pkg.maxSenders,
-        durationDays: pkg.durationDays,
-        isBestSeller: pkg.isBestSeller ?? false,
-        isActive: true,
-      },
-    });
-  }
-}
 
 async function resolveSeedUser() {
   const requestedEmail = process.env.SEED_EMAIL?.trim();
@@ -64,7 +23,6 @@ async function resolveSeedUser() {
         email: requestedEmail,
         name: requestedEmail.split("@")[0],
         password,
-        credits: 2500,
       },
     });
   }
@@ -83,7 +41,6 @@ async function resolveSeedUser() {
       email: DEFAULT_SEED_EMAIL,
       name: "Demo User",
       password,
-      credits: 2500,
     },
   });
 }
@@ -94,7 +51,7 @@ async function ensureSenderName(userId: string, name: string) {
       userId_name: { userId, name },
     },
     update: {
-      status: "approved",
+      status: "APPROVED",
       approvedAt: new Date(),
       approvedBy: "seed",
       rejectNote: null,
@@ -102,7 +59,7 @@ async function ensureSenderName(userId: string, name: string) {
     create: {
       userId,
       name,
-      status: "approved",
+      status: "APPROVED",
       approvedAt: new Date(),
       approvedBy: "seed",
     },
@@ -206,13 +163,6 @@ async function ensureCampaign(userId: string, input: {
 }
 
 async function seedDashboardData(userId: string) {
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      credits: 2500,
-    },
-  });
-
   await ensureSenderName(userId, "SMSOK");
 
   const [vipTag, newTag] = await Promise.all([
@@ -337,35 +287,425 @@ async function seedDashboardData(userId: string) {
   });
 }
 
+// ══════════════════════════════════════════════════════════
+// Phase 1: Multi-Tenant + PDPA + Backoffice Seed
+// ══════════════════════════════════════════════════════════
+
+async function seedMultiTenant(userId: string) {
+  // Create organization for seed user
+  const org = await prisma.organization.upsert({
+    where: { slug: "seed-org" },
+    update: {},
+    create: {
+      name: "Seed Organization",
+      slug: "seed-org",
+      plan: "starter",
+    },
+  });
+
+  // OWNER membership
+  await prisma.membership.upsert({
+    where: { userId_organizationId: { userId, organizationId: org.id } },
+    update: {},
+    create: { userId, organizationId: org.id, role: "OWNER" },
+  });
+
+  // Backfill organizationId on existing contacts
+  await prisma.$executeRawUnsafe(
+    `UPDATE contacts SET organization_id = $1 WHERE user_id = $2 AND organization_id IS NULL`,
+    org.id, userId
+  );
+  await prisma.$executeRawUnsafe(
+    `UPDATE messages SET organization_id = $1 WHERE user_id = $2 AND organization_id IS NULL`,
+    org.id, userId
+  );
+
+  console.log(`  ✅ Organization: ${org.name} (slug: ${org.slug})`);
+  return org;
+}
+
+async function seedPDPA(userId: string, orgId: string) {
+  // Add PDPA consent for existing seed contacts
+  const contacts = await prisma.contact.findMany({
+    where: { userId },
+    select: { id: true, phone: true },
+    take: 10,
+  });
+
+  for (const contact of contacts) {
+    await prisma.consent.upsert({
+      where: { id: `seed_consent_${contact.id}_marketing` },
+      update: {},
+      create: {
+        id: `seed_consent_${contact.id}_marketing`,
+        organizationId: orgId,
+        contactId: contact.id,
+        purpose: "MARKETING",
+        granted: true,
+        source: "import",
+      },
+    });
+    await prisma.consent.upsert({
+      where: { id: `seed_consent_${contact.id}_transactional` },
+      update: {},
+      create: {
+        id: `seed_consent_${contact.id}_transactional`,
+        organizationId: orgId,
+        contactId: contact.id,
+        purpose: "TRANSACTIONAL",
+        granted: true,
+        source: "import",
+      },
+    });
+  }
+  console.log(`  ✅ PDPA consents: ${contacts.length * 2} records`);
+}
+
+async function seedBackoffice() {
+  const adminPassword = await bcrypt.hash("admin1234", 12);
+
+  // Admin users
+  const admins = [
+    { email: "admin@smsok.com", name: "Super Admin", role: "SUPER_ADMIN" as const },
+    { email: "finance@smsok.com", name: "Finance Admin", role: "FINANCE" as const },
+    { email: "ops@smsok.com", name: "Operations Admin", role: "OPERATIONS" as const },
+    { email: "support@smsok.com", name: "Support Admin", role: "SUPPORT" as const },
+  ];
+
+  for (const a of admins) {
+    await prisma.adminUser.upsert({
+      where: { email: a.email },
+      update: {},
+      create: { email: a.email, name: a.name, password: adminPassword, role: a.role },
+    });
+  }
+  console.log(`  ✅ Admin users: ${admins.length} created`);
+
+  // SMS Provider
+  await prisma.smsProvider.upsert({
+    where: { name: "easythunder" },
+    update: {},
+    create: {
+      name: "easythunder",
+      displayName: "EasyThunder (Primary)",
+      apiUrl: "https://sms-api.easythunder.com",
+      credentials: { username: "test", password: "test" },
+      costPerSms: 0.35,
+      priority: 0,
+      status: "ACTIVE",
+      dailyLimit: 10000,
+    },
+  });
+  await prisma.smsProvider.upsert({
+    where: { name: "thaibulksms" },
+    update: {},
+    create: {
+      name: "thaibulksms",
+      displayName: "ThaiBulkSMS (Backup)",
+      apiUrl: "https://api.thaibulksms.com",
+      credentials: { apiKey: "test_key", apiSecret: "test_secret" },
+      costPerSms: 0.40,
+      priority: 1,
+      status: "ACTIVE",
+      dailyLimit: 5000,
+    },
+  });
+  console.log(`  ✅ SMS Providers: 2 created`);
+
+  // Note: CreditPackage and PricingTier models removed.
+  // Package tiers are now seeded via seedPackageTiers().
+}
+
+async function seedAuditLog(userId: string, orgId: string) {
+  await prisma.auditLog.create({
+    data: {
+      organizationId: orgId,
+      userId,
+      action: "seed.complete",
+      resource: "System",
+      result: "success",
+      metadata: { seededAt: new Date().toISOString(), version: "phase1+backoffice" },
+    },
+  });
+  console.log(`  ✅ Audit log: seed.complete`);
+}
+
+async function seedPlans() {
+  const plans = [
+    { name: "starter", displayName: "Starter", price: 49900, credits: 500, maxSenders: 5, sortOrder: 1, features: { support: "email", api: true } },
+    { name: "business", displayName: "Business", price: 149900, credits: 2000, maxSenders: 20, sortOrder: 2, features: { support: "priority", api: true, webhooks: true, sla: "99.5%" } },
+    { name: "enterprise", displayName: "Enterprise", price: 499900, credits: 10000, maxSenders: -1, sortOrder: 3, features: { support: "dedicated", api: true, webhooks: true, sla: "99.9%", customIntegration: true } },
+  ];
+
+  for (const plan of plans) {
+    await prisma.plan.upsert({
+      where: { name: plan.name },
+      update: { displayName: plan.displayName, price: plan.price, credits: plan.credits, maxSenders: plan.maxSenders, sortOrder: plan.sortOrder, features: plan.features },
+      create: plan,
+    });
+  }
+  console.log(`  ✅ Plans: ${plans.length} upserted`);
+}
+
+async function seedPackageTiers() {
+  const tiers = [
+    { tierCode: "TRIAL", name: "Trial", price: 0, smsQuota: 500, bonusPercent: 0, totalSms: 500, senderNameLimit: 1, expiryMonths: 1, isTrial: true, sortOrder: -1 },
+    { tierCode: "A", name: "Starter", price: 500, smsQuota: 500, bonusPercent: 0, totalSms: 500, senderNameLimit: 5, expiryMonths: 6, sortOrder: 1 },
+    { tierCode: "B", name: "Basic", price: 1000, smsQuota: 1000, bonusPercent: 10, totalSms: 1100, senderNameLimit: 10, expiryMonths: 12, sortOrder: 2 },
+    { tierCode: "C", name: "Growth", price: 10000, smsQuota: 10000, bonusPercent: 15, totalSms: 11500, senderNameLimit: 15, expiryMonths: 24, sortOrder: 3 },
+    { tierCode: "D", name: "Business", price: 50000, smsQuota: 50000, bonusPercent: 20, totalSms: 60000, senderNameLimit: 20, expiryMonths: 24, sortOrder: 4 },
+    { tierCode: "E", name: "Professional", price: 100000, smsQuota: 100000, bonusPercent: 25, totalSms: 125000, senderNameLimit: null, expiryMonths: 36, sortOrder: 5 },
+    { tierCode: "F", name: "Enterprise", price: 300000, smsQuota: 300000, bonusPercent: 30, totalSms: 390000, senderNameLimit: null, expiryMonths: 36, sortOrder: 6 },
+    { tierCode: "G", name: "Corporate", price: 500000, smsQuota: 500000, bonusPercent: 40, totalSms: 700000, senderNameLimit: null, expiryMonths: 36, sortOrder: 7 },
+    { tierCode: "H", name: "Unlimited", price: 1000000, smsQuota: 1000000, bonusPercent: 50, totalSms: 1500000, senderNameLimit: null, expiryMonths: 36, sortOrder: 8 },
+  ];
+
+  for (const tier of tiers) {
+    await prisma.packageTier.upsert({
+      where: { tierCode: tier.tierCode },
+      update: {
+        name: tier.name,
+        price: tier.price,
+        smsQuota: tier.smsQuota,
+        bonusPercent: tier.bonusPercent,
+        totalSms: tier.totalSms,
+        senderNameLimit: tier.senderNameLimit,
+        expiryMonths: tier.expiryMonths,
+        isTrial: tier.isTrial ?? false,
+        isActive: true,
+        sortOrder: tier.sortOrder,
+      },
+      create: tier,
+    });
+  }
+  console.log(`  ✅ Package tiers: ${tiers.length} upserted (TRIAL + A-H)`);
+}
+
+// ══════════════════════════════════════════════════════════
+// RBAC: Permissions + System Roles
+// ══════════════════════════════════════════════════════════
+
+const RBAC_RESOURCES = [
+  "sms", "contact", "campaign", "template", "group", "tag",
+  "billing", "invoice", "credit", "transaction",
+  "api_key", "webhook", "user", "org", "role",
+  "audit_log", "ticket", "analytics", "settings",
+] as const;
+
+const RBAC_ACTIONS = ["create", "read", "update", "delete", "manage"] as const;
+
+type SystemRoleDef = {
+  name: string;
+  description: string;
+  permissions: string[]; // "action:resource" or "*:*" or "resource:*" or "*:action"
+};
+
+const SYSTEM_ROLES: SystemRoleDef[] = [
+  {
+    name: "Owner",
+    description: "เจ้าของ org — ทำได้ทุกอย่าง",
+    permissions: ["*:*"],
+  },
+  {
+    name: "Admin",
+    description: "ผู้ดูแลระบบ — ทุกอย่างยกเว้น delete org",
+    permissions: ["*:*", "!delete:org"],
+  },
+  {
+    name: "Member",
+    description: "สมาชิกทั่วไป — ส่ง SMS, จัดการ contacts",
+    permissions: [
+      "sms:*", "contact:*", "campaign:*", "template:*",
+      "group:*", "tag:*",
+    ],
+  },
+  {
+    name: "Viewer",
+    description: "ดูอย่างเดียว — ไม่แก้ไขอะไร",
+    permissions: ["*:read"],
+  },
+  {
+    name: "API-only",
+    description: "สำหรับ API access — ไม่มี UI",
+    permissions: ["create:sms", "read:sms", "read:contact"],
+  },
+];
+
+function expandPermissions(patterns: string[]): Array<{ action: string; resource: string }> {
+  const allPerms: Array<{ action: string; resource: string }> = [];
+  for (const action of RBAC_ACTIONS) {
+    for (const resource of RBAC_RESOURCES) {
+      allPerms.push({ action, resource });
+    }
+  }
+
+  const excluded = new Set<string>();
+  const included = new Set<string>();
+
+  for (const pattern of patterns) {
+    if (pattern.startsWith("!")) {
+      const p = pattern.slice(1);
+      const [a, r] = p.split(":");
+      for (const perm of allPerms) {
+        if ((a === "*" || a === perm.action) && (r === "*" || r === perm.resource)) {
+          excluded.add(`${perm.action}:${perm.resource}`);
+        }
+      }
+      continue;
+    }
+
+    const [left, right] = pattern.split(":");
+    // Could be "action:resource", "*:*", "resource:*", "*:action"
+    // Spec uses "sms:*" meaning "all actions on sms" and "*:read" meaning "read on all resources"
+    for (const perm of allPerms) {
+      const matchDirect = (left === "*" || left === perm.action) && (right === "*" || right === perm.resource);
+      const matchReversed = (left === "*" || left === perm.resource) && (right === "*" || right === perm.action);
+      if (matchDirect || matchReversed) {
+        included.add(`${perm.action}:${perm.resource}`);
+      }
+    }
+  }
+
+  // Remove excluded
+  for (const ex of excluded) {
+    included.delete(ex);
+  }
+
+  return [...included].map((p) => {
+    const [action, resource] = p.split(":");
+    return { action, resource };
+  });
+}
+
+async function seedRBAC(orgId: string) {
+  // 1. Seed all permissions (idempotent via upsert)
+  let permCount = 0;
+  for (const action of RBAC_ACTIONS) {
+    for (const resource of RBAC_RESOURCES) {
+      await prisma.permission.upsert({
+        where: { action_resource: { action, resource } },
+        update: {},
+        create: {
+          action,
+          resource,
+          description: `${action} ${resource}`,
+        },
+      });
+      permCount++;
+    }
+  }
+  console.log(`  ✅ Permissions: ${permCount} seeded (${RBAC_RESOURCES.length} resources × ${RBAC_ACTIONS.length} actions)`);
+
+  // 2. Seed system roles for the org
+  for (const roleDef of SYSTEM_ROLES) {
+    const role = await prisma.role.upsert({
+      where: { organizationId_name: { organizationId: orgId, name: roleDef.name } },
+      update: { description: roleDef.description },
+      create: {
+        organizationId: orgId,
+        name: roleDef.name,
+        description: roleDef.description,
+        isSystemRole: true,
+      },
+    });
+
+    // Expand permission patterns and link
+    const expanded = expandPermissions(roleDef.permissions);
+    const permIds: string[] = [];
+    for (const { action, resource } of expanded) {
+      const perm = await prisma.permission.findUnique({
+        where: { action_resource: { action, resource } },
+      });
+      if (perm) permIds.push(perm.id);
+    }
+
+    // Clear existing and re-link
+    await prisma.rolePermission.deleteMany({ where: { roleId: role.id } });
+    if (permIds.length > 0) {
+      await prisma.rolePermission.createMany({
+        data: permIds.map((permissionId) => ({ roleId: role.id, permissionId })),
+        skipDuplicates: true,
+      });
+    }
+
+    console.log(`  ✅ Role "${roleDef.name}": ${permIds.length} permissions`);
+  }
+}
+
 async function main() {
-  await ensurePackages();
+  console.log("🌱 Seeding SMSOK Clone (Phase 1 + Backoffice + Packages + RBAC)...\n");
 
   const user = await resolveSeedUser();
   await seedDashboardData(user.id);
 
-  const [messageCount, contactCount, tagCount, campaignCount, packageCount] = await Promise.all([
+  console.log("\n📦 Phase 1: Multi-Tenant + PDPA...");
+  const org = await seedMultiTenant(user.id);
+  await seedPDPA(user.id, org.id);
+
+  console.log("\n🔧 Backoffice: Admin + Providers...");
+  await seedBackoffice();
+
+  console.log("\n💳 Payment: Plans + Package Tiers...");
+  await seedPlans();
+  await seedPackageTiers();
+
+  console.log("\n🔐 RBAC: Permissions + System Roles...");
+  await seedRBAC(org.id);
+  const ownerRole = await prisma.role.findUnique({
+    where: { organizationId_name: { organizationId: org.id, name: "Owner" } },
+    select: { id: true },
+  });
+  if (ownerRole) {
+    await prisma.userRole.upsert({
+      where: {
+        userId_roleId_organizationId: {
+          userId: user.id,
+          roleId: ownerRole.id,
+          organizationId: org.id,
+        },
+      },
+      update: {},
+      create: {
+        userId: user.id,
+        roleId: ownerRole.id,
+        organizationId: org.id,
+      },
+    });
+  }
+
+  await seedAuditLog(user.id, org.id);
+
+  const [messageCount, contactCount, tagCount, campaignCount, packageTierCount, orgCount, adminCount, permCount, roleCount] = await Promise.all([
     prisma.message.count({ where: { userId: user.id } }),
     prisma.contact.count({ where: { userId: user.id } }),
     prisma.tag.count({ where: { userId: user.id } }),
     prisma.campaign.count({ where: { userId: user.id } }),
-    prisma.package.count(),
+    prisma.packageTier.count(),
+    prisma.organization.count(),
+    prisma.adminUser.count(),
+    prisma.permission.count(),
+    prisma.role.count({ where: { organizationId: org.id } }),
   ]);
 
   console.log(JSON.stringify({
     seeded: true,
-    user: {
-      id: user.id,
-      email: user.email,
-    },
+    user: { id: user.id, email: user.email },
+    organization: { id: org.id, slug: org.slug },
     counts: {
-      packages: packageCount,
+      packageTiers: packageTierCount,
+      permissions: permCount,
+      roles: roleCount,
       messages: messageCount,
       contacts: contactCount,
       tags: tagCount,
       campaigns: campaignCount,
+      organizations: orgCount,
+      admins: adminCount,
     },
     note: "Use SEED_EMAIL=<email> bunx prisma db seed to target a specific user.",
   }, null, 2));
+
+  console.log("\n🌱 Seed complete!");
 }
 
 main()

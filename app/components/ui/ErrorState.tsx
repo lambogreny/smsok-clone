@@ -15,13 +15,13 @@ export default function ErrorState({
 }: ErrorStateProps) {
   return (
     <motion.div
-      className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-[20px] p-12 text-center border-red-500/10"
+      className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg p-12 text-center border-red-500/10"
       initial={{ opacity: 0, scale: 0.95, y: 10 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
     >
       <motion.div
-        className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-red-500/[0.05] border border-red-500/10 flex items-center justify-center"
+        className="w-16 h-16 mx-auto mb-4 rounded-lg bg-red-500/[0.05] border border-red-500/10 flex items-center justify-center"
         initial={{ scale: 0.8 }}
         animate={{ scale: 1 }}
         transition={{ delay: 0.2, type: "spring", stiffness: 300 }}
@@ -37,7 +37,7 @@ export default function ErrorState({
       {onRetry && (
         <motion.button
           onClick={onRetry}
-          className="bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] rounded-xl hover:border-[rgba(0,255,167,0.3)] hover:bg-[rgba(0,255,167,0.04)] inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium"
+          className="bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] rounded-xl hover:border-[rgba(var(--accent-rgb),0.3)] hover:bg-[rgba(var(--accent-rgb),0.04)] inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >

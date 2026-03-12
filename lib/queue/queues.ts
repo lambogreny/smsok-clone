@@ -13,6 +13,7 @@ import {
   RETRY_STRATEGIES,
   type SmsJobData,
   type WebhookJobData,
+  type EmailJobData,
   type DlqJobData,
 } from "./types"
 
@@ -63,6 +64,15 @@ export const webhookQueue = new Queue<WebhookJobData>(QUEUE_NAMES.SMS_WEBHOOK, {
   },
 })
 
+export const emailQueue = new Queue<EmailJobData>(QUEUE_NAMES.EMAIL, {
+  connection: producerConnectionOptions,
+  defaultJobOptions: {
+    ...RETRY_STRATEGIES.email,
+    removeOnComplete: { count: 2000 },
+    removeOnFail: { count: 5000 },
+  },
+})
+
 export const dlqQueue = new Queue<DlqJobData>(QUEUE_NAMES.SMS_DLQ, {
   connection: producerConnectionOptions,
   defaultJobOptions: {
@@ -79,6 +89,7 @@ export const allQueues = [
   batchQueue,
   campaignQueue,
   webhookQueue,
+  emailQueue,
   dlqQueue,
 ] as const
 

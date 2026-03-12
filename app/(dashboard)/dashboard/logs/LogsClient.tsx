@@ -2,7 +2,10 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ScrollText } from "lucide-react";
 import CustomSelect from "@/components/ui/CustomSelect";
+import { Input } from "@/components/ui/input";
+import EmptyState from "@/components/EmptyState";
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -31,15 +34,15 @@ type DetailTab = "request" | "response" | "error";
 // ─── Constants ────────────────────────────────────────────────────────────
 
 const METHOD_BADGE: Record<string, string> = {
-  GET: "bg-[rgba(0,255,167,0.1)] text-[#00FFA7] border-[rgba(0,255,167,0.15)]",
+  GET: "bg-[rgba(var(--accent-rgb),0.1)] text-[var(--accent)] border-[rgba(var(--accent-rgb),0.15)]",
   POST: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
   PUT: "bg-amber-500/15 text-amber-400 border-amber-500/20",
-  DELETE: "bg-red-500/15 text-red-400 border-red-500/20",
+  DELETE: "bg-[rgba(var(--error-rgb,239,68,68),0.15)] text-[var(--error)] border-[rgba(var(--error-rgb,239,68,68),0.2)]",
 };
 
 const SOURCE_BADGE: Record<string, string> = {
-  WEB: "bg-[rgba(0,255,167,0.1)] text-[#00FFA7] border-[rgba(0,255,167,0.15)]",
-  API: "bg-[rgba(50,152,218,0.1)] text-[#4779FF] border-[rgba(50,152,218,0.15)]",
+  WEB: "bg-[rgba(var(--accent-rgb),0.1)] text-[var(--accent)] border-[rgba(var(--accent-rgb),0.15)]",
+  API: "bg-[rgba(50,152,218,0.1)] text-[var(--accent-secondary)] border-[rgba(50,152,218,0.15)]",
 };
 
 const ENDPOINT_OPTIONS = [
@@ -65,13 +68,13 @@ const API_KEY_OPTIONS = [
 function statusBadgeCls(code: number) {
   if (code < 300) return "bg-emerald-500/15 text-emerald-400 border-emerald-500/20";
   if (code < 400) return "bg-amber-500/15 text-amber-400 border-amber-500/20";
-  return "bg-red-500/15 text-red-400 border-red-500/20";
+  return "bg-[rgba(var(--error-rgb,239,68,68),0.15)] text-[var(--error)] border-[rgba(var(--error-rgb,239,68,68),0.2)]";
 }
 
 function latencyCls(ms: number) {
   if (ms < 100) return "text-emerald-400";
   if (ms <= 500) return "text-amber-400";
-  return "text-red-400";
+  return "text-[var(--error)]";
 }
 
 function statusGroup(code: number) {
@@ -215,7 +218,7 @@ function JsonViewer({ data }: { data: unknown }) {
     <div className="relative rounded-lg bg-black/40 border border-white/[0.04] overflow-hidden">
       <button
         onClick={handleCopy}
-        className="absolute top-2 right-2 z-10 w-6 h-6 rounded-md bg-white/5 hover:bg-white/10 flex items-center justify-center text-[var(--text-muted)] hover:text-white transition-colors cursor-pointer"
+        className="absolute top-2 right-2 z-10 w-6 h-6 rounded-md bg-white/5 hover:bg-white/10 flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
         title="Copy"
       >
         {copied ? (
@@ -224,7 +227,7 @@ function JsonViewer({ data }: { data: unknown }) {
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" /></svg>
         )}
       </button>
-      <pre className="p-3 pr-9 text-[11px] font-mono text-[#00FFA7]/80 overflow-x-auto max-h-[250px] overflow-y-auto leading-relaxed">
+      <pre className="p-3 pr-9 text-[11px] font-mono text-[var(--accent)]/80 overflow-x-auto max-h-[250px] overflow-y-auto leading-relaxed">
         {text}
       </pre>
     </div>
@@ -266,7 +269,7 @@ function DetailPane({
       className="h-full flex flex-col"
     >
       {/* Detail Header — pr-10 prevents overlap with close button */}
-      <div className="px-5 pr-12 py-4 border-b border-[var(--border-subtle)] shrink-0">
+      <div className="px-5 pr-12 py-4 border-b border-[var(--border-default)] shrink-0">
         <div className="flex items-center gap-2 mb-2 flex-wrap">
           <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${METHOD_BADGE[log.method]}`}>
             {log.method}
@@ -281,12 +284,12 @@ function DetailPane({
             {log.latencyMs}ms
           </span>
         </div>
-        <p className="text-sm text-white font-mono break-all">{log.url}</p>
+        <p className="text-sm text-[var(--text-primary)] font-mono break-all">{log.url}</p>
         <p className="text-[11px] text-[var(--text-muted)] mt-1">{formatTimestampFull(log.timestamp)}</p>
       </div>
 
       {/* Meta chips */}
-      <div className="px-5 py-3 border-b border-[var(--border-subtle)] flex flex-wrap gap-x-4 gap-y-1.5 text-[11px] shrink-0">
+      <div className="px-5 py-3 border-b border-[var(--border-default)] flex flex-wrap gap-x-4 gap-y-1.5 text-[11px] shrink-0">
         {log.apiKeyName && (
           <span className="text-[var(--text-muted)]">Key: <span className="text-[var(--text-secondary)]">{log.apiKeyName}</span></span>
         )}
@@ -300,11 +303,11 @@ function DetailPane({
       </div>
 
       {/* Action buttons */}
-      <div className="px-5 py-3 border-b border-[var(--border-subtle)] flex items-center gap-2 shrink-0">
+      <div className="px-5 py-3 border-b border-[var(--border-default)] flex items-center gap-2 shrink-0">
         <button
           onClick={() => onReplay(log)}
           disabled={isReplaying}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-[rgba(0,255,167,0.1)] border border-[rgba(0,255,167,0.15)] text-[#00FFA7] hover:bg-[rgba(0,255,167,0.2)] transition-all cursor-pointer disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-[rgba(var(--accent-rgb),0.1)] border border-[rgba(var(--accent-rgb),0.15)] text-[var(--accent)] hover:bg-[rgba(var(--accent-rgb),0.2)] transition-all cursor-pointer disabled:opacity-50"
         >
           {isReplaying ? (
             <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24">
@@ -318,7 +321,7 @@ function DetailPane({
         </button>
         <button
           onClick={handleCopyCurl}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium bg-white/[0.03] border border-white/[0.06] text-[var(--text-muted)] hover:text-white hover:border-[rgba(0,255,167,0.15)] transition-all cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium bg-white/[0.03] border border-white/[0.06] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[rgba(var(--accent-rgb),0.15)] transition-all cursor-pointer"
         >
           {curlCopied ? (
             <><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-emerald-400"><polyline points="20 6 9 17 4 12" /></svg> Copied!</>
@@ -336,11 +339,11 @@ function DetailPane({
             onClick={() => setTab(t.id)}
             className={`px-3 py-2 text-[11px] font-medium rounded-t-lg transition-all cursor-pointer ${
               tab === t.id
-                ? "bg-white/[0.04] text-white border-b-2 border-[#00FFA7]"
+                ? "bg-white/[0.04] text-[var(--text-primary)] border-b-2 border-[var(--accent)]"
                 : "text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-white/[0.02]"
             }`}
           >
-            {t.id === "error" && <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-400 mr-1.5" />}
+            {t.id === "error" && <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--error)] mr-1.5" />}
             {t.label}
           </button>
         ))}
@@ -377,15 +380,15 @@ function DetailPane({
           )}
           {tab === "error" && log.errorCode && (
             <motion.div key="err" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.1 }}>
-              <div className="p-4 rounded-xl bg-red-500/[0.06] border border-red-500/15">
+              <div className="p-4 rounded-xl bg-[rgba(var(--error-rgb,239,68,68),0.06)] border border-[rgba(var(--error-rgb,239,68,68),0.15)]">
                 <div className="flex items-center gap-3 mb-2">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-red-400 shrink-0">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[var(--error)] shrink-0">
                     <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
                   </svg>
-                  <span className="text-sm font-semibold text-red-400">Error {log.errorCode}</span>
+                  <span className="text-sm font-semibold text-[var(--error)]">Error {log.errorCode}</span>
                 </div>
-                <p className="text-sm text-red-400/80">{log.errorMessage}</p>
-                <p className="text-[10px] text-red-400/60 mt-2 italic">Stack trace hidden for security</p>
+                <p className="text-sm text-[var(--error)] opacity-80">{log.errorMessage}</p>
+                <p className="text-[10px] text-[var(--error)] opacity-60 mt-2 italic">Stack trace hidden for security</p>
               </div>
             </motion.div>
           )}
@@ -498,7 +501,7 @@ export default function LogsClient() {
         <div className="flex items-center gap-2">
           <motion.button
             onClick={() => exportCsv(filtered)}
-            className="bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] rounded-xl hover:border-[rgba(0,255,167,0.3)] hover:bg-[rgba(0,255,167,0.04)] px-3 py-1.5 rounded-lg text-[11px] font-medium inline-flex items-center gap-1.5 cursor-pointer"
+            className="bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] rounded-xl hover:border-[rgba(var(--accent-rgb),0.3)] hover:bg-[rgba(var(--accent-rgb),0.04)] px-3 py-1.5 rounded-lg text-[11px] font-medium inline-flex items-center gap-1.5 cursor-pointer"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
@@ -520,7 +523,7 @@ export default function LogsClient() {
           </button>
           <motion.button
             onClick={refreshLogs}
-            className="bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] rounded-xl hover:border-[rgba(0,255,167,0.3)] hover:bg-[rgba(0,255,167,0.04)] px-3 py-1.5 rounded-lg text-[11px] font-medium inline-flex items-center gap-1.5 cursor-pointer"
+            className="bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] rounded-xl hover:border-[rgba(var(--accent-rgb),0.3)] hover:bg-[rgba(var(--accent-rgb),0.04)] px-3 py-1.5 rounded-lg text-[11px] font-medium inline-flex items-center gap-1.5 cursor-pointer"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
@@ -531,8 +534,20 @@ export default function LogsClient() {
         </div>
       </div>
 
+      {/* Empty state — when no logs at all */}
+      {logs.length === 0 ? (
+        <EmptyState
+          icon={ScrollText}
+          iconColor="var(--accent)"
+          iconBg="rgba(var(--accent-rgb), 0.1)"
+          title="ยังไม่มีบันทึก"
+          description="บันทึกการส่ง SMS จะแสดงที่นี่เมื่อเริ่มใช้งาน"
+        />
+      ) : (
+      <>
+
       {/* Filter Bar */}
-      <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-[20px] p-3 mb-4 shrink-0">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg p-3 mb-4 shrink-0">
         <div className="flex flex-col gap-2">
           <div className="flex flex-wrap gap-2">
             <div className="relative flex-1 min-w-[200px]">
@@ -598,14 +613,14 @@ export default function LogsClient() {
             </div>
             <div className="flex items-center gap-1.5">
               <label className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">จาก</label>
-              <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1); }} className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg text-[var(--text-primary)] focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] text-xs py-1 px-2 w-[130px]" />
+              <Input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1); }} className="text-xs py-1 px-2 w-[130px] h-auto min-h-[40px]" />
             </div>
             <div className="flex items-center gap-1.5">
               <label className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">ถึง</label>
-              <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1); }} className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg text-[var(--text-primary)] focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] text-xs py-1 px-2 w-[130px]" />
+              <Input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1); }} className="text-xs py-1 px-2 w-[130px] h-auto min-h-[40px]" />
             </div>
             {hasFilters && (
-              <button onClick={clearFilters} className="text-[10px] text-[var(--text-muted)] hover:text-[#00FFA7] transition-colors cursor-pointer">ล้าง</button>
+              <button onClick={clearFilters} className="text-[10px] text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors cursor-pointer">ล้าง</button>
             )}
             <span className="text-[10px] text-[var(--text-muted)] ml-auto">{filtered.length} รายการ</span>
           </div>
@@ -622,7 +637,7 @@ export default function LogsClient() {
             className={`mb-3 p-2.5 rounded-lg border text-xs font-medium shrink-0 ${
               replayResult.type === "success"
                 ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-                : "bg-red-500/10 border-red-500/20 text-red-400"
+                : "bg-[rgba(var(--error-rgb,239,68,68),0.1)] border-[rgba(var(--error-rgb,239,68,68),0.2)] text-[var(--error)]"
             }`}
           >
             {replayResult.text}
@@ -633,9 +648,9 @@ export default function LogsClient() {
       {/* Split Pane: Left=List, Right=Detail */}
       <div className="flex-1 flex gap-4 min-h-0">
         {/* Left Pane — Request List */}
-        <div className={`bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-[20px] flex flex-col overflow-hidden transition-all duration-300 ${selectedLog ? "w-[45%]" : "w-full"}`}>
+        <div className={`bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg flex flex-col overflow-hidden transition-all duration-300 ${selectedLog ? "w-[45%]" : "w-full"}`}>
           {/* List header */}
-          <div className="hidden md:grid grid-cols-[1fr_60px_60px_60px] gap-x-2 px-4 py-2 border-b border-[var(--border-subtle)] text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider shrink-0">
+          <div className="hidden md:grid grid-cols-[1fr_60px_60px_60px] gap-x-2 px-4 py-2 border-b border-[var(--border-default)] text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider shrink-0">
             <span>Request</span>
             <span className="text-center">Status</span>
             <span className="text-right">Time</span>
@@ -654,8 +669,8 @@ export default function LogsClient() {
                         key={log.id}
                         variants={rowVariant}
                         onClick={() => { setSelectedLog(log); setReplayResult(null); }}
-                        className={`w-full grid grid-cols-1 md:grid-cols-[1fr_60px_60px_60px] gap-x-2 px-4 py-2.5 items-center text-left border-b border-[var(--border-subtle)] hover:bg-white/[0.03] transition-colors cursor-pointer ${
-                          isSelected ? "bg-[rgba(0,255,167,0.06)] border-l-2 border-l-[#00FFA7]" : ""
+                        className={`w-full grid grid-cols-1 md:grid-cols-[1fr_60px_60px_60px] gap-x-2 px-4 py-2.5 items-center text-left border-b border-[var(--border-default)] hover:bg-white/[0.03] transition-colors cursor-pointer ${
+                          isSelected ? "bg-[rgba(var(--accent-rgb),0.06)] border-l-2 border-l-[var(--accent)]" : ""
                         }`}
                       >
                         {/* Method + URL + timestamp */}
@@ -664,7 +679,7 @@ export default function LogsClient() {
                             <span className={`shrink-0 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${METHOD_BADGE[log.method]}`}>
                               {log.method}
                             </span>
-                            <span className="text-xs text-white font-mono truncate">{log.url}</span>
+                            <span className="text-xs text-[var(--text-primary)] font-mono truncate">{log.url}</span>
                           </div>
                           <p className="text-[10px] text-[var(--text-muted)] font-mono mt-0.5">{formatTimestamp(log.timestamp)}</p>
                         </div>
@@ -698,7 +713,7 @@ export default function LogsClient() {
                   </svg>
                   <p className="text-xs text-[var(--text-secondary)]">ไม่พบ request logs</p>
                   {hasFilters && (
-                    <button onClick={clearFilters} className="text-[10px] text-[#00FFA7] hover:text-[#4779FF] cursor-pointer">ล้างตัวกรอง</button>
+                    <button onClick={clearFilters} className="text-[10px] text-[var(--accent)] hover:text-[var(--accent-secondary)] cursor-pointer">ล้างตัวกรอง</button>
                   )}
                 </div>
               )}
@@ -707,14 +722,14 @@ export default function LogsClient() {
 
           {/* Pagination */}
           {filtered.length > 0 && (
-            <div className="border-t border-[var(--border-subtle)] px-4 py-2 flex items-center justify-between text-[10px] text-[var(--text-muted)] shrink-0">
+            <div className="border-t border-[var(--border-default)] px-4 py-2 flex items-center justify-between text-[10px] text-[var(--text-muted)] shrink-0">
               <span>{showingFrom}–{showingTo} / {filtered.length}</span>
               {totalPages > 1 && (
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => setPage(p => Math.max(1, p - 1))}
                     disabled={page <= 1}
-                    className="w-6 h-6 rounded flex items-center justify-center hover:bg-[var(--bg-surface)] disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                    className="w-8 h-8 rounded flex items-center justify-center hover:bg-[var(--bg-surface)] disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                   >
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6" /></svg>
                   </button>
@@ -722,7 +737,7 @@ export default function LogsClient() {
                   <button
                     onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                     disabled={page >= totalPages}
-                    className="w-6 h-6 rounded flex items-center justify-center hover:bg-[var(--bg-surface)] disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                    className="w-8 h-8 rounded flex items-center justify-center hover:bg-[var(--bg-surface)] disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                   >
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6" /></svg>
                   </button>
@@ -736,7 +751,7 @@ export default function LogsClient() {
         <AnimatePresence>
           {selectedLog && (
             <motion.div
-              className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-[20px] relative flex flex-col overflow-hidden w-[55%]"
+              className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg relative flex flex-col overflow-hidden w-[55%]"
               initial={{ width: 0, opacity: 0 }}
               animate={{ width: "55%", opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
@@ -745,7 +760,7 @@ export default function LogsClient() {
               {/* Close button — fixed top-right of the pane */}
               <button
                 onClick={() => setSelectedLog(null)}
-                className="absolute top-3 right-3 z-20 w-7 h-7 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:bg-white/10 flex items-center justify-center text-[var(--text-muted)] hover:text-white transition-colors cursor-pointer"
+                className="absolute top-3 right-3 z-20 w-7 h-7 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-default)] hover:bg-white/10 flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -758,9 +773,9 @@ export default function LogsClient() {
 
         {/* Empty state for right pane */}
         {!selectedLog && (
-          <div className="hidden lg:flex bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-[20px] w-[55%] items-center justify-center">
+          <div className="hidden lg:flex bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg w-[55%] items-center justify-center">
             <div className="text-center">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] flex items-center justify-center">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-default)] flex items-center justify-center">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="text-[var(--text-muted)]">
                   <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" />
                 </svg>
@@ -770,6 +785,8 @@ export default function LogsClient() {
           </div>
         )}
       </div>
+      </>
+      )}
     </motion.div>
   );
 }

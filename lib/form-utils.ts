@@ -58,7 +58,12 @@ export function fieldCls(error: string | undefined, value: string, extra = ""): 
 export function smsCounterText(message: string): string {
   if (!message) return "";
   const hasThai = /[\u0E00-\u0E7F]/.test(message);
-  const perSms = hasThai ? 70 : 160;
-  const count = Math.ceil(message.length / perSms);
-  return `${message.length} chars • ${count} SMS ${hasThai ? "(Thai: 70/SMS)" : "(EN: 160/SMS)"}`;
+  const hasNonGsm = /[^\x00-\x7F]/.test(message);
+  const isUcs2 = hasThai || hasNonGsm;
+  // Synced with backend (lib/package/quota.ts)
+  const count = isUcs2
+    ? (message.length <= 70 ? 1 : Math.ceil(message.length / 67))
+    : (message.length <= 160 ? 1 : Math.ceil(message.length / 153));
+  const encoding = isUcs2 ? "UCS-2: 70/SMS" : "GSM-7: 160/SMS";
+  return `${message.length} chars • ${count} SMS (${encoding})`;
 }

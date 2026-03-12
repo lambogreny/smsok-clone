@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
         where: { userId: user.id, status: "verified" },
         orderBy: { createdAt: "desc" },
         take: 5,
-        select: { id: true, credits: true, amount: true, createdAt: true },
+        select: { id: true, amount: true, createdAt: true },
       }),
     ]);
 
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
       ...recentTopups.map((t) => ({
         id: `txn_${t.id}`,
         type: "topup",
-        message: `เติมเครดิต ${t.credits.toLocaleString()} เครดิต สำเร็จ`,
+        message: `ซื้อ package สำเร็จ (฿${(t.amount / 100).toLocaleString()})`,
         createdAt: t.createdAt.toISOString(),
         read: readAt ? t.createdAt <= readAt : false,
       })),

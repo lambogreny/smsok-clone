@@ -7,6 +7,9 @@ import { normalizePhone, sendOtpSchema, verifyOtpSchema } from "@/lib/validation
 import { checkOtpRateLimit, recordOtpSend } from "@/lib/otp-rate-limit";
 import crypto from "crypto";
 import { Prisma } from "@prisma/client";
+import { deductQuota, refundQuota, getRemainingQuota, ensureSufficientQuota } from "../package/quota";
+import { InsufficientCreditsError, toInsufficientCreditsResult } from "../quota-errors";
+import type { InsufficientCreditsResult } from "../quota-errors";
 
 const OTP_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
 const MAX_ATTEMPTS = 5;
@@ -68,7 +71,11 @@ export async function generateOtp_(
   channel: "WEB" | "API" = "WEB",
   ip: string = "unknown"
 ) {
-  const input = sendOtpSchema.parse({ phone, purpose });
+  const parsed = sendOtpSchema.safeParse({ phone, purpose });
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message || "ข้อมูลไม่ถูกต้อง");
+  }
+  const input = parsed.data;
   const normalizedPhone = normalizePhone(input.phone);
   const debugMode = options.debug === true && process.env.NODE_ENV !== "production";
 
@@ -88,14 +95,12 @@ export async function generateOtp_(
     throw new Error("ส่ง OTP มากเกินไป กรุณารอ 10 นาที");
   }
 
-  // Check user credits
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { credits: true },
-  });
-
-  if (!user || user.credits < OTP_CREDIT_COST) {
-    throw new Error("เครดิตไม่เพียงพอ");
+  // Check package quota — return structured error (not throw) for server action boundary
+  try {
+    await ensureSufficientQuota(userId, OTP_CREDIT_COST);
+  } catch (err) {
+    if (err instanceof InsufficientCreditsError) return toInsufficientCreditsResult(err);
+    throw err;
   }
 
   const code = generateOtp();
@@ -103,13 +108,13 @@ export async function generateOtp_(
   const expiresAt = new Date(Date.now() + OTP_EXPIRY_MS);
   const codeHash = hashOtp(code, refCode);
 
-  // Create OTP record + deduct credit in transaction
+  // Create OTP record + deduct package quota in transaction
   let otpRecord: { id: string; refCode: string; phone: string; purpose: string; expiresAt: Date };
-  let updatedUser: { credits: number };
+  let deductions: Array<{ purchaseId: string; amount: number }>;
 
   try {
-    [otpRecord, updatedUser] = await prisma.$transaction([
-      prisma.otpRequest.create({
+    const result = await prisma.$transaction(async (tx) => {
+      const otp = await tx.otpRequest.create({
         data: {
           userId,
           refCode,
@@ -125,13 +130,15 @@ export async function generateOtp_(
           purpose: true,
           expiresAt: true,
         },
-      }),
-      prisma.user.update({
-        where: { id: userId },
-        data: { credits: { decrement: OTP_CREDIT_COST } },
-        select: { credits: true },
-      }),
-    ]);
+      });
+
+      const quotaResult = await deductQuota(tx, userId, OTP_CREDIT_COST);
+
+      return { otp, deductions: quotaResult.deductions };
+    });
+
+    otpRecord = result.otp;
+    deductions = result.deductions;
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -155,14 +162,13 @@ export async function generateOtp_(
         throw new Error(result.error || "ส่ง OTP ไม่สำเร็จ กรุณาลองใหม่");
       }
     } catch {
-      // Refund credit on send failure
-      await prisma.$transaction([
-        prisma.otpRequest.delete({ where: { id: otpRecord.id } }),
-        prisma.user.update({
-          where: { id: userId },
-          data: { credits: { increment: OTP_CREDIT_COST } },
-        }),
-      ]);
+      // Refund package quota on send failure
+      await prisma.$transaction(async (tx) => {
+        await tx.otpRequest.delete({ where: { id: otpRecord.id } });
+        for (const d of deductions) {
+          await refundQuota(tx, d.purchaseId, d.amount);
+        }
+      });
       throw new Error("ส่ง OTP ไม่สำเร็จ กรุณาลองใหม่");
     }
   }
@@ -170,33 +176,24 @@ export async function generateOtp_(
   // Record successful send for Redis backoff tracking
   await recordOtpSend(normalizedPhone, ip);
 
-  // Log credit deduction + SMS history after confirmed send
+  // Log SMS history after confirmed send
   const sentAt = new Date();
-  await prisma.$transaction([
-    prisma.creditTransaction.create({
-      data: {
-        userId,
-        amount: -OTP_CREDIT_COST,
-        balance: updatedUser.credits, // already decremented
-        type: "OTP_SEND",
-        description: `OTP ส่งไปยัง ${normalizedPhone}`,
-        refId: otpRecord.id,
-      },
-    }),
-    prisma.message.create({
-      data: {
-        userId,
-        type: "OTP",
-        channel,
-        senderName: "EasySlip",
-        recipient: normalizedPhone,
-        content: "[OTP]",
-        status: "delivered",
-        creditCost: OTP_CREDIT_COST,
-        sentAt,
-      },
-    }),
-  ]);
+  await prisma.message.create({
+    data: {
+      userId,
+      type: "OTP",
+      channel,
+      senderName: "EasySlip",
+      recipient: normalizedPhone,
+      content: "[OTP]",
+      status: "delivered",
+      creditCost: OTP_CREDIT_COST,
+      sentAt,
+    },
+  });
+
+  // Re-fetch remaining quota after deduction
+  const updatedQuota = await getRemainingQuota(userId);
 
   return {
     id: otpRecord.id,
@@ -206,7 +203,7 @@ export async function generateOtp_(
     expiresAt: otpRecord.expiresAt.toISOString(),
     expiresIn: Math.floor(OTP_EXPIRY_MS / 1000),
     creditUsed: OTP_CREDIT_COST,
-    creditsRemaining: updatedUser.credits,
+    smsRemaining: updatedQuota.totalRemaining,
     delivery,
     ...(debugMode && { debugCode: code }),
   };
@@ -302,14 +299,20 @@ export async function verifyOtp_(
 
 export async function generateOtpForSession(data: unknown) {
   const userId = await requireSessionUserId();
-  const input = sendOtpSchema.parse(data);
-  return generateOtp_(userId, input.phone, input.purpose);
+  const parsed = sendOtpSchema.safeParse(data);
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message || "ข้อมูลไม่ถูกต้อง");
+  }
+  return generateOtp_(userId, parsed.data.phone, parsed.data.purpose);
 }
 
 export async function verifyOtpForSession(data: unknown) {
   const userId = await requireSessionUserId();
-  const input = verifyOtpSchema.parse(data);
-  return verifyOtp_(userId, input.ref, input.code);
+  const parsed = verifyOtpSchema.safeParse(data);
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message || "ข้อมูลไม่ถูกต้อง");
+  }
+  return verifyOtp_(userId, parsed.data.ref, parsed.data.code);
 }
 
 // ==========================================
@@ -317,7 +320,11 @@ export async function verifyOtpForSession(data: unknown) {
 // ==========================================
 
 export async function generateOtpForRegister(phone: string, ip: string = "unknown") {
-  const normalizedPhone = normalizePhone(sendOtpSchema.parse({ phone, purpose: "verify" }).phone);
+  const parsedOtp = sendOtpSchema.safeParse({ phone, purpose: "verify" });
+  if (!parsedOtp.success) {
+    throw new Error(parsedOtp.error.issues[0]?.message || "เบอร์โทรไม่ถูกต้อง");
+  }
+  const normalizedPhone = normalizePhone(parsedOtp.data.phone);
 
   // Anti-enumeration: check rate limit BEFORE phone existence check
   // This way attackers can't distinguish "phone exists" vs "rate limited"
@@ -342,9 +349,7 @@ export async function generateOtpForRegister(phone: string, ip: string = "unknow
   const refCode = generateRefCode();
   const expiresAt = new Date(Date.now() + OTP_EXPIRY_MS);
 
-  if (process.env.NODE_ENV !== "production") {
-    console.log(`[DEV] OTP for ${normalizedPhone} : ${code}  (ref: ${refCode})`);
-  }
+  // OTP code is hashed before storage — never log plaintext
 
   await prisma.otpRequest.create({
     data: {

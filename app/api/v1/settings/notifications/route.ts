@@ -1,11 +1,12 @@
 import { NextRequest } from "next/server";
-import { authenticateApiKey, apiResponse, apiError } from "@/lib/api-auth";
+import { authenticateRequest, apiResponse, apiError } from "@/lib/api-auth";
 import { getNotificationPrefs, updateNotificationPrefs } from "@/lib/actions/settings";
+import { updateNotificationPrefsSchema } from "@/lib/validations";
 
 // GET /api/v1/settings/notifications — get notification preferences
 export async function GET(req: NextRequest) {
   try {
-    const user = await authenticateApiKey(req);
+    const user = await authenticateRequest(req);
     const prefs = await getNotificationPrefs(user.id);
     return apiResponse(prefs);
   } catch (error) {
@@ -16,9 +17,10 @@ export async function GET(req: NextRequest) {
 // PUT /api/v1/settings/notifications — update notification preferences
 export async function PUT(req: NextRequest) {
   try {
-    const user = await authenticateApiKey(req);
+    const user = await authenticateRequest(req);
     const body = await req.json();
-    const result = await updateNotificationPrefs(user.id, body);
+    const input = updateNotificationPrefsSchema.parse(body);
+    const result = await updateNotificationPrefs(user.id, input);
     return apiResponse(result);
   } catch (error) {
     return apiError(error);

@@ -32,17 +32,12 @@ export async function register(formData: FormData) {
     const newUser = await tx.user.create({
       data: { name, email, phone, password: hashed },
     });
-    await tx.creditTransaction.create({
-      data: {
-        userId: newUser.id,
-        amount: 15,
-        balance: 15,
-        type: "WELCOME_BONUS",
-        description: "เครดิตต้อนรับสมาชิกใหม่",
-      },
-    });
     return newUser;
   });
+
+  // Create trial package for new user
+  const { createTrialPackage } = await import("./package/quota");
+  await createTrialPackage(user.id).catch(() => {});
 
   await setSession(user.id);
   redirect("/dashboard");
@@ -60,6 +55,9 @@ export async function registerWithOtp(data: {
   otpRef: string;
   otpCode: string;
   acceptTerms?: boolean;
+  consentService?: boolean;
+  consentThirdParty?: boolean;
+  consentMarketing?: boolean;
 }) {
   const { verifyOtpForRegister } = await import("./actions/otp");
 
@@ -109,17 +107,12 @@ export async function registerWithOtp(data: {
         acceptedTermsAt: data.acceptTerms ? new Date() : null,
       },
     });
-    await tx.creditTransaction.create({
-      data: {
-        userId: newUser.id,
-        amount: 15,
-        balance: 15,
-        type: "WELCOME_BONUS",
-        description: "เครดิตต้อนรับสมาชิกใหม่",
-      },
-    });
     return newUser;
   });
+
+  // Create trial package for new user
+  const { createTrialPackage } = await import("./package/quota");
+  await createTrialPackage(user.id).catch(() => {});
 
   await setSession(user.id);
 }

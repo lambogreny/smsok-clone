@@ -71,6 +71,8 @@ import {
   Loader2,
 } from "lucide-react";
 
+import EmptyState from "@/components/EmptyState";
+
 // ==========================================
 // Types
 // ==========================================
@@ -129,6 +131,7 @@ export default function GroupsPageClient({
 
   // Form
   const form = useForm<GroupFormValues>({
+    mode: "onChange",
     resolver: zodResolver(groupFormSchema),
     defaultValues: { name: "" },
   });
@@ -370,7 +373,7 @@ export default function GroupsPageClient({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-white">
+          <h2 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">
             กลุ่ม
           </h2>
           <p className="text-sm text-[var(--text-muted)] mt-1">
@@ -389,7 +392,7 @@ export default function GroupsPageClient({
       {/* Groups Table — Desktop */}
       {groups.length > 0 ? (
         <>
-          <Card className="hidden md:block bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] overflow-hidden">
+          <Card className="hidden md:block bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow className="border-b-0 hover:bg-transparent">
@@ -411,7 +414,7 @@ export default function GroupsPageClient({
                 {groups.map((g, idx) => (
                   <TableRow
                     key={g.id}
-                    className={`border-b border-[var(--border-subtle)] hover:bg-[var(--bg-surface-hover)] transition-colors ${
+                    className={`border-b border-[var(--border-default)] hover:bg-[var(--bg-surface-hover)] transition-colors ${
                       idx % 2 === 1 ? "bg-[var(--bg-muted)]" : "bg-transparent"
                     }`}
                   >
@@ -420,10 +423,10 @@ export default function GroupsPageClient({
                         href={`/dashboard/groups/${g.id}`}
                         className="flex items-center gap-3 group"
                       >
-                        <div className="w-9 h-9 rounded-xl bg-[rgba(0,255,167,0.08)] border border-[rgba(0,255,167,0.15)] flex items-center justify-center text-[var(--accent)] flex-shrink-0 group-hover:bg-[rgba(0,255,167,0.12)] transition-all">
+                        <div className="w-9 h-9 rounded-xl bg-[rgba(var(--accent-rgb),0.08)] border border-[rgba(var(--accent-rgb),0.15)] flex items-center justify-center text-[var(--accent)] flex-shrink-0 group-hover:bg-[rgba(var(--accent-rgb),0.12)] transition-all">
                           <FolderOpen className="w-4 h-4" />
                         </div>
-                        <span className="text-sm font-semibold text-white group-hover:text-[var(--accent)] group-hover:underline transition-colors truncate">
+                        <span className="text-sm font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent)] group-hover:underline transition-colors truncate">
                           {g.name}
                         </span>
                       </Link>
@@ -431,7 +434,7 @@ export default function GroupsPageClient({
                     <TableCell className="py-3.5">
                       <Badge
                         variant="outline"
-                        className="text-[12px] px-2 py-0.5 bg-[rgba(0,255,167,0.06)] text-[var(--accent)] border-[rgba(0,255,167,0.15)] font-medium rounded-full"
+                        className="text-[12px] px-2 py-0.5 bg-[rgba(var(--accent-rgb),0.06)] text-[var(--accent)] border-[rgba(var(--accent-rgb),0.15)] font-medium rounded-full"
                       >
                         {g._count.members}
                       </Badge>
@@ -449,7 +452,7 @@ export default function GroupsPageClient({
                           variant="outline"
                           size="sm"
                           onClick={() => openMembers(g)}
-                          className="h-8 border-[var(--border-subtle)] bg-transparent text-[var(--text-muted)] hover:text-[var(--accent)] hover:border-[rgba(0,255,167,0.3)]"
+                          className="h-8 border-[var(--border-default)] bg-transparent text-[var(--text-muted)] hover:text-[var(--accent)] hover:border-[rgba(var(--accent-rgb),0.3)]"
                         >
                           <Users className="w-3.5 h-3.5 mr-1" />
                           จัดการสมาชิก
@@ -458,7 +461,7 @@ export default function GroupsPageClient({
                           variant="ghost"
                           size="sm"
                           onClick={() => openEdit(g)}
-                          className="h-8 px-2.5 text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[rgba(0,255,167,0.04)]"
+                          className="h-8 px-2.5 text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[rgba(var(--accent-rgb),0.04)]"
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </Button>
@@ -469,7 +472,7 @@ export default function GroupsPageClient({
                             setDeletingGroup(g);
                             setShowDeleteAlert(true);
                           }}
-                          className="h-8 px-2.5 text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/5"
+                          className="h-8 px-2.5 text-[var(--text-muted)] hover:text-[var(--error)] hover:bg-[rgba(var(--error-rgb,239,68,68),0.05)]"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
@@ -486,16 +489,16 @@ export default function GroupsPageClient({
             {groups.map((g) => (
               <Card
                 key={g.id}
-                className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[16px] p-4"
+                className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-xl p-4"
               >
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-[rgba(0,255,167,0.08)] border border-[rgba(0,255,167,0.15)] flex items-center justify-center text-[var(--accent)] flex-shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-[rgba(var(--accent-rgb),0.08)] border border-[rgba(var(--accent-rgb),0.15)] flex items-center justify-center text-[var(--accent)] flex-shrink-0">
                     <FolderOpen className="w-5 h-5" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <Link
                       href={`/dashboard/groups/${g.id}`}
-                      className="text-sm font-semibold text-white hover:text-[var(--accent)] transition-colors truncate block"
+                      className="text-sm font-semibold text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors truncate block"
                     >
                       {g.name}
                     </Link>
@@ -509,7 +512,7 @@ export default function GroupsPageClient({
                     variant="outline"
                     size="sm"
                     onClick={() => openMembers(g)}
-                    className="flex-1 min-h-[44px] border-[var(--border-subtle)] bg-transparent text-[var(--text-muted)] hover:text-[var(--accent)] hover:border-[rgba(0,255,167,0.3)]"
+                    className="flex-1 min-h-[44px] border-[var(--border-default)] bg-transparent text-[var(--text-muted)] hover:text-[var(--accent)] hover:border-[rgba(var(--accent-rgb),0.3)]"
                   >
                     <Users className="w-4 h-4 mr-1" />
                     สมาชิก
@@ -525,7 +528,7 @@ export default function GroupsPageClient({
                       setDeletingGroup(g);
                       setShowDeleteAlert(true);
                     }}
-                    className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--text-muted)] hover:text-red-400 transition-colors"
+                    className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--error)] transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -536,24 +539,15 @@ export default function GroupsPageClient({
         </>
       ) : (
         /* Empty state */
-        <Card className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] p-12 text-center">
-          <div className="w-16 h-16 rounded-full bg-[rgba(0,255,167,0.08)] border border-[rgba(0,255,167,0.15)] flex items-center justify-center mx-auto mb-4">
-            <FolderOpen className="w-8 h-8 text-[var(--accent)]" />
-          </div>
-          <h3 className="text-lg font-semibold text-white mb-2">
-            ยังไม่มีกลุ่ม
-          </h3>
-          <p className="text-sm text-[var(--text-muted)] mb-6">
-            สร้างกลุ่มเพื่อจัดส่ง SMS เป็นหมวดหมู่
-          </p>
-          <Button
-            onClick={openCreate}
-            className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] font-semibold"
-          >
-            <Plus className="w-4 h-4 mr-1.5" />
-            สร้างกลุ่มแรก
-          </Button>
-        </Card>
+        <EmptyState
+          icon={FolderOpen}
+          iconColor="var(--accent)"
+          iconBg="rgba(var(--accent-rgb), 0.1)"
+          title="ยังไม่มีกลุ่ม"
+          description="สร้างกลุ่มเพื่อจัดการผู้ติดต่อ"
+          ctaLabel="สร้างกลุ่ม"
+          ctaAction={openCreate}
+        />
       )}
 
       {/* ==========================================
@@ -562,9 +556,9 @@ export default function GroupsPageClient({
 
       {/* Create / Edit Group Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] sm:max-w-[400px]">
+        <DialogContent className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg sm:max-w-[400px]">
           <DialogHeader>
-            <DialogTitle className="text-white text-lg">
+            <DialogTitle className="text-[var(--text-primary)] text-lg">
               {editingGroup ? "แก้ไขกลุ่ม" : "สร้างกลุ่มใหม่"}
             </DialogTitle>
             <DialogDescription className="text-[var(--text-muted)]">
@@ -592,7 +586,7 @@ export default function GroupsPageClient({
                         placeholder="ชื่อกลุ่ม"
                         maxLength={100}
                         autoFocus
-                        className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(0,255,167,0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+                        className="h-11 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]"
                         {...field}
                       />
                     </FormControl>
@@ -606,7 +600,7 @@ export default function GroupsPageClient({
                   type="button"
                   variant="outline"
                   onClick={() => setShowDialog(false)}
-                  className="border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-white bg-transparent"
+                  className="border-[var(--border-default)] text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-transparent"
                 >
                   ยกเลิก
                 </Button>
@@ -632,9 +626,9 @@ export default function GroupsPageClient({
 
       {/* Delete Group AlertDialog */}
       <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
-        <AlertDialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px]">
+        <AlertDialogContent className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">
+            <AlertDialogTitle className="text-[var(--text-primary)]">
               ลบกลุ่ม &ldquo;{deletingGroup?.name}&rdquo;?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-[var(--text-muted)]">
@@ -642,13 +636,13 @@ export default function GroupsPageClient({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-white bg-transparent">
+            <AlertDialogCancel className="border-[var(--border-default)] text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-transparent">
               ยกเลิก
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               disabled={isPending}
-              className="bg-red-500 hover:bg-red-600 text-white"
+              className="bg-[var(--error)] hover:bg-[var(--error)] text-[var(--text-primary)]"
             >
               {isPending ? (
                 <span className="flex items-center gap-2">
@@ -670,9 +664,9 @@ export default function GroupsPageClient({
           if (!open) setActiveGroup(null);
         }}
       >
-        <DialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] sm:max-w-[720px] max-h-[85vh] p-0 overflow-hidden">
+        <DialogContent className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg sm:max-w-[720px] max-h-[85vh] p-0 overflow-hidden">
           <DialogHeader className="px-6 pt-6 pb-0">
-            <DialogTitle className="text-white text-lg">
+            <DialogTitle className="text-[var(--text-primary)] text-lg">
               จัดการสมาชิก — กลุ่ม &ldquo;{activeGroup?.name}&rdquo; (
               {activeGroup?._count.members || 0} คน)
             </DialogTitle>
@@ -683,7 +677,7 @@ export default function GroupsPageClient({
 
           <div className="flex flex-col md:flex-row gap-0 flex-1 min-h-0 overflow-hidden">
             {/* Left: current members */}
-            <div className="flex-1 flex flex-col border-b md:border-b-0 md:border-r border-[var(--border-subtle)] min-h-0">
+            <div className="flex-1 flex flex-col border-b md:border-b-0 md:border-r border-[var(--border-default)] min-h-0">
               <div className="px-4 pt-4 pb-3">
                 <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-medium mb-2">
                   สมาชิกปัจจุบัน ({members.length})
@@ -692,7 +686,7 @@ export default function GroupsPageClient({
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-muted)]" />
                   <Input
                     type="text"
-                    className="pl-9 h-9 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white text-sm placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(0,255,167,0.6)]"
+                    className="pl-9 h-9 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] text-sm placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)]"
                     placeholder="ค้นหา..."
                     value={memberSearch}
                     onChange={(e) => setMemberSearch(e.target.value)}
@@ -718,7 +712,7 @@ export default function GroupsPageClient({
                       className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg hover:bg-[rgba(239,68,68,0.04)] group transition-colors"
                     >
                       <div className="min-w-0">
-                        <div className="text-[13px] text-white truncate">
+                        <div className="text-[13px] text-[var(--text-primary)] truncate">
                           {m.contact.name}
                         </div>
                         <div className="text-[12px] text-[var(--text-muted)] font-mono">
@@ -728,7 +722,7 @@ export default function GroupsPageClient({
                       <button
                         onClick={() => handleRemoveContact(m)}
                         disabled={isPending}
-                        className="flex-shrink-0 w-7 h-7 rounded-lg hover:bg-[rgba(239,68,68,0.1)] flex items-center justify-center text-[var(--text-muted)] hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all disabled:opacity-50"
+                        className="flex-shrink-0 w-7 h-7 rounded-lg hover:bg-[rgba(var(--error-rgb,239,68,68),0.1)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--error)] opacity-0 group-hover:opacity-100 transition-all disabled:opacity-50"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -748,7 +742,7 @@ export default function GroupsPageClient({
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-muted)]" />
                   <Input
                     type="text"
-                    className="pl-9 h-9 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white text-sm placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(0,255,167,0.6)]"
+                    className="pl-9 h-9 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] text-sm placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)]"
                     placeholder="ค้นหาเพื่อเพิ่ม..."
                     value={addSearch}
                     onChange={(e) => setAddSearch(e.target.value)}
@@ -770,17 +764,17 @@ export default function GroupsPageClient({
                       key={c.id}
                       onClick={() => handleAddContact(c)}
                       disabled={isPending}
-                      className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg hover:bg-[rgba(0,255,167,0.04)] text-left transition-all disabled:opacity-50 cursor-pointer group"
+                      className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg hover:bg-[rgba(var(--accent-rgb),0.04)] text-left transition-all disabled:opacity-50 cursor-pointer group"
                     >
                       <div className="min-w-0">
-                        <div className="text-[13px] text-white truncate">
+                        <div className="text-[13px] text-[var(--text-primary)] truncate">
                           {c.name}
                         </div>
                         <div className="text-[12px] text-[var(--text-muted)] font-mono">
                           {c.phone}
                         </div>
                       </div>
-                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[rgba(0,255,167,0.06)] group-hover:bg-[rgba(0,255,167,0.15)] flex items-center justify-center text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors">
+                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[rgba(var(--accent-rgb),0.06)] group-hover:bg-[rgba(var(--accent-rgb),0.15)] flex items-center justify-center text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors">
                         <Plus className="w-3 h-3" />
                       </span>
                     </button>
@@ -790,11 +784,11 @@ export default function GroupsPageClient({
             </div>
           </div>
 
-          <DialogFooter className="px-6 pb-6 pt-4 border-t border-[var(--border-subtle)]">
+          <DialogFooter className="px-6 pb-6 pt-4 border-t border-[var(--border-default)]">
             <Button
               variant="outline"
               onClick={() => setActiveGroup(null)}
-              className="border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-white bg-transparent"
+              className="border-[var(--border-default)] text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-transparent"
             >
               ปิด
             </Button>

@@ -97,6 +97,7 @@ export const createCampaignWizardStore = (initState: Partial<CampaignWizardState
             draft: s.draft,
             completedSteps: s.completedSteps,
           }),
+          skipHydration: true,
         }
       ),
       { name: 'CampaignWizardStore' }

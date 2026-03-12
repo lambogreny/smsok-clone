@@ -181,7 +181,7 @@ export const cardHover: Variants = {
   hover: {
     y: -4,
     boxShadow: "0 8px 30px rgba(0, 255, 167, 0.1)",
-    borderColor: "#00FFA7",
+    borderColor: "var(--accent)",
     transition: { type: "spring", stiffness: 300, damping: 20 },
   },
 };
@@ -190,7 +190,7 @@ export const toggleVariants: Variants = {
   off: { x: 0, backgroundColor: "#121C26" },
   on: {
     x: 20,
-    backgroundColor: "#00FFA7",
+    backgroundColor: "var(--accent)",
     transition: { ...springs.micro },
   },
 };

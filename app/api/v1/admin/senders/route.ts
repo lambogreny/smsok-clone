@@ -1,37 +1,61 @@
 import { NextRequest } from "next/server";
-import { authenticateApiKey, ApiError, apiResponse, apiError } from "@/lib/api-auth";
-import { adminApproveSenderName, adminGetPendingSenderNames } from "@/lib/actions/sender-names";
-import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { ApiError, apiResponse, apiError } from "@/lib/api-auth";
+import { authenticateAdmin } from "@/lib/admin-auth";
+import { prisma as db } from "@/lib/db";
 import { approveSenderNameSchema } from "@/lib/validations";
+import { applyRateLimit } from "@/lib/rate-limit";
 
-async function requireAdmin(req: NextRequest) {
-  const user = await authenticateApiKey(req);
-  if (user.role !== "admin") {
-    throw new ApiError(403, "Admin access required");
-  }
-  return user;
-}
-
+// GET /api/v1/admin/senders — list pending sender names
 export async function GET(req: NextRequest) {
   try {
-    await requireAdmin(req);
-    const pending = await adminGetPendingSenderNames();
+    await authenticateAdmin(req);
+
+    const pending = await db.senderName.findMany({
+      where: { status: "PENDING" },
+      include: {
+        user: { select: { name: true, email: true } },
+      },
+      orderBy: { createdAt: "asc" },
+    });
+
     return apiResponse({ senders: pending });
   } catch (error) {
     return apiError(error);
   }
 }
 
+// POST /api/v1/admin/senders — approve/reject sender name
 export async function POST(req: NextRequest) {
   try {
-    const admin = await requireAdmin(req);
+    const admin = await authenticateAdmin(req, ["SUPER_ADMIN", "OPERATIONS"]);
 
-    const limit = checkRateLimit(admin.id, "admin");
-    if (!limit.allowed) return rateLimitResponse(limit.resetIn);
+    const rl = await applyRateLimit(admin.id, "admin");
+    if (rl.blocked) return rl.blocked;
 
     const body = await req.json();
     const input = approveSenderNameSchema.parse(body);
-    await adminApproveSenderName(admin.id, input);
+
+    // All reads + checks + writes inside $transaction to prevent TOCTOU
+    await db.$transaction(async (tx) => {
+      const senderName = await tx.senderName.findUnique({
+        where: { id: input.id },
+      });
+      if (!senderName) throw new ApiError(404, "ไม่พบชื่อผู้ส่ง");
+      if (senderName.status !== "PENDING") throw new ApiError(400, "ชื่อผู้ส่งนี้ดำเนินการแล้ว");
+
+      if (input.action === "approve") {
+        await tx.senderName.update({
+          where: { id: input.id },
+          data: { status: "APPROVED", approvedAt: new Date(), approvedBy: admin.id },
+        });
+      } else {
+        await tx.senderName.update({
+          where: { id: input.id },
+          data: { status: "REJECTED", rejectNote: input.rejectNote },
+        });
+      }
+    });
+
     return apiResponse({ success: true });
   } catch (error) {
     return apiError(error);

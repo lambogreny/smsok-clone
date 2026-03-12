@@ -30,7 +30,7 @@ export default function SenderDropdown({
         </div>
         <p className="text-[11px] text-[var(--text-muted)] mt-1.5">
           ใช้ชื่อค่าเริ่มต้น —{" "}
-          <a href="/dashboard/senders" className="text-violet-400 hover:text-violet-300 transition-colors">
+          <a href="/dashboard/senders" className="text-[var(--accent)] hover:text-[var(--accent)]/80 transition-colors">
             ขอ Sender Name ใหม่ →
           </a>
         </p>
@@ -50,7 +50,7 @@ export default function SenderDropdown({
       />
       <p className="text-[11px] text-[var(--text-muted)] mt-1.5">
         {value === "EasySlip" ? "ใช้ชื่อค่าเริ่มต้นได้เลย หรือ" : "Sender ที่ผ่านอนุมัติแล้ว — "}
-        <a href="/dashboard/senders" className="text-violet-400 hover:text-violet-300 transition-colors">
+        <a href="/dashboard/senders" className="text-[var(--accent)] hover:text-[var(--accent)]/80 transition-colors">
           ขอ Sender Name ใหม่ →
         </a>
       </p>

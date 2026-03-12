@@ -110,7 +110,7 @@ export default function CustomFieldsSection({
       </CardHeader>
       <CardContent className="space-y-4">
         {error && (
-          <p className="text-sm text-[var(--error)] bg-[var(--error)]/10 rounded-lg px-3 py-2">
+          <p className="text-sm text-[var(--error)] bg-[rgba(var(--error-rgb,239,68,68),0.1)] rounded-lg px-3 py-2">
             {error}
           </p>
         )}

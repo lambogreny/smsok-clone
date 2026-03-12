@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { authenticateApiKey, apiResponse, apiError } from "@/lib/api-auth";
+import { authenticateRequest, apiResponse, apiError } from "@/lib/api-auth";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 
@@ -12,7 +12,7 @@ const schema = z.object({
 // POST /api/v1/contacts/bulk/move-group
 export async function POST(req: NextRequest) {
   try {
-    const user = await authenticateApiKey(req);
+    const user = await authenticateRequest(req);
     const body = await req.json();
     const input = schema.parse(body);
 

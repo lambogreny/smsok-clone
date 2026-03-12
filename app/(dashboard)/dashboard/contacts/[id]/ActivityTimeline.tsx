@@ -15,14 +15,14 @@ import { Badge } from "@/components/ui/badge";
 const TYPE_CONFIG: Record<string, { icon: typeof MessageSquare; label: string; color: string }> = {
   sms: { icon: MessageSquare, label: "SMS", color: "var(--accent)" },
   otp: { icon: KeyRound, label: "OTP", color: "var(--accent-secondary)" },
-  credit: { icon: CreditCard, label: "เครดิต", color: "var(--accent-warm)" },
+  credit: { icon: CreditCard, label: "แพ็กเกจ", color: "var(--accent-warm)" },
 };
 
 const FILTERS: { value: string; label: string }[] = [
   { value: "", label: "ทั้งหมด" },
   { value: "sms", label: "SMS" },
   { value: "otp", label: "OTP" },
-  { value: "credit", label: "เครดิต" },
+  { value: "credit", label: "แพ็กเกจ" },
 ];
 
 export default function ActivityTimeline({
@@ -107,7 +107,7 @@ export default function ActivityTimeline({
             <MessageSquare className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
             <p className="text-sm font-medium mb-1">ยังไม่มีกิจกรรม</p>
             <p className="text-xs text-muted-foreground">
-              กิจกรรมจะปรากฏเมื่อมีการส่ง SMS, OTP หรือธุรกรรมเครดิต
+              กิจกรรมจะปรากฏเมื่อมีการส่ง SMS, OTP หรือซื้อแพ็กเกจ
             </p>
           </div>
         ) : (
@@ -176,7 +176,7 @@ export default function ActivityTimeline({
                         <>
                           {String(data.messageType) === "MARKETING" ? "การตลาด" : String(data.messageType) === "OTP" ? "OTP" : "ข้อความ"}
                           {data.senderName ? ` — จาก ${String(data.senderName)}` : ""}
-                          {data.creditCost != null ? ` (${String(data.creditCost)} เครดิต)` : ""}
+                          {data.creditCost != null ? ` (${String(data.creditCost)} SMS)` : ""}
                         </>
                       )}
                       {activity.type === "otp" && (

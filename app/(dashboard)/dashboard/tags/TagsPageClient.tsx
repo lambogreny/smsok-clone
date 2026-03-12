@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -11,10 +12,19 @@ import { useToast } from "@/app/components/ui/Toast";
 import { TAG_COLORS } from "@/lib/tag-utils";
 import type { TagItem } from "@/lib/types/api-responses";
 
+// PageLayout
+import PageLayout, {
+  PageHeader,
+  StatsRow,
+  StatCard,
+  FilterBar,
+  TableWrapper,
+  EmptyState,
+} from "@/components/blocks/PageLayout";
+
 // shadcn
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -43,16 +53,10 @@ import {
 } from "@/components/ui/form";
 
 // Icons
-import { Plus, Pencil, Trash2, Tag, Loader2, Search, ArrowUpDown } from "lucide-react";
+import { Plus, Pencil, Trash2, Tag, Users, Star, Loader2, Search } from "lucide-react";
 
 // ==========================================
-// Types
-// ==========================================
-
-// TagItem imported from api-responses
-
-// ==========================================
-// Nansen-aligned color picker options
+// Color config
 // ==========================================
 
 const COLOR_OPTIONS = TAG_COLORS.map((c) => ({
@@ -81,6 +85,15 @@ const tagFormSchema = z.object({
 type TagFormValues = z.infer<typeof tagFormSchema>;
 
 // ==========================================
+// Date formatter
+// ==========================================
+
+function formatThaiDate(dateStr: string | Date) {
+  const d = typeof dateStr === "string" ? new Date(dateStr) : dateStr;
+  return d.toLocaleDateString("th-TH", { day: "numeric", month: "short" });
+}
+
+// ==========================================
 // Main Component
 // ==========================================
 
@@ -101,10 +114,23 @@ export default function TagsPageClient({
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [deletingTag, setDeletingTag] = useState<TagItem | null>(null);
 
+  // Search
+  const [searchQuery, setSearchQuery] = useState("");
+  const filteredTags = initialTags.filter((tag) =>
+    tag.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Stats
+  const totalContacts = initialTags.reduce((sum, t) => sum + t._count.contactTags, 0);
+  const mostUsed = initialTags.length > 0
+    ? initialTags.reduce((max, t) => (t._count.contactTags > max._count.contactTags ? t : max), initialTags[0])
+    : null;
+
   // Form
   const form = useForm<TagFormValues>({
+    mode: "onChange",
     resolver: zodResolver(tagFormSchema),
-    defaultValues: { name: "", color: "#00FFA7" },
+    defaultValues: { name: "", color: "var(--accent)" },
   });
 
   // ==========================================
@@ -113,7 +139,7 @@ export default function TagsPageClient({
 
   function openCreate() {
     setEditingTag(null);
-    form.reset({ name: "", color: "#00FFA7" });
+    form.reset({ name: "", color: "var(--accent)" });
     setShowDialog(true);
   }
 
@@ -166,119 +192,125 @@ export default function TagsPageClient({
   // Render
   // ==========================================
 
-  // Search state
-  const [searchQuery, setSearchQuery] = useState("");
-  const filteredTags = initialTags.filter((tag) =>
-    tag.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-  const totalContacts = initialTags.reduce((sum, t) => sum + t._count.contactTags, 0);
-  const activeTags = initialTags.filter((t) => t._count.contactTags > 0).length;
-  const unusedTags = initialTags.length - activeTags;
-
   return (
-    <div className="pb-20 md:pb-8" style={{ padding: "var(--content-padding-y) var(--content-padding-x)" }}>
-      {/* Page Header — DNA Part 1 */}
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">แท็ก</h1>
-          <p className="page-description">จัดการและจัดระเบียบแท็กรายชื่อผู้ติดต่อ</p>
-        </div>
-        <Button
-          onClick={openCreate}
-          className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] font-semibold"
-        >
-          <Plus className="w-4 h-4 mr-1.5" />
-          สร้างแท็ก
-        </Button>
-      </div>
+    <PageLayout>
+      {/* Header */}
+      <PageHeader
+        title="แท็ก"
+        count={initialTags.length}
+        actions={
+          <Button
+            onClick={openCreate}
+            className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] font-semibold"
+          >
+            <Plus className="w-4 h-4 mr-1.5" />
+            สร้างแท็ก
+          </Button>
+        }
+      />
 
-      {/* Stats Cards — DNA Part 8 */}
-      <div className="stats-grid">
-        <div className="nansen-stat-card">
-          <div className="label">แท็กทั้งหมด</div>
-          <div className="value">{initialTags.length}</div>
-          <div className="text-xs text-[var(--text-subdued)] mt-1">tags</div>
-        </div>
-        <div className="nansen-stat-card">
-          <div className="label">ใช้งานอยู่</div>
-          <div className="value">{activeTags}</div>
-          <div className="text-xs text-[var(--text-subdued)] mt-1">มีรายชื่อ</div>
-        </div>
-        <div className="nansen-stat-card">
-          <div className="label">ไม่ได้ใช้</div>
-          <div className="value">{unusedTags}</div>
-          <div className="text-xs text-[var(--text-subdued)] mt-1">ว่าง</div>
-        </div>
-        <div className="nansen-stat-card">
-          <div className="label">รายชื่อทั้งหมด</div>
-          <div className="value">{totalContacts.toLocaleString()}</div>
-          <div className="text-xs text-[var(--text-subdued)] mt-1">tagged contacts</div>
-        </div>
-      </div>
+      {/* Stats — 3 cards per spec */}
+      <StatsRow columns={3}>
+        <StatCard
+          icon={<Tag className="w-[18px] h-[18px]" style={{ color: "var(--accent)" }} />}
+          iconColor="var(--accent-rgb)"
+          value={initialTags.length}
+          label="แท็กทั้งหมด"
+        />
+        <StatCard
+          icon={<Users className="w-[18px] h-[18px]" style={{ color: "var(--info)" }} />}
+          iconColor="71,121,255"
+          value={totalContacts.toLocaleString()}
+          label="ผู้ติดต่อที่มีแท็ก"
+        />
+        <StatCard
+          icon={<Star className="w-[18px] h-[18px]" style={{ color: "var(--warning)" }} />}
+          iconColor="245,158,11"
+          value={mostUsed?.name ?? "—"}
+          label="แท็กที่ใช้บ่อยสุด"
+          subtitle={mostUsed ? `${mostUsed._count.contactTags} คน` : undefined}
+        />
+      </StatsRow>
 
-      {/* Filter Bar — DNA Part 1 */}
-      <div className="filter-bar">
-        <div className="relative flex-1 max-w-[300px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-subdued)]" />
-          <input
-            type="text"
-            placeholder="ค้นหาแท็ก..."
+      {/* Search */}
+      <FilterBar>
+        <div className="relative flex-1 max-w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)]" />
+          <Input
+            placeholder="ค้นหาชื่อแท็ก..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="nansen-input w-full pl-9"
+            className="pl-9 h-10 bg-[var(--bg-surface)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]"
           />
         </div>
-      </div>
+        {searchQuery && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSearchQuery("")}
+            className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+          >
+            ล้างตัวกรอง
+          </Button>
+        )}
+      </FilterBar>
 
-      {/* Tags Table — DNA Part 2 + Part 8 */}
+      {/* Table or Empty */}
       {filteredTags.length > 0 ? (
-        <>
+        <TableWrapper>
           {/* Desktop Table */}
-          <div className="hidden md:block overflow-x-auto rounded-[var(--radius-xl)] border border-[var(--border-default)]">
+          <div className="hidden md:block">
             <table className="nansen-table">
               <thead>
                 <tr>
-                  <th style={{ width: 200 }}>
-                    ชื่อแท็ก <ArrowUpDown className="inline w-3 h-3 sort-icon" />
-                  </th>
-                  <th style={{ width: 120 }}>สี</th>
-                  <th style={{ width: 120 }} className="text-right">รายชื่อ</th>
-                  <th style={{ width: 60 }} className="text-center">จัดการ</th>
+                  <th style={{ width: 50 }}>สี</th>
+                  <th>ชื่อแท็ก</th>
+                  <th style={{ width: 120 }} className="text-right">ผู้ติดต่อ</th>
+                  <th style={{ width: 120 }} className="hidden lg:table-cell">สร้างเมื่อ</th>
+                  <th style={{ width: 100 }} className="text-center">จัดการ</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredTags.map((tag) => (
                   <tr key={tag.id} className="group">
+                    {/* Color dot */}
                     <td>
-                      <div className="flex items-center gap-3">
-                        <span
-                          className={`w-3 h-3 rounded-full flex-shrink-0 ${getColorDotClass(tag.color)}`}
-                        />
-                        <span className="font-medium">{tag.name}</span>
-                      </div>
+                      <span
+                        className="inline-block w-[10px] h-[10px] rounded-full"
+                        style={{ background: tag.color }}
+                      />
                     </td>
+                    {/* Tag name — click navigates to contacts */}
                     <td>
-                      <span className="tag-pill" style={{
-                        background: `${tag.color}1a`,
-                        color: tag.color,
-                        borderColor: `${tag.color}33`,
-                      }}>
-                        <span className="dot" style={{ background: tag.color }} />
-                        {COLOR_OPTIONS.find((c) => c.hex === tag.color)?.name || tag.color}
-                      </span>
+                      <Link
+                        href={`/dashboard/contacts?tag=${encodeURIComponent(tag.name)}`}
+                        className="text-sm font-semibold text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors"
+                      >
+                        {tag.name}
+                      </Link>
                     </td>
-                    <td className="numeric">{tag._count.contactTags.toLocaleString()}</td>
+                    {/* Contact count */}
+                    <td className="text-right tabular-nums text-sm text-[var(--text-muted)]">
+                      {tag._count.contactTags.toLocaleString()} คน
+                    </td>
+                    {/* Created date */}
+                    <td className="hidden lg:table-cell text-sm text-[var(--text-secondary)]">
+                      {formatThaiDate(tag.createdAt)}
+                    </td>
+                    {/* Actions */}
                     <td className="text-center">
                       <div className="flex items-center gap-1 justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
+                          type="button"
                           onClick={() => openEdit(tag)}
-                          className="w-7 h-7 rounded-lg hover:bg-[rgba(255,255,255,0.04)] flex items-center justify-center text-[var(--text-subdued)] hover:text-white transition-colors"
+                          className="w-8 h-8 rounded-md hover:bg-[rgba(255,255,255,0.04)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
                         >
                           <Pencil className="w-4 h-4" />
                         </button>
                         <button
+                          type="button"
                           onClick={() => { setDeletingTag(tag); setShowDeleteAlert(true); }}
-                          className="w-7 h-7 rounded-lg hover:bg-[rgba(239,68,68,0.06)] flex items-center justify-center text-[var(--text-subdued)] hover:text-red-400 transition-colors"
+                          className="w-8 h-8 rounded-md hover:bg-[rgba(239,68,68,0.06)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--error)] transition-colors cursor-pointer"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -291,33 +323,38 @@ export default function TagsPageClient({
           </div>
 
           {/* Mobile Cards */}
-          <div className="md:hidden space-y-3">
+          <div className="md:hidden divide-y divide-[var(--border-default)]">
             {filteredTags.map((tag) => (
-              <div
-                key={tag.id}
-                className="nansen-card p-4 flex items-center justify-between"
-              >
-                <div className="flex items-center gap-3">
+              <div key={tag.id} className="flex items-center justify-between px-4 py-3">
+                <div className="flex items-center gap-3 min-w-0">
                   <span
-                    className={`w-3 h-3 rounded-full flex-shrink-0 ${getColorDotClass(tag.color)}`}
+                    className="w-[10px] h-[10px] rounded-full shrink-0"
+                    style={{ background: tag.color }}
                   />
-                  <div>
-                    <div className="text-sm font-medium text-white">{tag.name}</div>
-                    <div className="text-xs text-[var(--text-subdued)] mt-0.5">
-                      {tag._count.contactTags} รายชื่อ
+                  <div className="min-w-0">
+                    <Link
+                      href={`/dashboard/contacts?tag=${encodeURIComponent(tag.name)}`}
+                      className="text-sm font-semibold text-[var(--text-primary)] block truncate"
+                    >
+                      {tag.name}
+                    </Link>
+                    <div className="text-xs text-[var(--text-secondary)] mt-0.5">
+                      {tag._count.contactTags} คน
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-0.5 shrink-0">
                   <button
+                    type="button"
                     onClick={() => openEdit(tag)}
-                    className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--text-subdued)] hover:text-[var(--accent)] transition-colors"
+                    className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
                   >
                     <Pencil className="w-4 h-4" />
                   </button>
                   <button
+                    type="button"
                     onClick={() => { setDeletingTag(tag); setShowDeleteAlert(true); }}
-                    className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--text-subdued)] hover:text-red-400 transition-colors"
+                    className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--error)] transition-colors cursor-pointer"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -327,32 +364,33 @@ export default function TagsPageClient({
           </div>
 
           {/* Pagination info */}
-          <div className="mt-4 text-right text-xs text-[var(--text-subdued)]">
-            แสดง {filteredTags.length} จาก {initialTags.length} แท็ก
+          <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--border-default)]">
+            <span className="text-[13px] text-[var(--text-secondary)]">
+              แสดง {filteredTags.length} จาก {initialTags.length} แท็ก
+            </span>
           </div>
-        </>
+        </TableWrapper>
       ) : (
-        /* Empty state */
-        <div className="nansen-card p-12 text-center">
-          <div className="w-16 h-16 rounded-full bg-[rgba(0,255,167,0.08)] border border-[rgba(0,255,167,0.15)] flex items-center justify-center mx-auto mb-4">
-            <Tag className="w-8 h-8 text-[var(--accent)]" />
-          </div>
-          <h3 className="text-lg font-semibold text-white mb-2">
-            {searchQuery ? "ไม่พบแท็ก" : "ยังไม่มีแท็ก"}
-          </h3>
-          <p className="text-sm text-[var(--text-subdued)] mb-6">
-            {searchQuery ? `ไม่พบแท็กที่ตรงกับ "${searchQuery}"` : "สร้างแท็กเพื่อจัดกลุ่มรายชื่อของคุณ"}
-          </p>
-          {!searchQuery && (
-            <Button
-              onClick={openCreate}
-              className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] font-semibold"
-            >
-              <Plus className="w-4 h-4 mr-1.5" />
-              สร้างแท็กแรก
-            </Button>
-          )}
-        </div>
+        <EmptyState
+          icon={<Tag className="w-12 h-12" />}
+          title={searchQuery ? "ไม่พบแท็ก" : "ยังไม่มีแท็ก"}
+          subtitle={
+            searchQuery
+              ? `ไม่พบแท็กที่ตรงกับ "${searchQuery}"`
+              : "สร้างแท็กเพื่อจัดกลุ่มผู้ติดต่อ"
+          }
+          action={
+            !searchQuery ? (
+              <Button
+                onClick={openCreate}
+                className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] font-semibold"
+              >
+                <Plus className="w-4 h-4 mr-1.5" />
+                สร้างแท็กแรก
+              </Button>
+            ) : undefined
+          }
+        />
       )}
 
       {/* ==========================================
@@ -361,9 +399,9 @@ export default function TagsPageClient({
 
       {/* Create / Edit Tag Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] sm:max-w-[400px]">
+        <DialogContent className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg sm:max-w-[400px]">
           <DialogHeader>
-            <DialogTitle className="text-white text-lg">
+            <DialogTitle className="text-[var(--text-primary)] text-lg">
               {editingTag ? "แก้ไขแท็ก" : "สร้างแท็กใหม่"}
             </DialogTitle>
             <DialogDescription className="text-[var(--text-muted)]">
@@ -383,7 +421,7 @@ export default function TagsPageClient({
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-secondary)]">
+                    <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-muted)]">
                       ชื่อแท็ก
                     </FormLabel>
                     <FormControl>
@@ -391,7 +429,7 @@ export default function TagsPageClient({
                         placeholder="ชื่อแท็ก"
                         maxLength={50}
                         autoFocus
-                        className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(0,255,167,0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+                        className="h-11 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)]"
                         {...field}
                       />
                     </FormControl>
@@ -406,7 +444,7 @@ export default function TagsPageClient({
                 name="color"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-secondary)]">
+                    <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-muted)]">
                       สี
                     </FormLabel>
                     <div className="flex gap-2 flex-wrap">
@@ -415,7 +453,7 @@ export default function TagsPageClient({
                           key={c.hex}
                           type="button"
                           onClick={() => field.onChange(c.hex)}
-                          className={`w-7 h-7 rounded-full transition-all ${
+                          className={`w-7 h-7 rounded-full transition-all cursor-pointer ${
                             field.value === c.hex
                               ? "ring-2 ring-offset-2 ring-offset-[var(--bg-surface)] scale-110"
                               : "hover:scale-105"
@@ -440,7 +478,7 @@ export default function TagsPageClient({
                   type="button"
                   variant="outline"
                   onClick={() => setShowDialog(false)}
-                  className="border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-white bg-transparent"
+                  className="border-[var(--border-default)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-transparent"
                 >
                   ยกเลิก
                 </Button>
@@ -466,24 +504,24 @@ export default function TagsPageClient({
 
       {/* Delete Tag AlertDialog */}
       <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
-        <AlertDialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px]">
+        <AlertDialogContent className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">
+            <AlertDialogTitle className="text-[var(--text-primary)]">
               ลบแท็ก &ldquo;{deletingTag?.name}&rdquo;?
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-[var(--text-muted)]">
+            <AlertDialogDescription className="text-[var(--text-secondary)]">
               แท็กจะถูกลบจาก {deletingTag?._count.contactTags || 0}{" "}
               รายชื่อผู้ติดต่อ
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-white bg-transparent">
+            <AlertDialogCancel className="border-[var(--border-default)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-transparent">
               ยกเลิก
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               disabled={isPending}
-              className="bg-red-500 hover:bg-red-600 text-white"
+              className="bg-[var(--error)] hover:bg-[var(--error)] text-[var(--text-primary)]"
             >
               {isPending ? (
                 <span className="flex items-center gap-2">
@@ -497,6 +535,6 @@ export default function TagsPageClient({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </PageLayout>
   );
 }

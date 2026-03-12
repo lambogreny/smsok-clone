@@ -1,11 +1,11 @@
 import { NextRequest } from "next/server"
-import { authenticateApiKey, apiError, apiResponse } from "@/lib/api-auth"
+import { authenticateRequest, apiError, apiResponse } from "@/lib/api-auth"
 import { getWebhookLogs } from "@/lib/actions/webhooks"
 
 // GET /api/v1/webhooks/:id/logs — Get webhook delivery logs
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await authenticateApiKey(req)
+    await authenticateRequest(req)
     const { id } = await params
 
     const url = new URL(req.url)

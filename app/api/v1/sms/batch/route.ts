@@ -1,14 +1,19 @@
 import { NextRequest } from "next/server";
-import { authenticateApiKey, apiResponse, apiError } from "@/lib/api-auth";
+import { authenticateRequest, apiResponse, apiError } from "@/lib/api-auth";
+import { requireApiPermission } from "@/lib/rbac";
 import { sendBatchSms } from "@/lib/actions/sms";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { sendBatchSmsApiSchema } from "@/lib/validations";
+import { getRemainingQuota } from "@/lib/package/quota";
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await authenticateApiKey(req);
+    const user = await authenticateRequest(req);
 
-    const limit = checkRateLimit(user.id, "batch");
+    const denied = await requireApiPermission(user.id, "create", "sms");
+    if (denied) return denied;
+
+    const limit = await checkRateLimit(user.id, "batch");
     if (!limit.allowed) return rateLimitResponse(limit.resetIn);
 
     const body = await req.json();
@@ -19,10 +24,17 @@ export async function POST(req: NextRequest) {
       message: input.message,
     }, "API");
 
+    if ("error" in result && result.error === "INSUFFICIENT_CREDITS") {
+      return Response.json(result, { status: 402 });
+    }
+
+    const batch = result as { totalMessages: number; totalSms: number };
+    const quota = await getRemainingQuota(user.id);
+
     return apiResponse({
-      total_messages: result.totalMessages,
-      credits_used: result.totalCredits,
-      credits_remaining: user.credits - result.totalCredits,
+      total_messages: batch.totalMessages,
+      sms_used: batch.totalSms,
+      sms_remaining: quota.totalRemaining,
     }, 201);
   } catch (error) {
     return apiError(error);

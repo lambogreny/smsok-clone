@@ -1,12 +1,17 @@
 import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getDashboardStats } from "@/lib/actions/sms";
+import { getRemainingQuota } from "@/lib/package/quota";
 import AnalyticsContent from "./AnalyticsContent";
 
 export default async function AnalyticsPage() {
   const user = await getSession();
   if (!user) redirect("/login");
 
-  const stats = await getDashboardStats(user.id);
-  return <AnalyticsContent stats={stats} />;
+  const [stats, quota] = await Promise.all([
+    getDashboardStats(user.id),
+    getRemainingQuota(user.id).catch(() => ({ totalRemaining: 0 })),
+  ]);
+
+  return <AnalyticsContent stats={{ ...stats, smsRemaining: quota.totalRemaining }} />;
 }

@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { authenticateApiKey, apiResponse, apiError } from "@/lib/api-auth";
+import { authenticateRequest, apiResponse, apiError } from "@/lib/api-auth";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 
@@ -13,7 +13,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await authenticateApiKey(req);
+    const user = await authenticateRequest(req);
     const { id: groupId } = await params;
     const body = await req.json();
     const input = schema.parse(body);

@@ -19,7 +19,7 @@ type ConfirmDialogProps = {
 const variantConfig: Record<Variant, { icon: string; iconBg: string; iconBorder: string; btnBg: string }> = {
   danger: { icon: "text-red-400", iconBg: "bg-red-500/[0.08]", iconBorder: "border-red-500/10", btnBg: "bg-red-500 hover:bg-red-600" },
   warning: { icon: "text-amber-400", iconBg: "bg-amber-500/[0.08]", iconBorder: "border-amber-500/10", btnBg: "bg-amber-500 hover:bg-amber-600" },
-  info: { icon: "text-[#00FFA7]", iconBg: "bg-[rgba(0,255,167,0.1)]", iconBorder: "border-[rgba(0,255,167,0.15)]", btnBg: "bg-[#00FFA7] hover:bg-[#00C9A0]" },
+  info: { icon: "text-[var(--accent)]", iconBg: "bg-[rgba(var(--accent-rgb),0.1)]", iconBorder: "border-[rgba(var(--accent-rgb),0.15)]", btnBg: "bg-[var(--accent)] hover:bg-[var(--accent-hover)]" },
 };
 
 export default function ConfirmDialog({
@@ -47,7 +47,7 @@ export default function ConfirmDialog({
             onClick={onClose}
           />
           <motion.div
-            className="surface-elevated relative max-w-sm w-full p-6 rounded-2xl"
+            className="surface-elevated relative max-w-sm w-full p-6 rounded-lg"
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -71,7 +71,7 @@ export default function ConfirmDialog({
               <button
                 onClick={onClose}
                 disabled={loading}
-                className="flex-1 bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] hover:border-[rgba(0,255,167,0.3)] hover:bg-[rgba(0,255,167,0.04)] py-2.5 rounded-xl text-sm font-medium"
+                className="flex-1 bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] hover:border-[rgba(var(--accent-rgb),0.3)] hover:bg-[rgba(var(--accent-rgb),0.04)] py-2.5 rounded-xl text-sm font-medium"
               >
                 {cancelLabel}
               </button>

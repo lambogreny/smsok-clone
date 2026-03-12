@@ -22,6 +22,6 @@ export default async function ApiKeysPage() {
   }));
 
   return (
-    <ApiKeysContent userId={user.id} apiKeys={serialized} />
+    <ApiKeysContent apiKeys={serialized} />
   );
 }

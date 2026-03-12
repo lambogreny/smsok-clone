@@ -1,4 +1,3 @@
-"use server"
 
 import { prisma } from "@/lib/db"
 import { getSession, verifyPassword } from "@/lib/auth"
@@ -14,6 +13,8 @@ import {
   check2FARateLimit,
   reset2FARateLimit,
 } from "@/lib/two-factor"
+import { sendEmail } from "@/lib/resend"
+import { createHash, randomBytes, timingSafeEqual } from "crypto"
 
 // ── Failed attempt logging (for security audit) ─────────
 
@@ -113,6 +114,49 @@ export async function enable2FA(code: string) {
   })
 
   return { success: true }
+}
+
+// ── Regenerate Backup Codes ─────────────────────────────
+
+export async function regenerate2FARecoveryCodes(code: string) {
+  const user = await getSession()
+  if (!user) throw new Error("กรุณาเข้าสู่ระบบ")
+
+  if (!code || !/^\d{6}$/.test(code)) {
+    throw new Error("รหัส 2FA ต้องเป็นตัวเลข 6 หลัก")
+  }
+
+  const tfa = await prisma.twoFactorAuth.findUnique({
+    where: { userId: user.id },
+  })
+  if (!tfa || !tfa.enabled) {
+    throw new Error("กรุณาเปิดใช้ 2FA ก่อน")
+  }
+
+  let secret: string
+  try {
+    secret = decryptSecret(tfa.secret)
+  } catch {
+    throw new Error("ไม่สามารถถอดรหัส 2FA ได้ กรุณาตั้งค่าใหม่")
+  }
+
+  const valid = verifyTotpCode(secret, code)
+  if (!valid) {
+    throw new Error("รหัส 2FA ไม่ถูกต้อง")
+  }
+
+  const recoveryCodes = generateRecoveryCodes()
+  const hashedCodes = await hashRecoveryCodes(recoveryCodes)
+
+  await prisma.twoFactorAuth.update({
+    where: { userId: user.id },
+    data: { recoveryCodes: hashedCodes },
+  })
+
+  return {
+    success: true,
+    recoveryCodes,
+  }
 }
 
 // ── Disable 2FA ─────────────────────────────────────────
@@ -262,4 +306,229 @@ export async function get2FAStatus() {
     setupAt: tfa?.createdAt ?? null,
     remainingRecoveryCodes: tfa ? tfa.recoveryCodes.filter((c) => c !== "").length : 0,
   }
+}
+
+// ══════════════════════════════════════════════════════════
+// Remember Device
+// ══════════════════════════════════════════════════════════
+
+function hashToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex")
+}
+
+const REMEMBER_TOKEN_DAYS = 30
+
+// ── Create Remember Token ───────────────────────────────
+
+export async function createRememberToken(userId: string): Promise<string> {
+  const token = randomBytes(32).toString("hex")
+  const tokenHash = hashToken(token)
+  const expiresAt = new Date(Date.now() + REMEMBER_TOKEN_DAYS * 24 * 60 * 60 * 1000)
+
+  await prisma.twoFactorAuth.update({
+    where: { userId },
+    data: {
+      rememberTokenHash: tokenHash,
+      rememberTokenExpiresAt: expiresAt,
+    },
+  })
+
+  return token
+}
+
+// ── Verify Remember Token ───────────────────────────────
+
+export async function verifyRememberToken(userId: string, token: string): Promise<boolean> {
+  const tfa = await prisma.twoFactorAuth.findUnique({
+    where: { userId },
+    select: {
+      rememberTokenHash: true,
+      rememberTokenExpiresAt: true,
+    },
+  })
+
+  if (!tfa || !tfa.rememberTokenHash || !tfa.rememberTokenExpiresAt) {
+    return false
+  }
+
+  // Check expiration
+  if (new Date() > tfa.rememberTokenExpiresAt) {
+    // Token expired — clear it
+    await prisma.twoFactorAuth.update({
+      where: { userId },
+      data: {
+        rememberTokenHash: null,
+        rememberTokenExpiresAt: null,
+      },
+    })
+    return false
+  }
+
+  // Constant-time comparison via hash (timing-safe)
+  const candidateHash = hashToken(token)
+  if (candidateHash.length !== tfa.rememberTokenHash.length) return false
+  return timingSafeEqual(Buffer.from(candidateHash), Buffer.from(tfa.rememberTokenHash))
+}
+
+// ── Clear Remember Tokens ───────────────────────────────
+
+export async function clearRememberTokens(userId: string): Promise<void> {
+  const tfa = await prisma.twoFactorAuth.findUnique({
+    where: { userId },
+    select: { id: true },
+  })
+
+  if (tfa) {
+    await prisma.twoFactorAuth.update({
+      where: { userId },
+      data: {
+        rememberTokenHash: null,
+        rememberTokenExpiresAt: null,
+      },
+    })
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// Recovery via Email
+// ══════════════════════════════════════════════════════════
+
+const RECOVERY_TOKEN_EXPIRY_HOURS = 1
+
+// ── Request Recovery Email ──────────────────────────────
+
+export async function requestRecoveryEmail(userId: string): Promise<void> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { email: true },
+  })
+  if (!user) throw new Error("ไม่พบผู้ใช้")
+
+  const tfa = await prisma.twoFactorAuth.findUnique({
+    where: { userId },
+    select: { enabled: true },
+  })
+  if (!tfa || !tfa.enabled) {
+    throw new Error("ผู้ใช้ไม่ได้เปิดใช้ 2FA")
+  }
+
+  const token = randomBytes(32).toString("hex")
+  const tokenHash = hashToken(token)
+  const expiresAt = new Date(Date.now() + RECOVERY_TOKEN_EXPIRY_HOURS * 60 * 60 * 1000)
+
+  await prisma.twoFactorAuth.update({
+    where: { userId },
+    data: {
+      recoveryTokenHash: tokenHash,
+      recoveryTokenExpiresAt: expiresAt,
+    },
+  })
+
+  const recoveryLink = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/auth/2fa-recover?token=${token}&userId=${userId}`
+
+  try {
+    await sendEmail({
+      to: user.email,
+      subject: "[SMSOK] ลิงก์กู้คืน 2FA",
+      html: `
+        <h2>กู้คืนการยืนยันตัวตนสองขั้นตอน</h2>
+        <p>คุณได้ขอลิงก์กู้คืน 2FA ลิงก์นี้จะหมดอายุใน ${RECOVERY_TOKEN_EXPIRY_HOURS} ชั่วโมง</p>
+        <p><a href="${recoveryLink}">คลิกที่นี่เพื่อปิด 2FA</a></p>
+        <p>หรือคัดลอก URL นี้: ${recoveryLink}</p>
+        <p>หากคุณไม่ได้ขอ กรุณาเพิกเฉยอีเมลนี้</p>
+      `,
+      text: `กู้คืน 2FA: ${recoveryLink}\nลิงก์หมดอายุใน ${RECOVERY_TOKEN_EXPIRY_HOURS} ชั่วโมง`,
+    })
+  } catch {
+    // If email fails, recovery link is lost — user must retry
+    // NEVER log recovery links (security risk)
+  }
+}
+
+// ── Process Recovery Token ──────────────────────────────
+
+export async function processRecoveryToken(token: string, userId: string): Promise<{ success: boolean }> {
+  const tfa = await prisma.twoFactorAuth.findUnique({
+    where: { userId },
+    select: {
+      enabled: true,
+      recoveryTokenHash: true,
+      recoveryTokenExpiresAt: true,
+    },
+  })
+
+  if (!tfa || !tfa.recoveryTokenHash || !tfa.recoveryTokenExpiresAt) {
+    throw new Error("ลิงก์กู้คืนไม่ถูกต้องหรือถูกใช้แล้ว")
+  }
+
+  // Check expiration
+  if (new Date() > tfa.recoveryTokenExpiresAt) {
+    // Clear expired token
+    await prisma.twoFactorAuth.update({
+      where: { userId },
+      data: {
+        recoveryTokenHash: null,
+        recoveryTokenExpiresAt: null,
+      },
+    })
+    throw new Error("ลิงก์กู้คืนหมดอายุแล้ว")
+  }
+
+  // Verify token (constant-time comparison)
+  const candidateHash = hashToken(token)
+  if (candidateHash.length !== tfa.recoveryTokenHash.length ||
+      !timingSafeEqual(Buffer.from(candidateHash), Buffer.from(tfa.recoveryTokenHash))) {
+    throw new Error("ลิงก์กู้คืนไม่ถูกต้อง")
+  }
+
+  // Disable 2FA and clear all tokens
+  await prisma.twoFactorAuth.delete({
+    where: { userId },
+  })
+
+  // Clear rate limit
+  reset2FARateLimit(userId)
+
+  return { success: true }
+}
+
+// ══════════════════════════════════════════════════════════
+// Admin: Enforce 2FA for Organization
+// ══════════════════════════════════════════════════════════
+
+// ── Enforce Org 2FA ─────────────────────────────────────
+
+export async function enforceOrg2FA(
+  adminUserId: string,
+  organizationId: string,
+  enforce: boolean
+): Promise<{ success: boolean }> {
+  // Verify the user is an admin/owner of the organization
+  const membership = await prisma.membership.findFirst({
+    where: {
+      userId: adminUserId,
+      organizationId,
+      role: { in: ["OWNER", "ADMIN"] },
+    },
+  })
+  if (!membership) {
+    throw new Error("คุณไม่มีสิทธิ์จัดการองค์กรนี้")
+  }
+
+  await prisma.organization.update({
+    where: { id: organizationId },
+    data: { require2fa: enforce },
+  })
+
+  return { success: true }
+}
+
+// ── Check if Org 2FA is Required ────────────────────────
+
+export async function isOrg2FARequired(organizationId: string): Promise<boolean> {
+  const org = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { require2fa: true },
+  })
+  return org?.require2fa ?? false
 }

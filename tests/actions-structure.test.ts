@@ -62,7 +62,7 @@ describe("sendSms logic", () => {
   });
 
   it("verifies sender name is approved", () => {
-    expect(sendBlock).toContain('status: "approved"');
+    expect(sendBlock).toContain('status: "APPROVED"');
   });
 
   it("allows default SMSOK sender", () => {
@@ -280,7 +280,7 @@ describe("getApprovedSenderNames logic", () => {
   );
 
   it("filters by approved status", () => {
-    expect(block).toContain('status: "approved"');
+    expect(block).toContain('status: "APPROVED"');
   });
 
   it("always includes default SMSOK sender", () => {
@@ -299,7 +299,7 @@ describe("adminApproveSenderName logic", () => {
   });
 
   it("only processes pending names", () => {
-    expect(block).toContain('status !== "pending"');
+    expect(block).toContain('status !== "PENDING"');
   });
 
   it("records approvedBy on approve", () => {
@@ -358,7 +358,7 @@ describe("purchasePackage logic", () => {
   });
 
   it("creates pending transaction", () => {
-    expect(block).toContain('status: "pending"');
+    expect(block).toContain('status: "PENDING"');
   });
 });
 
@@ -373,7 +373,7 @@ describe("uploadSlip logic", () => {
   });
 
   it("only allows pending transactions", () => {
-    expect(block).toContain('status !== "pending"');
+    expect(block).toContain('status !== "PENDING"');
     expect(block).toContain("รายการนี้ดำเนินการแล้ว");
   });
 });
@@ -403,7 +403,7 @@ describe("adminVerifyTransaction logic", () => {
   });
 
   it("sets rejected status on reject", () => {
-    expect(block).toContain('status: "rejected"');
+    expect(block).toContain('status: "REJECTED"');
   });
 });
 

@@ -1,83 +1,98 @@
 import { createStore } from 'zustand/vanilla'
 import { immer } from 'zustand/middleware/immer'
 
-export type TopupStep = 'select' | 'payment' | 'confirm' | 'done'
+export type PurchaseStep = 'select' | 'payment' | 'confirm' | 'done'
 
-export type CreditsState = {
-  balance: number
-  topupFlow: {
+export type PackagesState = {
+  smsRemaining: number
+  smsTotal: number
+  purchaseFlow: {
     active: boolean
-    step: TopupStep
+    step: PurchaseStep
     selectedPackageId: string | null
-    amount: number
+    smsAmount: number
   }
 }
 
-export type CreditsActions = {
-  setBalance: (balance: number) => void
-  deductCredits: (amount: number) => void
-  addCredits: (amount: number) => void
-  startTopup: () => void
-  setTopupStep: (step: TopupStep) => void
-  selectPackage: (packageId: string, amount: number) => void
-  cancelTopup: () => void
-  completeTopup: (creditsAdded: number) => void
+export type PackagesActions = {
+  setSmsRemaining: (remaining: number) => void
+  setSmsTotal: (total: number) => void
+  deductSms: (amount: number) => void
+  addSms: (amount: number) => void
+  startPurchase: () => void
+  setPurchaseStep: (step: PurchaseStep) => void
+  selectPackage: (packageId: string, smsAmount: number) => void
+  cancelPurchase: () => void
+  completePurchase: (smsAdded: number) => void
 }
 
-export type CreditsStore = CreditsState & CreditsActions
+export type PackagesStore = PackagesState & PackagesActions
 
-const defaultTopupFlow = {
+const defaultPurchaseFlow = {
   active: false,
-  step: 'select' as TopupStep,
+  step: 'select' as PurchaseStep,
   selectedPackageId: null,
-  amount: 0,
+  smsAmount: 0,
 }
 
-export const defaultCreditsState: CreditsState = {
-  balance: 0,
-  topupFlow: { ...defaultTopupFlow },
+export const defaultPackagesState: PackagesState = {
+  smsRemaining: 0,
+  smsTotal: 0,
+  purchaseFlow: { ...defaultPurchaseFlow },
 }
 
-export const createCreditsStore = (initState: Partial<CreditsState> = {}) =>
-  createStore<CreditsStore>()(
+export const createPackagesStore = (initState: Partial<PackagesState> = {}) =>
+  createStore<PackagesStore>()(
     immer((set) => ({
-      ...defaultCreditsState,
+      ...defaultPackagesState,
       ...initState,
-      setBalance: (balance) =>
+      setSmsRemaining: (remaining) =>
         set((s) => {
-          s.balance = balance
+          s.smsRemaining = remaining
         }),
-      deductCredits: (amount) =>
+      setSmsTotal: (total) =>
         set((s) => {
-          s.balance = Math.max(0, s.balance - amount)
+          s.smsTotal = total
         }),
-      addCredits: (amount) =>
+      deductSms: (amount) =>
         set((s) => {
-          s.balance += amount
+          s.smsRemaining = Math.max(0, s.smsRemaining - amount)
         }),
-      startTopup: () =>
+      addSms: (amount) =>
         set((s) => {
-          s.topupFlow.active = true
-          s.topupFlow.step = 'select'
+          s.smsRemaining += amount
         }),
-      setTopupStep: (step) =>
+      startPurchase: () =>
         set((s) => {
-          s.topupFlow.step = step
+          s.purchaseFlow.active = true
+          s.purchaseFlow.step = 'select'
         }),
-      selectPackage: (packageId, amount) =>
+      setPurchaseStep: (step) =>
         set((s) => {
-          s.topupFlow.selectedPackageId = packageId
-          s.topupFlow.amount = amount
-          s.topupFlow.step = 'payment'
+          s.purchaseFlow.step = step
         }),
-      cancelTopup: () =>
+      selectPackage: (packageId, smsAmount) =>
         set((s) => {
-          s.topupFlow = { ...defaultTopupFlow }
+          s.purchaseFlow.selectedPackageId = packageId
+          s.purchaseFlow.smsAmount = smsAmount
+          s.purchaseFlow.step = 'payment'
         }),
-      completeTopup: (creditsAdded) =>
+      cancelPurchase: () =>
         set((s) => {
-          s.balance += creditsAdded
-          s.topupFlow = { ...defaultTopupFlow }
+          s.purchaseFlow = { ...defaultPurchaseFlow }
+        }),
+      completePurchase: (smsAdded) =>
+        set((s) => {
+          s.smsRemaining += smsAdded
+          s.purchaseFlow = { ...defaultPurchaseFlow }
         }),
     }))
   )
+
+// Backwards compatibility aliases
+export type CreditsState = PackagesState
+export type CreditsActions = PackagesActions
+export type CreditsStore = PackagesStore
+export type TopupStep = PurchaseStep
+export const defaultCreditsState = defaultPackagesState
+export const createCreditsStore = createPackagesStore

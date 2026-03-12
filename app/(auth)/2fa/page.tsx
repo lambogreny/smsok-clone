@@ -25,6 +25,7 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { Send, ArrowLeft, ArrowRight, Shield, Loader2 } from "lucide-react";
+import { clearLogoutMarker } from "@/components/AuthGuard";
 
 const otpSchema = z.object({
   code: z.string().length(6, "กรอกรหัส 6 หลัก"),
@@ -53,11 +54,13 @@ function TwoFactorContent() {
   const [useRecovery, setUseRecovery] = useState(false);
 
   const otpForm = useForm<OtpValues>({
+    mode: "onChange",
     resolver: zodResolver(otpSchema),
     defaultValues: { code: "" },
   });
 
   const recoveryForm = useForm<RecoveryValues>({
+    mode: "onChange",
     resolver: zodResolver(recoverySchema),
     defaultValues: { recoveryCode: "" },
   });
@@ -86,6 +89,7 @@ function TwoFactorContent() {
         }
         return;
       }
+      clearLogoutMarker();
       router.push(result.redirectTo ?? "/dashboard");
     } catch {
       setError("ไม่สามารถเชื่อมต่อได้ กรุณาลองใหม่");
@@ -95,7 +99,7 @@ function TwoFactorContent() {
   return (
     <div className="min-h-screen flex items-center justify-center px-6 bg-[var(--bg-base)]">
       <div className="w-full max-w-[420px]">
-        <Card className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] shadow-none">
+        <Card className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-lg shadow-none">
           <CardHeader className="text-center pb-0 pt-8 px-8">
             <Link href="/" className="inline-flex items-center gap-2 justify-center mb-4">
               <div className="w-7 h-7 rounded-lg bg-[var(--accent)] flex items-center justify-center">
@@ -103,7 +107,7 @@ function TwoFactorContent() {
               </div>
               <span className="text-xl font-bold text-white">SMSOK</span>
             </Link>
-            <div className="w-12 h-12 rounded-full bg-[rgba(0,255,167,0.08)] border border-[rgba(0,255,167,0.15)] flex items-center justify-center mx-auto mb-4">
+            <div className="w-12 h-12 rounded-full bg-[rgba(var(--accent-rgb),0.08)] border border-[rgba(var(--accent-rgb),0.15)] flex items-center justify-center mx-auto mb-4">
               <Shield className="w-6 h-6 text-[var(--accent)]" />
             </div>
             <h1 className="text-2xl font-bold text-white">ยืนยันตัวตน</h1>
@@ -116,7 +120,7 @@ function TwoFactorContent() {
 
           <CardContent className="px-8 pt-6 pb-2">
             {error && (
-              <div className="mb-4 p-3 rounded-lg bg-[rgba(239,68,68,0.06)] border border-[rgba(239,68,68,0.15)] text-[#F87171] text-[13px] text-center">
+              <div className="mb-4 p-3 rounded-lg bg-[rgba(var(--error-rgb),0.06)] border border-[rgba(var(--error-rgb),0.15)] text-[var(--error)] text-[13px] text-center">
                 {error}
               </div>
             )}
@@ -136,7 +140,7 @@ function TwoFactorContent() {
                           <Input
                             type="text"
                             placeholder="xxxx-xxxx-xxxx"
-                            className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg font-mono focus:border-[rgba(0,255,167,0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+                            className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg font-mono focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]"
                             autoFocus
                             {...field}
                             onChange={(e) => field.onChange(e.target.value.toLowerCase())}
@@ -149,7 +153,7 @@ function TwoFactorContent() {
                   <Button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full h-12 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] rounded-xl text-[15px] font-semibold transition-all duration-200 hover:shadow-[0_4px_16px_rgba(0,255,167,0.25)] group"
+                    className="w-full h-11 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] rounded-xl text-[15px] font-semibold transition-all duration-200 hover:shadow-[0_4px_16px_rgba(0,255,167,0.25)] group"
                   >
                     {isSubmitting ? (
                       <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />กำลังยืนยัน...</span>
@@ -199,7 +203,7 @@ function TwoFactorContent() {
                   <Button
                     type="submit"
                     disabled={isSubmitting || otpForm.watch("code").length < 6}
-                    className="w-full h-12 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] rounded-xl text-[15px] font-semibold transition-all duration-200 hover:shadow-[0_4px_16px_rgba(0,255,167,0.25)] group"
+                    className="w-full h-11 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] rounded-xl text-[15px] font-semibold transition-all duration-200 hover:shadow-[0_4px_16px_rgba(0,255,167,0.25)] group"
                   >
                     {isSubmitting ? (
                       <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />กำลังยืนยัน...</span>

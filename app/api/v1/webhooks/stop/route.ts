@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { timingSafeEqual, createHash } from "crypto";
 import { prisma } from "@/lib/db";
+import { stopWebhookBodySchema } from "@/lib/validations";
 
 function hashForCompare(value: string): Buffer {
   return createHash("sha256").update(value).digest();
@@ -15,7 +16,29 @@ function hashForCompare(value: string): Buffer {
  * Body: { phone: string, keyword?: string }
  * Auth: Shared secret via X-Webhook-Secret header
  */
+// Simple in-memory rate limiter for /stop endpoint (10 req/min per IP)
+const stopRateMap = new Map<string, { count: number; resetAt: number }>();
+const STOP_RATE_LIMIT = 10;
+const STOP_RATE_WINDOW = 60_000;
+
+function checkStopRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = stopRateMap.get(ip);
+  if (!entry || now > entry.resetAt) {
+    stopRateMap.set(ip, { count: 1, resetAt: now + STOP_RATE_WINDOW });
+    return true;
+  }
+  entry.count++;
+  return entry.count <= STOP_RATE_LIMIT;
+}
+
 export async function POST(req: NextRequest) {
+  // Rate limit: 10 req/min per IP
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  if (!checkStopRateLimit(ip)) {
+    return Response.json({ error: "Rate limited" }, { status: 429 });
+  }
+
   // Verify webhook secret (hash both sides to fixed 32-byte length, preventing length oracle)
   const secret = req.headers.get("x-webhook-secret");
   const expectedSecret = process.env.STOP_WEBHOOK_SECRET;
@@ -30,15 +53,17 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { phone } = body as { phone?: string };
-  if (!phone || typeof phone !== "string") {
+  const parsed = stopWebhookBodySchema.safeParse(body);
+  if (!parsed.success) {
     return Response.json({ error: "Missing phone" }, { status: 400 });
   }
+  const { phone } = parsed.data;
 
   // Normalize phone (strip leading 0, add +66)
   const normalized = phone.startsWith("+") ? phone : phone.startsWith("0") ? `+66${phone.slice(1)}` : `+66${phone}`;
 
-  // Opt-out ALL contacts with this phone across all users
+  // PDPA/TCPA compliance: STOP opt-out is GLOBAL across all orgs
+  // A recipient who says STOP must be respected everywhere — not org-scoped
   const result = await prisma.contact.updateMany({
     where: { phone: normalized, consentStatus: { not: "OPTED_OUT" } },
     data: {

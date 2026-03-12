@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { authenticateApiKey, apiResponse, apiError } from "@/lib/api-auth";
+import { authenticateRequest, apiResponse, apiError } from "@/lib/api-auth";
+import { requireApiPermission } from "@/lib/rbac";
 import { prisma } from "@/lib/db";
 
 // GET /api/v1/groups/:id/members?search=xxx&page=1&limit=20
@@ -8,7 +9,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await authenticateApiKey(req);
+    const user = await authenticateRequest(req);
+
+    const denied = await requireApiPermission(user.id, "read", "group");
+    if (denied) return denied;
+
     const { id: groupId } = await params;
     const { searchParams } = new URL(req.url);
 

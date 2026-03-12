@@ -1,7 +1,15 @@
-"use server";
 
 import { prisma } from "@/lib/db";
 import { sendSingleSms } from "@/lib/sms-gateway";
+import {
+  deductQuota,
+  refundQuota,
+  refundQuotaIfEligible,
+  getRemainingQuota,
+  calculateSmsSegments,
+  ensureSufficientQuota,
+} from "../package/quota";
+import { checkSendingHours } from "../sending-hours";
 
 const MAX_SCHEDULE_DAYS_AHEAD = 30;
 
@@ -15,7 +23,7 @@ export async function createScheduledSms(
   }
 ) {
   // Validate phone
-  if (!/^0[689]\d{8}$/.test(data.recipient)) {
+  if (!/^0[0-9]\d{8}$/.test(data.recipient)) {
     throw new Error("หมายเลขโทรศัพท์ไม่ถูกต้อง");
   }
 
@@ -39,22 +47,15 @@ export async function createScheduledSms(
     throw new Error(`ตั้งเวลาล่วงหน้าได้ไม่เกิน ${MAX_SCHEDULE_DAYS_AHEAD} วัน`);
   }
 
-  // Calculate credit cost
-  const smsCount = Math.ceil(data.message.length / 70);
+  // Calculate SMS segment count (GSM-7: 160/153, UCS-2: 70/67)
+  const smsCount = calculateSmsSegments(data.message);
 
-  // Check credits
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { credits: true },
-  });
+  // Check remaining quota
+  await ensureSufficientQuota(userId, smsCount);
 
-  if (!user || user.credits < smsCount) {
-    throw new Error(`เครดิตไม่เพียงพอ (ต้องการ ${smsCount} เครดิต)`);
-  }
-
-  // HOLD: deduct credits now
-  const [scheduled] = await prisma.$transaction([
-    prisma.scheduledSms.create({
+  // HOLD: deduct quota now via FIFO
+  const scheduled = await prisma.$transaction(async (tx) => {
+    const record = await tx.scheduledSms.create({
       data: {
         userId,
         senderName: data.senderName || "EasySlip",
@@ -63,12 +64,12 @@ export async function createScheduledSms(
         scheduledAt,
         creditCost: smsCount,
       },
-    }),
-    prisma.user.update({
-      where: { id: userId },
-      data: { credits: { decrement: smsCount } },
-    }),
-  ]);
+    });
+
+    await deductQuota(tx, userId, smsCount);
+
+    return record;
+  });
 
   return {
     id: scheduled.id,
@@ -108,17 +109,22 @@ export async function cancelScheduledSms(userId: string, id: string) {
     throw new Error("ยกเลิกได้เฉพาะข้อความที่ยังไม่ได้ส่ง");
   }
 
-  // Cancel + REFUND credits
-  await prisma.$transaction([
-    prisma.scheduledSms.update({
+  // Cancel + REFUND quota to first active package
+  const quota = await getRemainingQuota(userId);
+  const firstPackage = quota.packages[0];
+
+  if (!firstPackage) {
+    throw new Error("ไม่พบ package สำหรับคืน quota");
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.scheduledSms.update({
       where: { id },
       data: { status: "cancelled" },
-    }),
-    prisma.user.update({
-      where: { id: userId },
-      data: { credits: { increment: sms.creditCost } },
-    }),
-  ]);
+    });
+
+    await refundQuota(tx, firstPackage.id, sms.creditCost);
+  });
 
   return { success: true, creditsRefunded: sms.creditCost };
 }
@@ -130,6 +136,7 @@ export async function cancelScheduledSms(userId: string, id: string) {
 export async function processScheduledSms() {
   const now = new Date();
 
+  // Fetch due messages first, then check sending hours per-org
   const dueMessages = await prisma.scheduledSms.findMany({
     where: {
       status: "pending",
@@ -138,9 +145,45 @@ export async function processScheduledSms() {
     take: 50, // batch size
   });
 
+  if (dueMessages.length === 0) {
+    return { processed: 0, sent: 0, failed: 0, rescheduled: false };
+  }
+
+  // Group by orgId to check sending hours per-org
+  const orgIds = [...new Set(dueMessages.map((m) => m.organizationId).filter(Boolean))] as string[];
+  const blockedOrgs = new Set<string | null>();
+
+  // Check default (no org) sending hours
+  const defaultHours = await checkSendingHours();
+  if (!defaultHours.allowed) blockedOrgs.add(null);
+
+  // Check per-org sending hours
+  for (const orgId of orgIds) {
+    const orgHours = await checkSendingHours(orgId);
+    if (!orgHours.allowed) blockedOrgs.add(orgId);
+  }
+
+  // Reschedule blocked messages
+  const blockedMessages = dueMessages.filter((m) => blockedOrgs.has(m.organizationId));
+  if (blockedMessages.length > 0) {
+    const nextAllowed = defaultHours.nextAllowedAt ? new Date(defaultHours.nextAllowedAt) : null;
+    if (nextAllowed) {
+      await prisma.scheduledSms.updateMany({
+        where: { id: { in: blockedMessages.map((m) => m.id) } },
+        data: { scheduledAt: nextAllowed },
+      });
+    }
+  }
+
+  // Only process messages from non-blocked orgs
+  const allowedMessages = dueMessages.filter((m) => !blockedOrgs.has(m.organizationId));
+  if (allowedMessages.length === 0) {
+    return { processed: 0, sent: 0, failed: 0, rescheduled: blockedMessages.length > 0, nextAllowedAt: defaultHours.nextAllowedAt };
+  }
+
   const results = { sent: 0, failed: 0 };
 
-  for (const sms of dueMessages) {
+  for (const sms of allowedMessages) {
     try {
       const result = await sendSingleSms(sms.recipient, sms.content, sms.senderName);
 
@@ -154,37 +197,43 @@ export async function processScheduledSms() {
         });
         results.sent++;
       } else {
-        // REFUND on failure
-        await prisma.$transaction([
-          prisma.scheduledSms.update({
+        // REFUND on failure — tier D+ only
+        const quota = await getRemainingQuota(sms.userId);
+        const firstPackage = quota.packages[0];
+
+        await prisma.$transaction(async (tx) => {
+          await tx.scheduledSms.update({
             where: { id: sms.id },
             data: {
               status: "failed",
               errorCode: result.error?.slice(0, 100) || "unknown",
             },
-          }),
-          prisma.user.update({
-            where: { id: sms.userId },
-            data: { credits: { increment: sms.creditCost } },
-          }),
-        ]);
+          });
+
+          if (firstPackage) {
+            await refundQuotaIfEligible(tx, firstPackage.id, sms.creditCost);
+          }
+        });
         results.failed++;
       }
     } catch (err) {
-      // REFUND on exception
-      await prisma.$transaction([
-        prisma.scheduledSms.update({
+      // REFUND on exception — tier D+ only
+      const quota = await getRemainingQuota(sms.userId);
+      const firstPackage = quota.packages[0];
+
+      await prisma.$transaction(async (tx) => {
+        await tx.scheduledSms.update({
           where: { id: sms.id },
           data: {
             status: "failed",
             errorCode: err instanceof Error ? err.message.slice(0, 100) : "unknown",
           },
-        }),
-        prisma.user.update({
-          where: { id: sms.userId },
-          data: { credits: { increment: sms.creditCost } },
-        }),
-      ]);
+        });
+
+        if (firstPackage) {
+          await refundQuotaIfEligible(tx, firstPackage.id, sms.creditCost);
+        }
+      });
       results.failed++;
     }
   }

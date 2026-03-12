@@ -15,7 +15,7 @@ function getClientIp(req: NextRequest) {
 export async function POST(req: NextRequest) {
   // Rate limit BEFORE processing — prevents token brute-force
   const ip = getClientIp(req);
-  const limit = checkRateLimit(ip, "password");
+  const limit = await checkRateLimit(ip, "password");
   if (!limit.allowed) {
     return rateLimitResponse(limit.resetIn);
   }

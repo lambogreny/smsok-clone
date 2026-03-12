@@ -24,19 +24,20 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { Search, ArrowRight, Inbox, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, ArrowRight, Inbox, ChevronLeft, ChevronRight, MessageSquare } from "lucide-react";
+import EmptyState from "@/components/EmptyState";
 import type { MessageItem, PaginationMeta } from "@/lib/types/api-responses";
 
 const statusConfig: Record<string, { badge: string; label: string }> = {
-  delivered: { badge: "bg-[rgba(16,185,129,0.08)] text-[#34D399] border-[rgba(16,185,129,0.2)]", label: "ส่งสำเร็จ" },
-  sent:      { badge: "bg-[rgba(0,255,167,0.08)] text-[var(--accent)] border-[rgba(0,255,167,0.2)]", label: "ส่งแล้ว" },
-  pending:   { badge: "bg-[rgba(245,158,11,0.08)] text-[#FBBF24] border-[rgba(245,158,11,0.2)]", label: "รอส่ง" },
-  failed:    { badge: "bg-[rgba(239,68,68,0.08)] text-[#F87171] border-[rgba(239,68,68,0.2)]", label: "ล้มเหลว" },
+  delivered: { badge: "bg-[rgba(var(--success-rgb),0.08)] text-[var(--success)] border-[rgba(var(--success-rgb),0.2)]", label: "ส่งสำเร็จ" },
+  sent:      { badge: "bg-[rgba(var(--accent-rgb),0.08)] text-[var(--accent)] border-[rgba(var(--accent-rgb),0.2)]", label: "ส่งแล้ว" },
+  pending:   { badge: "bg-[rgba(var(--warning-rgb),0.08)] text-[var(--warning)] border-[rgba(var(--warning-rgb),0.2)]", label: "รอส่ง" },
+  failed:    { badge: "bg-[rgba(var(--error-rgb),0.08)] text-[var(--error)] border-[rgba(var(--error-rgb),0.2)]", label: "ล้มเหลว" },
 };
 
 const typeConfig: Record<string, string> = {
   SMS: "bg-[rgba(71,121,255,0.08)] text-[var(--accent-secondary)]",
-  OTP: "bg-[rgba(0,255,167,0.08)] text-[var(--accent)]",
+  OTP: "bg-[rgba(var(--accent-rgb),0.08)] text-[var(--accent)]",
 };
 
 function detectType(content: string): "OTP" | "SMS" {
@@ -95,7 +96,7 @@ export default function MessagesClient({
           <p className="text-sm text-[var(--text-muted)] mt-1">{total} รายการทั้งหมด</p>
         </div>
         <Link href="/dashboard/send">
-          <Button className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--text-on-accent)] rounded-[20px] font-semibold gap-2">
+          <Button className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--text-on-accent)] rounded-lg font-semibold gap-2">
             ส่ง SMS <ArrowRight className="w-4 h-4" />
           </Button>
         </Link>
@@ -108,7 +109,7 @@ export default function MessagesClient({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
             <Input
               type="text"
-              className="pl-10 h-11 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-xl focus:border-[rgba(0,255,167,0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+              className="pl-10 h-11 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-xl focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]"
               placeholder="ค้นหาเบอร์, เนื้อหา, ผู้ส่ง..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -168,7 +169,7 @@ export default function MessagesClient({
             const status = statusConfig[msg.status] ?? statusConfig.pending;
             const msgType = detectType(msg.content);
             return (
-              <Card key={msg.id} className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-[16px]">
+              <Card key={msg.id} className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-xl">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm text-[var(--text-primary)] font-mono">{msg.recipient}</span>
@@ -185,7 +186,7 @@ export default function MessagesClient({
                       <span>{msg.senderName}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="font-mono">฿{msg.creditCost}</span>
+                      <span className="font-mono">{msg.creditCost} SMS</span>
                       <span>
                         {new Date(msg.createdAt).toLocaleString("th-TH", {
                           month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
@@ -200,11 +201,11 @@ export default function MessagesClient({
         </div>
 
         {/* Desktop Table */}
-        <Card className="hidden md:block bg-[var(--bg-surface)] border-[var(--border-default)] rounded-[20px] overflow-hidden">
+        <Card className="hidden md:block bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-[var(--bg-surface-hover)] border-none hover:bg-[var(--bg-surface-hover)]">
+                <TableRow className="bg-[var(--table-header)] border-none hover:bg-[var(--table-header)]">
                   <TableHead className="text-[12px] uppercase text-[var(--text-muted)] font-semibold tracking-[0.05em] whitespace-nowrap">เวลา</TableHead>
                   <TableHead className="text-[12px] uppercase text-[var(--text-muted)] font-semibold tracking-[0.05em]">ผู้รับ</TableHead>
                   <TableHead className="text-[12px] uppercase text-[var(--text-muted)] font-semibold tracking-[0.05em] hidden md:table-cell">เนื้อหา</TableHead>
@@ -221,7 +222,7 @@ export default function MessagesClient({
                   return (
                     <TableRow
                       key={msg.id}
-                      className={`border-b border-[var(--border-default)] hover:bg-[var(--bg-surface)] transition-colors duration-150 h-10 ${i % 2 === 1 ? "bg-[var(--bg-base)]" : "bg-transparent"}`}
+                      className={`border-b border-[var(--border-default)] hover:bg-black transition-colors duration-150 h-10 ${i % 2 === 1 ? "bg-[var(--table-alt-row)]" : "bg-transparent"}`}
                     >
                       <TableCell className="text-xs text-[var(--text-muted)] whitespace-nowrap py-2">
                         {new Date(msg.createdAt).toLocaleString("th-TH", {
@@ -241,7 +242,7 @@ export default function MessagesClient({
                       </TableCell>
                       <TableCell className="text-xs text-[var(--text-muted)] hidden lg:table-cell py-2">{msg.senderName}</TableCell>
                       <TableCell className="text-right py-2">
-                        <span className="text-xs text-[var(--text-muted)] font-mono">฿{msg.creditCost}</span>
+                        <span className="text-xs text-[var(--text-muted)] font-mono">{msg.creditCost} SMS</span>
                       </TableCell>
                       <TableCell className="text-center py-2">
                         <Badge variant="outline" className={`text-[11px] px-2.5 py-0.5 rounded-full border ${status.badge}`}>
@@ -286,7 +287,7 @@ export default function MessagesClient({
                         onClick={() => goToPage(p)}
                         className={`w-8 h-8 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                           p === page
-                            ? "bg-[rgba(0,255,167,0.08)] border border-[rgba(0,255,167,0.3)] text-[var(--accent)]"
+                            ? "bg-[rgba(var(--accent-rgb),0.08)] border border-[rgba(var(--accent-rgb),0.3)] text-[var(--accent)]"
                             : "border border-[var(--border-default)] text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"
                         }`}
                       >
@@ -334,7 +335,7 @@ export default function MessagesClient({
         </>
       ) : messages.length > 0 ? (
         /* No filter results */
-        <Card className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-[20px]">
+        <Card className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg">
           <CardContent className="p-12 text-center">
             <Search className="w-12 h-12 text-[var(--text-muted)] mx-auto mb-4" />
             <p className="text-sm text-[var(--text-primary)] mb-1">ไม่พบผลลัพธ์</p>
@@ -343,18 +344,16 @@ export default function MessagesClient({
         </Card>
       ) : (
         /* Empty state */
-        <Card className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-[20px]">
-          <CardContent className="p-12 text-center">
-            <Inbox className="w-12 h-12 text-[var(--text-muted)] mx-auto mb-4" />
-            <p className="text-lg font-semibold text-[var(--text-primary)] mb-1">ยังไม่มีข้อความ</p>
-            <p className="text-sm text-[var(--text-muted)] mb-5">ส่ง SMS ครั้งแรกเลย!</p>
-            <Link href="/dashboard/send">
-              <Button className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--text-on-accent)] rounded-[20px] font-semibold gap-2">
-                ส่ง SMS <ArrowRight className="w-4 h-4" />
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={MessageSquare}
+          iconColor="var(--accent-secondary)"
+          iconBg="rgba(71,121,255,0.06)"
+          iconBorder="rgba(71,121,255,0.1)"
+          title="ยังไม่มีประวัติการส่ง SMS"
+          description={"เมื่อส่ง SMS แล้ว ประวัติจะแสดงที่นี่\nพร้อมสถานะการส่ง (ส่งแล้ว/ถึง/ไม่ถึง)"}
+          ctaLabel="📱 ส่ง SMS แรก"
+          ctaAction={() => router.push("/dashboard/send")}
+        />
       )}
     </div>
   );

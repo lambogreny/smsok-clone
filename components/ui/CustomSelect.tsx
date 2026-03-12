@@ -102,7 +102,7 @@ export default function CustomSelect({
           transition={{ duration: 0.15 }}
           style={{ position: "fixed", top: rect.top, left: rect.left, width: rect.width, zIndex: 9999 }}
           className="rounded-xl overflow-hidden
-            bg-[#0D1526]/95 backdrop-blur-xl border border-white/10
+            bg-[var(--bg-elevated)]/95 border border-white/10
             shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
         >
           {options.map((opt, i) => (
@@ -113,7 +113,7 @@ export default function CustomSelect({
               onClick={() => { onChange(opt.value); close(); }}
               className={`w-full text-left px-3 py-2 text-sm transition-colors
                 ${i === focused ? "bg-white/[0.08] text-white" : "text-[var(--text-secondary)] hover:bg-white/[0.05]"}
-                ${opt.value === value ? "text-violet-400 font-medium" : ""}`}
+                ${opt.value === value ? "text-[var(--accent)] font-medium" : ""}`}
             >
               {opt.label}
             </button>
@@ -132,8 +132,8 @@ export default function CustomSelect({
         onKeyDown={handleKeyDown}
         disabled={disabled}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm
-          bg-[var(--bg-surface)]/80 backdrop-blur-sm border transition-colors
-          ${open ? "border-violet-500/40" : "border-[var(--border-subtle)] hover:border-violet-500/30"}
+          bg-[var(--bg-surface)]/80 border transition-colors
+          ${open ? "border-[rgba(0,226,181,0.15)]" : "border-[var(--border-subtle)] hover:border-[rgba(0,226,181,0.15)]"}
           text-[var(--text-secondary)] disabled:opacity-50 disabled:cursor-not-allowed`}
       >
         <span className={selectedLabel ? "" : "text-[var(--text-muted)]"}>

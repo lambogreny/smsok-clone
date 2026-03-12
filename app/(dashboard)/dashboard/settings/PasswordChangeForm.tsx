@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { changePasswordForSession } from "@/lib/actions/settings";
 import { fieldCls } from "@/lib/form-utils";
 import { safeErrorMessage } from "@/lib/error-messages";
@@ -34,11 +35,13 @@ export default function PasswordChangeForm() {
       });
 
       setResult({ type: "success", message: "เปลี่ยนรหัสผ่านเรียบร้อยแล้ว" });
+      toast.success("เปลี่ยนรหัสผ่านสำเร็จ");
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch (e) {
       setResult({ type: "error", message: safeErrorMessage(e) });
+      toast.error("ไม่สามารถเปลี่ยนรหัสผ่านได้");
     } finally {
       setLoading(false);
     }
@@ -71,7 +74,7 @@ export default function PasswordChangeForm() {
             {newPassword.length > 0 && (
               <div className="flex gap-1 mt-1.5">
                 {[{ re: /.{8}/, label: "8+ ตัว" }, { re: /[A-Z]/, label: "A-Z" }, { re: /[0-9]/, label: "0-9" }].map(({ re, label }) => (
-                  <span key={label} className={`text-[10px] px-1.5 py-0.5 rounded ${re.test(newPassword) ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/10 text-red-400"}`}>{label}</span>
+                  <span key={label} className={`text-[10px] px-1.5 py-0.5 rounded ${re.test(newPassword) ? "bg-emerald-500/20 text-emerald-400" : "bg-[rgba(var(--error-rgb,239,68,68),0.1)] text-[var(--error)]"}`}>{label}</span>
                 ))}
               </div>
             )}
@@ -86,14 +89,14 @@ export default function PasswordChangeForm() {
               onChange={(e) => setConfirmPassword(e.target.value)}
             />
             {confirmPassword.length > 0 && newPassword !== confirmPassword && (
-              <p className="text-red-400 text-xs mt-1">รหัสผ่านไม่ตรงกัน</p>
+              <p className="text-[var(--error)] text-xs mt-1">รหัสผ่านไม่ตรงกัน</p>
             )}
           </div>
         </div>
       </div>
 
       {result && (
-        <p className={`mt-4 text-xs font-medium ${result.type === "success" ? "text-emerald-400" : "text-red-400"}`}>
+        <p className={`mt-4 text-xs font-medium ${result.type === "success" ? "text-emerald-400" : "text-[var(--error)]"}`}>
           {result.message}
         </p>
       )}

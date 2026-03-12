@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma as db } from "@/lib/db";
 import { executeCampaign } from "@/lib/actions/campaigns";
 
-const CRON_SECRET = process.env.CRON_SECRET || "";
+const CRON_SECRET = process.env.CRON_SECRET;
 
 // GET /api/cron/campaigns — process scheduled campaigns
 // Call via cron job: curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/campaigns

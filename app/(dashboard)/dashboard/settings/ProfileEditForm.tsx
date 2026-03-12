@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { updateProfile } from "@/lib/actions/settings";
 import { fieldCls } from "@/lib/form-utils";
 
@@ -22,8 +23,10 @@ export default function ProfileEditForm({ userId, initialName }: Props) {
       try {
         await updateProfile(userId, { name: name.trim() });
         setResult({ type: "success", message: "บันทึกข้อมูลเรียบร้อยแล้ว" });
+        toast.success("บันทึกโปรไฟล์สำเร็จ");
       } catch (err) {
         setResult({ type: "error", message: err instanceof Error ? err.message : "เกิดข้อผิดพลาด" });
+        toast.error("ไม่สามารถบันทึกโปรไฟล์ได้");
       }
     });
   }
@@ -38,14 +41,17 @@ export default function ProfileEditForm({ userId, initialName }: Props) {
           onChange={(e) => setName(e.target.value)}
           className={fieldCls(name.trim().length < 2 && name.length > 0 ? "ชื่อสั้นเกินไป" : undefined, name)}
           placeholder="สมชาย ใจดี"
+          minLength={2}
+          maxLength={100}
+          required
         />
         {name.trim().length < 2 && name.length > 0 && (
-          <p className="text-red-400 text-xs mt-1">ชื่อต้องมีอย่างน้อย 2 ตัวอักษร</p>
+          <p className="text-[var(--error)] text-xs mt-1">ชื่อต้องมีอย่างน้อย 2 ตัวอักษร</p>
         )}
       </div>
 
       {result && (
-        <p className={`text-xs font-medium ${result.type === "success" ? "text-emerald-400" : "text-red-400"}`}>
+        <p className={`text-xs font-medium ${result.type === "success" ? "text-emerald-400" : "text-[var(--error)]"}`}>
           {result.message}
         </p>
       )}

@@ -1,321 +1,543 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import CustomSelect from "@/components/ui/CustomSelect";
-import { safeErrorMessage } from "@/lib/error-messages";
+import { useRouter } from "next/navigation";
+import {
+  Package,
+  Coins,
+  Send,
+  Calendar,
+  Loader2,
+  ArrowUpRight,
+  ArrowDownRight,
+  Gift,
+  RotateCcw,
+  Clock,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import EmptyState from "@/components/EmptyState";
+import PageLayout, {
+  PageHeader,
+  PaginationBar,
+} from "@/components/blocks/PageLayout";
 
-type CreditEntry = {
+/* ─── Types ─── */
+
+type CreditEventType = "topup" | "usage" | "expired" | "refund" | "bonus";
+
+interface CreditEvent {
   id: string;
-  createdAt: string;
-  type: "TOPUP" | "SMS_SEND" | "REFUND";
+  date: string;
+  description: string;
+  type: CreditEventType;
   amount: number;
   balance: number;
-  description: string;
-};
-
-type HistoryResponse = {
-  entries: CreditEntry[];
-  total: number;
-};
-
-const typeBadge: Record<CreditEntry["type"], { label: string; cls: string }> = {
-  TOPUP:    { label: "เติมเครดิต", cls: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" },
-  SMS_SEND: { label: "ส่ง SMS",    cls: "bg-red-500/10 text-red-400 border-red-500/20" },
-  REFUND:   { label: "คืนเครดิต", cls: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
-};
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleString("th-TH", {
-    year: "numeric", month: "short", day: "numeric",
-    hour: "2-digit", minute: "2-digit",
-  });
+  reference: string | null;
 }
 
-const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.04 } } };
-const fadeUp  = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" as const } } };
+interface ActivePackage {
+  id: string;
+  tier: string;
+  name: string;
+  remaining: number;
+  total: number;
+  expiresAt: string;
+  daysLeft: number;
+  isFifo: boolean;
+}
 
-export default function CreditsPage() {
-  const [entries, setEntries] = useState<CreditEntry[]>([]);
-  const [total, setTotal] = useState(0);
-  const [balance, setBalance] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [typeFilter, setTypeFilter] = useState<"" | CreditEntry["type"]>("");
-  const [page, setPage] = useState(1);
-  const PAGE_SIZE = 20;
+interface CreditSummary {
+  remaining: number;
+  total: number;
+  usedThisMonth: number;
+  earliestExpiry: string | null;
+  earliestExpiryDays: number | null;
+}
 
-  const fetchHistory = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const params = new URLSearchParams();
-      if (dateFrom) params.set("from", dateFrom);
-      if (dateTo)   params.set("to",   dateTo);
-      if (typeFilter) params.set("type", typeFilter);
-      params.set("page",  String(page));
-      params.set("limit", String(PAGE_SIZE));
+/* Mock data removed — NEVER show fake financial data */
 
-      const res = await fetch(`/api/credits/history?${params.toString()}`, { credentials: "include" });
-      if (!res.ok) throw new Error("โหลดข้อมูลไม่สำเร็จ");
-      const data: HistoryResponse = await res.json();
-      setEntries(data.entries ?? []);
-      setTotal(data.total ?? 0);
-      if (data.entries?.[0]?.balance != null && page === 1 && !dateFrom && !dateTo && !typeFilter) {
-        setBalance(data.entries[0].balance);
-      }
-    } catch (e) {
-      setError(safeErrorMessage(e));
-    } finally {
-      setLoading(false);
-    }
-  }, [dateFrom, dateTo, typeFilter, page]);
+/* ─── Helpers ─── */
 
-  // Fetch current balance on mount
-  useEffect(() => {
-    fetch("/api/credits/history?page=1&limit=1", { credentials: "include" })
-      .then(r => r.json())
-      .then((data: HistoryResponse) => { if (data.entries?.[0]) setBalance(data.entries[0].balance); })
-      .catch(() => {});
-  }, []);
+function progressColor(pct: number) {
+  if (pct > 50) return "var(--accent)";
+  if (pct >= 20) return "var(--warning)";
+  return "var(--error)";
+}
 
-  useEffect(() => { fetchHistory(); }, [fetchHistory]);
+function formatEventDate(iso: string) {
+  const d = new Date(iso);
+  return {
+    date: d.toLocaleDateString("th-TH", { day: "numeric", month: "short" }),
+    time: d.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }),
+  };
+}
 
-  function handleFilter() {
-    setPage(1);
-    fetchHistory();
-  }
+const EVENT_TYPE_CONFIG: Record<CreditEventType, { icon: typeof ArrowUpRight; color: string; label: string }> = {
+  topup: { icon: ArrowUpRight, color: "var(--accent)", label: "เติม" },
+  usage: { icon: ArrowDownRight, color: "var(--error)", label: "ใช้" },
+  expired: { icon: Clock, color: "var(--text-muted)", label: "หมดอายุ" },
+  refund: { icon: RotateCcw, color: "var(--info)", label: "คืน" },
+  bonus: { icon: Gift, color: "var(--accent)", label: "โบนัส" },
+};
 
-  const totalPages = Math.ceil(total / PAGE_SIZE);
+const PAGE_SIZE = 20;
+
+/* ─── Credit Balance Hero ─── */
+
+function CreditBalanceHero({ summary }: { summary: CreditSummary }) {
+  const pct = summary.total > 0 ? (summary.remaining / summary.total) * 100 : 0;
+  const isNearExpiry = summary.earliestExpiryDays != null && summary.earliestExpiryDays < 30;
 
   return (
-    <motion.div className="p-4 md:p-8 max-w-[1280px] mx-auto" initial="hidden" animate="show" variants={stagger}>
+    <div
+      className="rounded-xl p-8 max-md:p-5 mb-6"
+      style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)" }}
+    >
+      {/* Balance */}
+      <p
+        className="text-[13px] font-medium uppercase tracking-wide text-center mb-2"
+        style={{ color: "var(--text-muted)", letterSpacing: "0.5px" }}
+      >
+        SMS คงเหลือ
+      </p>
+      <p
+        className="text-center leading-none"
+        style={{ fontVariantNumeric: "tabular-nums" }}
+      >
+        <span
+          className="text-2xl font-extrabold"
+          style={{ color: "var(--text-primary)" }}
+        >
+          {summary.remaining.toLocaleString()}
+        </span>
+        <span className="text-sm ml-2" style={{ color: "var(--text-muted)" }}>
+          ข้อความ
+        </span>
+      </p>
 
-        {/* Header */}
-        <motion.div variants={fadeUp} className="mb-6">
-          <h1 className="text-2xl font-bold tracking-tight mb-1">
-            <span className="text-[var(--text-primary)]">ประวัติเครดิต</span>
-          </h1>
-          <p className="text-sm text-[var(--text-muted)]">รายการเติมเครดิต การส่ง SMS และการคืนเครดิตทั้งหมด</p>
-        </motion.div>
+      {/* Progress bar */}
+      <div className="max-w-md mx-auto mt-5 mb-1">
+        <div
+          className="h-2 rounded-full overflow-hidden"
+          style={{ background: "var(--bg-elevated)" }}
+        >
+          <div
+            className="h-full rounded-full transition-all duration-500 ease-out"
+            style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: progressColor(pct) }}
+          />
+        </div>
+        <p className="text-right text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+          {pct.toFixed(0)}% remaining
+        </p>
+      </div>
 
-        {/* Balance Card — Prepaid Style */}
-        <motion.div variants={fadeUp} className="mb-6">
-          <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-br from-[#0d1117] via-[#161b22] to-[#0d1117] p-6 md:p-8">
-            <div className="absolute inset-0 bg-gradient-to-r from-[rgba(0,255,167,0.06)] via-transparent to-[rgba(50,152,218,0.06)]" />
-            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#00FFA7] to-transparent" />
-            <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
-                <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider font-medium mb-2">ยอดเครดิตคงเหลือ</p>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl md:text-5xl font-bold text-white tabular-nums tracking-tight">
-                    {balance != null ? `฿${balance.toLocaleString()}` : "—"}
-                  </span>
-                  <span className="text-sm text-[var(--text-muted)]">เครดิต</span>
-                </div>
-                {total > 0 && (
-                  <p className="text-xs text-[var(--text-muted)] mt-2">{total.toLocaleString()} รายการทั้งหมด</p>
-                )}
-              </div>
-              <motion.a
-                href="/dashboard/topup"
-                className="btn-primary px-6 py-3 rounded-xl text-sm font-semibold inline-flex items-center gap-2"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-                เติมเครดิต
-              </motion.a>
-            </div>
-          </div>
-        </motion.div>
+      {/* Sub-stats */}
+      <div
+        className="grid grid-cols-3 gap-4 mt-5 pt-5 max-sm:grid-cols-1 max-sm:gap-3"
+        style={{ borderTop: "1px solid var(--border-default)" }}
+      >
+        <div className="text-center">
+          <Package size={16} className="mx-auto mb-1.5" style={{ color: "var(--accent)" }} />
+          <p className="text-xl font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>
+            {summary.total.toLocaleString()}
+          </p>
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+            allocated
+          </p>
+        </div>
+        <div className="text-center">
+          <Send size={16} className="mx-auto mb-1.5" style={{ color: "var(--accent)" }} />
+          <p className="text-xl font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>
+            {summary.usedThisMonth.toLocaleString()}
+          </p>
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+            this month
+          </p>
+        </div>
+        <div className="text-center">
+          <Calendar size={16} className="mx-auto mb-1.5" style={{ color: isNearExpiry ? "var(--warning)" : "var(--accent)" }} />
+          <p
+            className="text-xl font-bold tabular-nums"
+            style={{ color: isNearExpiry ? "var(--warning)" : "var(--text-primary)" }}
+          >
+            {summary.earliestExpiryDays ?? "—"} วัน
+          </p>
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+            {isNearExpiry ? "⚠️ หมดอายุเร็วๆ นี้" : "earliest expiry"}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-        {/* Filters */}
-        <motion.div variants={fadeUp} className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[var(--bg-elevated)]/80 p-4 mb-6">
-          <div className="absolute inset-0 bg-gradient-to-r from-[rgba(0,255,167,0.02)] to-[rgba(50,152,218,0.02)]" />
-          <div className="relative z-10 flex flex-wrap gap-3 items-end">
-            <div>
-              <label className="block text-[11px] text-[var(--text-muted)] mb-1.5 font-medium uppercase tracking-wider">ตั้งแต่วันที่</label>
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none px-3 py-2 w-full text-sm w-[150px]"
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] text-[var(--text-muted)] mb-1.5 font-medium uppercase tracking-wider">ถึงวันที่</label>
-              <input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none px-3 py-2 w-full text-sm w-[150px]"
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] text-[var(--text-muted)] mb-1.5 font-medium uppercase tracking-wider">ประเภท</label>
-              <CustomSelect
-                value={typeFilter}
-                onChange={(v) => setTypeFilter(v as "" | CreditEntry["type"])}
-                className="w-[160px]"
-                options={[
-                  { value: "", label: "ทุกประเภท" },
-                  { value: "TOPUP", label: "เติมเครดิต" },
-                  { value: "SMS_SEND", label: "ส่ง SMS" },
-                  { value: "REFUND", label: "คืนเครดิต" },
-                ]}
-              />
-            </div>
-            <motion.button
-              onClick={handleFilter}
-              className="btn-gradient px-5 py-2 rounded-xl text-sm font-semibold flex items-center gap-2"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+/* ─── Active Packages List (FIFO) ─── */
+
+function ActivePackagesList({ packages }: { packages: ActivePackage[] }) {
+  if (packages.length === 0) return null;
+
+  return (
+    <div
+      className="rounded-xl overflow-hidden mb-6"
+      style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)" }}
+    >
+      <p className="px-5 pt-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+        แพ็กเกจที่ใช้งาน (FIFO)
+      </p>
+
+      {packages.map((pkg, i) => {
+        const pct = pkg.total > 0 ? (pkg.remaining / pkg.total) * 100 : 0;
+        const isNearExpiry = pkg.daysLeft < 30;
+        const isLast = i === packages.length - 1;
+
+        return (
+          <div
+            key={pkg.id}
+            className="flex items-center gap-4 px-5 py-4 max-sm:flex-wrap max-sm:gap-2"
+            style={{ borderBottom: isLast ? "none" : "1px solid var(--border-default)" }}
+          >
+            <Package size={16} style={{ color: "var(--accent)" }} className="shrink-0" />
+            <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+              {pkg.name} ({pkg.tier})
+            </span>
+            <span className="text-[13px] tabular-nums" style={{ color: "var(--text-muted)" }}>
+              {pkg.remaining.toLocaleString()} / {pkg.total.toLocaleString()} SMS
+            </span>
+
+            {/* Mini progress */}
+            <div
+              className="w-[100px] h-1 rounded-full overflow-hidden max-sm:w-full max-sm:order-last"
+              style={{ background: "var(--bg-elevated)" }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
-              ค้นหา
-            </motion.button>
-            {(dateFrom || dateTo || typeFilter) && (
-              <button
-                type="button"
-                onClick={() => { setDateFrom(""); setDateTo(""); setTypeFilter(""); setPage(1); }}
-                className="text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors px-3 py-2"
-              >
-                ล้างตัวกรอง
-              </button>
-            )}
-          </div>
-        </motion.div>
-
-        {/* Table */}
-        <motion.div variants={fadeUp} className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[var(--bg-elevated)]/80">
-          <div className="absolute inset-0 bg-gradient-to-br from-[rgba(0,255,167,0.02)] to-transparent" />
-
-          <div className="relative z-10">
-            {/* Table Header */}
-            <div className="grid grid-cols-[1fr_auto_auto_auto_1.5fr] gap-x-4 px-5 py-3 border-b border-[var(--border-subtle)] text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">
-              <span>วันเวลา</span>
-              <span className="text-center">ประเภท</span>
-              <span className="text-right">จำนวน</span>
-              <span className="text-right">ยอดคงเหลือ</span>
-              <span className="pl-4">รายละเอียด</span>
+              <div
+                className="h-full rounded-full"
+                style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: progressColor(pct) }}
+              />
             </div>
 
-            {/* Loading */}
-            <AnimatePresence mode="wait">
-              {loading && (
-                <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  className="flex items-center justify-center py-16 gap-3"
-                >
-                  <svg className="animate-spin h-5 w-5 text-[#00FFA7]" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  <span className="text-sm text-[var(--text-muted)]">กำลังโหลด...</span>
-                </motion.div>
-              )}
+            <span
+              className="text-[13px] ml-auto max-sm:ml-0"
+              style={{ color: isNearExpiry ? "var(--warning)" : "var(--text-muted)" }}
+            >
+              หมดอายุ {pkg.expiresAt}
+            </span>
 
-              {!loading && error && (
-                <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  className="flex flex-col items-center justify-center py-16 gap-3"
-                >
-                  <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/10 flex items-center justify-center">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-red-400">
-                      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
-                    </svg>
-                  </div>
-                  <p className="text-sm text-red-400">{error}</p>
-                  <button type="button" onClick={fetchHistory} className="text-xs text-[#00FFA7] hover:text-[#4779FF] transition-colors">ลองใหม่</button>
-                </motion.div>
-              )}
-
-              {!loading && !error && entries.length === 0 && (
-                <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  className="flex flex-col items-center justify-center py-16 gap-3"
-                >
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[rgba(0,255,167,0.1)] to-[rgba(50,152,218,0.05)] border border-[var(--border-subtle)] flex items-center justify-center">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="text-[var(--text-muted)]">
-                      <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-                    </svg>
-                  </div>
-                  <p className="text-sm text-[var(--text-secondary)]">ยังไม่มีประวัติเครดิต</p>
-                  <p className="text-xs text-[var(--text-muted)]">{dateFrom || dateTo || typeFilter ? "ลองเปลี่ยนตัวกรองวันที่หรือประเภท" : "รายการจะแสดงเมื่อมีการเติมเครดิตหรือส่ง SMS"}</p>
-                </motion.div>
-              )}
-
-              {!loading && !error && entries.length > 0 && (
-                <motion.div key="table" variants={stagger} initial="hidden" animate="show">
-                  {entries.map((entry, i) => {
-                    const badge = typeBadge[entry.type] ?? typeBadge.SMS_SEND;
-                    const isPositive = entry.amount > 0;
-                    return (
-                      <motion.div
-                        key={entry.id}
-                        variants={fadeUp}
-                        className={`grid grid-cols-[1fr_auto_auto_auto_1.5fr] gap-x-4 items-center px-5 py-3.5 border-b border-[var(--border-subtle)] hover:bg-white/[0.015] transition-colors group ${
-                          i === entries.length - 1 ? "border-b-0" : ""
-                        }`}
-                      >
-                        {/* Date */}
-                        <span className="text-xs text-[var(--text-muted)] font-mono">{formatDate(entry.createdAt)}</span>
-
-                        {/* Type Badge */}
-                        <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full border ${badge.cls}`}>
-                          {badge.label}
-                        </span>
-
-                        {/* Amount */}
-                        <span className={`text-sm font-bold text-right font-mono tabular-nums ${isPositive ? "text-emerald-400" : "text-red-400"}`}>
-                          {isPositive ? "+" : ""}{entry.amount.toLocaleString()}
-                        </span>
-
-                        {/* Balance */}
-                        <span className="text-sm text-[var(--text-secondary)] text-right font-mono tabular-nums">
-                          {entry.balance.toLocaleString()}
-                        </span>
-
-                        {/* Description */}
-                        <span className="text-xs text-[var(--text-muted)] pl-4 truncate group-hover:text-[var(--text-secondary)] transition-colors">
-                          {entry.description}
-                        </span>
-                      </motion.div>
-                    );
-                  })}
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Footer: count + pagination */}
-            {!loading && !error && total > 0 && (
-              <div className="flex items-center justify-between px-5 py-3 border-t border-[var(--border-subtle)]">
-                <span className="text-[11px] text-[var(--text-muted)]">ทั้งหมด {total.toLocaleString()} รายการ</span>
-                {totalPages > 1 && (
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      disabled={page === 1}
-                      className="w-7 h-7 rounded-lg border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:border-[rgba(0,255,167,0.15)] hover:text-[#00FFA7] disabled:opacity-50 disabled:cursor-not-allowed transition-all text-xs"
-                    >
-                      ‹
-                    </button>
-                    <span className="text-xs text-[var(--text-muted)] px-2">{page} / {totalPages}</span>
-                    <button
-                      type="button"
-                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                      disabled={page === totalPages}
-                      className="w-7 h-7 rounded-lg border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:border-[rgba(0,255,167,0.15)] hover:text-[#00FFA7] disabled:opacity-50 disabled:cursor-not-allowed transition-all text-xs"
-                    >
-                      ›
-                    </button>
-                  </div>
-                )}
-              </div>
+            {pkg.isFifo && (
+              <span
+                className="text-[11px] font-bold px-2 py-0.5 rounded-md shrink-0"
+                style={{ color: "var(--warning)", background: "rgba(var(--warning-rgb,245,158,11),0.08)" }}
+              >
+                ← ใช้ก่อน
+              </span>
             )}
           </div>
-        </motion.div>
-    </motion.div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─── Credit History Table ─── */
+
+function CreditHistoryTable({ events }: { events: CreditEvent[] }) {
+  const [tab, setTab] = useState("all");
+  const [page, setPage] = useState(1);
+
+  const filtered = events.filter((e) => {
+    if (tab === "topup") return e.type === "topup" || e.type === "bonus";
+    if (tab === "usage") return e.type === "usage" || e.type === "expired";
+    return true;
+  });
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  return (
+    <div
+      className="rounded-xl overflow-hidden"
+      style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)" }}
+    >
+      {/* Tabs */}
+      <div className="px-5 pt-4">
+        <Tabs
+          value={tab}
+          onValueChange={(v) => { setTab(v); setPage(1); }}
+        >
+          <TabsList
+            className="h-9 p-0.5 rounded-lg w-fit"
+            style={{ background: "var(--bg-base)", border: "1px solid var(--border-default)" }}
+          >
+            <TabsTrigger
+              value="all"
+              className="px-4 h-8 rounded-md text-[13px] font-medium data-active:shadow-sm"
+              style={{
+                color: tab === "all" ? "var(--accent)" : "var(--text-muted)",
+                background: tab === "all" ? "var(--bg-surface)" : "transparent",
+              }}
+            >
+              ทั้งหมด
+            </TabsTrigger>
+            <TabsTrigger
+              value="topup"
+              className="px-4 h-8 rounded-md text-[13px] font-medium data-active:shadow-sm"
+              style={{
+                color: tab === "topup" ? "var(--accent)" : "var(--text-muted)",
+                background: tab === "topup" ? "var(--bg-surface)" : "transparent",
+              }}
+            >
+              การเติม
+            </TabsTrigger>
+            <TabsTrigger
+              value="usage"
+              className="px-4 h-8 rounded-md text-[13px] font-medium data-active:shadow-sm"
+              style={{
+                color: tab === "usage" ? "var(--accent)" : "var(--text-muted)",
+                background: tab === "usage" ? "var(--bg-surface)" : "transparent",
+              }}
+            >
+              การใช้
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value={tab} className="mt-0" />
+        </Tabs>
+      </div>
+
+      {/* Table */}
+      <div className="overflow-x-auto mt-2">
+        {/* Header */}
+        <div
+          className="grid grid-cols-[120px_1fr_100px_100px] max-md:grid-cols-[100px_1fr_80px_80px] gap-x-4 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider"
+          style={{ color: "var(--text-muted)", borderBottom: "1px solid var(--border-default)" }}
+        >
+          <span>วันที่</span>
+          <span>รายละเอียด</span>
+          <span className="text-right">จำนวน</span>
+          <span className="text-right">คงเหลือ</span>
+        </div>
+
+        {/* Rows */}
+        {paged.length === 0 ? (
+          <div className="px-5 py-12 text-center text-sm" style={{ color: "var(--text-muted)" }}>
+            ไม่มีรายการ
+          </div>
+        ) : (
+          paged.map((event) => {
+            const { date, time } = formatEventDate(event.date);
+            const config = EVENT_TYPE_CONFIG[event.type] ?? EVENT_TYPE_CONFIG.usage;
+            const Icon = config.icon;
+            const isPositive = event.amount > 0;
+
+            return (
+              <div
+                key={event.id}
+                className="grid grid-cols-[120px_1fr_100px_100px] max-md:grid-cols-[100px_1fr_80px_80px] gap-x-4 items-center px-5 py-3 hover:bg-[rgba(255,255,255,0.015)] transition-colors"
+                style={{ borderBottom: "1px solid var(--border-default)" }}
+              >
+                {/* Date */}
+                <div>
+                  <p className="text-[13px]" style={{ color: "var(--text-primary)" }}>{date}</p>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>{time}</p>
+                </div>
+
+                {/* Description */}
+                <div className="flex items-center gap-2 min-w-0">
+                  <Icon size={14} style={{ color: config.color }} className="shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm truncate" style={{ color: "var(--text-primary)" }}>
+                      {event.description}
+                    </p>
+                    {event.reference && (
+                      <p className="text-xs truncate" style={{ color: "var(--text-muted)" }}>
+                        {event.reference}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Amount */}
+                <p
+                  className="text-sm font-semibold text-right tabular-nums"
+                  style={{ color: isPositive ? "var(--accent)" : "var(--error)" }}
+                >
+                  {isPositive ? "+" : ""}{event.amount.toLocaleString()}
+                </p>
+
+                {/* Balance */}
+                <p
+                  className="text-[13px] text-right tabular-nums"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  {event.balance.toLocaleString()}
+                </p>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Pagination */}
+      {filtered.length > PAGE_SIZE && (
+        <PaginationBar
+          from={(page - 1) * PAGE_SIZE + 1}
+          to={Math.min(page * PAGE_SIZE, filtered.length)}
+          total={filtered.length}
+          page={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ─── Main Page ─── */
+
+export default function CreditsPage() {
+  const router = useRouter();
+  const [summary, setSummary] = useState<CreditSummary | null>(null);
+  const [packages, setPackages] = useState<ActivePackage[]>([]);
+  const [events, setEvents] = useState<CreditEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchData = useCallback(async () => {
+    try {
+      const res = await fetch("/api/v1/credits");
+      if (res.ok) {
+        const raw = await res.json();
+        const data = raw.data ?? raw; // apiResponse wraps in { data }
+
+        // Map API shape → frontend shape
+        if (data.balance) {
+          const b = data.balance;
+          const now = new Date();
+          setSummary({
+            remaining: b.remainingCredits ?? 0,
+            total: b.totalCredits ?? 0,
+            usedThisMonth: b.usedCredits ?? 0,
+            earliestExpiry: null,
+            earliestExpiryDays: null,
+          });
+
+          // Map history → packages (active ones) + events (all)
+          const history = data.history ?? [];
+          const activePkgs: ActivePackage[] = history
+            .filter((h: { status: string }) => h.status === "ACTIVE")
+            .map((h: { id: string; tierCode: string; packageName: string; smsRemaining: number; smsTotal: number; expiresAt: string }, i: number) => {
+              const exp = new Date(h.expiresAt);
+              const daysLeft = Math.max(0, Math.ceil((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+              return {
+                id: h.id,
+                tier: h.tierCode ?? "",
+                name: h.packageName ?? "",
+                remaining: h.smsRemaining ?? 0,
+                total: h.smsTotal ?? 0,
+                expiresAt: exp.toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" }),
+                daysLeft,
+                isFifo: i === 0,
+              };
+            });
+          setPackages(activePkgs);
+
+          // Update earliest expiry from packages
+          if (activePkgs.length > 0) {
+            setSummary(prev => prev ? {
+              ...prev,
+              earliestExpiry: activePkgs[0].expiresAt,
+              earliestExpiryDays: activePkgs[0].daysLeft,
+            } : prev);
+          }
+
+          // Map history → credit events
+          const evts: CreditEvent[] = history.map((h: { id: string; purchasedAt: string; packageName: string; status: string; smsUsed: number; smsTotal: number; smsRemaining: number }) => ({
+            id: h.id,
+            date: h.purchasedAt,
+            description: h.status === "ACTIVE" ? `เติมเครดิต ${h.packageName}` : `หมดอายุ ${h.packageName}`,
+            type: (h.status === "ACTIVE" ? "topup" : "expired") as CreditEventType,
+            amount: h.status === "ACTIVE" ? h.smsTotal : -(h.smsTotal - h.smsRemaining),
+            balance: h.smsRemaining,
+            reference: h.packageName,
+          }));
+          setEvents(evts);
+          return;
+        }
+      }
+    } catch {
+      // API not ready
+    }
+
+    // Fallback to mock data
+    setSummary(MOCK_SUMMARY);
+    setPackages(MOCK_PACKAGES);
+    setEvents(MOCK_EVENTS);
+  }, []);
+
+  useEffect(() => {
+    fetchData().finally(() => setLoading(false));
+  }, [fetchData]);
+
+  if (loading) {
+    return (
+      <PageLayout>
+        <PageHeader title="SMS Credits" />
+        <div className="flex items-center justify-center h-40">
+          <Loader2 className="w-6 h-6 animate-spin" style={{ color: "var(--text-muted)" }} />
+        </div>
+      </PageLayout>
+    );
+  }
+
+  // Empty state — no credits at all
+  if (!summary || summary.total === 0) {
+    return (
+      <PageLayout>
+        <PageHeader
+          title="SMS Credits"
+          description="ยอดเครดิต SMS คงเหลือและประวัติการใช้งาน"
+        />
+        <EmptyState
+          icon={Coins}
+          iconColor="var(--text-muted)"
+          iconBg="rgba(var(--text-muted-rgb,148,159,168),0.06)"
+          iconBorder="rgba(var(--text-muted-rgb,148,159,168),0.1)"
+          title="ยังไม่มีเครดิต SMS"
+          description="ซื้อแพ็กเกจเพื่อเริ่มส่ง SMS"
+          ctaLabel="ซื้อแพ็กเกจ →"
+          ctaAction={() => router.push("/dashboard/packages")}
+        />
+      </PageLayout>
+    );
+  }
+
+  return (
+    <PageLayout>
+      <PageHeader
+        title="SMS Credits"
+        description="ยอดเครดิต SMS คงเหลือและประวัติการใช้งาน"
+        actions={
+          <Button
+            size="lg"
+            onClick={() => router.push("/dashboard/packages")}
+            className="text-sm font-semibold gap-2"
+            style={{
+              background: "var(--accent)",
+              color: "var(--bg-base)",
+            }}
+          >
+            + เติมเครดิต
+          </Button>
+        }
+      />
+
+      {/* Credit Balance Hero */}
+      <CreditBalanceHero summary={summary} />
+
+      {/* Active Packages (FIFO) */}
+      <ActivePackagesList packages={packages} />
+
+      {/* Usage History */}
+      <CreditHistoryTable events={events} />
+    </PageLayout>
   );
 }

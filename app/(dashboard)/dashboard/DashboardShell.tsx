@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { logout } from "@/lib/actions";
 import { useState, useEffect, useRef } from "react";
+import { broadcastLogout } from "@/components/AuthGuard";
 import { cn } from "@/lib/utils";
 
 // shadcn components
@@ -92,12 +92,12 @@ const sidebarItems: SidebarItem[] = [
   { icon: SlidersHorizontal, label: "ชื่อผู้ส่ง", href: "/dashboard/senders", section: "manage" },
   { icon: Users, label: "แคมเปญ", href: "/dashboard/campaigns", section: "manage" },
   { icon: BarChart3, label: "รายงาน", href: "/dashboard/analytics", section: "manage" },
-  { icon: CircleDollarSign, label: "เติมเครดิต", href: "/dashboard/topup", section: "settings" },
+  { icon: CircleDollarSign, label: "ซื้อแพ็กเกจ", href: "/dashboard/packages", section: "settings" },
   { icon: Key, label: "คีย์ API", href: "/dashboard/api-keys", section: "settings" },
   { icon: ScrollText, label: "API Logs", href: "/dashboard/logs", section: "settings" },
   { icon: BookOpen, label: "เอกสาร API", href: "/dashboard/docs", section: "settings" },
   { icon: Settings, label: "ตั้งค่า", href: "/dashboard/settings", section: "settings" },
-  { icon: Receipt, label: "ประวัติเครดิต", href: "/dashboard/credits", section: "settings" },
+  { icon: Receipt, label: "แพ็กเกจของฉัน", href: "/dashboard/packages/my", section: "settings" },
 ];
 
 function SidebarLink({ item, isActive }: { item: SidebarItem; isActive: boolean }) {
@@ -108,7 +108,7 @@ function SidebarLink({ item, isActive }: { item: SidebarItem; isActive: boolean 
       className={cn(
         "flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors duration-200",
         isActive
-          ? "bg-[rgba(0,255,167,0.08)] text-[var(--accent)] border-l-[3px] border-[var(--accent)]"
+          ? "bg-[rgba(var(--accent-rgb),0.08)] text-[var(--accent)] border-l-[3px] border-[var(--accent)]"
           : "text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-white/[0.04]"
       )}
     >
@@ -120,10 +120,12 @@ function SidebarLink({ item, isActive }: { item: SidebarItem; isActive: boolean 
 
 export default function DashboardShell({
   user,
+  smsRemaining = 0,
   title = "",
   children,
 }: {
-  user: UserData;
+  user: UserData | null;
+  smsRemaining?: number;
   title?: string;
   children: React.ReactNode;
 }) {
@@ -182,13 +184,13 @@ export default function DashboardShell({
   return (
     <div className="min-h-screen flex bg-[var(--bg-base)]">
       {/* ── Desktop Sidebar ── */}
-      <aside className="hidden md:flex w-[220px] shrink-0 border-r border-[var(--border-subtle)] bg-[var(--bg-base)] flex-col">
+      <aside className="hidden md:flex w-[220px] shrink-0 border-r border-[var(--border-default)] bg-[var(--bg-base)] flex-col">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5 px-5 h-14 border-b border-[var(--border-subtle)] group">
+        <Link href="/" className="flex items-center gap-2.5 px-5 h-14 border-b border-[var(--border-default)] group">
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[var(--accent)] to-[var(--accent-secondary)] flex items-center justify-center">
-            <Send className="w-3.5 h-3.5 text-white" />
+            <Send className="w-3.5 h-3.5 text-[var(--text-primary)]" />
           </div>
-          <span className="text-lg font-bold tracking-tight text-white">SMSOK</span>
+          <span className="text-lg font-bold tracking-tight text-[var(--text-primary)]">SMSOK</span>
         </Link>
 
         {/* Navigation */}
@@ -245,7 +247,8 @@ export default function DashboardShell({
         </ScrollArea>
 
         {/* User section */}
-        <div className="border-t border-[var(--border-subtle)] p-3">
+        <div className="border-t border-[var(--border-default)] p-3">
+          {user ? (
           <DropdownMenu>
             <DropdownMenuTrigger className="flex items-center gap-2.5 px-2 py-2 w-full rounded-lg hover:bg-white/[0.04] transition-colors duration-200 cursor-pointer">
               <Avatar className="w-9 h-9 rounded-full">
@@ -258,7 +261,7 @@ export default function DashboardShell({
                 <div className="text-[11px] text-[var(--text-muted)] truncate">{user.email}</div>
               </div>
             </DropdownMenuTrigger>
-            <DropdownMenuContent side="top" align="start" className="w-48 bg-[var(--bg-surface)] border-[var(--border-subtle)]">
+            <DropdownMenuContent side="top" align="start" className="w-48 bg-[var(--bg-surface)] border-[var(--border-default)]">
               <DropdownMenuGroup>
                 <DropdownMenuLabel className="text-[var(--text-muted)]">บัญชีของฉัน</DropdownMenuLabel>
               </DropdownMenuGroup>
@@ -272,21 +275,19 @@ export default function DashboardShell({
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="cursor-pointer"
-                onClick={() => router.push("/dashboard/credits")}
+                onClick={() => router.push("/dashboard/packages/my")}
               >
                 <Receipt className="w-4 h-4" />
-                ประวัติเครดิต
+                แพ็กเกจของฉัน
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 variant="destructive"
                 className="cursor-pointer"
-                onClick={() => {
-                  const form = document.createElement("form");
-                  form.method = "POST";
-                  form.action = "/api/auth/logout";
-                  document.body.appendChild(form);
-                  form.requestSubmit();
+                onClick={async () => {
+                  await fetch("/api/auth/logout", { method: "POST" });
+                  broadcastLogout();
+                  window.location.href = "/login";
                 }}
               >
                 <LogOut className="w-4 h-4" />
@@ -294,14 +295,19 @@ export default function DashboardShell({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          ) : (
+            <Link href="/login" className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--accent)] text-[var(--text-on-accent)] text-sm font-semibold hover:opacity-90 transition-opacity justify-center">
+              เข้าสู่ระบบ
+            </Link>
+          )}
         </div>
       </aside>
 
       {/* ── Main Content ── */}
       <main className="flex-1 overflow-auto flex flex-col">
         {/* Header */}
-        <header className="sticky top-0 z-40 border-b border-[var(--border-subtle)] bg-[var(--bg-base)] h-14 flex items-center justify-between px-6 md:px-8">
-          <h1 className="text-base font-semibold text-white tracking-tight">
+        <header className="sticky top-0 z-40 border-b border-[var(--border-default)] bg-[var(--bg-base)] h-14 flex items-center justify-between px-6 md:px-8">
+          <h1 className="text-base font-semibold text-[var(--text-primary)] tracking-tight">
             {title || sidebarItems.find((i) => i.href === pathname)?.label || "ภาพรวม"}
           </h1>
 
@@ -311,28 +317,28 @@ export default function DashboardShell({
               variant="ghost"
               size="sm"
               onClick={() => setCmdkOpen(true)}
-              className="hidden sm:flex items-center gap-2 text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-white/[0.04] h-9 px-3"
+              className="hidden sm:flex items-center gap-2 text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-white/[0.04] h-10 px-3"
             >
               <Search className="w-4 h-4" />
               <span className="text-xs">ค้นหา...</span>
-              <kbd className="ml-1 text-[10px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded px-1.5 py-0.5 text-[var(--text-muted)]">
+              <kbd className="ml-1 text-[10px] bg-[var(--bg-surface)] border border-[var(--border-default)] rounded px-1.5 py-0.5 text-[var(--text-muted)]">
                 ⌘K
               </kbd>
             </Button>
 
             {/* Notifications */}
             <DropdownMenu onOpenChange={(open) => { if (open) handleNotifOpen(); }}>
-              <DropdownMenuTrigger className="relative w-9 h-9 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-[rgba(0,255,167,0.3)] flex items-center justify-center transition-colors duration-200 cursor-pointer">
+              <DropdownMenuTrigger className="relative w-10 h-10 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-default)] hover:border-[rgba(var(--accent-rgb),0.3)] flex items-center justify-center transition-colors duration-200 cursor-pointer">
                 <Bell className="w-4 h-4 text-[var(--text-muted)]" />
                 {unreadCount > 0 && (
-                  <Badge className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 border-2 border-[var(--bg-base)] text-[10px] font-bold text-white flex items-center justify-center p-0">
+                  <Badge className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--error)] border-2 border-[var(--bg-base)] text-[10px] font-bold text-[var(--text-primary)] flex items-center justify-center p-0">
                     {unreadCount > 99 ? "99+" : unreadCount}
                   </Badge>
                 )}
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" side="bottom" sideOffset={8} className="w-80 bg-[var(--bg-surface)] border-[var(--border-subtle)]">
+              <DropdownMenuContent align="end" side="bottom" sideOffset={8} className="w-80 bg-[var(--bg-surface)] border-[var(--border-default)]">
                 <DropdownMenuGroup>
-                  <DropdownMenuLabel className="text-white text-sm font-semibold">
+                  <DropdownMenuLabel className="text-[var(--text-primary)] text-sm font-semibold">
                     การแจ้งเตือน
                   </DropdownMenuLabel>
                 </DropdownMenuGroup>
@@ -347,9 +353,9 @@ export default function DashboardShell({
                       <div className={cn(
                         "w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5",
                         n.type === "sms_success" && "bg-[rgba(16,185,129,0.1)] text-emerald-400",
-                        n.type === "sms_failed" && "bg-[rgba(239,68,68,0.1)] text-red-400",
+                        n.type === "sms_failed" && "bg-[rgba(var(--error-rgb,239,68,68),0.1)] text-[var(--error)]",
                         n.type === "topup" && "bg-[rgba(var(--accent-secondary-rgb,50,152,218),0.1)] text-[var(--accent-secondary)]",
-                        !["sms_success", "sms_failed", "topup"].includes(n.type) && "bg-[rgba(0,255,167,0.1)] text-[var(--accent)]"
+                        !["sms_success", "sms_failed", "topup"].includes(n.type) && "bg-[rgba(var(--accent-rgb),0.1)] text-[var(--accent)]"
                       )}>
                         {n.type === "sms_success" && <MessageSquare className="w-3.5 h-3.5" />}
                         {n.type === "sms_failed" && <MessageSquare className="w-3.5 h-3.5" />}
@@ -373,24 +379,30 @@ export default function DashboardShell({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Credits */}
+            {/* SMS Remaining */}
             <Link
-              href="/dashboard/topup"
-              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-[rgba(0,255,167,0.3)] transition-colors duration-200"
+              href="/dashboard/packages/my"
+              className="hidden sm:flex items-center gap-2 px-3 py-1.5 min-h-[44px] md:min-h-0 rounded-lg bg-[rgba(0,226,181,0.06)] border border-[rgba(0,226,181,0.15)] hover:border-[rgba(0,226,181,0.3)] transition-colors duration-200"
             >
-              <CircleDollarSign className="w-3.5 h-3.5 text-[var(--accent)]" />
-              <span className="text-xs text-[var(--text-muted)]">เครดิต</span>
-              <span className="text-sm font-semibold text-white">
-                ฿{user.credits.toLocaleString()}
+              <MessageSquare className="w-3.5 h-3.5 text-[var(--accent)]" />
+              <span className="text-sm font-bold text-[var(--accent)]">
+                {smsRemaining.toLocaleString()}
               </span>
+              <span className="text-xs text-[var(--text-muted)]">SMS</span>
             </Link>
 
             {/* Mobile avatar */}
-            <Avatar className="w-8 h-8 rounded-lg md:hidden">
-              <AvatarFallback className="bg-[rgba(0,255,167,0.1)] border border-[rgba(0,255,167,0.15)] text-[var(--accent)] text-xs font-semibold rounded-lg">
-                {user.name.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
+            {user ? (
+              <Avatar className="w-8 h-8 rounded-lg md:hidden">
+                <AvatarFallback className="bg-[rgba(var(--accent-rgb),0.1)] border border-[rgba(var(--accent-rgb),0.15)] text-[var(--accent)] text-xs font-semibold rounded-lg">
+                  {user.name.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+            ) : (
+              <Link href="/login" className="text-xs text-[var(--accent)] font-semibold md:hidden">
+                เข้าสู่ระบบ
+              </Link>
+            )}
           </div>
         </header>
 
@@ -398,7 +410,7 @@ export default function DashboardShell({
         <div className="flex-1">{children}</div>
 
         {/* Footer */}
-        <footer className="border-t border-[var(--border-subtle)] px-8 py-4 shrink-0">
+        <footer className="border-t border-[var(--border-default)] px-8 py-4 shrink-0">
           <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)]">
             <span>v1.0</span>
             <span>&copy; SMSOK</span>
@@ -491,9 +503,9 @@ export default function DashboardShell({
 
       {/* ── Mobile Bottom Sheet ── */}
       <Sheet open={mobileSheetOpen} onOpenChange={setMobileSheetOpen}>
-        <SheetContent side="bottom" className="bg-[var(--bg-base)] border-t border-[var(--border-subtle)] rounded-t-2xl pb-8">
+        <SheetContent side="bottom" className="bg-[var(--bg-base)] border-t border-[var(--border-default)] rounded-t-2xl pb-8">
           <SheetHeader>
-            <SheetTitle className="text-white">เมนูเพิ่มเติม</SheetTitle>
+            <SheetTitle className="text-[var(--text-primary)]">เมนูเพิ่มเติม</SheetTitle>
           </SheetHeader>
           <div className="grid grid-cols-3 gap-2 mt-4">
             {sidebarItems
@@ -509,7 +521,7 @@ export default function DashboardShell({
                     className={cn(
                       "flex flex-col items-center gap-2 p-3 rounded-xl transition-colors duration-200",
                       isActive
-                        ? "bg-[rgba(0,255,167,0.08)] text-[var(--accent)] border border-[rgba(0,255,167,0.15)]"
+                        ? "bg-[rgba(var(--accent-rgb),0.08)] text-[var(--accent)] border border-[rgba(var(--accent-rgb),0.15)]"
                         : "text-[var(--text-muted)] hover:bg-white/[0.04] border border-transparent"
                     )}
                   >
@@ -520,17 +532,23 @@ export default function DashboardShell({
               })}
           </div>
           <Separator className="my-4 bg-[var(--border-subtle)]" />
-          <form action={logout}>
-            <button className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-red-400/70 hover:text-red-400 hover:bg-red-500/[0.05] transition-colors duration-200 text-sm cursor-pointer">
-              <LogOut className="w-4 h-4" />
-              ออกจากระบบ
-            </button>
-          </form>
+          <button
+            type="button"
+            onClick={async () => {
+              await fetch("/api/auth/logout", { method: "POST" });
+              broadcastLogout();
+              window.location.href = "/login";
+            }}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-[var(--error)] opacity-70 hover:opacity-100 hover:text-[var(--error)] hover:bg-[rgba(var(--error-rgb,239,68,68),0.05)] transition-colors duration-200 text-sm cursor-pointer"
+          >
+            <LogOut className="w-4 h-4" />
+            ออกจากระบบ
+          </button>
         </SheetContent>
       </Sheet>
 
       {/* ── Mobile Bottom Nav ── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-[var(--border-subtle)] bg-[var(--bg-base)] flex items-center justify-around px-2 py-2 safe-area-bottom">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-[var(--border-default)] bg-[var(--bg-base)] flex items-center justify-around px-2 py-2 safe-area-bottom">
         <Link
           href="/dashboard"
           className={cn(

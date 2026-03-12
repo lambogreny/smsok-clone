@@ -1,11 +1,11 @@
 import { NextRequest } from "next/server";
-import { authenticateApiKey, apiResponse, apiError } from "@/lib/api-auth";
+import { authenticateRequest, apiResponse, apiError } from "@/lib/api-auth";
 import { prisma } from "@/lib/db";
 
 // GET /api/v1/logs?page=1&limit=20&status=400&endpoint=/sms/send&method=POST&from=2026-03-01&to=2026-03-10&search=0812345678
 export async function GET(req: NextRequest) {
   try {
-    const user = await authenticateApiKey(req);
+    const user = await authenticateRequest(req);
     const { searchParams } = new URL(req.url);
 
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);

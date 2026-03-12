@@ -28,16 +28,23 @@ export async function getGroups(userId: string) {
 }
 
 export async function createGroup(userId: string, data: unknown) {
-  const input = createGroupSchema.parse(data);
+  const parsed = createGroupSchema.safeParse(data);
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message || "ข้อมูลไม่ถูกต้อง");
+  }
   const group = await db.contactGroup.create({
-    data: { userId, name: input.name },
+    data: { userId, name: parsed.data.name },
   });
   revalidatePath("/dashboard/groups");
   return group;
 }
 
 export async function updateGroup(userId: string, groupId: string, data: unknown) {
-  const input = createGroupSchema.parse(data);
+  const parsed = createGroupSchema.safeParse(data);
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message || "ข้อมูลไม่ถูกต้อง");
+  }
+  const input = parsed.data;
   const existing = await db.contactGroup.findFirst({ where: { id: groupId, userId } });
   if (!existing) throw new Error("ไม่พบกลุ่ม");
   const updated = await db.contactGroup.update({
@@ -120,7 +127,7 @@ export async function importContactsToGroup(
   csvData: { name: string; phone: string }[]
 ) {
   // Rate limit
-  const limit = checkRateLimit(userId, "import");
+  const limit = await checkRateLimit(userId, "import");
   if (!limit.allowed) throw new Error("นำเข้าบ่อยเกินไป กรุณารอสักครู่");
 
   // Verify group ownership

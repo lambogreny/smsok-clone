@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   try {
     const user = await authenticatePublicApiKey(req);
 
-    const limit = checkRateLimit(user.id, "apikey");
+    const limit = await checkRateLimit(user.id, "apikey");
     if (!limit.allowed) return rateLimitResponse(limit.resetIn);
 
     const body = await req.json();

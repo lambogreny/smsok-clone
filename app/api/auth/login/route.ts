@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
-import { verifyPassword, setSession, signToken } from "@/lib/auth";
+import { verifyPassword, setSession } from "@/lib/auth";
 import { ApiError, apiError, apiResponse } from "@/lib/api-auth";
 import { loginSchema } from "@/lib/validations";
 import { startApiLog, setApiLogUser } from "@/lib/api-log";
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
 
   // Rate limit BEFORE any auth logic — prevents brute-force
   const ip = getClientIp(req);
-  const limit = checkRateLimit(ip, "auth");
+  const limit = await checkRateLimit(ip, "auth_login");
   if (!limit.allowed) {
     return rateLimitResponse(limit.resetIn);
   }
@@ -47,6 +47,8 @@ export async function POST(req: NextRequest) {
         name: true,
         password: true,
         mustChangePassword: true,
+        failedLoginAttempts: true,
+        lockedUntil: true,
         twoFactorAuth: {
           select: { enabled: true },
         },
@@ -59,9 +61,40 @@ export async function POST(req: NextRequest) {
       throw new ApiError(401, "อีเมลหรือรหัสผ่านไม่ถูกต้อง");
     }
 
+    // Always run bcrypt first (constant-time) — check lockout AFTER to avoid leaking account existence
     const valid = await verifyPassword(input.password, user.password);
-    if (!valid) {
+
+    // Account lockout check — same 401 message to prevent enumeration
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
       throw new ApiError(401, "อีเมลหรือรหัสผ่านไม่ถูกต้อง");
+    }
+
+    if (!valid) {
+      // Increment failed attempts
+      const attempts = (user.failedLoginAttempts ?? 0) + 1;
+      const lockData: Record<string, unknown> = { failedLoginAttempts: attempts };
+
+      // Lock after 5 failed attempts for 15 minutes
+      if (attempts >= 5) {
+        const lockedUntil = new Date(Date.now() + 15 * 60 * 1000);
+        lockData.lockedUntil = lockedUntil;
+      }
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: lockData,
+      });
+
+      // Generic 401 for all failures — don't reveal lockout state
+      throw new ApiError(401, "อีเมลหรือรหัสผ่านไม่ถูกต้อง");
+    }
+
+    // Login success — reset failed attempts
+    if (user.failedLoginAttempts > 0 || user.lockedUntil) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { failedLoginAttempts: 0, lockedUntil: null },
+      });
     }
 
     // Check if 2FA is enabled
@@ -82,7 +115,7 @@ export async function POST(req: NextRequest) {
     }
 
     // No 2FA — set session directly
-    await setSession(user.id);
+    await setSession(user.id, { headers: req.headers });
     setApiLogUser(user.id);
 
     return apiResponse({

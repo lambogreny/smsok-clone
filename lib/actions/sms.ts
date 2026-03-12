@@ -6,33 +6,52 @@ import { revalidatePath } from "next/cache";
 import {
   sendSmsSchema,
   sendBatchSmsSchema,
-  calculateSmsCount,
   normalizePhone,
   reportFilterSchema,
 } from "../validations";
 import { sendSingleSms, sendSmsBatch } from "../sms-gateway";
+import {
+  deductQuota,
+  refundQuota,
+  refundQuotaIfEligible,
+  calculateSmsSegments,
+  ensureSufficientQuota,
+} from "../package/quota";
+import { assertSendingHours } from "../sending-hours";
+import { checkAndAutoTopup } from "./auto-topup";
+import { InsufficientCreditsError, toInsufficientCreditsResult } from "../quota-errors";
+import type { InsufficientCreditsResult } from "../quota-errors";
 
 // ==========================================
 // Send single SMS
 // ==========================================
 
-export async function sendSms(userId: string, data: unknown, channel: "WEB" | "API" = "WEB") {
-  const input = sendSmsSchema.parse(data);
-  const smsCount = calculateSmsCount(input.message);
+export async function sendSms(userId: string, data: unknown, channel: "WEB" | "API" = "WEB", orgId?: string) {
+  const parsed = sendSmsSchema.safeParse(data);
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message || "ข้อมูลไม่ถูกต้อง");
+  }
+  const input = parsed.data;
 
-  // Check credits
-  const user = await db.user.findUniqueOrThrow({
-    where: { id: userId },
-    select: { credits: true },
-  });
+  // PDPA: Block marketing SMS outside org-configured hours (WEB channel = marketing)
+  // API channel may be transactional — caller handles enforcement
+  if (channel === "WEB") {
+    await assertSendingHours(orgId);
+  }
 
-  if (user.credits < smsCount) {
-    throw new Error("เครดิตไม่เพียงพอ กรุณาเติมเงิน");
+  const smsCount = calculateSmsSegments(input.message);
+
+  // Check package quota — return structured error (not throw) for server action boundary
+  try {
+    await ensureSufficientQuota(userId, smsCount);
+  } catch (err) {
+    if (err instanceof InsufficientCreditsError) return toInsufficientCreditsResult(err);
+    throw err;
   }
 
   // Check sender name is approved
   const sender = await db.senderName.findFirst({
-    where: { userId, name: input.senderName, status: "approved" },
+    where: { userId, name: input.senderName, status: "APPROVED" },
   });
   if (!sender && input.senderName !== "EasySlip") {
     throw new Error("ชื่อผู้ส่งยังไม่ได้รับอนุมัติ");
@@ -48,8 +67,8 @@ export async function sendSms(userId: string, data: unknown, channel: "WEB" | "A
     throw new Error("ผู้รับปฏิเสธการรับ SMS (opt-out) ไม่สามารถส่งได้");
   }
 
-  // Create message + deduct credits in transaction
-  const { message, updatedUser } = await db.$transaction(async (tx: Omit<PrismaClient, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">) => {
+  // Create message + deduct package quota in transaction
+  const { message, deductions } = await db.$transaction(async (tx: Omit<PrismaClient, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">) => {
     const createdMessage = await tx.message.create({
       data: {
         userId,
@@ -62,17 +81,18 @@ export async function sendSms(userId: string, data: unknown, channel: "WEB" | "A
       },
     });
 
-    const nextUser = await tx.user.update({
-      where: { id: userId },
-      data: { credits: { decrement: smsCount } },
-      select: { credits: true },
-    });
+    const result = await deductQuota(tx, userId, smsCount);
 
     return {
       message: createdMessage,
-      updatedUser: nextUser,
+      deductions: result.deductions,
     };
   });
+
+  // Auto top-up check (fire-and-forget)
+  checkAndAutoTopup(userId).catch((err) =>
+    console.error("[auto-topup] check failed:", err),
+  );
 
   // Send via EasyThunder SMS Gateway
   let gatewaySent = false;
@@ -86,7 +106,7 @@ export async function sendSms(userId: string, data: unknown, channel: "WEB" | "A
     if (result.success) {
       gatewaySent = true;
 
-      // Step 1: ALWAYS mark message as "sent" first — this must succeed
+      // Mark message as "sent"
       await db.message.update({
         where: { id: message.id },
         data: {
@@ -95,45 +115,18 @@ export async function sendSms(userId: string, data: unknown, channel: "WEB" | "A
           gatewayId: result.jobId || null,
         },
       });
-
-      // Step 2: Create ledger entry — if this fails, SMS is still recorded as sent
-      try {
-        await db.creditTransaction.create({
-          data: {
-            userId,
-            amount: -smsCount,
-            balance: updatedUser.credits,
-            type: "SMS_SEND",
-            description: `SMS sent to ${normalizePhone(input.recipient)}`,
-            refId: message.id,
-          },
-        });
-      } catch (ledgerError) {
-        // Log but don't fail — SMS was sent, message is marked "sent", credits already deducted
-        console.error("[sendSms] creditTransaction ledger failed but SMS was sent:", ledgerError);
-      }
     } else {
-      // Gateway returned failure — REFUND credits + create refund ledger entry
-      await db.$transaction([
-        db.message.update({
+      // Gateway returned failure — REFUND package quota
+      await db.$transaction(async (tx) => {
+        await tx.message.update({
           where: { id: message.id },
           data: { status: "failed", errorCode: result.error?.slice(0, 100) || null },
-        }),
-        db.user.update({
-          where: { id: userId },
-          data: { credits: { increment: smsCount } },
-        }),
-        db.creditTransaction.create({
-          data: {
-            userId,
-            amount: smsCount,
-            balance: updatedUser.credits + smsCount,
-            type: "REFUND",
-            description: `SMS failed to ${normalizePhone(input.recipient)} — credits refunded`,
-            refId: message.id,
-          },
-        }),
-      ]);
+        });
+        // Refund each package deduction
+        for (const d of deductions) {
+          await refundQuota(tx, d.purchaseId, d.amount);
+        }
+      });
       throw new Error(result.error || "ส่ง SMS ไม่สำเร็จ");
     }
   } catch (gatewayError) {
@@ -141,26 +134,15 @@ export async function sendSms(userId: string, data: unknown, channel: "WEB" | "A
     if (!gatewaySent) {
       const isAlreadyHandled = gatewayError instanceof Error && gatewayError.message.includes("ส่ง SMS ไม่สำเร็จ");
       if (!isAlreadyHandled) {
-        await db.$transaction([
-          db.message.update({
+        await db.$transaction(async (tx) => {
+          await tx.message.update({
             where: { id: message.id },
             data: { status: "failed" },
-          }),
-          db.user.update({
-            where: { id: userId },
-            data: { credits: { increment: smsCount } },
-          }),
-          db.creditTransaction.create({
-            data: {
-              userId,
-              amount: smsCount,
-              balance: updatedUser.credits + smsCount,
-              type: "REFUND",
-              description: `SMS failed — credits refunded`,
-              refId: message.id,
-            },
-          }),
-        ]);
+          });
+          for (const d of deductions) {
+            await refundQuota(tx, d.purchaseId, d.amount);
+          }
+        });
       }
     }
     throw gatewayError;
@@ -174,33 +156,40 @@ export async function sendSms(userId: string, data: unknown, channel: "WEB" | "A
 // Send batch SMS (creates multiple messages)
 // ==========================================
 
-export async function sendBatchSms(userId: string, data: unknown, channel: "WEB" | "API" = "WEB") {
-  const input = sendBatchSmsSchema.parse(data);
-  const smsCount = calculateSmsCount(input.message);
-  const totalCredits = smsCount * input.recipients.length;
+export async function sendBatchSms(userId: string, data: unknown, channel: "WEB" | "API" = "WEB", orgId?: string) {
+  const parsed = sendBatchSmsSchema.safeParse(data);
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message || "ข้อมูลไม่ถูกต้อง");
+  }
+  const input = parsed.data;
 
-  // Check credits
-  const user = await db.user.findUniqueOrThrow({
-    where: { id: userId },
-    select: { credits: true },
-  });
+  // PDPA: Block marketing SMS outside org-configured hours (WEB channel = marketing)
+  // API channel may be transactional — caller handles enforcement
+  if (channel === "WEB") {
+    await assertSendingHours(orgId);
+  }
 
-  if (user.credits < totalCredits) {
-    throw new Error(
-      `เครดิตไม่เพียงพอ ต้องใช้ ${totalCredits} เครดิต (คงเหลือ ${user.credits})`
-    );
+  const smsCount = calculateSmsSegments(input.message);
+  const totalSms = smsCount * input.recipients.length;
+
+  // Check package quota — return structured error (not throw) for server action boundary
+  try {
+    await ensureSufficientQuota(userId, totalSms);
+  } catch (err) {
+    if (err instanceof InsufficientCreditsError) return toInsufficientCreditsResult(err);
+    throw err;
   }
 
   // Check sender name
   const sender = await db.senderName.findFirst({
-    where: { userId, name: input.senderName, status: "approved" },
+    where: { userId, name: input.senderName, status: "APPROVED" },
   });
   if (!sender && input.senderName !== "EasySlip") {
     throw new Error("ชื่อผู้ส่งยังไม่ได้รับอนุมัติ");
   }
 
-  // Create messages + deduct credits
-  const result = await db.$transaction(async (tx: Omit<PrismaClient, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">) => {
+  // Create messages + deduct package quota
+  const { result, batchDeductions } = await db.$transaction(async (tx: Omit<PrismaClient, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">) => {
     const created = await tx.message.createMany({
       data: input.recipients.map((phone) => ({
         userId,
@@ -213,13 +202,15 @@ export async function sendBatchSms(userId: string, data: unknown, channel: "WEB"
       })),
     });
 
-    await tx.user.update({
-      where: { id: userId },
-      data: { credits: { decrement: totalCredits } },
-    });
+    const quotaResult = await deductQuota(tx, userId, totalSms);
 
-    return created;
+    return { result: created, batchDeductions: quotaResult.deductions };
   });
+
+  // Auto top-up check (fire-and-forget)
+  checkAndAutoTopup(userId).catch((err) =>
+    console.error("[auto-topup] check failed:", err),
+  );
 
   // Send via EasyThunder SMS Gateway (batches of 1000)
   const normalizedRecipients = input.recipients.map(normalizePhone);
@@ -267,50 +258,22 @@ export async function sendBatchSms(userId: string, data: unknown, channel: "WEB"
     });
   }
 
-  // Refund credits for failed messages + create ledger in one transaction
-  if (failedCount > 0 || sentCount > 0) {
-    const refundCredits = smsCount * failedCount;
-    const consumedCredits = smsCount * sentCount;
-    const finalBalance = user.credits - consumedCredits;
-
-    const ops = [];
-    if (failedCount > 0) {
-      ops.push(
-        db.user.update({
-          where: { id: userId },
-          data: { credits: { increment: refundCredits } },
-        }),
-        db.creditTransaction.create({
-          data: {
-            userId,
-            amount: refundCredits,
-            balance: finalBalance + refundCredits,
-            type: "REFUND",
-            description: `Batch SMS failed for ${failedCount} recipients — credits refunded`,
-          },
-        })
-      );
-    }
-    if (sentCount > 0) {
-      ops.push(
-        db.creditTransaction.create({
-          data: {
-            userId,
-            amount: -consumedCredits,
-            balance: finalBalance,
-            type: "SMS_SEND",
-            description: `Batch SMS sent to ${sentCount} recipients`,
-          },
-        })
-      );
-    }
-    if (ops.length > 0) {
-      await db.$transaction(ops);
-    }
+  // Refund package quota for failed messages (tier D+ only for delivery failures)
+  if (failedCount > 0) {
+    const refundSms = smsCount * failedCount;
+    let toRefund = refundSms;
+    await db.$transaction(async (tx) => {
+      for (let i = batchDeductions.length - 1; i >= 0 && toRefund > 0; i--) {
+        const d = batchDeductions[i];
+        const refundAmount = Math.min(d.amount, toRefund);
+        await refundQuotaIfEligible(tx, d.purchaseId, refundAmount);
+        toRefund -= refundAmount;
+      }
+    });
   }
 
   revalidatePath("/dashboard");
-  return { totalMessages: result.count, totalCredits, sentCount, failedCount };
+  return { totalMessages: result.count, totalSms, sentCount, failedCount };
 }
 
 // ==========================================
@@ -342,7 +305,11 @@ export async function getMessageStatus(userId: string, messageId: string) {
 // ==========================================
 
 export async function getMessages(userId: string, filters: unknown) {
-  const input = reportFilterSchema.parse(filters);
+  const parsed = reportFilterSchema.safeParse(filters);
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message || "ข้อมูลไม่ถูกต้อง");
+  }
+  const input = parsed.data;
   const skip = (input.page - 1) * input.limit;
 
   const where: Record<string, unknown> = { userId };
@@ -417,7 +384,7 @@ export async function getDashboardStats(userId: string) {
   const [user, todayStats, monthStats, recentMessages] = await db.$transaction([
     db.user.findUniqueOrThrow({
       where: { id: userId },
-      select: { credits: true, name: true, email: true },
+      select: { name: true, email: true },
     }),
     db.message.groupBy({
       by: ["status"],

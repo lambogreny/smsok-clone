@@ -22,7 +22,7 @@ export default async function CampaignsPage() {
       orderBy: { name: "asc" },
     }),
     prisma.senderName.findMany({
-      where: { userId: user.id, status: "approved" },
+      where: { userId: user.id, status: "APPROVED" },
       select: { name: true },
       orderBy: { name: "asc" },
     }),

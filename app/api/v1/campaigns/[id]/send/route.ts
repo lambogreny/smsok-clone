@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { apiError, apiResponse } from "@/lib/api-auth";
 import { authenticatePublicApiKey } from "@/lib/api-key-auth";
+import { requireApiPermission } from "@/lib/rbac";
 import { executeCampaign } from "@/lib/actions/campaigns";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
@@ -11,7 +12,11 @@ export async function POST(
 ) {
   try {
     const user = await authenticatePublicApiKey(req);
-    const limit = checkRateLimit(user.id, "batch");
+
+    const denied = await requireApiPermission(user.id, "create", "campaign");
+    if (denied) return denied;
+
+    const limit = await checkRateLimit(user.id, "batch");
     if (!limit.allowed) return rateLimitResponse(limit.resetIn);
 
     const { id } = await params;

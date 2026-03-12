@@ -7,14 +7,11 @@ import { processScheduledSms } from "@/lib/actions/scheduled-sms";
 export async function POST(req: NextRequest) {
   try {
     const cronSecret = process.env.CRON_SECRET;
+    const auth = req.headers.get("authorization");
 
-    if (cronSecret) {
-      const auth = req.headers.get("authorization");
-      if (auth !== `Bearer ${cronSecret}`) {
-        return Response.json({ error: "Unauthorized" }, { status: 401 });
-      }
-    } else if (process.env.NODE_ENV === "production") {
-      return Response.json({ error: "CRON_SECRET not configured" }, { status: 500 });
+    // Guard: empty string is falsy — block if not configured OR mismatch
+    if (!cronSecret || !auth || auth !== `Bearer ${cronSecret}`) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const result = await processScheduledSms();

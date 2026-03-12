@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { authenticateApiKey, apiResponse, apiError } from "@/lib/api-auth";
+import { authenticateRequest, apiResponse, apiError } from "@/lib/api-auth";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { prisma } from "@/lib/db";
 import { normalizePhone } from "@/lib/validations";
@@ -10,9 +10,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await authenticateApiKey(req);
+    const user = await authenticateRequest(req);
     const { id: groupId } = await params;
-    const limit = checkRateLimit(user.id, "import");
+    const limit = await checkRateLimit(user.id, "import");
     if (!limit.allowed) return rateLimitResponse(limit.resetIn);
 
     // Verify group ownership

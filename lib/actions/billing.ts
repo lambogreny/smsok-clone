@@ -1,4 +1,3 @@
-"use server"
 
 import { prisma } from "@/lib/db"
 import { getSession } from "@/lib/auth"
@@ -159,12 +158,14 @@ export async function hasBillingInfo(): Promise<boolean> {
 // Uses INSERT ... ON CONFLICT DO UPDATE for atomic increment
 
 const DOC_PREFIX: Record<DocumentType, string> = {
+  ORDER: "ORD",
   TAX_INVOICE: "TIV",
   RECEIPT: "RCP",
   TAX_INVOICE_RECEIPT: "TIR",
   INVOICE: "INV",
   DEBIT_NOTE: "DBN",
   CREDIT_NOTE: "CDN",
+  QUOTATION: "QT",
 }
 
 export async function getNextDocumentNumber(type: DocumentType): Promise<string> {

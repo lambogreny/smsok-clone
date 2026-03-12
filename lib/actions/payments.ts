@@ -1,97 +1,23 @@
-"use server";
 
 import { prisma as db } from "../db";
-import type { PrismaClient } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { idSchema } from "../validations";
 import { verifySlipByBase64, verifySlipByUrl } from "../easyslip";
 import { isObviouslyInternalUrl } from "../url-safety";
 
-type DbTx = Omit<PrismaClient, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">;
+// ==========================================
+// Get active package tiers from DB (for pricing page)
+// ==========================================
 
-type CreditLedgerEntry = {
-  userId: string;
-  amount: number;
-  balance: number;
-  type: "TOPUP" | "SMS_SEND" | "REFUND";
-  description: string;
-  refId?: string | null;
-};
-
-export async function createCreditLedgerEntry(tx: DbTx, entry: CreditLedgerEntry) {
-  return tx.creditTransaction.create({
-    data: {
-      userId: entry.userId,
-      amount: entry.amount,
-      balance: entry.balance,
-      type: entry.type,
-      description: entry.description,
-      refId: entry.refId ?? null,
-    },
+export async function getPackageTiers() {
+  return db.packageTier.findMany({
+    where: { isActive: true, isTrial: false },
+    orderBy: { sortOrder: "asc" },
   });
 }
 
 // ==========================================
-// Get active packages from DB
-// PUBLIC endpoint — no auth required (for pricing page)
-// ==========================================
-
-export async function getPackages() {
-  return db.package.findMany({
-    where: { isActive: true },
-    orderBy: { price: "asc" },
-  });
-}
-
-export async function getCreditHistory(userId: string) {
-  return db.creditTransaction.findMany({
-    where: { userId },
-    orderBy: { createdAt: "desc" },
-    take: 100,
-  });
-}
-
-// ==========================================
-// Purchase package — create pending transaction
-// ==========================================
-
-export async function purchasePackage(
-  userId: string,
-  packageId: string,
-  method: "bank_transfer" | "promptpay"
-) {
-  if (!packageId || typeof packageId !== "string") throw new Error("กรุณาเลือกแพ็กเกจ");
-
-  const pkg = await db.package.findUnique({ where: { id: packageId } });
-  if (!pkg || !pkg.isActive) throw new Error("ไม่พบแพ็กเกจ");
-
-  const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + pkg.durationDays);
-
-  const transaction = await db.transaction.create({
-    data: {
-      userId,
-      packageId: pkg.id,
-      amount: pkg.price, // satang
-      credits: pkg.totalCredits,
-      method,
-      status: "pending",
-      expiresAt,
-    },
-  });
-
-  revalidatePath("/dashboard/topup");
-  return {
-    transactionId: transaction.id,
-    amount: pkg.price,
-    credits: pkg.totalCredits,
-    method,
-    expiresAt,
-  };
-}
-
-// ==========================================
-// Upload slip for verification
+// Upload slip for verification (package purchase)
 // ==========================================
 
 export async function uploadSlip(userId: string, transactionId: string, slipUrl: string) {
@@ -119,11 +45,11 @@ export async function uploadSlip(userId: string, transactionId: string, slipUrl:
 
   if (slipResult.success && slipResult.data) {
     const slipData = slipResult.data;
-    const slipAmount = Math.round(slipData.amount * 100); // Convert baht to satang (round to avoid float drift)
-    const expectedAmount = Number(transaction.amount); // Ensure numeric comparison
+    const slipAmount = Math.round(slipData.amount * 100); // Convert baht to satang
+    const expectedAmount = Number(transaction.amount);
 
-    // Verify amount matches (allow 1 satang tolerance)
-    if (Math.abs(slipAmount - expectedAmount) <= 1) {
+    // Verify amount matches (allow ±1 baht = 100 satang tolerance)
+    if (Math.abs(slipAmount - expectedAmount) <= 100) {
       // Check reference not already used
       const existingRef = await db.transaction.findFirst({
         where: {
@@ -138,7 +64,7 @@ export async function uploadSlip(userId: string, transactionId: string, slipUrl:
         return { status: "rejected", transactionId, error: "สลิปนี้ถูกใช้ไปแล้ว" };
       }
 
-      // Auto-approve: add credits
+      // Auto-approve: activate package purchase
       await db.$transaction(async (tx) => {
         await tx.transaction.update({
           where: { id: transactionId },
@@ -150,25 +76,18 @@ export async function uploadSlip(userId: string, transactionId: string, slipUrl:
           },
         });
 
-        const updatedUser = await tx.user.update({
-          where: { id: transaction.userId },
-          data: { credits: { increment: transaction.credits } },
-          select: { credits: true },
-        });
-
-        await createCreditLedgerEntry(tx, {
-          userId: transaction.userId,
-          amount: transaction.credits,
-          balance: updatedUser.credits,
-          type: "TOPUP",
-          description: `Topup verified from slip ${slipData.transRef}`,
-          refId: transactionId,
-        });
+        // Activate the associated package purchase if exists
+        if (transaction.packageId) {
+          await tx.packagePurchase.updateMany({
+            where: { userId: transaction.userId, tierId: transaction.packageId, isActive: false },
+            data: { isActive: true },
+          });
+        }
       });
 
       revalidatePath("/dashboard/topup");
       revalidatePath("/dashboard");
-      return { status: "verified", transactionId, credits: transaction.credits };
+      return { status: "verified", transactionId };
     } else {
       // Amount mismatch — needs manual review
       await db.transaction.update({
@@ -194,7 +113,6 @@ export async function adminVerifyTransaction(
 ) {
   idSchema.parse({ id: transactionId });
 
-  // Verify admin role
   const admin = await db.user.findFirst({
     where: { id: adminUserId, role: "admin" },
   });
@@ -217,20 +135,13 @@ export async function adminVerifyTransaction(
         },
       });
 
-      const updatedUser = await tx.user.update({
-        where: { id: transaction.userId },
-        data: { credits: { increment: transaction.credits } },
-        select: { credits: true },
-      });
-
-      await createCreditLedgerEntry(tx, {
-        userId: transaction.userId,
-        amount: transaction.credits,
-        balance: updatedUser.credits,
-        type: "TOPUP",
-        description: `Topup approved by admin ${adminUserId}`,
-        refId: transactionId,
-      });
+      // Activate the associated package purchase if exists
+      if (transaction.packageId) {
+        await tx.packagePurchase.updateMany({
+          where: { userId: transaction.userId, tierId: transaction.packageId, isActive: false },
+          data: { isActive: true },
+        });
+      }
     });
   } else {
     await db.transaction.update({
@@ -291,21 +202,20 @@ export async function verifyTopupSlip(userId: string, payload: string) {
   }
 
   const amountSatang = Math.round(slipData.amount * 100);
-  const matchedPackage = await db.package.findFirst({
-    where: { price: amountSatang, isActive: true },
-    orderBy: { totalCredits: "desc" },
+
+  // Match to a package tier by price
+  const matchedTier = await db.packageTier.findFirst({
+    where: { price: amountSatang, isActive: true, isTrial: false },
+    orderBy: { totalSms: "desc" },
   });
-  const creditsToAdd = matchedPackage
-    ? matchedPackage.totalCredits
-    : Math.max(1, Math.round(slipData.amount));
 
   const result = await db.$transaction(async (tx) => {
     const topupTransaction = await tx.transaction.create({
       data: {
         userId,
-        packageId: matchedPackage?.id ?? null,
+        packageId: matchedTier?.id ?? null,
         amount: amountSatang,
-        credits: creditsToAdd,
+        credits: 0, // legacy field
         method: "slip_verify",
         status: "verified",
         reference: slipData.transRef,
@@ -315,30 +225,28 @@ export async function verifyTopupSlip(userId: string, payload: string) {
       },
     });
 
-    const updatedUser = await tx.user.update({
-      where: { id: userId },
-      data: { credits: { increment: creditsToAdd } },
-      select: { credits: true },
-    });
-
-    await createCreditLedgerEntry(tx, {
-      userId,
-      amount: creditsToAdd,
-      balance: updatedUser.credits,
-      type: "TOPUP",
-      description: matchedPackage
-        ? `Topup from verified slip for package ${matchedPackage.name}`
-        : `Topup from verified slip amount ฿${slipData.amount.toFixed(2)}`,
-      refId: topupTransaction.id,
-    });
+    // Create package purchase if matched
+    if (matchedTier) {
+      const expiresAt = new Date();
+      expiresAt.setMonth(expiresAt.getMonth() + matchedTier.expiryMonths);
+      await tx.packagePurchase.create({
+        data: {
+          userId,
+          tierId: matchedTier.id,
+          smsTotal: matchedTier.totalSms,
+          smsUsed: 0,
+          expiresAt,
+          isActive: true,
+        },
+      });
+    }
 
     return {
       transactionId: topupTransaction.id,
       reference: slipData.transRef,
       amount: slipData.amount,
-      creditsAdded: creditsToAdd,
-      creditsBalance: updatedUser.credits,
-      matchedPackage: matchedPackage?.name ?? null,
+      matchedPackage: matchedTier?.name ?? null,
+      smsAdded: matchedTier?.totalSms ?? 0,
     };
   });
 

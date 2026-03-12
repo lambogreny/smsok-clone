@@ -1,8 +1,9 @@
 import { NextRequest } from "next/server";
-import { authenticateApiKey, ApiError, apiError, apiResponse } from "./api-auth";
+import { authenticateRequest, ApiError, apiError, apiResponse } from "./api-auth";
 import { generateOtp_, verifyOtp_ } from "./actions/otp";
+import { InsufficientCreditsError, type InsufficientCreditsResult } from "./quota-errors";
 import { checkRateLimit, rateLimitResponse } from "./rate-limit";
-import { checkOtpRateLimit, recordOtpSend } from "./otp-rate-limit";
+import { checkOtpRateLimit } from "./otp-rate-limit";
 import { sendOtpSchema, verifyOtpSchema } from "./validations";
 
 type JsonRecord = Record<string, unknown>;
@@ -47,9 +48,19 @@ export function isVerifyOtpRequest(body: unknown): boolean {
   return input.action === "verify" || Boolean(input.ref) || Boolean(input.refCode);
 }
 
+function isInsufficientCreditsResult(value: unknown): value is InsufficientCreditsResult {
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      (value as { error?: unknown }).error === "INSUFFICIENT_CREDITS" &&
+      typeof (value as { creditsRequired?: unknown }).creditsRequired === "number" &&
+      typeof (value as { creditsRemaining?: unknown }).creditsRemaining === "number",
+  );
+}
+
 export async function handleSendOtp(req: NextRequest, body?: unknown) {
   try {
-    const user = await authenticateApiKey(req);
+    const user = await authenticateRequest(req);
     const ip = getClientIp(req);
 
     let input: ReturnType<typeof pickSendInput>;
@@ -84,6 +95,14 @@ export async function handleSendOtp(req: NextRequest, body?: unknown) {
       debug: shouldExposeDebugOtp(req),
     }, "API", ip);
 
+    if (isInsufficientCreditsResult(result)) {
+      throw new InsufficientCreditsError(
+        result.creditsRequired,
+        result.creditsRemaining,
+        result.message,
+      );
+    }
+
     return apiResponse({
       ...result,
       retryAfter: 0,
@@ -98,7 +117,7 @@ export async function handleSendOtp(req: NextRequest, body?: unknown) {
 
 export async function handleVerifyOtp(req: NextRequest, body?: unknown) {
   try {
-    const user = await authenticateApiKey(req);
+    const user = await authenticateRequest(req);
     const ip = getClientIp(req);
 
     let input: ReturnType<typeof pickVerifyInput>;
@@ -109,12 +128,12 @@ export async function handleVerifyOtp(req: NextRequest, body?: unknown) {
     }
 
     // IP-based rate limit on verify (still in-memory — verify doesn't need Redis backoff)
-    const ipLimit = checkRateLimit(`otp-verify:${ip}`, "otp_verify");
+    const ipLimit = await checkRateLimit(`otp-verify:${ip}`, "otp_verify");
     if (!ipLimit.allowed) {
       return rateLimitResponse(ipLimit.resetIn);
     }
 
-    const refLimit = checkRateLimit(`ref:${input.ref}`, "otp_verify");
+    const refLimit = await checkRateLimit(`ref:${input.ref}`, "otp_verify");
     if (!refLimit.allowed) {
       return rateLimitResponse(refLimit.resetIn);
     }

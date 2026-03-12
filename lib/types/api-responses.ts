@@ -56,8 +56,8 @@ export type SendOtpResponse = {
   purpose: string
   expiresAt: string
   expiresIn: number
-  creditUsed: number
-  creditsRemaining: number
+  smsUsed: number
+  smsRemaining: number
   delivery: "sms" | "debug"
   debugCode?: string
   retryAfter: number
@@ -99,14 +99,14 @@ export type RegisterOtpVerifyResponse = {
 export type SendSmsResponse = {
   id: string
   status: string
-  credits_used: number
-  credits_remaining: number
+  sms_used: number
+  sms_remaining: number
 }
 
 export type BatchSmsResponse = {
   totalRecipients: number
-  totalCreditsUsed: number
-  creditsRemaining: number
+  totalSmsUsed: number
+  smsRemaining: number
   results: Array<{
     phone: string
     status: string
@@ -121,12 +121,11 @@ export type UserData = {
   id: string
   name: string
   email: string
-  credits: number
   role: string
 }
 
 export type BalanceResponse = {
-  credits: number
+  smsRemaining: number
 }
 
 export type ProfileResponse = {
@@ -135,7 +134,6 @@ export type ProfileResponse = {
   email: string
   phone: string | null
   role: string
-  credits: number
   createdAt: string
 }
 
@@ -157,23 +155,6 @@ export type ApiKeyListItem = {
   createdAt: Date
 }
 
-// ── Auto-Topup Responses ────────────────────────────────
-
-export type AutoTopupResponse = {
-  id: string
-  enabled: boolean
-  threshold: number
-  packageId: string
-  maxPerMonth: number
-  usedThisMonth: number
-  package?: {
-    id: string
-    name: string
-    credits: number
-    price: string
-  }
-}
-
 // ── Settings Responses ──────────────────────────────────
 
 export type WorkspaceSettingsResponse = {
@@ -183,10 +164,10 @@ export type WorkspaceSettingsResponse = {
 }
 
 export type NotificationPrefsResponse = {
-  emailCreditLow: boolean
+  emailSmsLow: boolean
   emailCampaignDone: boolean
   emailWeeklyReport: boolean
-  smsCreditLow: boolean
+  smsSmsLow: boolean
   smsCampaignDone: boolean
 }
 
@@ -241,7 +222,7 @@ export type CustomFieldValueItem = {
 // ── Activity Timeline ───────────────────────────────────
 
 export type ActivityItem = {
-  type: "sms" | "otp" | "credit"
+  type: "sms" | "otp"
   id: string
   timestamp: string
   data: Record<string, unknown>
@@ -300,6 +281,7 @@ export type TagItem = {
   id: string
   name: string
   color: string
+  createdAt: string | Date
   _count: { contactTags: number }
 }
 
@@ -359,13 +341,14 @@ export type BillingInfoResponse = {
   updatedAt: Date
 }
 
-export type CreditPackageResponse = {
+export type PackageTierResponse = {
   id: string
   name: string
-  credits: number
-  price: string // Decimal as string (baht, excl. VAT)
-  pricePerCredit: string
-  active: boolean
+  tierCode: string
+  smsQuota: number
+  totalSms: number
+  price: string
+  isActive: boolean
   sortOrder: number
 }
 
@@ -459,7 +442,7 @@ export type PeriodStats = {
 }
 
 export type DashboardStats = {
-  user: { credits: number; name: string; email: string }
+  user: { name: string; email: string }
   today: PeriodStats
   yesterday: PeriodStats
   thisMonth: PeriodStats

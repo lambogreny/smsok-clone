@@ -16,6 +16,60 @@ const contactInclude = {
 } as const;
 
 // ==========================================
+// Get single contact by ID (for detail page)
+// ==========================================
+
+export async function getContactById(userId: string, contactId: string) {
+  idSchema.parse({ id: contactId });
+
+  const contact = await db.contact.findFirst({
+    where: { id: contactId, userId },
+    include: {
+      ...contactInclude,
+      customFieldValues: {
+        include: { field: { select: { id: true, name: true, type: true, options: true } } },
+      },
+    },
+  });
+
+  if (!contact) return null;
+  return contact;
+}
+
+// ==========================================
+// Update contact consent (opt-in/opt-out)
+// ==========================================
+
+export async function updateContactConsent(
+  userId: string,
+  contactId: string,
+  data: { smsConsent: boolean; optOutReason?: string }
+) {
+  idSchema.parse({ id: contactId });
+
+  const contact = await db.contact.findFirst({
+    where: { id: contactId, userId },
+  });
+  if (!contact) throw new Error("ไม่พบรายชื่อ");
+
+  const now = new Date();
+  const updated = await db.contact.update({
+    where: { id: contactId },
+    data: {
+      smsConsent: data.smsConsent,
+      consentStatus: data.smsConsent ? "OPTED_IN" : "OPTED_OUT",
+      ...(data.smsConsent
+        ? { consentAt: now, optOutAt: null, optOutReason: null }
+        : { optOutAt: now, optOutReason: data.optOutReason || null }),
+    },
+  });
+
+  revalidatePath(`/dashboard/contacts/${contactId}`);
+  revalidatePath("/dashboard/contacts");
+  return updated;
+}
+
+// ==========================================
 // List contacts
 // ==========================================
 
@@ -51,6 +105,33 @@ export async function getContacts(userId: string, filters?: unknown) {
       totalPages: Math.ceil(total / input.limit),
     },
   };
+}
+
+// ==========================================
+// Search contacts (lightweight, for add-to-group dialogs)
+// ==========================================
+
+export async function searchContactsBasic(
+  userId: string,
+  search: string,
+  limit = 50,
+) {
+  return db.contact.findMany({
+    where: {
+      userId,
+      ...(search
+        ? {
+            OR: [
+              { name: { contains: search, mode: "insensitive" as const } },
+              { phone: { contains: search } },
+            ],
+          }
+        : {}),
+    },
+    select: { id: true, name: true, phone: true },
+    orderBy: { name: "asc" },
+    take: limit,
+  });
 }
 
 // ==========================================

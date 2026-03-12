@@ -1,7 +1,7 @@
 export { sendSms, sendBatchSms, getMessageStatus, getMessages, getDashboardStats } from "./sms";
 export { getContacts, createContact, updateContact, deleteContact, importContacts, exportContacts, getContactsByGroup, addContactsToGroup, createContactGroup, getContactGroups, getGroupsForContact, getGroupsWithMemberships } from "./contacts";
 export { requestSenderName, getSenderNames, getApprovedSenderNames, adminApproveSenderName, adminGetPendingSenderNames } from "./sender-names";
-export { purchasePackage, uploadSlip, adminVerifyTransaction, getUserTransactions, adminGetPendingTransactions, getPackages, getCreditHistory, verifyTopupSlip } from "./payments";
+export { uploadSlip, adminVerifyTransaction, getUserTransactions, adminGetPendingTransactions, getPackageTiers, verifyTopupSlip } from "./payments";
 export { createApiKey, getApiKeys, toggleApiKey, deleteApiKey } from "./api-keys";
 export { getTags, createTag, updateTag, deleteTag, assignTagToContact, unassignTagFromContact } from "./tags";
 export { updateProfile, changePassword, getProfile } from "./settings";

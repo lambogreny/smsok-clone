@@ -1,14 +1,19 @@
 import { NextRequest } from "next/server";
-import { authenticateApiKey, ApiError, apiResponse, apiError } from "@/lib/api-auth";
+import { authenticateRequest, ApiError, apiResponse, apiError } from "@/lib/api-auth";
+import { requireApiPermission } from "@/lib/rbac";
 import { sendSms } from "@/lib/actions/sms";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { sendSmsApiSchema } from "@/lib/validations";
+import { getRemainingQuota } from "@/lib/package/quota";
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await authenticateApiKey(req);
+    const user = await authenticateRequest(req);
 
-    const limit = checkRateLimit(user.id, "sms");
+    const denied = await requireApiPermission(user.id, "create", "sms");
+    if (denied) return denied;
+
+    const limit = await checkRateLimit(user.id, "sms");
     if (!limit.allowed) return rateLimitResponse(limit.resetIn);
 
     let body: unknown;
@@ -24,11 +29,18 @@ export async function POST(req: NextRequest) {
       message: input.message,
     }, "API");
 
+    if ("error" in message && message.error === "INSUFFICIENT_CREDITS") {
+      return Response.json(message, { status: 402 });
+    }
+
+    const msg = message as { id: string; status: string; creditCost: number };
+    const quota = await getRemainingQuota(user.id);
+
     return apiResponse({
-      id: message.id,
-      status: message.status,
-      credits_used: message.creditCost,
-      credits_remaining: user.credits - message.creditCost,
+      id: msg.id,
+      status: msg.status,
+      sms_used: msg.creditCost,
+      sms_remaining: quota.totalRemaining,
     }, 201);
   } catch (error) {
     return apiError(error);

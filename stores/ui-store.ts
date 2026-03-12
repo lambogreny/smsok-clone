@@ -74,6 +74,7 @@ export const createUiStore = (initState: Partial<UiState> = {}) =>
             locale: s.locale,
             sidebar: s.sidebar,
           }),
+          skipHydration: true,
         }
       ),
       { name: 'UiStore' }

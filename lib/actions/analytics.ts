@@ -1,6 +1,6 @@
-"use server";
 
 import { prisma as db } from "../db";
+import { getRemainingQuota } from "../package/quota";
 
 function getDateRange(period: string): { from: Date; label: string } {
   const now = new Date();
@@ -35,7 +35,6 @@ export async function getAnalytics(userId: string, period: string) {
     statusCounts,
     creditUsed,
     dailyBreakdown,
-    user,
     totalAllTime,
   ] = await db.$transaction([
     // Status breakdown
@@ -62,12 +61,6 @@ export async function getAnalytics(userId: string, period: string) {
       LIMIT 30
     `,
 
-    // Current user info
-    db.user.findUniqueOrThrow({
-      where: { id: userId },
-      select: { credits: true },
-    }),
-
     // All-time total
     db.message.count({ where: { userId } }),
   ]);
@@ -84,6 +77,8 @@ export async function getAnalytics(userId: string, period: string) {
     ? Math.round(((sent + delivered) / total) * 10000) / 100
     : 0;
 
+  const quota = await getRemainingQuota(userId);
+
   return {
     period: label,
     from: from.toISOString(),
@@ -96,7 +91,7 @@ export async function getAnalytics(userId: string, period: string) {
       pending,
       successRate,
       creditsUsed: creditUsed._sum.creditCost ?? 0,
-      creditsRemaining: user.credits,
+      creditsRemaining: quota.totalRemaining,
     },
     daily: dailyBreakdown.map((d: { day: string; count: bigint }) => ({
       date: String(d.day).slice(0, 10),

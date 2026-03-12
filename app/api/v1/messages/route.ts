@@ -1,10 +1,10 @@
 import { NextRequest } from "next/server";
-import { authenticateApiKey, apiResponse, apiError } from "@/lib/api-auth";
+import { authenticateRequest, apiResponse, apiError } from "@/lib/api-auth";
 import { getMessages, getMessageStatus } from "@/lib/actions/sms";
 
 export async function GET(req: NextRequest) {
   try {
-    const user = await authenticateApiKey(req);
+    const user = await authenticateRequest(req);
     const { searchParams } = new URL(req.url);
 
     // Single message lookup

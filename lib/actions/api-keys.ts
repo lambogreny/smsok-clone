@@ -5,6 +5,7 @@ import { createApiKeySchema, idSchema } from "../validations";
 import { revalidatePath } from "next/cache";
 import { randomBytes } from "crypto";
 import { hashApiKey } from "../crypto-utils";
+import { getSession } from "../auth";
 
 // ==========================================
 // Generate API key (sk_live_xxxxx format)
@@ -22,7 +23,20 @@ function maskApiKey(key: string): string {
 // Create API key
 // ==========================================
 
-export async function createApiKey(userId: string, data: unknown) {
+export async function createApiKey(dataOrUserId: unknown, dataArg?: unknown) {
+  // Support both: createApiKey(data) from client, createApiKey(userId, data) from API routes
+  let userId: string;
+  let data: unknown;
+  if (typeof dataOrUserId === "string" && dataArg !== undefined) {
+    userId = dataOrUserId;
+    data = dataArg;
+  } else {
+    const user = await getSession();
+    if (!user) throw new Error("กรุณาเข้าสู่ระบบ");
+    userId = user.id;
+    data = dataOrUserId;
+  }
+
   const input = createApiKeySchema.parse(data);
 
   // Limit: max 5 API keys per user
@@ -41,6 +55,7 @@ export async function createApiKey(userId: string, data: unknown) {
       name: input.name,
       key: keyHash,
       keyPrefix,
+      permissions: input.permissions ?? [],
     },
   });
 
@@ -59,13 +74,19 @@ export async function createApiKey(userId: string, data: unknown) {
 // List API keys (mask the key)
 // ==========================================
 
-export async function getApiKeys(userId: string) {
+export async function getApiKeys(userId?: string) {
+  if (!userId) {
+    const user = await getSession();
+    if (!user) throw new Error("กรุณาเข้าสู่ระบบ");
+    userId = user.id;
+  }
   const keys = await db.apiKey.findMany({
     where: { userId },
     select: {
       id: true,
       name: true,
       keyPrefix: true,
+      permissions: true,
       isActive: true,
       lastUsed: true,
       createdAt: true,
@@ -77,6 +98,7 @@ export async function getApiKeys(userId: string) {
     id: k.id,
     name: k.name,
     key: k.keyPrefix || "sk_live_****...****",
+    permissions: k.permissions,
     isActive: k.isActive,
     lastUsed: k.lastUsed,
     createdAt: k.createdAt,
@@ -87,7 +109,19 @@ export async function getApiKeys(userId: string) {
 // Toggle API key active/inactive
 // ==========================================
 
-export async function toggleApiKey(userId: string, keyId: string) {
+export async function toggleApiKey(userIdOrKeyId: string, keyIdArg?: string) {
+  let userId: string;
+  let keyId: string;
+  if (keyIdArg !== undefined) {
+    userId = userIdOrKeyId;
+    keyId = keyIdArg;
+  } else {
+    const user = await getSession();
+    if (!user) throw new Error("กรุณาเข้าสู่ระบบ");
+    userId = user.id;
+    keyId = userIdOrKeyId;
+  }
+
   idSchema.parse({ id: keyId });
 
   const apiKey = await db.apiKey.findFirst({
@@ -108,7 +142,22 @@ export async function toggleApiKey(userId: string, keyId: string) {
 // Update API key name
 // ==========================================
 
-export async function updateApiKeyName(userId: string, keyId: string, data: unknown) {
+export async function updateApiKeyName(userIdOrKeyId: string, keyIdOrData: unknown, dataArg?: unknown) {
+  let userId: string;
+  let keyId: string;
+  let data: unknown;
+  if (dataArg !== undefined) {
+    userId = userIdOrKeyId;
+    keyId = keyIdOrData as string;
+    data = dataArg;
+  } else {
+    const user = await getSession();
+    if (!user) throw new Error("กรุณาเข้าสู่ระบบ");
+    userId = user.id;
+    keyId = userIdOrKeyId;
+    data = keyIdOrData;
+  }
+
   idSchema.parse({ id: keyId });
   const input = createApiKeySchema.parse(data);
 
@@ -131,7 +180,19 @@ export async function updateApiKeyName(userId: string, keyId: string, data: unkn
 // Delete API key
 // ==========================================
 
-export async function deleteApiKey(userId: string, keyId: string) {
+export async function deleteApiKey(userIdOrKeyId: string, keyIdArg?: string) {
+  let userId: string;
+  let keyId: string;
+  if (keyIdArg !== undefined) {
+    userId = userIdOrKeyId;
+    keyId = keyIdArg;
+  } else {
+    const user = await getSession();
+    if (!user) throw new Error("กรุณาเข้าสู่ระบบ");
+    userId = user.id;
+    keyId = userIdOrKeyId;
+  }
+
   idSchema.parse({ id: keyId });
 
   const apiKey = await db.apiKey.findFirst({

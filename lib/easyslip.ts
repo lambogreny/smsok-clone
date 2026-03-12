@@ -36,6 +36,7 @@ export async function verifySlipByUrl(imageUrl: string): Promise<SlipVerifyResul
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ url: imageUrl }),
+    signal: AbortSignal.timeout(10_000),
   });
 
   if (!res.ok) {
@@ -86,6 +87,7 @@ export async function verifySlipByBase64(base64Image: string): Promise<SlipVerif
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ payload: base64Image }),
+    signal: AbortSignal.timeout(10_000),
   });
 
   if (!res.ok) {

@@ -185,7 +185,7 @@ export default function ImportWizard({
         </DialogHeader>
 
         {error && (
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-[var(--error)]/10 text-sm text-[var(--error)]">
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-[rgba(var(--error-rgb,239,68,68),0.1)] text-sm text-[var(--error)]">
             <AlertTriangle className="w-4 h-4 flex-shrink-0" />
             {error}
             <Button variant="ghost" size="sm" className="ml-auto h-6 w-6 p-0" onClick={() => setError(null)}>

@@ -58,7 +58,7 @@ export default function SenderNameForm({ userId }: { userId: string }) {
               {name.length}/11 ตัวอักษร
             </span>
             {name.length > 0 && !isValid && (
-              <span className="text-xs text-red-400">3-11 ตัว A-Z 0-9 หรือช่องว่าง</span>
+              <span className="text-xs text-[var(--error)]">3-11 ตัว A-Z 0-9 หรือช่องว่าง</span>
             )}
           </div>
         </div>
@@ -111,7 +111,7 @@ export default function SenderNameForm({ userId }: { userId: string }) {
             className={`p-4 rounded-xl border text-sm font-medium ${
               result.type === "success"
                 ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-                : "bg-red-500/10 border-red-500/20 text-red-400"
+                : "bg-[rgba(var(--error-rgb,239,68,68),0.1)] border-[rgba(var(--error-rgb,239,68,68),0.2)] text-[var(--error)]"
             }`}
           >
             {result.message}

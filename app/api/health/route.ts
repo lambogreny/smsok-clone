@@ -1,13 +1,15 @@
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
+import { redisHealthCheck } from "@/lib/redis";
+import { allQueues } from "@/lib/queue/queues";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   const start = Date.now();
-  const checks: Record<string, { status: string; latency?: number; error?: string }> = {};
+  const checks: Record<string, { status: string; latency?: number; error?: string; queues?: Record<string, number> }> = {};
   checks.app = { status: "ok" };
 
   // Database check
@@ -17,9 +19,30 @@ export async function GET() {
     checks.database = { status: "ok", latency: Date.now() - dbStart };
   } catch (e) {
     const rawError = e instanceof Error ? e.message : "unknown";
-    // Never expose raw DB error to client — may contain connection strings
     checks.database = { status: "error", error: "database unreachable" };
     logger.error("Health check: database unreachable", { error: rawError });
+  }
+
+  // Redis check
+  checks.redis = await redisHealthCheck();
+
+  // BullMQ queues check
+  try {
+    const queueStats: Record<string, number> = {};
+    for (const q of allQueues) {
+      try {
+        queueStats[q.name] = await q.getWaitingCount();
+      } catch {
+        queueStats[q.name] = -1;
+      }
+    }
+    const hasQueueError = Object.values(queueStats).some((v) => v === -1);
+    checks.queues = {
+      status: hasQueueError ? "error" : "ok",
+      queues: queueStats,
+    };
+  } catch {
+    checks.queues = { status: "error", error: "queues unreachable" };
   }
 
   // Memory usage

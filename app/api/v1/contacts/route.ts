@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { authenticateApiKey, ApiError, apiResponse, apiError } from "@/lib/api-auth";
+import { authenticateRequest, ApiError, apiResponse, apiError } from "@/lib/api-auth";
+import { requireApiPermission } from "@/lib/rbac";
 import { createContact } from "@/lib/actions/contacts";
 import { createContactSchema } from "@/lib/validations";
 import { prisma } from "@/lib/db";
@@ -7,7 +8,11 @@ import { prisma } from "@/lib/db";
 // GET /api/v1/contacts?search=xxx&groupId=xxx&page=1&limit=20
 export async function GET(req: NextRequest) {
   try {
-    const user = await authenticateApiKey(req);
+    const user = await authenticateRequest(req);
+
+    const denied = await requireApiPermission(user.id, "read", "contact");
+    if (denied) return denied;
+
     const { searchParams } = new URL(req.url);
 
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
@@ -67,7 +72,11 @@ export async function GET(req: NextRequest) {
 // POST /api/v1/contacts — create single contact
 export async function POST(req: NextRequest) {
   try {
-    const user = await authenticateApiKey(req);
+    const user = await authenticateRequest(req);
+
+    const denied = await requireApiPermission(user.id, "create", "contact");
+    if (denied) return denied;
+
     const body = await req.json();
     const input = createContactSchema.parse(body);
     const contact = await createContact(user.id, input);

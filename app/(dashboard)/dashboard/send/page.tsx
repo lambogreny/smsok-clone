@@ -7,9 +7,12 @@ export default async function SendPage() {
   const user = await getSession();
   if (!user) redirect("/login");
 
-  const senderNames = await getApprovedSenderNames(user.id);
+  const approved = await getApprovedSenderNames(user.id);
+  const names = approved.map(s => s.name);
+  // Always include "EasySlip" as default sender
+  const senderNames = names.includes("EasySlip") ? names : ["EasySlip", ...names];
 
   return (
-    <SendSmsForm userId={user.id} senderNames={senderNames.map(s => s.name)} />
+    <SendSmsForm userId={user.id} senderNames={senderNames} />
   );
 }

@@ -21,6 +21,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Send, ArrowLeft, ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
+import { clearLogoutMarker } from "@/components/AuthGuard";
 
 type LoginValues = z.infer<typeof loginSchema>;
 
@@ -32,6 +33,7 @@ export default function LoginPage() {
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" },
+    mode: "onChange",
   });
 
   const isSubmitting = form.formState.isSubmitting;
@@ -53,6 +55,7 @@ export default function LoginPage() {
         router.push(`/2fa?token=${encodeURIComponent(result.challengeToken)}`);
         return;
       }
+      clearLogoutMarker();
       router.push(result.redirectTo ?? "/dashboard");
     } catch {
       setServerError("ไม่สามารถเชื่อมต่อได้ กรุณาลองใหม่");
@@ -71,7 +74,7 @@ export default function LoginPage() {
       </Link>
 
       <div className="w-full max-w-[420px]">
-        <Card className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] shadow-none">
+        <Card className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-lg shadow-none">
           <CardHeader className="text-center pb-0 pt-8 px-8">
             {/* Logo */}
             <Link href="/" className="inline-flex items-center gap-2 justify-center mb-4">
@@ -86,7 +89,7 @@ export default function LoginPage() {
 
           <CardContent className="px-8 pt-6 pb-2">
             {serverError && (
-              <div className="mb-4 p-3 rounded-lg bg-[rgba(239,68,68,0.06)] border border-[rgba(239,68,68,0.15)] text-[#F87171] text-[13px] text-center">
+              <div className="mb-4 p-3 rounded-lg bg-[rgba(var(--error-rgb),0.06)] border border-[rgba(var(--error-rgb),0.15)] text-[var(--error)] text-[13px] text-center">
                 {serverError}
               </div>
             )}
@@ -105,7 +108,7 @@ export default function LoginPage() {
                         <Input
                           type="email"
                           placeholder="you@example.com"
-                          className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(0,255,167,0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+                          className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]"
                           {...field}
                         />
                       </FormControl>
@@ -135,7 +138,7 @@ export default function LoginPage() {
                           <Input
                             type={showPassword ? "text" : "password"}
                             placeholder="••••••••"
-                            className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg pr-11 focus:border-[rgba(0,255,167,0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+                            className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg pr-11 focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]"
                             {...field}
                           />
                           <button
@@ -154,8 +157,8 @@ export default function LoginPage() {
 
                 <Button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="w-full h-12 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] rounded-xl text-[15px] font-semibold transition-all duration-200 hover:shadow-[0_4px_16px_rgba(0,255,167,0.25)] group"
+                  disabled={isSubmitting || !form.formState.isValid}
+                  className="w-full h-11 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] rounded-xl text-[15px] font-semibold transition-all duration-200 hover:shadow-[0_4px_16px_rgba(0,255,167,0.25)] group disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? (
                     <span className="flex items-center gap-2">

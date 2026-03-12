@@ -1,11 +1,11 @@
 import { NextRequest } from "next/server";
-import { authenticateApiKey, apiResponse, apiError } from "@/lib/api-auth";
+import { authenticateRequest, apiResponse, apiError } from "@/lib/api-auth";
 import { createContactGroup, getContactsByGroup, addContactsToGroup } from "@/lib/actions/contacts";
 import { addContactsToGroupSchema, createContactGroupSchema } from "@/lib/validations";
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await authenticateApiKey(req);
+    const user = await authenticateRequest(req);
     const body = await req.json();
 
     if (body.action === "add_contacts") {
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    const user = await authenticateApiKey(req);
+    const user = await authenticateRequest(req);
     const { searchParams } = new URL(req.url);
     const groupId = searchParams.get("groupId");
 

@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { authenticateApiKey, apiResponse, apiError } from "@/lib/api-auth";
+import { authenticateRequest, apiResponse, apiError } from "@/lib/api-auth";
+import { requireApiPermission } from "@/lib/rbac";
 import { exportContacts } from "@/lib/actions/contacts";
 
 /** Escape a value for safe CSV output (prevents CSV injection + XSS) */
@@ -13,7 +14,11 @@ function escapeCsvField(value: unknown): string {
 
 export async function GET(req: NextRequest) {
   try {
-    const user = await authenticateApiKey(req);
+    const user = await authenticateRequest(req);
+
+    const denied = await requireApiPermission(user.id, "read", "contact");
+    if (denied) return denied;
+
     const { searchParams } = new URL(req.url);
     const format = searchParams.get("format") || "json";
 

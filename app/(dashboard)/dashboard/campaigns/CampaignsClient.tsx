@@ -1,13 +1,70 @@
 "use client";
 
 import { useState, useTransition, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import {
+  BarChart3,
+  CheckCircle,
+  FileText,
+  Loader,
+  Megaphone,
+  MoreHorizontal,
+  Pencil,
+  Copy,
+  Pause,
+  Trash2,
+  Eye,
+  Search,
+  Plus,
+  X,
+} from "lucide-react";
+import { z } from "zod";
 import { createCampaign, executeCampaign, getCampaignProgress } from "@/lib/actions/campaigns";
 import { fieldCls } from "@/lib/form-utils";
 import CustomSelect from "@/components/ui/CustomSelect";
 import SenderDropdown from "@/components/ui/SenderDropdown";
 import { safeErrorMessage } from "@/lib/error-messages";
+import { useToast } from "@/app/components/ui/Toast";
+import SendingHoursWarning from "@/components/blocks/SendingHoursWarning";
+import EmptyStateShared from "@/components/EmptyState";
+
+// ─── Campaign form validation schema ────────────────────────────────────────
+const campaignFormSchema = z.object({
+  name: z.string().min(1, "กรุณากรอกชื่อแคมเปญ").max(100, "ชื่อต้องไม่เกิน 100 ตัวอักษร"),
+  contactGroupId: z.string().min(1, "กรุณาเลือกกลุ่มผู้รับ"),
+  templateId: z.string().min(1, "กรุณาเลือกเทมเพลต"),
+  senderName: z.string().min(1, "กรุณาระบุชื่อผู้ส่ง"),
+  scheduledAt: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || new Date(val) > new Date(),
+      "วันเวลาที่ตั้งไว้ต้องเป็นอนาคต",
+    ),
+});
+
+// PageLayout
+import PageLayout, {
+  PageHeader,
+  StatsRow,
+  StatCard,
+  FilterBar,
+  TableWrapper,
+  PaginationBar,
+  EmptyState,
+} from "@/components/blocks/PageLayout";
+
+// shadcn
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // ─── Types ────────────────────────────────────────────────────────────────
 type CampaignStatus = "draft" | "scheduled" | "sending" | "running" | "completed" | "failed" | "cancelled";
@@ -32,92 +89,89 @@ type Campaign = {
 type ContactGroup = { id: string; name: string; count: number };
 type Template = { id: string; name: string; body: string };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────
+// ─── Status Config (V2 colors) ─────────────────────────────────────────
 const STATUS_CONFIG: Record<
   CampaignStatus,
-  { label: string; bg: string; text: string; dot: string; pulse?: boolean }
+  { label: string; color: string; bg: string; dot?: boolean; pulse?: boolean }
 > = {
-  draft: { label: "แบบร่าง", bg: "bg-slate-500/10", text: "text-slate-300", dot: "bg-slate-300" },
-  scheduled: { label: "ตั้งเวลา", bg: "bg-amber-500/10", text: "text-amber-400", dot: "bg-amber-400" },
-  sending: { label: "กำลังส่ง...", bg: "bg-blue-500/10", text: "text-blue-400", dot: "bg-blue-400", pulse: true },
-  running: { label: "กำลังส่ง", bg: "bg-blue-500/10", text: "text-blue-400", dot: "bg-blue-400", pulse: true },
-  completed: { label: "เสร็จสิ้น", bg: "bg-emerald-500/10", text: "text-emerald-400", dot: "bg-emerald-400" },
-  failed: { label: "ล้มเหลว", bg: "bg-red-500/10", text: "text-red-400", dot: "bg-red-400" },
-  cancelled: { label: "ยกเลิก", bg: "bg-red-500/10", text: "text-red-400", dot: "bg-red-400" },
+  draft:     { label: "ฉบับร่าง",   color: "var(--text-muted)", bg: "rgba(148,159,168,0.08)" },
+  scheduled: { label: "ตั้งเวลา",   color: "var(--info)", bg: "rgba(var(--info-rgb),0.08)" },
+  sending:   { label: "กำลังส่ง",   color: "var(--accent)", bg: "rgba(var(--accent-rgb),0.08)", dot: true, pulse: true },
+  running:   { label: "กำลังส่ง",   color: "var(--accent)", bg: "rgba(var(--accent-rgb),0.08)", dot: true, pulse: true },
+  completed: { label: "สำเร็จ",    color: "var(--success)", bg: "rgba(var(--success-rgb),0.08)" },
+  failed:    { label: "ล้มเหลว",   color: "var(--error)", bg: "rgba(var(--error-rgb),0.08)" },
+  cancelled: { label: "ยกเลิก",    color: "var(--error)", bg: "rgba(var(--error-rgb),0.08)" },
 };
 
+// ─── Filter pill config ─────────────────────────────────────────────────
+const FILTER_PILLS: { key: CampaignStatus | "all"; label: string; color: string; rgb: string }[] = [
+  { key: "all",       label: "ทั้งหมด",   color: "var(--text-muted)", rgb: "var(--text-muted-rgb)" },
+  { key: "sending",   label: "กำลังส่ง",  color: "var(--accent)", rgb: "var(--accent-rgb)" },
+  { key: "completed", label: "สำเร็จ",   color: "var(--success)", rgb: "var(--success-rgb)" },
+  { key: "draft",     label: "ฉบับร่าง",  color: "var(--text-muted)", rgb: "var(--text-muted-rgb)" },
+  { key: "scheduled", label: "ตั้งเวลา",  color: "var(--info)", rgb: "var(--info-rgb)" },
+  { key: "failed",    label: "ล้มเหลว",  color: "var(--error)", rgb: "var(--error-rgb)" },
+];
+
+// ─── Helpers ──────────────────────────────────────────────────────────────
 function StatusBadge({ status }: { status: CampaignStatus }) {
   const cfg = STATUS_CONFIG[status];
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-semibold uppercase tracking-wider ${cfg.bg} ${cfg.text}`}
+      className="inline-flex items-center gap-1.5 rounded-full text-[11px] font-medium"
+      style={{
+        padding: "3px 10px",
+        background: cfg.bg,
+        color: cfg.color,
+      }}
     >
-      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot} ${cfg.pulse ? "animate-pulse" : ""}`} />
+      {cfg.dot && (
+        <span
+          className={`w-1.5 h-1.5 rounded-full ${cfg.pulse ? "animate-pulse" : ""}`}
+          style={{ background: cfg.color }}
+        />
+      )}
       {cfg.label}
     </span>
   );
 }
 
-function formatDate(iso: string | null): string {
+function formatThaiDate(iso: string | null): string {
   if (!iso) return "-";
   const d = new Date(iso);
-  return d.toLocaleDateString("th-TH", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return d.toLocaleDateString("th-TH", { day: "numeric", month: "short" });
 }
 
-function ProgressBar({ sent, total }: { sent: number; total: number }) {
+function NansenProgressBar({
+  sent,
+  total,
+  status,
+}: {
+  sent: number;
+  total: number;
+  status: CampaignStatus;
+}) {
   const pct = total > 0 ? Math.round((sent / total) * 100) : 0;
+  const barColor =
+    status === "failed" || status === "cancelled"
+      ? "var(--error)"
+      : "var(--accent)";
+
   return (
-    <div className="w-full">
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-[10px] text-[var(--text-subdued)]">
-          {sent.toLocaleString()} / {total.toLocaleString()}
-        </span>
-        <span className="text-[10px] font-semibold text-[#00FFA7]">{pct}%</span>
-      </div>
-      <div className="h-1.5 rounded-full bg-[var(--bg-muted)] overflow-hidden">
-        <motion.div
-          className="h-full rounded-full bg-[#00FFA7]"
-          initial={{ width: 0 }}
-          animate={{ width: `${pct}%` }}
-          transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+    <div className="flex items-center gap-2">
+      <div className="w-20 h-1.5 rounded-[3px] bg-[rgba(255,255,255,0.06)] overflow-hidden">
+        <div
+          className="h-full rounded-[3px] transition-[width] duration-500 ease-out"
+          style={{ width: `${pct}%`, background: barColor }}
         />
       </div>
+      <span className="text-xs tabular-nums text-[var(--text-secondary)] w-9 text-right">{pct}%</span>
     </div>
   );
 }
 
-function DeliveryBar({ pct }: { pct: number }) {
-  return (
-    <span className="inline-flex items-center gap-2">
-      <span className="text-sm">{pct}%</span>
-      <span className="delivery-bar">
-        <span className="fill" style={{ width: `${pct}%` }} />
-      </span>
-    </span>
-  );
-}
-
-// ─── Animations ───────────────────────────────────────────────────────────
-const fadeUp = {
-  hidden: { opacity: 0, y: 16 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.4 } },
-};
-
-const stagger = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.06 } },
-};
-
-const rowVariant = {
-  hidden: { opacity: 0, x: -16 },
-  show: { opacity: 1, x: 0, transition: { duration: 0.35, ease: "easeOut" as const } },
-};
+// ─── Per-page constant ───────────────────────────────────────────────────
+const PER_PAGE = 20;
 
 // ─── Main Component ──────────────────────────────────────────────────────
 export default function CampaignsClient({
@@ -134,12 +188,15 @@ export default function CampaignsClient({
   senderNames?: string[];
 }) {
   const router = useRouter();
+  const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [campaigns, setCampaigns] = useState<Campaign[]>(initialCampaigns);
   const [showForm, setShowForm] = useState(false);
   const [filterStatus, setFilterStatus] = useState<CampaignStatus | "all">("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [sendingIds, setSendingIds] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(1);
 
   // Form state
   const [formName, setFormName] = useState("");
@@ -156,7 +213,6 @@ export default function CampaignsClient({
 
   useEffect(() => {
     return () => {
-      // Cleanup all poll intervals on unmount
       for (const interval of pollIntervalsRef.current.values()) {
         clearInterval(interval);
       }
@@ -164,34 +220,58 @@ export default function CampaignsClient({
     };
   }, []);
 
-  const filtered =
-    filterStatus === "all" ? campaigns : campaigns.filter((c) => c.status === filterStatus);
+  // ─── Derived data ─────────────────────────────────────────────────
+  const filtered = campaigns
+    .filter((c) => filterStatus === "all" || c.status === filterStatus)
+    .filter((c) => !searchQuery || c.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+  const currentPage = Math.min(page, totalPages);
+  const paginatedCampaigns = filtered.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
 
   // Stats
-  const totalCampaigns = campaigns.length;
-  const activeCampaigns = campaigns.filter(
-    (c) => c.status === "running" || c.status === "scheduled"
-  ).length;
-  const completedCampaigns = campaigns.filter((c) => c.status === "completed").length;
-  const totalSmsSent = campaigns.reduce((sum, c) => sum + c.sentCount, 0);
+  const totalCount = campaigns.length;
+  const completedCount = campaigns.filter((c) => c.status === "completed").length;
+  const activeCount = campaigns.filter((c) => c.status === "sending" || c.status === "running").length;
+  const draftCount = campaigns.filter((c) => c.status === "draft").length;
+  const activeRemaining = campaigns
+    .filter((c) => c.status === "sending" || c.status === "running")
+    .reduce((sum, c) => sum + (c.totalRecipients - c.sentCount), 0);
+  const completionRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   const selectedGroup = groups.find((g) => g.id === formGroup);
   const creditEstimate = selectedGroup ? selectedGroup.count : 0;
 
+  // ─── Handlers ─────────────────────────────────────────────────────
   const handleCreate = () => {
-    if (!formName.trim() || !formGroup || !formTemplate) return;
     setFeedback(null);
+
+    // Zod validation
+    const parsed = campaignFormSchema.safeParse({
+      name: formName.trim(),
+      contactGroupId: formGroup,
+      templateId: formTemplate,
+      senderName: formSender.trim() || "EasySlip",
+      scheduledAt: formSchedule || undefined,
+    });
+
+    if (!parsed.success) {
+      const firstError = parsed.error.issues[0];
+      setFeedback({ type: "error", text: firstError.message });
+      return;
+    }
 
     startTransition(async () => {
       try {
         await createCampaign(userId, {
-          name: formName.trim(),
-          contactGroupId: formGroup,
-          templateId: formTemplate,
-          senderName: formSender.trim() || "EasySlip",
-          scheduledAt: formSchedule ? new Date(formSchedule).toISOString() : undefined,
+          name: parsed.data.name,
+          contactGroupId: parsed.data.contactGroupId,
+          templateId: parsed.data.templateId,
+          senderName: parsed.data.senderName,
+          scheduledAt: parsed.data.scheduledAt ? new Date(parsed.data.scheduledAt).toISOString() : undefined,
         });
         setFeedback({ type: "success", text: "สร้างแคมเปญสำเร็จ!" });
+        toast("success", "สร้างแคมเปญสำเร็จ");
         setFormName("");
         setFormGroup("");
         setFormTemplate("");
@@ -201,6 +281,7 @@ export default function CampaignsClient({
         router.refresh();
       } catch (e) {
         setFeedback({ type: "error", text: safeErrorMessage(e) });
+        toast("error", safeErrorMessage(e));
       }
     });
   };
@@ -209,7 +290,6 @@ export default function CampaignsClient({
     setFeedback(null);
     setSendingIds((prev) => new Set(prev).add(campaignId));
 
-    // Optimistic: mark as sending
     setCampaigns((prev) =>
       prev.map((c) => (c.id === campaignId ? { ...c, status: "sending" as CampaignStatus } : c))
     );
@@ -218,13 +298,10 @@ export default function CampaignsClient({
       try {
         await executeCampaign(userId, campaignId);
 
-        // Mark as running
         setCampaigns((prev) =>
           prev.map((c) => (c.id === campaignId ? { ...c, status: "running" as CampaignStatus } : c))
         );
 
-        // Poll progress — store ref for cleanup on unmount
-        // Clear any existing poll for this campaign first
         const existingInterval = pollIntervalsRef.current.get(campaignId);
         if (existingInterval) clearInterval(existingInterval);
 
@@ -246,7 +323,6 @@ export default function CampaignsClient({
               )
             );
 
-            // Update selected campaign detail if open
             setSelectedCampaign((prev) =>
               prev?.id === campaignId
                 ? {
@@ -275,6 +351,11 @@ export default function CampaignsClient({
                     ? `ส่งสำเร็จ ${progress.sentCount} ข้อความ (ล้มเหลว ${progress.failedCount})`
                     : `แคมเปญ${progress.status === "failed" ? "ล้มเหลว" : "ถูกยกเลิก"}`,
               });
+              if (progress.status === "completed") {
+                toast("success", `ส่งแคมเปญสำเร็จ ${progress.sentCount} ข้อความ`);
+              } else {
+                toast("error", `แคมเปญ${progress.status === "failed" ? "ล้มเหลว" : "ถูกยกเลิก"}`);
+              }
             }
           } catch {
             clearInterval(pollInterval);
@@ -284,7 +365,6 @@ export default function CampaignsClient({
 
         pollIntervalsRef.current.set(campaignId, pollInterval);
       } catch (e) {
-        // Rollback optimistic update
         setCampaigns((prev) =>
           prev.map((c) => (c.id === campaignId ? { ...c, status: "draft" as CampaignStatus } : c))
         );
@@ -294,108 +374,153 @@ export default function CampaignsClient({
           return next;
         });
         setFeedback({ type: "error", text: safeErrorMessage(e) });
+        toast("error", safeErrorMessage(e));
       }
     });
   };
 
   const handleCancel = (_id: string) => {
-    // TODO: implement campaign cancel via server action
     setFeedback({ type: "error", text: "ฟีเจอร์ยกเลิกแคมเปญกำลังพัฒนา" });
   };
 
-  const statCards = [
-    { label: "แคมเปญทั้งหมด", value: totalCampaigns, sub: "campaigns" },
-    { label: "กำลังดำเนินการ", value: activeCampaigns, sub: "active" },
-    { label: "เสร็จสิ้น", value: completedCampaigns, sub: "completed" },
-    { label: "SMS ส่งแล้ว", value: totalSmsSent.toLocaleString(), sub: "messages" },
-  ];
-
-  const filterTabs: { key: CampaignStatus | "all"; label: string }[] = [
-    { key: "all", label: "ทั้งหมด" },
-    { key: "draft", label: "แบบร่าง" },
-    { key: "scheduled", label: "ตั้งเวลา" },
-    { key: "sending", label: "กำลังส่ง" },
-    { key: "running", label: "กำลังส่ง" },
-    { key: "completed", label: "เสร็จสิ้น" },
-    { key: "failed", label: "ล้มเหลว" },
-    { key: "cancelled", label: "ยกเลิก" },
-  ];
-
+  // ─── Render ───────────────────────────────────────────────────────
   return (
-    <motion.div initial="hidden" animate="show" variants={stagger} style={{ padding: "var(--content-padding-y) var(--content-padding-x)" }}>
-      {/* Page Header — DNA Part 1 */}
-      <motion.div variants={fadeUp} className="page-header">
-        <div>
-          <h1 className="page-title">แคมเปญ SMS</h1>
-          <p className="page-description">สร้างและจัดการแคมเปญส่ง SMS จำนวนมาก</p>
-        </div>
-        <motion.button
-          onClick={() => {
-            setShowForm(!showForm);
-            setSelectedCampaign(null);
-          }}
-          className="btn-primary px-5 py-2.5 text-sm rounded-xl inline-flex items-center gap-2 font-semibold"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+    <PageLayout>
+      {/* Feedback toast */}
+      {feedback && (
+        <div
+          className={`mb-4 px-4 py-2.5 rounded-xl text-sm font-medium ${
+            feedback.type === "success"
+              ? "bg-[rgba(16,185,129,0.08)] text-[var(--success)] border border-[rgba(16,185,129,0.2)]"
+              : "bg-[rgba(239,68,68,0.08)] text-[var(--error)] border border-[rgba(239,68,68,0.2)]"
+          }`}
         >
-          {showForm ? (
-            <>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-              ยกเลิก
-            </>
-          ) : (
-            <>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-              สร้างแคมเปญ
-            </>
-          )}
-        </motion.button>
-      </motion.div>
+          {feedback.text}
+        </div>
+      )}
 
-      {/* Stats Grid — DNA Part 4 + Part 9 */}
-      <motion.div className="stats-grid" variants={stagger}>
-        {statCards.map((stat) => (
-          <motion.div key={stat.label} variants={fadeUp} className="nansen-stat-card">
-            <div className="label">{stat.label}</div>
-            <div className="value">
-              {typeof stat.value === "number" ? stat.value.toLocaleString() : stat.value}
-            </div>
-            <div className="text-xs text-[var(--text-subdued)] mt-1">{stat.sub}</div>
-          </motion.div>
-        ))}
-      </motion.div>
+      {/* Page Header */}
+      <PageHeader
+        title="แคมเปญ"
+        count={totalCount}
+        description="สร้างและจัดการแคมเปญส่ง SMS จำนวนมาก"
+        actions={
+          <Button
+            onClick={() => {
+              setShowForm(!showForm);
+              setSelectedCampaign(null);
+            }}
+            className="bg-[var(--accent)] text-[var(--text-on-accent)] hover:bg-[var(--accent)]/90 font-semibold cursor-pointer"
+          >
+            {showForm ? (
+              <>
+                <X className="w-4 h-4 mr-1.5" />
+                ยกเลิก
+              </>
+            ) : (
+              <>
+                <Plus className="w-4 h-4 mr-1.5" />
+                สร้างแคมเปญ
+              </>
+            )}
+          </Button>
+        }
+      />
+
+      {/* Stats Row — 4 cards per spec 4.1 */}
+      <StatsRow columns={4}>
+        <StatCard
+          icon={<BarChart3 className="w-[18px] h-[18px] text-[var(--accent)]" />}
+          iconColor="var(--accent-rgb)"
+          value={totalCount}
+          label="แคมเปญทั้งหมด"
+        />
+        <StatCard
+          icon={<CheckCircle className="w-[18px] h-[18px] text-emerald-500" />}
+          iconColor="16,185,129"
+          value={completedCount}
+          label="สำเร็จ"
+          subtitle={`${completionRate}% completion rate`}
+        />
+        <StatCard
+          icon={<Loader className="w-[18px] h-[18px] animate-spin text-amber-500" />}
+          iconColor="245,158,11"
+          value={activeCount}
+          label="กำลังส่ง"
+          subtitle={activeRemaining > 0 ? `${activeRemaining.toLocaleString()} SMS remaining` : undefined}
+        />
+        <StatCard
+          icon={<FileText className="w-[18px] h-[18px] text-[var(--text-muted)]" />}
+          iconColor="148,159,168"
+          value={draftCount}
+          label="ฉบับร่าง"
+        />
+      </StatsRow>
+
+      {/* Status filter pills — spec 4.2 */}
+      <FilterBar>
+        {FILTER_PILLS.map((pill) => {
+          const isActive = filterStatus === pill.key;
+          const count = pill.key === "all" ? null : campaigns.filter((c) => c.status === pill.key).length;
+          return (
+            <button
+              key={pill.key}
+              type="button"
+              onClick={() => { setFilterStatus(pill.key); setPage(1); }}
+              className="rounded-full text-[13px] font-medium border transition-colors cursor-pointer"
+              style={{
+                padding: "6px 14px",
+                background: isActive ? `rgba(${pill.rgb},0.08)` : "transparent",
+                borderColor: isActive ? `rgba(${pill.rgb},0.3)` : "var(--border-default)",
+                color: isActive ? pill.color : "var(--text-muted)",
+              }}
+            >
+              {pill.key === "sending" && isActive && (
+                <span
+                  className="inline-block w-1.5 h-1.5 rounded-full mr-1.5 animate-pulse"
+                  style={{ background: pill.color }}
+                />
+              )}
+              {pill.label}
+              {count !== null && count > 0 && (
+                <span className="ml-1.5 opacity-60">{count}</span>
+              )}
+            </button>
+          );
+        })}
+      </FilterBar>
+
+      {/* Search — spec 4.3 */}
+      <div className="relative mb-4">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
+        <Input
+          placeholder="ค้นหาชื่อแคมเปญ..."
+          value={searchQuery}
+          onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+          className="pl-10 bg-[var(--bg-surface)] border-[var(--table-border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] h-10"
+        />
+      </div>
 
       {/* Create Campaign Form */}
       <AnimatePresence>
         {showForm && (
           <motion.div
-            className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-[20px] p-6 mb-8"
+            className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg p-6 mb-4"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <h3 className="text-base font-semibold text-white mb-5 flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-[rgba(0,255,167,0.08)] border border-[rgba(0,255,167,0.15)] flex items-center justify-center">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#00FFA7]">
-                  <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
-                </svg>
+            <h3 className="text-base font-semibold text-[var(--text-primary)] mb-5 flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-[rgba(var(--accent-rgb),0.08)] border border-[rgba(var(--accent-rgb),0.15)] flex items-center justify-center">
+                <Megaphone className="w-4 h-4 text-[var(--accent)]" />
               </div>
-              <span className="text-white">สร้างแคมเปญใหม่</span>
+              สร้างแคมเปญใหม่
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Campaign Name */}
               <div>
-                <label className="block text-xs text-[var(--text-secondary)] uppercase tracking-wider mb-2">
-                  ชื่อแคมเปญ *
-                </label>
+                <label className="block text-xs text-[var(--text-muted)] uppercase tracking-wider mb-2">ชื่อแคมเปญ *</label>
                 <input
                   type="text"
                   className={fieldCls(undefined, formName)}
@@ -404,24 +529,12 @@ export default function CampaignsClient({
                   onChange={(e) => setFormName(e.target.value)}
                 />
               </div>
-
-              {/* Sender Name */}
               <div>
-                <label className="block text-xs text-[var(--text-secondary)] uppercase tracking-wider mb-2">
-                  ชื่อผู้ส่ง
-                </label>
-                <SenderDropdown
-                  value={formSender}
-                  onChange={setFormSender}
-                  senderNames={senderNames}
-                />
+                <label className="block text-xs text-[var(--text-muted)] uppercase tracking-wider mb-2">ชื่อผู้ส่ง</label>
+                <SenderDropdown value={formSender} onChange={setFormSender} senderNames={senderNames} />
               </div>
-
-              {/* Contact Group */}
               <div>
-                <label className="block text-xs text-[var(--text-secondary)] uppercase tracking-wider mb-2">
-                  กลุ่มผู้รับ *
-                </label>
+                <label className="block text-xs text-[var(--text-muted)] uppercase tracking-wider mb-2">กลุ่มผู้รับ *</label>
                 <CustomSelect
                   value={formGroup}
                   onChange={setFormGroup}
@@ -432,12 +545,8 @@ export default function CampaignsClient({
                   }))}
                 />
               </div>
-
-              {/* Template */}
               <div>
-                <label className="block text-xs text-[var(--text-secondary)] uppercase tracking-wider mb-2">
-                  เทมเพลต *
-                </label>
+                <label className="block text-xs text-[var(--text-muted)] uppercase tracking-wider mb-2">เทมเพลต *</label>
                 <CustomSelect
                   value={formTemplate}
                   onChange={setFormTemplate}
@@ -445,38 +554,24 @@ export default function CampaignsClient({
                   options={templates.map((t) => ({ value: t.id, label: t.name }))}
                 />
               </div>
-
-              {/* Schedule */}
               <div>
-                <label className="block text-xs text-[var(--text-secondary)] uppercase tracking-wider mb-2">
-                  ตั้งเวลาส่ง
-                </label>
-                <input
+                <label className="block text-xs text-[var(--text-muted)] uppercase tracking-wider mb-2">ตั้งเวลาส่ง</label>
+                <Input
                   type="datetime-local"
-                  className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none px-3 py-2 w-full"
+                  className="w-full"
                   value={formSchedule}
                   onChange={(e) => setFormSchedule(e.target.value)}
                 />
-                <p className="text-[10px] text-[var(--text-muted)] mt-1">
-                  เว้นว่างเพื่อบันทึกเป็นแบบร่าง
-                </p>
+                <p className="text-[10px] text-[var(--text-muted)] mt-1">เว้นว่างเพื่อบันทึกเป็นแบบร่าง</p>
               </div>
-
-              {/* Credit Estimate */}
               <div>
-                <label className="block text-xs text-[var(--text-secondary)] uppercase tracking-wider mb-2">
-                  ประมาณการเครดิต
-                </label>
-                <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none px-3 py-2 w-full flex items-center justify-between pointer-events-none">
+                <label className="block text-xs text-[var(--text-muted)] uppercase tracking-wider mb-2">ประมาณการ SMS</label>
+                <div className="bg-[var(--bg-surface)] border border-[var(--table-border)] rounded-lg px-3 py-2 w-full flex items-center justify-between pointer-events-none">
                   <span className="text-[var(--text-secondary)]">
-                    {creditEstimate > 0
-                      ? `${creditEstimate.toLocaleString()} เครดิต`
-                      : "เลือกกลุ่มก่อน"}
+                    {creditEstimate > 0 ? `${creditEstimate.toLocaleString()} SMS` : "เลือกกลุ่มก่อน"}
                   </span>
                   {creditEstimate > 0 && (
-                    <span className="text-[10px] text-amber-400 font-semibold">
-                      ~{creditEstimate.toLocaleString()} SMS
-                    </span>
+                    <span className="text-[10px] text-amber-400 font-semibold">~{creditEstimate.toLocaleString()} SMS</span>
                   )}
                 </div>
               </div>
@@ -489,39 +584,32 @@ export default function CampaignsClient({
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="mt-4 p-4 rounded-xl bg-[var(--bg-surface)]/50 border border-[var(--border-subtle)]"
+                  className="mt-4 p-4 rounded-xl bg-[rgba(255,255,255,0.02)] border border-[var(--table-border)]"
                 >
-                  <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-2">
-                    ตัวอย่างข้อความ
-                  </p>
-                  <p className="text-sm text-[var(--text-secondary)]">
-                    {templates.find((t) => t.id === formTemplate)?.body || ""}
-                  </p>
+                  <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-2">ตัวอย่างข้อความ</p>
+                  <p className="text-sm text-[var(--text-secondary)]">{templates.find((t) => t.id === formTemplate)?.body || ""}</p>
                 </motion.div>
               )}
             </AnimatePresence>
 
+            <SendingHoursWarning scheduledAt={formSchedule || null} className="mt-4" />
+
             <div className="mt-5 flex items-center gap-3">
-              <motion.button
+              <Button
                 onClick={handleCreate}
-                disabled={!formName.trim() || !formGroup || !formTemplate}
-                className="btn-primary px-6 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                disabled={isPending}
+                className="bg-[var(--accent)] text-[var(--text-on-accent)] hover:bg-[var(--accent)]/90 font-semibold cursor-pointer"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
-                </svg>
+                <Megaphone className="w-4 h-4 mr-1.5" />
                 {formSchedule ? "ตั้งเวลาส่ง" : "บันทึกแบบร่าง"}
-              </motion.button>
-              <motion.button
+              </Button>
+              <Button
+                variant="outline"
                 onClick={() => setShowForm(false)}
-                className="bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] rounded-xl hover:border-[rgba(0,255,167,0.3)] hover:bg-[rgba(0,255,167,0.04)] px-5 py-2.5 rounded-xl text-sm font-medium"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                className="border-[var(--table-border)] text-[var(--text-primary)] hover:bg-[rgba(var(--accent-rgb),0.04)] cursor-pointer"
               >
                 ยกเลิก
-              </motion.button>
+              </Button>
             </div>
           </motion.div>
         )}
@@ -531,7 +619,7 @@ export default function CampaignsClient({
       <AnimatePresence>
         {selectedCampaign && (
           <motion.div
-            className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-[20px] p-6 mb-8"
+            className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg p-6 mb-4"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -539,388 +627,311 @@ export default function CampaignsClient({
           >
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-3">
-                <h3 className="text-base font-semibold text-white">{selectedCampaign.name}</h3>
+                <h3 className="text-base font-semibold text-[var(--text-primary)]">{selectedCampaign.name}</h3>
                 <StatusBadge status={selectedCampaign.status} />
               </div>
-              <motion.button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setSelectedCampaign(null)}
-                className="bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] rounded-xl hover:border-[rgba(0,255,167,0.3)] hover:bg-[rgba(0,255,167,0.04)] px-3 py-1.5 text-xs rounded-lg"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                className="border-[var(--table-border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
               >
                 ปิด
-              </motion.button>
+              </Button>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
-              <div className="p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-default)]">
-                <p className="text-[10px] text-[var(--text-subdued)] uppercase tracking-wider mb-1">
-                  ผู้รับทั้งหมด
-                </p>
-                <p className="text-lg font-bold text-white">
-                  {selectedCampaign.totalRecipients.toLocaleString()}
-                </p>
+              {[
+                { label: "ผู้รับทั้งหมด", value: selectedCampaign.totalRecipients, color: "white" },
+                { label: "ส่งแล้ว", value: selectedCampaign.sentCount, color: "var(--accent-secondary)" },
+                { label: "สำเร็จ", value: selectedCampaign.deliveredCount, color: "var(--accent)" },
+                { label: "ล้มเหลว", value: selectedCampaign.failedCount, color: "var(--error)" },
+              ].map((s) => (
+                <div key={s.label} className="p-3 rounded-xl bg-[var(--table-alt-row)] border border-[var(--table-border)]">
+                  <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">{s.label}</p>
+                  <p className="text-lg font-bold tabular-nums" style={{ color: s.color }}>
+                    {s.value.toLocaleString()}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* Full-width progress bar for detail */}
+            <div className="w-full">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] text-[var(--text-muted)]">
+                  {selectedCampaign.sentCount.toLocaleString()} / {selectedCampaign.totalRecipients.toLocaleString()}
+                </span>
+                <span className="text-[10px] font-semibold text-[var(--accent)]">
+                  {selectedCampaign.totalRecipients > 0
+                    ? Math.round((selectedCampaign.sentCount / selectedCampaign.totalRecipients) * 100)
+                    : 0}%
+                </span>
               </div>
-              <div className="p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-default)]">
-                <p className="text-[10px] text-[var(--text-subdued)] uppercase tracking-wider mb-1">
-                  ส่งแล้ว
-                </p>
-                <p className="text-lg font-bold text-[#4779FF]">
-                  {selectedCampaign.sentCount.toLocaleString()}
-                </p>
-              </div>
-              <div className="p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-default)]">
-                <p className="text-[10px] text-[var(--text-subdued)] uppercase tracking-wider mb-1">
-                  สำเร็จ
-                </p>
-                <p className="text-lg font-bold text-[#00FFA7]">
-                  {selectedCampaign.deliveredCount.toLocaleString()}
-                </p>
-              </div>
-              <div className="p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-default)]">
-                <p className="text-[10px] text-[var(--text-subdued)] uppercase tracking-wider mb-1">
-                  ล้มเหลว
-                </p>
-                <p className="text-lg font-bold text-[#ef4444]">
-                  {selectedCampaign.failedCount.toLocaleString()}
-                </p>
+              <div className="h-1.5 rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-[var(--accent)] transition-[width] duration-500 ease-out"
+                  style={{
+                    width: `${selectedCampaign.totalRecipients > 0 ? Math.round((selectedCampaign.sentCount / selectedCampaign.totalRecipients) * 100) : 0}%`,
+                  }}
+                />
               </div>
             </div>
 
-            <ProgressBar sent={selectedCampaign.sentCount} total={selectedCampaign.totalRecipients} />
-
-            <div className="mt-5 pt-4 border-t border-[var(--border-subtle)] grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-              <div>
-                <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">
-                  กลุ่มผู้รับ
-                </p>
-                <p className="text-[var(--text-secondary)]">{selectedCampaign.groupName}</p>
-              </div>
-              <div>
-                <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">
-                  เทมเพลต
-                </p>
-                <p className="text-[var(--text-secondary)]">{selectedCampaign.templateName}</p>
-              </div>
-              <div>
-                <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">
-                  ผู้ส่ง
-                </p>
-                <p className="text-[var(--text-secondary)] font-mono">{selectedCampaign.senderName}</p>
-              </div>
-              <div>
-                <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">
-                  กำหนดส่ง
-                </p>
-                <p className="text-[var(--text-secondary)]">{formatDate(selectedCampaign.scheduledAt)}</p>
-              </div>
+            <div className="mt-5 pt-4 border-t border-[var(--table-border)] grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+              {[
+                { label: "กลุ่มผู้รับ", value: selectedCampaign.groupName },
+                { label: "เทมเพลต", value: selectedCampaign.templateName },
+                { label: "ผู้ส่ง", value: selectedCampaign.senderName, mono: true },
+                { label: "กำหนดส่ง", value: formatThaiDate(selectedCampaign.scheduledAt) || formatThaiDate(selectedCampaign.createdAt) },
+              ].map((item) => (
+                <div key={item.label}>
+                  <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">{item.label}</p>
+                  <p className={`text-[var(--text-secondary)] ${item.mono ? "font-mono" : ""}`}>{item.value}</p>
+                </div>
+              ))}
             </div>
 
             {/* Status-based Actions */}
             {(selectedCampaign.status === "draft" || selectedCampaign.status === "scheduled") && (
-              <div className="mt-5 pt-4 border-t border-[var(--border-subtle)] flex items-center gap-3">
-                <motion.button
+              <div className="mt-5 pt-4 border-t border-[var(--table-border)] flex items-center gap-3">
+                <Button
                   onClick={() => handleSend(selectedCampaign.id)}
                   disabled={sendingIds.has(selectedCampaign.id)}
-                  className="btn-primary px-4 py-2 rounded-xl text-sm font-semibold inline-flex items-center gap-2"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  className="bg-[var(--accent)] text-[var(--text-on-accent)] hover:bg-[var(--accent)]/90 font-semibold cursor-pointer"
                 >
                   {sendingIds.has(selectedCampaign.id) ? (
-                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
+                    <Loader className="w-4 h-4 mr-1.5 animate-spin" />
                   ) : (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-1.5">
                       <polygon points="5 3 19 12 5 21 5 3" />
                     </svg>
                   )}
                   {sendingIds.has(selectedCampaign.id) ? "กำลังส่ง..." : "ส่งทันที"}
-                </motion.button>
-                <motion.button
+                </Button>
+                <Button
+                  variant="outline"
                   onClick={() => handleCancel(selectedCampaign.id)}
-                  className="px-4 py-2 rounded-xl text-sm font-medium border border-red-500/20 text-red-400 hover:bg-red-500/10 transition-colors inline-flex items-center gap-2"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  className="border-[rgba(239,68,68,0.2)] text-[var(--error)] hover:bg-[rgba(239,68,68,0.08)] cursor-pointer"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
+                  <X className="w-4 h-4 mr-1.5" />
                   ยกเลิกแคมเปญ
-                </motion.button>
+                </Button>
               </div>
             )}
             {(selectedCampaign.status === "sending" || selectedCampaign.status === "running") && (
-              <div className="mt-5 pt-4 border-t border-[var(--border-subtle)]">
-                <motion.button
+              <div className="mt-5 pt-4 border-t border-[var(--table-border)]">
+                <Button
+                  variant="outline"
                   onClick={() => handleCancel(selectedCampaign.id)}
-                  className="px-4 py-2 rounded-xl text-sm font-medium border border-red-500/20 text-red-400 hover:bg-red-500/10 transition-colors inline-flex items-center gap-2"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  className="border-[rgba(239,68,68,0.2)] text-[var(--error)] hover:bg-[rgba(239,68,68,0.08)] cursor-pointer"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="6" y="4" width="4" height="16" />
-                    <rect x="14" y="4" width="4" height="16" />
-                  </svg>
+                  <Pause className="w-4 h-4 mr-1.5" />
                   หยุดแคมเปญ
-                </motion.button>
+                </Button>
               </div>
             )}
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Filter Tabs — Nansen teal */}
-      <motion.div variants={fadeUp} className="filter-bar flex-wrap">
-        {filterTabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setFilterStatus(tab.key)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              filterStatus === tab.key
-                ? "bg-[rgba(0,255,167,0.12)] text-[#00FFA7] border border-[rgba(0,255,167,0.25)]"
-                : "bg-[var(--bg-surface)] text-[var(--text-subdued)] border border-[var(--border-default)] hover:text-white"
-            }`}
-          >
-            {tab.label}
-            {tab.key !== "all" && (
-              <span className="ml-1.5 text-[10px] opacity-60">
-                {campaigns.filter((c) => c.status === tab.key).length}
-              </span>
-            )}
-          </button>
-        ))}
-      </motion.div>
-
-      {/* Campaign List — DNA Part 2 */}
+      {/* Campaign Table — Nansen style per spec 4.4 */}
       {filtered.length > 0 ? (
-        <motion.div
-          className="overflow-hidden rounded-[var(--radius-xl)] border border-[var(--border-default)]"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.15 }}
-        >
+        <TableWrapper>
           {/* Desktop Table */}
           <div className="hidden md:block overflow-x-auto">
-            <table className="nansen-table">
+            <table className="w-full">
               <thead>
-                <tr>
-                  <th>แคมเปญ</th>
-                  <th>สถานะ</th>
-                  <th>กลุ่ม</th>
-                  <th>เทมเพลต</th>
-                  <th>กำหนดส่ง</th>
-                  <th style={{ width: 160 }}>ความคืบหน้า</th>
-                  <th>ผลลัพธ์</th>
-                  <th className="text-right" style={{ width: 96 }}>จัดการ</th>
+                <tr className="bg-[var(--table-header)] border-b border-[var(--table-border)]">
+                  <th className="text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-[0.04em] px-4 py-2.5">ชื่อแคมเปญ</th>
+                  <th className="text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-[0.04em] px-4 py-2.5">สถานะ</th>
+                  <th className="text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-[0.04em] px-4 py-2.5 hidden lg:table-cell">ความคืบหน้า</th>
+                  <th className="text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-[0.04em] px-4 py-2.5 hidden lg:table-cell">ผู้ส่ง</th>
+                  <th className="text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-[0.04em] px-4 py-2.5 hidden lg:table-cell">วันที่</th>
+                  <th className="text-center text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-[0.04em] px-4 py-2.5 w-20">จัดการ</th>
                 </tr>
               </thead>
-              <motion.tbody variants={stagger} initial="hidden" animate="show">
-                {filtered.map((campaign) => (
-                  <motion.tr
+              <tbody>
+                {paginatedCampaigns.map((campaign, idx) => (
+                  <tr
                     key={campaign.id}
-                    variants={rowVariant}
-                    className="cursor-pointer group"
+                    className={`border-b border-[var(--table-border)] hover:bg-black transition-colors duration-150 cursor-pointer ${
+                      idx % 2 === 1 ? "bg-[var(--table-alt-row)]" : ""
+                    }`}
                     onClick={() => {
                       setSelectedCampaign(campaign);
                       setShowForm(false);
                     }}
                   >
-                    <td>
-                      <p className="font-medium text-sm text-white">{campaign.name}</p>
-                      <p className="text-[10px] text-[var(--text-subdued)] font-mono mt-0.5">
-                        {campaign.senderName}
+                    {/* Campaign name cell */}
+                    <td className="px-4 py-2.5">
+                      <p className="text-sm font-medium text-[var(--text-primary)]">{campaign.name}</p>
+                      <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                        {campaign.totalRecipients.toLocaleString()} SMS · ฿{campaign.creditReserved.toLocaleString()}
                       </p>
                     </td>
-                    <td>
+                    {/* Status */}
+                    <td className="px-4 py-2.5">
                       <StatusBadge status={campaign.status} />
                     </td>
-                    <td className="text-[var(--text-secondary)] text-xs">
-                      {campaign.groupName}
+                    {/* Progress */}
+                    <td className="px-4 py-2.5 hidden lg:table-cell">
+                      <NansenProgressBar
+                        sent={campaign.sentCount}
+                        total={campaign.totalRecipients}
+                        status={campaign.status}
+                      />
+                      <p className="text-[11px] text-[var(--text-muted)] mt-0.5 tabular-nums">
+                        {campaign.sentCount.toLocaleString()}/{campaign.totalRecipients.toLocaleString()}
+                      </p>
                     </td>
-                    <td className="text-[var(--text-secondary)] text-xs">
-                      {campaign.templateName}
+                    {/* Sender */}
+                    <td className="px-4 py-2.5 hidden lg:table-cell">
+                      <span className="text-sm text-[var(--text-secondary)] font-mono">{campaign.senderName}</span>
                     </td>
-                    <td className="text-[var(--text-subdued)] text-xs">
-                      {formatDate(campaign.scheduledAt)}
+                    {/* Date */}
+                    <td className="px-4 py-2.5 hidden lg:table-cell">
+                      <span className="text-sm text-[var(--text-muted)]">{formatThaiDate(campaign.createdAt)}</span>
                     </td>
-                    <td>
-                      <ProgressBar sent={campaign.sentCount} total={campaign.totalRecipients} />
-                    </td>
-                    <td>
-                      <div className="flex items-center gap-2 text-xs">
-                        <span className="positive">
-                          {campaign.deliveredCount.toLocaleString()}
-                        </span>
-                        <span className="text-[var(--text-subdued)]">/</span>
-                        <span className="negative">
-                          {campaign.failedCount.toLocaleString()}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="text-right">
-                      <div
-                        className="flex items-center gap-1.5 justify-end"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {(campaign.status === "draft" || campaign.status === "scheduled") && (
-                          <motion.button
-                            onClick={() => handleSend(campaign.id)}
-                            disabled={sendingIds.has(campaign.id)}
-                            className="px-2.5 py-1 rounded-md text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/15 hover:bg-emerald-500/20 transition-colors disabled:opacity-50"
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
+                    {/* Actions dropdown */}
+                    <td className="px-4 py-2.5 text-center" onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          className="w-8 h-8 rounded-md flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.04)] transition-colors cursor-pointer"
+                        >
+                          <MoreHorizontal className="w-4 h-4" />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="end"
+                          className="bg-[var(--table-header)] border-[var(--table-border)] rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
+                        >
+                          <DropdownMenuItem
+                            className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] focus:text-[var(--text-primary)] focus:bg-[rgba(255,255,255,0.04)] cursor-pointer"
+                            onClick={() => {
+                              setSelectedCampaign(campaign);
+                              setShowForm(false);
+                            }}
                           >
-                            ส่งทันที
-                          </motion.button>
-                        )}
-                        {(campaign.status === "sending" || campaign.status === "running") && (
-                          <span className="px-2.5 py-1 rounded-md text-[10px] font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/15 inline-flex items-center gap-1">
-                            <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                            </svg>
-                            กำลังส่ง
-                          </span>
-                        )}
-                        {(campaign.status === "draft" ||
-                          campaign.status === "scheduled" ||
-                          campaign.status === "sending" ||
-                          campaign.status === "running") && (
-                          <motion.button
-                            onClick={() => handleCancel(campaign.id)}
-                            className="px-2.5 py-1 rounded-md text-[10px] font-semibold bg-red-500/10 text-red-400 border border-red-500/15 hover:bg-red-500/20 transition-colors"
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
-                            ยกเลิก
-                          </motion.button>
-                        )}
-                      </div>
+                            <Eye className="w-4 h-4 mr-2" />
+                            ดูรายละเอียด
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] focus:text-[var(--text-primary)] focus:bg-[rgba(255,255,255,0.04)] cursor-pointer">
+                            <Pencil className="w-4 h-4 mr-2" />
+                            แก้ไข
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] focus:text-[var(--text-primary)] focus:bg-[rgba(255,255,255,0.04)] cursor-pointer">
+                            <Copy className="w-4 h-4 mr-2" />
+                            ทำซ้ำ
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator className="bg-[var(--table-border)]" />
+                          {(campaign.status === "sending" || campaign.status === "running") && (
+                            <DropdownMenuItem
+                              className="text-[var(--warning)] hover:text-[var(--warning)] focus:text-[var(--warning)] focus:bg-[rgba(245,158,11,0.08)] cursor-pointer"
+                              onClick={() => handleCancel(campaign.id)}
+                            >
+                              <Pause className="w-4 h-4 mr-2" />
+                              หยุดชั่วคราว
+                            </DropdownMenuItem>
+                          )}
+                          {(campaign.status === "draft" || campaign.status === "scheduled") && (
+                            <DropdownMenuItem
+                              className="text-[var(--success)] hover:text-[var(--success)] focus:text-[var(--success)] focus:bg-[rgba(16,185,129,0.08)] cursor-pointer"
+                              onClick={() => handleSend(campaign.id)}
+                            >
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2">
+                                <polygon points="5 3 19 12 5 21 5 3" />
+                              </svg>
+                              ส่งทันที
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem className="text-[var(--error)] hover:text-[var(--error)] focus:text-[var(--error)] focus:bg-[rgba(239,68,68,0.08)] cursor-pointer">
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            ลบ
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
-                  </motion.tr>
+                  </tr>
                 ))}
-              </motion.tbody>
+              </tbody>
             </table>
           </div>
 
           {/* Mobile Cards */}
-          <div className="md:hidden divide-y divide-[var(--border-subtle)]">
-            {filtered.map((campaign) => (
-              <motion.div
+          <div className="md:hidden divide-y divide-[var(--table-border)]">
+            {paginatedCampaigns.map((campaign) => (
+              <div
                 key={campaign.id}
-                variants={rowVariant}
-                className="p-4 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                className="p-4 cursor-pointer hover:bg-[rgba(255,255,255,0.02)] transition-colors"
                 onClick={() => {
                   setSelectedCampaign(campaign);
                   setShowForm(false);
                 }}
               >
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start justify-between mb-2">
                   <div>
-                    <p className="text-slate-200 font-medium text-sm">{campaign.name}</p>
-                    <p className="text-[10px] text-[var(--text-muted)] mt-0.5">
-                      {campaign.groupName} &middot; {campaign.templateName}
+                    <p className="text-sm font-medium text-[var(--text-primary)]">{campaign.name}</p>
+                    <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                      {campaign.groupName} · {campaign.totalRecipients.toLocaleString()} SMS
                     </p>
                   </div>
                   <StatusBadge status={campaign.status} />
                 </div>
-
-                <ProgressBar sent={campaign.sentCount} total={campaign.totalRecipients} />
-
-                <div className="flex items-center justify-between mt-3">
-                  <div className="flex items-center gap-3 text-[10px]">
-                    <span className="text-emerald-400">
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="inline mr-0.5">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                      {campaign.deliveredCount.toLocaleString()}
-                    </span>
-                    <span className="text-red-400">
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="inline mr-0.5">
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                      </svg>
-                      {campaign.failedCount.toLocaleString()}
-                    </span>
-                  </div>
-                  <span className="text-[10px] text-[var(--text-muted)]">
-                    {formatDate(campaign.scheduledAt)}
+                <NansenProgressBar sent={campaign.sentCount} total={campaign.totalRecipients} status={campaign.status} />
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-xs text-[var(--text-muted)] tabular-nums">
+                    {campaign.sentCount.toLocaleString()}/{campaign.totalRecipients.toLocaleString()}
                   </span>
+                  <span className="text-xs text-[var(--text-muted)]">{formatThaiDate(campaign.createdAt)}</span>
                 </div>
-
-                {(campaign.status === "draft" ||
-                  campaign.status === "scheduled" ||
-                  campaign.status === "sending" ||
-                  campaign.status === "running") && (
-                  <div
-                    className="flex items-center gap-2 mt-3"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {(campaign.status === "draft" || campaign.status === "scheduled") && (
-                      <motion.button
-                        onClick={() => handleSend(campaign.id)}
-                        disabled={sendingIds.has(campaign.id)}
-                        className="px-3 py-1.5 rounded-lg text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/15 disabled:opacity-50"
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        ส่งทันที
-                      </motion.button>
-                    )}
-                    {(campaign.status === "sending" || campaign.status === "running") && (
-                      <span className="px-3 py-1.5 rounded-lg text-[10px] font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/15 inline-flex items-center gap-1">
-                        <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                        </svg>
-                        กำลังส่ง
-                      </span>
-                    )}
-                    <motion.button
-                      onClick={() => handleCancel(campaign.id)}
-                      className="px-3 py-1.5 rounded-lg text-[10px] font-semibold bg-red-500/10 text-red-400 border border-red-500/15"
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      ยกเลิก
-                    </motion.button>
-                  </div>
-                )}
-              </motion.div>
+              </div>
             ))}
           </div>
-        </motion.div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <PaginationBar
+              from={(currentPage - 1) * PER_PAGE + 1}
+              to={Math.min(currentPage * PER_PAGE, filtered.length)}
+              total={filtered.length}
+              page={currentPage}
+              totalPages={totalPages}
+              onPageChange={setPage}
+            />
+          )}
+        </TableWrapper>
       ) : (
-        <motion.div variants={fadeUp} className="nansen-card p-12 text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[rgba(0,255,167,0.08)] border border-[rgba(0,255,167,0.15)] flex items-center justify-center">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-[#00FFA7]">
-              <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
-            </svg>
-          </div>
-          <h3 className="text-lg font-semibold text-white mb-2">ไม่พบแคมเปญ</h3>
-          <p className="text-sm text-[var(--text-muted)] mb-6">
-            {filterStatus === "all"
-              ? "เริ่มต้นสร้างแคมเปญแรกของคุณ"
-              : `ไม่มีแคมเปญในสถานะ "${STATUS_CONFIG[filterStatus as CampaignStatus]?.label}"`}
-          </p>
-          <motion.button
-            onClick={() => {
-              setShowForm(true);
-              setFilterStatus("all");
-            }}
-            className="btn-primary px-5 py-2.5 text-sm font-semibold rounded-xl inline-flex items-center gap-2"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            สร้างแคมเปญ
-          </motion.button>
-        </motion.div>
+        filterStatus === "all" && !searchQuery ? (
+          <EmptyStateShared
+            icon={Megaphone}
+            iconColor="var(--accent-purple)"
+            iconBg="rgba(var(--accent-purple-rgb),0.06)"
+            iconBorder="rgba(var(--accent-purple-rgb),0.1)"
+            title="ยังไม่มี Campaign"
+            description="สร้าง campaign เพื่อส่ง SMS ถึงผู้ติดต่อหลายคนพร้อมกัน"
+            ctaLabel="+ สร้าง Campaign"
+            ctaAction={() => setShowForm(true)}
+          />
+        ) : (
+          <TableWrapper>
+            <EmptyState
+              icon={<Megaphone className="w-12 h-12" />}
+              title="ไม่พบแคมเปญที่ตรงกับตัวกรอง"
+              subtitle="ลองเปลี่ยนตัวกรองหรือค้นหาด้วยคำอื่น"
+              action={
+                <Button
+                  variant="outline"
+                  onClick={() => { setFilterStatus("all"); setSearchQuery(""); }}
+                  className="border-[var(--table-border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
+                >
+                  ล้างตัวกรอง
+                </Button>
+              }
+            />
+          </TableWrapper>
+        )
       )}
-    </motion.div>
+    </PageLayout>
   );
 }
+

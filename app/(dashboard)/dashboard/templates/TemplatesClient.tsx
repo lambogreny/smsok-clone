@@ -10,6 +10,7 @@ import {
   updateTemplate,
   deleteTemplate,
 } from "@/lib/actions/templates";
+import EmptyState from "@/components/EmptyState";
 import type { TemplateItem } from "@/lib/types/api-responses";
 import { safeErrorMessage } from "@/lib/error-messages";
 import { useToast } from "@/app/components/ui/Toast";
@@ -86,14 +87,14 @@ const CATEGORY_STYLES: Record<
     dot: "bg-[var(--text-muted)]",
   },
   otp: {
-    bg: "bg-[rgba(0,255,167,0.08)]",
+    bg: "bg-[rgba(var(--accent-rgb),0.08)]",
     text: "text-[var(--accent)]",
     dot: "bg-[var(--accent)]",
   },
   marketing: {
-    bg: "bg-[rgba(245,158,11,0.08)]",
-    text: "text-[#F59E0B]",
-    dot: "bg-[#F59E0B]",
+    bg: "bg-[rgba(var(--warning-rgb),0.08)]",
+    text: "text-[var(--warning)]",
+    dot: "bg-[var(--warning)]",
   },
   notification: {
     bg: "bg-[rgba(var(--accent-secondary-rgb,50,152,218),0.08)]",
@@ -147,7 +148,7 @@ function highlightVariables(text: string) {
       return (
         <span
           key={i}
-          className="inline-block px-1.5 py-0.5 rounded bg-[rgba(0,255,167,0.06)] text-[var(--accent)] text-[11px] font-mono font-semibold mx-0.5 border border-[rgba(0,255,167,0.1)]"
+          className="inline-block px-1.5 py-0.5 rounded bg-[rgba(var(--accent-rgb),0.06)] text-[var(--accent)] text-[11px] font-mono font-semibold mx-0.5 border border-[rgba(var(--accent-rgb),0.1)]"
         >
           {part}
         </span>
@@ -202,6 +203,7 @@ export default function TemplatesClient({
 
   // Form
   const form = useForm<TemplateFormValues>({
+    mode: "onChange",
     resolver: zodResolver(templateFormSchema),
     defaultValues: { name: "", category: "general", content: "" },
   });
@@ -317,7 +319,7 @@ export default function TemplatesClient({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-white">
+          <h2 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">
             เทมเพลตข้อความ
           </h2>
           <p className="text-sm text-[var(--text-muted)] mt-1">
@@ -344,8 +346,8 @@ export default function TemplatesClient({
               onClick={() => setActiveCategory(key)}
               className={`shrink-0 px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-all flex items-center gap-2 border min-h-[36px] ${
                 isActive
-                  ? "bg-[rgba(0,255,167,0.08)] border-[rgba(0,255,167,0.3)] text-[var(--accent)]"
-                  : "bg-transparent border-[var(--border-subtle)] text-[var(--text-muted)] hover:bg-[rgba(255,255,255,0.03)] hover:text-white"
+                  ? "bg-[rgba(var(--accent-rgb),0.08)] border-[rgba(var(--accent-rgb),0.3)] text-[var(--accent)]"
+                  : "bg-transparent border-[var(--border-default)] text-[var(--text-muted)] hover:bg-[rgba(255,255,255,0.03)] hover:text-[var(--text-primary)]"
               }`}
             >
               {key !== "all" && (
@@ -370,11 +372,11 @@ export default function TemplatesClient({
             return (
               <Card
                 key={template.id}
-                className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] p-4 hover:border-[rgba(0,255,167,0.15)] hover:-translate-y-0.5 transition-all group"
+                className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg p-4 hover:border-[rgba(var(--accent-rgb),0.15)] hover:-translate-y-0.5 transition-all group"
               >
                 {/* Top row: name + category badge */}
                 <div className="flex items-start justify-between mb-3">
-                  <h3 className="text-[15px] font-semibold text-white leading-snug pr-4 line-clamp-1">
+                  <h3 className="text-[15px] font-semibold text-[var(--text-primary)] leading-snug pr-4 line-clamp-1">
                     {template.name}
                   </h3>
                   <span
@@ -398,7 +400,7 @@ export default function TemplatesClient({
                     {vars.map((v) => (
                       <span
                         key={v}
-                        className="text-[11px] px-1.5 py-0.5 rounded bg-[rgba(0,255,167,0.06)] text-[var(--accent)] font-mono border border-[rgba(0,255,167,0.1)]"
+                        className="text-[11px] px-1.5 py-0.5 rounded bg-[rgba(var(--accent-rgb),0.06)] text-[var(--accent)] font-mono border border-[rgba(var(--accent-rgb),0.1)]"
                       >
                         {v}
                       </span>
@@ -407,7 +409,7 @@ export default function TemplatesClient({
                 )}
 
                 {/* Footer: timestamp + actions */}
-                <div className="flex items-center justify-between pt-3 border-t border-[var(--border-subtle)]">
+                <div className="flex items-center justify-between pt-3 border-t border-[var(--border-default)]">
                   <span className="text-[12px] text-[var(--text-muted)]">
                     อัปเดต {formatDate(template.updatedAt)}
                   </span>
@@ -415,7 +417,7 @@ export default function TemplatesClient({
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => openEdit(template)}
-                      className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:text-white hover:bg-[rgba(255,255,255,0.04)] transition-all"
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.04)] transition-all"
                     >
                       <Pencil className="w-4 h-4" />
                     </button>
@@ -424,7 +426,7 @@ export default function TemplatesClient({
                         setDeletingTemplate(template);
                         setShowDeleteAlert(true);
                       }}
-                      className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:text-red-400 hover:bg-[rgba(239,68,68,0.06)] transition-all"
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--error)] hover:bg-[rgba(var(--error-rgb,239,68,68),0.06)] transition-all"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -436,14 +438,24 @@ export default function TemplatesClient({
         </div>
       ) : (
         /* Empty state */
-        <Card className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] p-12 text-center">
-          <div className="w-16 h-16 rounded-full bg-[rgba(0,255,167,0.08)] border border-[rgba(0,255,167,0.15)] flex items-center justify-center mx-auto mb-4">
+        activeCategory === "all" ? (
+        <EmptyState
+          icon={FileText}
+          iconColor="var(--accent-secondary)"
+          iconBg="rgba(71,121,255,0.06)"
+          iconBorder="rgba(71,121,255,0.1)"
+          title="ยังไม่มี Template"
+          description="สร้างเทมเพลตข้อความเพื่อใช้ซ้ำได้สะดวก"
+          ctaLabel="+ สร้าง Template"
+          ctaAction={openCreate}
+        />
+        ) : (
+        <Card className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg p-12 text-center">
+          <div className="w-16 h-16 rounded-full bg-[rgba(var(--accent-rgb),0.08)] border border-[rgba(var(--accent-rgb),0.15)] flex items-center justify-center mx-auto mb-4">
             <FileText className="w-8 h-8 text-[var(--accent)]" />
           </div>
-          <h3 className="text-lg font-semibold text-white mb-2">
-            {activeCategory === "all"
-              ? "ยังไม่มีเทมเพลต"
-              : `ไม่มีเทมเพลตในหมวด "${getCategoryLabel(activeCategory)}"`}
+          <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">
+            {`ไม่มีเทมเพลตในหมวด "${getCategoryLabel(activeCategory)}"`}
           </h3>
           <p className="text-sm text-[var(--text-muted)] mb-6">
             สร้างเทมเพลตข้อความสำเร็จรูปเพื่อส่งข้อความได้รวดเร็วขึ้น
@@ -456,6 +468,7 @@ export default function TemplatesClient({
             สร้างเทมเพลต
           </Button>
         </Card>
+        )
       )}
 
       {/* Mobile action buttons — visible on cards (touch targets) */}
@@ -483,7 +496,7 @@ export default function TemplatesClient({
                       setDeletingTemplate(template);
                       setShowDeleteAlert(true);
                     }}
-                    className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--text-muted)] hover:text-red-400 transition-colors"
+                    className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--error)] transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -500,9 +513,9 @@ export default function TemplatesClient({
 
       {/* Create / Edit Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px] sm:max-w-[560px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg sm:max-w-[560px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-white text-lg">
+            <DialogTitle className="text-[var(--text-primary)] text-lg">
               {editingTemplate ? "แก้ไขเทมเพลต" : "สร้างเทมเพลตใหม่"}
             </DialogTitle>
             <DialogDescription className="text-[var(--text-muted)]">
@@ -530,7 +543,7 @@ export default function TemplatesClient({
                       <Input
                         placeholder="เช่น ยืนยัน OTP, โปรโมชั่นประจำเดือน"
                         maxLength={100}
-                        className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(0,255,167,0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+                        className="h-11 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]"
                         {...field}
                       />
                     </FormControl>
@@ -560,8 +573,8 @@ export default function TemplatesClient({
                               onClick={() => field.onChange(key)}
                               className={`px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all flex items-center gap-2 border ${
                                 isSelected
-                                  ? "border-[rgba(0,255,167,0.5)] bg-[rgba(0,255,167,0.04)] text-white"
-                                  : "border-[var(--border-subtle)] bg-transparent text-[var(--text-muted)] hover:border-[rgba(0,255,167,0.2)] hover:text-white"
+                                  ? "border-[rgba(var(--accent-rgb),0.5)] bg-[rgba(var(--accent-rgb),0.04)] text-[var(--text-primary)]"
+                                  : "border-[var(--border-default)] bg-transparent text-[var(--text-muted)] hover:border-[rgba(var(--accent-rgb),0.2)] hover:text-[var(--text-primary)]"
                               }`}
                             >
                               <span
@@ -591,9 +604,9 @@ export default function TemplatesClient({
                       <span
                         className={`text-[10px] font-mono ${
                           field.value.length > 900
-                            ? "text-red-400"
+                            ? "text-[var(--error)]"
                             : field.value.length > 700
-                              ? "text-[#F59E0B]"
+                              ? "text-[var(--warning)]"
                               : "text-[var(--text-muted)]"
                         }`}
                       >
@@ -605,7 +618,7 @@ export default function TemplatesClient({
                         placeholder="พิมพ์ข้อความ... ใช้ {{name}} สำหรับตัวแปร"
                         maxLength={1000}
                         rows={5}
-                        className="bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg resize-y min-h-[120px] focus:border-[rgba(0,255,167,0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+                        className="bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg resize-y min-h-[120px] focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]"
                         {...field}
                         ref={(el) => {
                           field.ref(el);
@@ -634,7 +647,7 @@ export default function TemplatesClient({
                       key={value}
                       type="button"
                       onClick={() => insertVariable(value)}
-                      className="px-3 py-1.5 rounded-lg text-[11px] font-mono bg-[rgba(0,255,167,0.06)] text-[var(--accent)] hover:bg-[rgba(0,255,167,0.12)] border border-[rgba(0,255,167,0.1)] transition-all flex items-center gap-1.5"
+                      className="px-3 py-1.5 rounded-lg text-[11px] font-mono bg-[rgba(var(--accent-rgb),0.06)] text-[var(--accent)] hover:bg-[rgba(var(--accent-rgb),0.12)] border border-[rgba(var(--accent-rgb),0.1)] transition-all flex items-center gap-1.5"
                     >
                       <Plus className="w-2.5 h-2.5" />
                       {label}{" "}
@@ -650,7 +663,7 @@ export default function TemplatesClient({
                   <label className="block text-xs text-[var(--text-muted)] mb-2">
                     ตัวอย่าง
                   </label>
-                  <div className="p-3 rounded-lg bg-[var(--bg-base)] border border-[var(--border-subtle)] text-[13px] text-[var(--text-secondary)] leading-relaxed whitespace-pre-wrap">
+                  <div className="p-3 rounded-lg bg-[var(--bg-base)] border border-[var(--border-default)] text-[13px] text-[var(--text-secondary)] leading-relaxed whitespace-pre-wrap">
                     {highlightVariables(contentValue)}
                   </div>
                 </div>
@@ -661,7 +674,7 @@ export default function TemplatesClient({
                   type="button"
                   variant="outline"
                   onClick={() => setShowDialog(false)}
-                  className="border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-white bg-transparent"
+                  className="border-[var(--border-default)] text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-transparent"
                 >
                   ยกเลิก
                 </Button>
@@ -689,9 +702,9 @@ export default function TemplatesClient({
 
       {/* Delete Confirmation */}
       <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
-        <AlertDialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-[20px]">
+        <AlertDialogContent className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">
+            <AlertDialogTitle className="text-[var(--text-primary)]">
               ลบเทมเพลต?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-[var(--text-muted)]">
@@ -700,13 +713,13 @@ export default function TemplatesClient({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-white bg-transparent">
+            <AlertDialogCancel className="border-[var(--border-default)] text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-transparent">
               ยกเลิก
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               disabled={isPending}
-              className="bg-red-500 hover:bg-red-600 text-white"
+              className="bg-[var(--error)] hover:bg-[var(--error)] text-[var(--text-primary)]"
             >
               {isPending ? (
                 <span className="flex items-center gap-2">

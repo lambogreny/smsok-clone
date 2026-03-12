@@ -1,4 +1,3 @@
-"use server"
 
 import { prisma } from "@/lib/db"
 import { getSession } from "@/lib/auth"
@@ -27,20 +26,20 @@ export async function acceptTerms(options?: {
   }
 
   // Append-only: create new record, also update User.acceptedTermsAt for quick checks
-  await prisma.$transaction([
-    prisma.termsAcceptance.create({
+  await prisma.$transaction(async (tx) => {
+    await tx.termsAcceptance.create({
       data: {
         userId: user.id,
         version: CURRENT_TOS_VERSION,
         ipAddress: options?.ipAddress ?? null,
         userAgent: options?.userAgent ?? null,
       },
-    }),
-    prisma.user.update({
+    })
+    await tx.user.update({
       where: { id: user.id },
       data: { acceptedTermsAt: new Date() },
-    }),
-  ])
+    })
+  })
 
   return { success: true, version: CURRENT_TOS_VERSION }
 }

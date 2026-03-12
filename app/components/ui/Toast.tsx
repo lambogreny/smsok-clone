@@ -15,7 +15,7 @@ const toastConfig: Record<ToastType, { dot: string; border: string; bg: string; 
   success: { dot: "bg-emerald-400", border: "border-emerald-500/20", bg: "bg-emerald-500/5", text: "text-emerald-400" },
   error: { dot: "bg-red-400", border: "border-red-500/20", bg: "bg-red-500/5", text: "text-red-400" },
   warning: { dot: "bg-amber-400", border: "border-amber-500/20", bg: "bg-amber-500/5", text: "text-amber-400" },
-  info: { dot: "bg-cyan-400", border: "border-cyan-500/20", bg: "bg-cyan-500/5", text: "text-cyan-400" },
+  info: { dot: "bg-[var(--accent)]", border: "border-[rgba(var(--accent-rgb),0.15)]", bg: "bg-[rgba(var(--accent-rgb),0.1)]", text: "text-[var(--accent)]" },
 };
 
 let globalAddToast: ((type: ToastType, message: string) => void) | null = null;
@@ -70,7 +70,7 @@ function ToastItem({ toast, config, onDismiss }: { toast: Toast; config: typeof 
       animate={{ opacity: 1, x: 0, scale: 1 }}
       exit={{ opacity: 0, x: 80, scale: 0.95 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
-      className={`flex items-center gap-3 px-4 py-3 rounded-xl border backdrop-blur-xl ${config.border} ${config.bg}`}
+      className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${config.border} ${config.bg}`}
     >
       <span className={`w-2 h-2 rounded-full flex-shrink-0 ${config.dot}`} />
       <p className={`text-sm font-medium flex-1 ${config.text}`}>{toast.message}</p>

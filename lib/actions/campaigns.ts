@@ -2,8 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma as db } from "../db";
-import { createCampaignSchema, paginationSchema, calculateSmsCount, normalizePhone } from "../validations";
+import { createCampaignSchema, paginationSchema, normalizePhone } from "../validations";
 import { sendSmsBatch } from "../sms-gateway";
+import {
+  deductQuota,
+  refundQuotaIfEligible,
+  calculateSmsSegments,
+  ensureSufficientQuota,
+} from "../package/quota";
+import { assertSendingHours } from "../sending-hours";
 
 export async function getCampaigns(userId: string, filters?: unknown) {
   const pagination = filters ? paginationSchema.parse(filters) : { page: 1, limit: 20 };
@@ -64,20 +71,13 @@ export async function createCampaign(userId: string, data: unknown) {
 
   if (input.senderName && input.senderName !== "EasySlip") {
     const sender = await db.senderName.findFirst({
-      where: { userId, name: input.senderName, status: "approved" },
+      where: { userId, name: input.senderName, status: "APPROVED" },
       select: { id: true },
     });
     if (!sender) throw new Error("ชื่อผู้ส่งยังไม่ได้รับอนุมัติ");
   }
 
-  const user = await db.user.findUniqueOrThrow({
-    where: { id: userId },
-    select: { credits: true },
-  });
-
-  if (totalRecipients > user.credits) {
-    throw new Error(`เครดิตไม่เพียงพอสำหรับแคมเปญนี้ (ต้องใช้ ${totalRecipients} เครดิต)`);
-  }
+  await ensureSufficientQuota(userId, totalRecipients);
 
   const campaign = await db.campaign.create({
     data: {
@@ -101,7 +101,10 @@ export async function createCampaign(userId: string, data: unknown) {
   return campaign;
 }
 
-export async function executeCampaign(userId: string, campaignId: string) {
+export async function executeCampaign(userId: string, campaignId: string, orgId?: string) {
+  // PDPA: Block marketing campaigns outside org-configured hours
+  await assertSendingHours(orgId);
+
   // 1. Fetch campaign with contacts and template
   const campaign = await db.campaign.findFirst({
     where: { id: campaignId, userId },
@@ -125,32 +128,33 @@ export async function executeCampaign(userId: string, campaignId: string) {
   const phones = campaign.contactGroup.members.map((m) => m.contact.phone);
   if (phones.length === 0) throw new Error("กลุ่มรายชื่อไม่มีสมาชิก");
 
-  const message = campaign.template.content;
+  const rawMessage = campaign.template.content;
   const senderName = campaign.senderName || "EasySlip";
-  const smsCount = calculateSmsCount(message);
-  const totalCredits = smsCount * phones.length;
 
-  // 2. Check credits
-  const user = await db.user.findUniqueOrThrow({
-    where: { id: userId },
-    select: { credits: true },
+  // Auto-shorten links + append UTM params
+  const { shortenLinksInMessage } = await import("../link-shortener");
+  const { text: message } = await shortenLinksInMessage(rawMessage, {
+    userId,
+    campaignId,
+    campaignName: campaign.name,
   });
 
-  if (user.credits < totalCredits) {
-    throw new Error(`เครดิตไม่เพียงพอ (ต้องใช้ ${totalCredits} เครดิต, คงเหลือ ${user.credits})`);
-  }
+  const smsCount = calculateSmsSegments(message);
+  const totalCredits = smsCount * phones.length;
 
-  // 3. Mark as running + deduct credits + create messages
+  // 2. Check SMS quota
+  await ensureSufficientQuota(userId, totalCredits);
+
+  // 3. Mark as running + deduct quota + create messages
+  let deductions: Array<{ purchaseId: string; amount: number }> = [];
   await db.$transaction(async (tx) => {
     await tx.campaign.update({
       where: { id: campaignId },
       data: { status: "running", startedAt: new Date() },
     });
 
-    await tx.user.update({
-      where: { id: userId },
-      data: { credits: { decrement: totalCredits } },
-    });
+    const result = await deductQuota(tx, userId, totalCredits);
+    deductions = result.deductions;
 
     await tx.message.createMany({
       data: phones.map((phone) => ({
@@ -164,6 +168,13 @@ export async function executeCampaign(userId: string, campaignId: string) {
       })),
     });
   });
+
+  // Fire campaign.started webhook (non-blocking)
+  import("../webhook-dispatch").then(({ dispatchWebhookEvent }) => {
+    dispatchWebhookEvent(userId, "campaign.started", {
+      campaignId, campaignName: campaign.name, totalRecipients: phones.length,
+    });
+  }).catch(() => {});
 
   // 4. Send SMS in batches of 1000
   const normalizedPhones = phones.map(normalizePhone);
@@ -207,44 +218,21 @@ export async function executeCampaign(userId: string, campaignId: string) {
     });
   }
 
-  // 6. Refund failed credits + create ledger entries
+  // 6. Refund failed SMS quota back to packages
   const refundCredits = smsCount * failedCount;
   const consumedCredits = smsCount * sentCount;
-  const finalBalance = user.credits - totalCredits;
 
-  const ops = [];
-  if (failedCount > 0) {
-    ops.push(
-      db.user.update({
-        where: { id: userId },
-        data: { credits: { increment: refundCredits } },
-      }),
-      db.creditTransaction.create({
-        data: {
-          userId,
-          amount: refundCredits,
-          balance: finalBalance + refundCredits,
-          type: "REFUND",
-          description: `Campaign "${campaign.name}" — ${failedCount} failed, credits refunded`,
-        },
-      })
-    );
-  }
-  if (sentCount > 0) {
-    ops.push(
-      db.creditTransaction.create({
-        data: {
-          userId,
-          amount: -consumedCredits,
-          balance: finalBalance,
-          type: "SMS_SEND",
-          description: `Campaign "${campaign.name}" — sent to ${sentCount} recipients`,
-        },
-      })
-    );
-  }
-  if (ops.length > 0) {
-    await db.$transaction(ops);
+  if (failedCount > 0 && refundCredits > 0) {
+    // Refund in reverse FIFO order (last deducted first) — tier D+ only
+    let remainingRefund = refundCredits;
+    await db.$transaction(async (tx) => {
+      for (let i = deductions.length - 1; i >= 0 && remainingRefund > 0; i--) {
+        const d = deductions[i];
+        const refundAmount = Math.min(d.amount, remainingRefund);
+        await refundQuotaIfEligible(tx, d.purchaseId, refundAmount);
+        remainingRefund -= refundAmount;
+      }
+    });
   }
 
   // 7. Update campaign status + counts
@@ -259,6 +247,18 @@ export async function executeCampaign(userId: string, campaignId: string) {
       completedAt: new Date(),
     },
   });
+
+  // 8. Fire webhook events
+  const { dispatchWebhookEvent } = await import("../webhook-dispatch");
+  const webhookData = {
+    campaignId,
+    campaignName: campaign.name,
+    totalRecipients: phones.length,
+    sentCount,
+    failedCount,
+    creditUsed: consumedCredits,
+  };
+  dispatchWebhookEvent(userId, finalStatus === "failed" ? "campaign.failed" : "campaign.completed", webhookData).catch(() => {});
 
   revalidatePath("/dashboard/campaigns");
   return {

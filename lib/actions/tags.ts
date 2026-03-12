@@ -28,6 +28,7 @@ export async function createTag(userId: string, data: unknown) {
         color: input.color,
       },
     });
+    revalidatePath("/dashboard/tags");
     revalidatePath("/dashboard/contacts");
     return tag;
   } catch (error) {
@@ -55,6 +56,7 @@ export async function updateTag(userId: string, tagId: string, data: unknown) {
         ...(input.color !== undefined && { color: input.color }),
       },
     });
+    revalidatePath("/dashboard/tags");
     revalidatePath("/dashboard/contacts");
     return updated;
   } catch (error) {
@@ -74,11 +76,12 @@ export async function deleteTag(userId: string, tagId: string) {
   if (!tag) throw new Error("ไม่พบแท็ก");
 
   await db.tag.delete({ where: { id: tagId } });
-  revalidatePath("/dashboard/contacts");
+  revalidatePath("/dashboard/tags");
+    revalidatePath("/dashboard/contacts");
 }
 
 async function ensureOwnedTagAndContact(userId: string, contactId: string, tagId: string) {
-  const [contact, tag] = await db.$transaction([
+  const [contact, tag] = await Promise.all([
     db.contact.findFirst({
       where: { id: contactId, userId },
       select: { id: true },
@@ -113,7 +116,8 @@ export async function assignTagToContact(userId: string, contactId: string, data
     },
   });
 
-  revalidatePath("/dashboard/contacts");
+  revalidatePath("/dashboard/tags");
+    revalidatePath("/dashboard/contacts");
   return { success: true };
 }
 
@@ -130,6 +134,7 @@ export async function unassignTagFromContact(userId: string, contactId: string, 
     },
   });
 
-  revalidatePath("/dashboard/contacts");
+  revalidatePath("/dashboard/tags");
+    revalidatePath("/dashboard/contacts");
   return { success: true };
 }

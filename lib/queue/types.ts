@@ -12,6 +12,7 @@ export const QUEUE_NAMES = {
   SMS_CAMPAIGN: "sms-campaign",
   SMS_WEBHOOK: "sms-webhook",
   SMS_DLQ: "sms-dlq",
+  EMAIL: "email",
 } as const
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES]
@@ -53,12 +54,40 @@ export interface WebhookJobData {
   attempt: number
 }
 
+// ── Email Job Data ──────────────────────────────────────
+
+export type EmailTemplate =
+  | "welcome"
+  | "verification"
+  | "password_reset"
+  | "invoice"
+  | "credit_low"
+  | "campaign_summary"
+  | "security_alert"
+  | "weekly_report"
+  | "package_expiry"
+  | "purchase_confirmation"
+
+export interface EmailJobData {
+  correlationId: string
+  to: string | string[]
+  template: EmailTemplate
+  data: Record<string, unknown>
+  userId?: string
+  tags?: { name: string; value: string }[]
+}
+
+export interface EmailJobResult {
+  resendId?: string
+  success: boolean
+}
+
 // ── DLQ Job Data ────────────────────────────────────────
 
 export interface DlqJobData {
   originalQueue: string
   originalJobId: string | undefined
-  data: SmsJobData | WebhookJobData
+  data: SmsJobData | WebhookJobData | EmailJobData
   error: string
   failedAt: string        // ISO string
   attempts: number
@@ -106,7 +135,8 @@ export const RETRY_STRATEGIES = {
   single: { attempts: 5, backoff: { type: "exponential" as const, delay: 2000 } },
   batch: { attempts: 5, backoff: { type: "exponential" as const, delay: 5000 } },
   campaign: { attempts: 8, backoff: { type: "exponential" as const, delay: 10000 } },
-  webhook: { attempts: 5, backoff: { type: "exponential" as const, delay: 30000 } },
+  webhook: { attempts: 3, backoff: { type: "exponential" as const, delay: 1000 } },
+  email: { attempts: 3, backoff: { type: "exponential" as const, delay: 3000 } },
 } as const
 
 // ── Concurrency / Rate Limits ───────────────────────────
@@ -118,4 +148,5 @@ export const QUEUE_CONFIG = {
   [QUEUE_NAMES.SMS_CAMPAIGN]: { concurrency: 5, rateLimit: { max: 100, duration: 1000 } },
   [QUEUE_NAMES.SMS_WEBHOOK]: { concurrency: 20, rateLimit: { max: 50, duration: 1000 } },
   [QUEUE_NAMES.SMS_DLQ]: { concurrency: 3 },
+  [QUEUE_NAMES.EMAIL]: { concurrency: 10, rateLimit: { max: 20, duration: 1000 } },
 } as const

@@ -1,11 +1,12 @@
 import { NextRequest } from "next/server"
-import { authenticateApiKey, ApiError, apiError, apiResponse } from "@/lib/api-auth"
+import { authenticateRequest, ApiError, apiError, apiResponse } from "@/lib/api-auth"
 import { createWebhook, listWebhooks } from "@/lib/actions/webhooks"
+import { createWebhookSchema } from "@/lib/validations"
 
 // GET /api/v1/webhooks — List user's webhooks
 export async function GET(req: NextRequest) {
   try {
-    const user = await authenticateApiKey(req)
+    const user = await authenticateRequest(req)
     const webhooks = await listWebhooks(user.id)
     return apiResponse({ webhooks })
   } catch (error) {
@@ -16,7 +17,7 @@ export async function GET(req: NextRequest) {
 // POST /api/v1/webhooks — Create webhook
 export async function POST(req: NextRequest) {
   try {
-    const user = await authenticateApiKey(req)
+    const user = await authenticateRequest(req)
 
     let body: unknown
     try {
@@ -25,9 +26,7 @@ export async function POST(req: NextRequest) {
       throw new ApiError(400, "กรุณาส่งข้อมูล JSON")
     }
 
-    const { url, events } = body as { url?: string; events?: string[] }
-    if (!url) throw new ApiError(400, "กรุณาระบุ URL")
-    if (!events || !events.length) throw new ApiError(400, "กรุณาเลือก events")
+    const { url, events } = createWebhookSchema.parse(body)
 
     const webhook = await createWebhook({ url, events, userId: user.id })
     return apiResponse({ webhook }, 201)

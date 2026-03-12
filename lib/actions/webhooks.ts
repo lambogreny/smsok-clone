@@ -1,4 +1,3 @@
-"use server"
 
 import { prisma } from "@/lib/db"
 import { getSession } from "@/lib/auth"
@@ -11,8 +10,14 @@ const VALID_EVENTS: WebhookEvent[] = [
   "sms.sent",
   "sms.delivered",
   "sms.failed",
+  "sms.clicked",
   "otp.verified",
   "credit.low",
+  "campaign.completed",
+  "campaign.started",
+  "campaign.failed",
+  "contact.opted_out",
+  "credits.depleted",
 ]
 
 // ── List webhooks ───────────────────────────────────────
@@ -100,8 +105,8 @@ export async function createWebhook(input: {
     },
   })
 
-  // Return secret only on creation (one-time display)
-  return webhook
+  // Return plaintext secret only on creation (one-time display)
+  return { ...webhook, secret }
 }
 
 // ── Update webhook ──────────────────────────────────────

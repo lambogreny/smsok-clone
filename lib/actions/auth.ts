@@ -1,8 +1,7 @@
-"use server";
 
 import crypto from "crypto";
 import { prisma } from "@/lib/db";
-import { hashPassword } from "@/lib/auth";
+import { hashPassword, revokeAllUserSessions } from "@/lib/auth";
 import { sendSingleSms } from "@/lib/sms-gateway";
 import { forgotPasswordSchema, resetPasswordSchema } from "@/lib/validations";
 
@@ -189,15 +188,53 @@ export async function resetPassword(input: unknown) {
     throw new Error(`โทเค็นรีเซ็ตรหัสผ่านไม่ถูกต้อง (เหลือ ${remaining} ครั้ง)`);
   }
 
+  // Get current password before updating
+  const currentUser = await prisma.user.findUnique({
+    where: { id: record.userId },
+    select: { password: true },
+  });
+
+  const { verifyPassword: verifyPw } = await import("@/lib/auth");
+
+  // Check against current password first
+  if (currentUser) {
+    const sameAsCurrent = await verifyPw(parsed.newPassword, currentUser.password);
+    if (sameAsCurrent) {
+      throw new Error("รหัสผ่านใหม่ต้องไม่ซ้ำกับรหัสผ่านปัจจุบัน");
+    }
+  }
+
+  // Check password history — reject if matches any of last 5
+  const recentPasswords = await prisma.passwordHistory.findMany({
+    where: { userId: record.userId },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+    select: { passwordHash: true },
+  });
+
+  for (const prev of recentPasswords) {
+    const reused = await verifyPw(parsed.newPassword, prev.passwordHash);
+    if (reused) {
+      throw new Error("ห้ามใช้รหัสผ่านที่เคยใช้แล้ว (5 รหัสล่าสุด)");
+    }
+  }
+
   const passwordHash = await hashPassword(parsed.newPassword);
 
   await prisma.$transaction([
+    // Save old password to history
+    ...(currentUser ? [prisma.passwordHistory.create({
+      data: { userId: record.userId, passwordHash: currentUser.password },
+    })] : []),
+    // Update password
     prisma.user.update({
       where: { id: record.userId },
       data: {
         password: passwordHash,
         mustChangePassword: false,
         phoneVerified: true,
+        failedLoginAttempts: 0,
+        lockedUntil: null,
       },
     }),
     prisma.otpRequest.update({
@@ -207,6 +244,8 @@ export async function resetPassword(input: unknown) {
       },
     }),
   ]);
+
+  await revokeAllUserSessions(record.userId, { incrementSecurityVersion: true });
 
   return { success: true };
 }

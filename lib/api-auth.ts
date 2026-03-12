@@ -2,6 +2,7 @@ import { prisma as db } from "./db";
 import { NextRequest } from "next/server";
 import { startApiLog, setApiLogUser, setApiLogApiKey, finishApiLog, ERROR_CODES } from "./api-log";
 import { hashApiKey } from "./crypto-utils";
+import { InsufficientCreditsError } from "./quota-errors";
 
 /**
  * Authenticate API request via Bearer token
@@ -40,7 +41,7 @@ export async function authenticateApiKey(req: NextRequest) {
       id: true,
       isActive: true,
       userId: true,
-      user: { select: { id: true, credits: true, role: true } },
+      user: { select: { id: true, role: true } },
     },
   });
 
@@ -67,6 +68,22 @@ export async function authenticateApiKey(req: NextRequest) {
   return apiKey.user;
 }
 
+/**
+ * Authenticate via session cookie OR API key (Bearer token).
+ * Tries session first, falls back to API key.
+ */
+export async function authenticateRequest(req: NextRequest) {
+  // Try session cookie first
+  const { getSession } = await import("./auth");
+  const session = await getSession();
+  if (session?.id) {
+    return { id: session.id, role: session.role };
+  }
+
+  // Fall back to API key
+  return authenticateApiKey(req);
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -83,6 +100,20 @@ export function apiResponse(data: unknown, status = 200) {
 }
 
 export function apiError(error: unknown) {
+  if (error instanceof InsufficientCreditsError) {
+    const body = {
+      error: error.code,
+      message: error.message,
+      creditsRequired: error.creditsRequired,
+      creditsRemaining: error.creditsRemaining,
+      requiredCredits: error.creditsRequired,
+      remainingCredits: error.creditsRemaining,
+      code: ERROR_CODES.CREDITS,
+    };
+    finishApiLog(402, body, ERROR_CODES.CREDITS, error.message, error.stack);
+    return Response.json(body, { status: 402 });
+  }
+
   if (error instanceof ApiError) {
     const body = { error: error.message, code: error.code || ERROR_CODES.BAD_REQUEST };
     finishApiLog(error.status, body, body.code, error.message);
@@ -128,12 +159,13 @@ export function apiError(error: unknown) {
     let code: string = ERROR_CODES.INTERNAL;
     if (isThaiValidation) {
       if (msg.includes("ไม่พบ")) code = ERROR_CODES.NOT_FOUND;
-      else if (msg.includes("เครดิตไม่เพียงพอ")) code = ERROR_CODES.CREDITS;
+      else if (msg.includes("เครดิตไม่เพียงพอ") || msg.includes("SMS ไม่เพียงพอ")) code = ERROR_CODES.CREDITS;
       else if (msg.includes("มากเกินไป") || msg.includes("บ่อยเกินไป")) code = ERROR_CODES.RATE_LIMIT;
       else code = ERROR_CODES.BUSINESS;
     }
 
-    const status = isThaiValidation ? 400 : 500;
+    const status =
+      isThaiValidation && code === ERROR_CODES.CREDITS ? 402 : isThaiValidation ? 400 : 500;
     const body = {
       error: isThaiValidation ? msg : "เกิดข้อผิดพลาดภายในระบบ กรุณาลองใหม่",
       code,

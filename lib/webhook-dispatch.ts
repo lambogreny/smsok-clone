@@ -7,8 +7,14 @@ export type WebhookEvent =
   | "sms.sent"
   | "sms.delivered"
   | "sms.failed"
+  | "sms.clicked"
   | "otp.verified"
   | "credit.low"
+  | "campaign.completed"
+  | "campaign.started"
+  | "campaign.failed"
+  | "contact.opted_out"
+  | "credits.depleted"
 
 const MAX_RETRIES = 3
 const BACKOFF_BASE = 5 // seconds: 1s, 5s, 25s (5^0, 5^1, 5^2)
