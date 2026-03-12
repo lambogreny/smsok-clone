@@ -7,6 +7,8 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { orderSummarySelect } from "@/lib/orders/api";
 import { parseOrderStatus, serializeOrderV2 } from "@/lib/orders/service";
 
+export { POST } from "@/app/api/v1/orders/route";
+
 const listSchema = z.object({
   status: z.enum([
     "draft",

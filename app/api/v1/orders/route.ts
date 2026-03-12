@@ -20,12 +20,15 @@ import { generateOrderDocumentNumber } from "@/lib/orders/numbering";
 const createSchema = z.object({
   package_tier_id: z.string().min(1),
   customer_type: z.enum(["INDIVIDUAL", "COMPANY"]),
+  company_name: z.string().trim().min(2).max(200).optional(),
+  company_address: z.string().trim().min(10).max(1000).optional(),
   tax_name: z.string().trim().min(2).max(200),
   tax_id: z.string().regex(/^\d{13}$/),
   tax_address: z.string().trim().min(10).max(1000),
   tax_branch_type: z.enum(["HEAD", "BRANCH"]),
   tax_branch_number: z.string().regex(/^\d{5}$/).optional(),
   has_wht: z.boolean().default(false),
+  wht_applicable: z.boolean().optional(),
   save_tax_profile: z.boolean().default(false),
   payment_method: z.enum(["bank_transfer", "promptpay"]).default("bank_transfer"),
 }).superRefine((value, ctx) => {
@@ -140,6 +143,10 @@ export async function POST(req: NextRequest) {
     if (rl.blocked) return rl.blocked;
 
     const input = createSchema.parse(await req.json());
+    const companyName = input.customer_type === "COMPANY" ? input.company_name?.trim() || input.tax_name : input.tax_name;
+    const companyAddress =
+      input.customer_type === "COMPANY" ? input.company_address?.trim() || input.tax_address : input.tax_address;
+    const hasWht = input.wht_applicable ?? input.has_wht;
     const tier = await db.packageTier.findUnique({
       where: { id: input.package_tier_id },
       select: {
@@ -151,12 +158,12 @@ export async function POST(req: NextRequest) {
       },
     });
     if (!tier || !tier.isActive) throw new ApiError(404, "ไม่พบแพ็กเกจ");
-    if (input.has_wht && !isWhtEligible(Number(tier.price), input.customer_type)) {
+    if (hasWht && !isWhtEligible(Number(tier.price), input.customer_type)) {
       throw new ApiError(400, "หักภาษี ณ ที่จ่ายใช้ได้เมื่อเป็นนิติบุคคลและยอดก่อน VAT ตั้งแต่ 1,000 บาท");
     }
 
     const organizationId = await getUserPrimaryOrganizationId(session.id);
-    const totals = calculateOrderAmounts(Number(tier.price), input.has_wht);
+    const totals = calculateOrderAmounts(Number(tier.price), hasWht);
     const expiresAt = getOrderExpirationDate(input.payment_method);
 
     const order = await db.$transaction(async (tx) => {
@@ -166,9 +173,9 @@ export async function POST(req: NextRequest) {
       let taxProfileId: string | null = null;
       if (input.save_tax_profile && input.customer_type === "COMPANY") {
         const profile = await upsertDefaultCompanyTaxProfile(tx, session.id, organizationId, {
-          companyName: input.tax_name,
+          companyName,
           taxId: input.tax_id,
-          address: input.tax_address,
+          address: companyAddress,
           branchType: input.tax_branch_type,
           branchNumber: input.tax_branch_number ?? null,
         });
@@ -185,15 +192,15 @@ export async function POST(req: NextRequest) {
           customerType: input.customer_type,
           packageName: tier.name,
           smsCount: tier.totalSms,
-          taxName: input.tax_name,
+          taxName: companyName,
           taxId: input.tax_id,
-          taxAddress: input.tax_address,
+          taxAddress: companyAddress,
           taxBranchType: input.tax_branch_type,
           taxBranchNumber: input.tax_branch_type === "HEAD" ? null : input.tax_branch_number ?? null,
           netAmount: totals.netAmount,
           vatAmount: totals.vatAmount,
           totalAmount: totals.totalAmount,
-          hasWht: input.has_wht,
+          hasWht,
           whtAmount: totals.whtAmount,
           payAmount: totals.payAmount,
           status: "PENDING_PAYMENT",

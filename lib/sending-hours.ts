@@ -83,7 +83,8 @@ export async function checkSendingHours(orgId?: string): Promise<{
 export async function assertSendingHours(orgId?: string): Promise<void> {
   const result = await checkSendingHours(orgId);
   if (!result.allowed) {
-    throw new ApiError(400, result.reason ?? "ไม่สามารถส่ง SMS นอกเวลาที่กำหนด");
+    const reason = result.reason || "ไม่สามารถส่ง SMS นอกเวลาที่กำหนด";
+    throw new ApiError(400, reason);
   }
 }
 
