@@ -49,10 +49,10 @@
 
     /* TEXT — from app.nansen.ai (high contrast on dark) */
     --text-primary: #F2F4F5;
-    --text-secondary: #949FA8;
-    --text-muted: #949FA8;
-    --text-muted-rgb: 148,159,168;
-    --text-subdued: #949FA8;
+    --text-secondary: #B0BAC3;
+    --text-muted: #B0BAC3;
+    --text-muted-rgb: 176,186,195;
+    --text-subdued: #B0BAC3;
     --text-placeholder: #949FA8;
     --text-body: #B0B4B8;
     --text-on-accent: #061019;
@@ -71,9 +71,9 @@
     /* SIDEBAR */
     --sidebar-bg: #061019;
     --sidebar-active-bg: #1F2833;
-    --sidebar-text: #949FA8;
+    --sidebar-text: #B0BAC3;
     --sidebar-text-active: #F2F4F5;
-    --sidebar-icon: #949FA8;
+    --sidebar-icon: #B0BAC3;
     --sidebar-icon-active: var(--accent);
     --sidebar-divider: #2B3540;
     --sidebar-hover: #121C26;

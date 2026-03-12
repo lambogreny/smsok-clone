@@ -110,7 +110,7 @@ export async function fetchBankAccount(): Promise<{
 
 // Comparison table features
 export const COMPARISON_FEATURES = [
-  { key: "smsCredits", label: "SMS Credits" },
+  { key: "smsCredits", label: "จำนวน SMS" },
   { key: "bonusCredits", label: "Bonus SMS" },
   { key: "senderNames", label: "Sender Names" },
   { key: "validity", label: "Validity" },

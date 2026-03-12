@@ -42,13 +42,13 @@ export async function GET(req: NextRequest) {
 
   return new Promise<Response>((resolve) => {
     const url = new URL(req.url);
-    const mockReq = {
+    const adapterReq = {
       method: "GET",
       url: url.pathname.replace("/api/admin/queues", "") || "/",
       headers: Object.fromEntries(new Headers(req.headers)),
       query: Object.fromEntries(url.searchParams),
     };
-    const mockRes = {
+    const adapterRes = {
       statusCode: 200,
       headers: {} as Record<string, string>,
       body: "",
@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
         this.send(JSON.stringify(data));
       },
     };
-    handler(mockReq as any, mockRes as any, () => {
+    handler(adapterReq as any, adapterRes as any, () => {
       resolve(new Response("Not Found", { status: 404 }));
     });
   });

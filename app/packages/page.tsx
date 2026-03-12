@@ -162,7 +162,7 @@ function PackageCard({ pkg, compact = false }: { pkg: Package; compact?: boolean
 
 /* ─── Comparison Table ─── */
 
-function ComparisonTable() {
+function ComparisonTable({ packages }: { packages: Package[] }) {
   const rows: { label: string; getValue: (pkg: Package) => string }[] = [
     { label: "SMS", getValue: (p) => formatNumber(p.sms) },
     { label: "ราคา", getValue: (p) => formatCurrency(p.price) },
@@ -181,7 +181,7 @@ function ComparisonTable() {
             <th className="sticky left-0 z-10 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider bg-[var(--table-header)] text-[var(--text-body)]">
               เปรียบเทียบ
             </th>
-            {FALLBACK_PACKAGES.map((pkg) => (
+            {packages.map((pkg) => (
               <th
                 key={pkg.tier}
                 className={cn(
@@ -211,7 +211,7 @@ function ComparisonTable() {
               >
                 {row.label}
               </td>
-              {FALLBACK_PACKAGES.map((pkg) => {
+              {packages.map((pkg) => {
                 const val = row.getValue(pkg)
                 const isAccent = row.label === "Refund" && val === "✓"
                 return (
@@ -449,7 +449,7 @@ export default function PackagesPage() {
         {/* ═══ Comparison Table ═══ */}
         {showComparison && (
           <div className="animate-fade-in-up mt-6">
-            <ComparisonTable />
+            <ComparisonTable packages={packages} />
           </div>
         )}
 

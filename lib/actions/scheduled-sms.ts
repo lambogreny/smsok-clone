@@ -22,6 +22,14 @@ export async function createScheduledSms(
     scheduledAt: string; // ISO 8601
   }
 ) {
+  const sender = await prisma.senderName.findFirst({
+    where: { userId, name: data.senderName, status: "APPROVED" },
+    select: { id: true },
+  });
+  if (!sender) {
+    throw new Error("ชื่อผู้ส่งยังไม่ได้รับอนุมัติ");
+  }
+
   // Validate phone
   if (!/^0[0-9]\d{8}$/.test(data.recipient)) {
     throw new Error("หมายเลขโทรศัพท์ไม่ถูกต้อง");
@@ -58,7 +66,7 @@ export async function createScheduledSms(
     const record = await tx.scheduledSms.create({
       data: {
         userId,
-        senderName: data.senderName || "EasySlip",
+        senderName: data.senderName,
         recipient: data.recipient,
         content: data.message,
         scheduledAt,

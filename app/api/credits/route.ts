@@ -54,6 +54,16 @@ export async function GET() {
     else if (percentage <= 50) threshold = "50%";
 
     return apiResponse({
+      remaining_credits: remainingCredits,
+      total_quota: totalCredits,
+      used_quota: usedCredits,
+      quotaSummary: {
+        total_quota: totalCredits,
+        used_quota: usedCredits,
+        remaining_credits: remainingCredits,
+        percentage,
+        threshold,
+      },
       balance: {
         totalCredits,
         usedCredits,

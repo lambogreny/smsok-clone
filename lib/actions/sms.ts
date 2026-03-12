@@ -18,7 +18,6 @@ import {
   ensureSufficientQuota,
 } from "../package/quota";
 import { assertSendingHours } from "../sending-hours";
-import { checkAndAutoTopup } from "./auto-topup";
 import { InsufficientCreditsError, toInsufficientCreditsResult } from "../quota-errors";
 import type { InsufficientCreditsResult } from "../quota-errors";
 import { resolveActionUserId } from "../action-user";
@@ -71,7 +70,7 @@ export async function sendSms(dataOrUserId: unknown, maybeData?: unknown, channe
   const sender = await db.senderName.findFirst({
     where: { userId, name: input.senderName, status: "APPROVED" },
   });
-  if (!sender && input.senderName !== "EasySlip") {
+  if (!sender) {
     throw new Error("ชื่อผู้ส่งยังไม่ได้รับอนุมัติ");
   }
 
@@ -106,11 +105,6 @@ export async function sendSms(dataOrUserId: unknown, maybeData?: unknown, channe
       deductions: result.deductions,
     };
   });
-
-  // Auto top-up check (fire-and-forget)
-  checkAndAutoTopup(userId).catch((err) =>
-    console.error("[auto-topup] check failed:", err),
-  );
 
   // Send via EasyThunder SMS Gateway
   let gatewaySent = false;
@@ -212,7 +206,7 @@ export async function sendBatchSms(dataOrUserId: unknown, maybeData?: unknown, c
   const sender = await db.senderName.findFirst({
     where: { userId, name: input.senderName, status: "APPROVED" },
   });
-  if (!sender && input.senderName !== "EasySlip") {
+  if (!sender) {
     throw new Error("ชื่อผู้ส่งยังไม่ได้รับอนุมัติ");
   }
 
@@ -234,11 +228,6 @@ export async function sendBatchSms(dataOrUserId: unknown, maybeData?: unknown, c
 
     return { result: created, batchDeductions: quotaResult.deductions };
   });
-
-  // Auto top-up check (fire-and-forget)
-  checkAndAutoTopup(userId).catch((err) =>
-    console.error("[auto-topup] check failed:", err),
-  );
 
   // Send via EasyThunder SMS Gateway (batches of 1000)
   const normalizedRecipients = input.recipients.map(normalizePhone);

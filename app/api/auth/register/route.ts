@@ -1,9 +1,10 @@
 import { NextRequest } from "next/server";
 import { ApiError, apiError, apiResponse } from "@/lib/api-auth";
 import { registerWithOtp } from "@/lib/actions";
-import { startApiLog } from "@/lib/api-log";
+import { ERROR_CODES, startApiLog } from "@/lib/api-log";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { registerRouteSchema } from "@/lib/validations";
+import { hasValidCsrfOrigin } from "@/lib/csrf";
 
 function getClientIp(req: NextRequest) {
   return (
@@ -15,6 +16,10 @@ function getClientIp(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   startApiLog(req);
+
+  if (!hasValidCsrfOrigin(req)) {
+    return apiError(new ApiError(403, "CSRF: invalid origin", ERROR_CODES.FORBIDDEN));
+  }
 
   // Rate limit BEFORE processing — prevents spam registration
   const ip = getClientIp(req);

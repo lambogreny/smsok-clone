@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { ACCESS_COOKIE_NAME, REFRESH_COOKIE_NAME, verifySessionJwt } from "@/lib/session-jwt";
-
-const ALLOWED_ORIGINS = [
-  process.env.NEXT_PUBLIC_APP_URL,
-  "http://localhost:3000",
-].filter(Boolean);
+import { getAllowedOrigins, hasValidCsrfOrigin } from "@/lib/csrf";
 const PUBLIC_API_ANON_PATHS = new Set([
   "/api/v1/docs",
   "/api/v1/packages",
@@ -37,7 +33,7 @@ function applySecurityHeaders(response: NextResponse) {
 }
 
 function applyApiHeaders(response: NextResponse, origin: string | null) {
-  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+  if (origin && getAllowedOrigins().includes(origin)) {
     response.headers.set("Access-Control-Allow-Origin", origin);
   }
 
@@ -169,9 +165,13 @@ export async function middleware(req: NextRequest) {
   }
 
   // --- CSRF protection for browser-facing auth API routes ---
-  if (pathname.startsWith("/api/auth/") && req.method === "POST") {
-    const origin = req.headers.get("origin");
-    if (!origin || !ALLOWED_ORIGINS.includes(origin)) {
+  if (
+    pathname.startsWith("/api/auth/") &&
+    req.method !== "GET" &&
+    req.method !== "HEAD" &&
+    req.method !== "OPTIONS"
+  ) {
+    if (!hasValidCsrfOrigin(req)) {
       return NextResponse.json(
         { error: "CSRF: invalid origin" },
         { status: 403, headers: response.headers }

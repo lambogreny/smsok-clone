@@ -1,6 +1,8 @@
 export const API_KEY_PERMISSIONS = [
   "sms:send",
   "sms:read",
+  "otp:send",
+  "otp:verify",
   "contacts:read",
   "contacts:write",
   "campaigns:read",
@@ -24,6 +26,8 @@ const LEGACY_API_KEY_PERMISSION_ALIASES: Record<string, ApiKeyPermission> = {
   send_sms: "sms:send",
   read_sms: "sms:read",
   "sms:write": "sms:send",
+  send_otp: "otp:send",
+  verify_otp: "otp:verify",
   read_contacts: "contacts:read",
   write_contacts: "contacts:write",
   manage_contacts: "contacts:write",
@@ -155,6 +159,14 @@ export function resolveApiKeyRoutePermission(
     return isRead ? "sms:read" : "sms:send";
   }
 
+  if (path === "/api/v1/otp/send") {
+    return "otp:send";
+  }
+
+  if (path === "/api/v1/otp/verify") {
+    return "otp:verify";
+  }
+
   if (path === "/api/v1/sms/send" || path === "/api/v1/sms/batch") {
     return "sms:send";
   }
@@ -203,6 +215,10 @@ export function mapRbacPermissionToApiKeyPermission(
     case "read:sms":
     case "read:analytics":
       return "sms:read";
+    case "create:otp":
+      return "otp:send";
+    case "verify:otp":
+      return "otp:verify";
     case "read:contact":
       return "contacts:read";
     case "create:contact":

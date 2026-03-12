@@ -128,7 +128,7 @@ function CreditBalanceHero({ summary }: { summary: CreditSummary }) {
           />
         </div>
         <p className="text-right text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-          {pct.toFixed(0)}% remaining
+          {pct.toFixed(0)}% คงเหลือ
         </p>
       </div>
 
@@ -143,7 +143,7 @@ function CreditBalanceHero({ summary }: { summary: CreditSummary }) {
             {summary.total.toLocaleString()}
           </p>
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-            allocated
+            โควต้าทั้งหมด
           </p>
         </div>
         <div className="text-center">
@@ -152,7 +152,7 @@ function CreditBalanceHero({ summary }: { summary: CreditSummary }) {
             {summary.usedThisMonth.toLocaleString()}
           </p>
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-            this month
+            ใช้เดือนนี้
           </p>
         </div>
         <div className="text-center">
@@ -164,7 +164,7 @@ function CreditBalanceHero({ summary }: { summary: CreditSummary }) {
             {summary.earliestExpiryDays ?? "—"} วัน
           </p>
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-            {isNearExpiry ? "⚠️ หมดอายุเร็วๆ นี้" : "earliest expiry"}
+            {isNearExpiry ? "⚠️ หมดอายุเร็วๆ นี้" : "หมดอายุเร็วที่สุด"}
           </p>
         </div>
       </div>

@@ -3,10 +3,11 @@ import { prisma } from "@/lib/db";
 import { verifyPassword, setSession } from "@/lib/auth";
 import { ApiError, apiError, apiResponse } from "@/lib/api-auth";
 import { loginSchema } from "@/lib/validations";
-import { startApiLog, setApiLogUser } from "@/lib/api-log";
+import { ERROR_CODES, startApiLog, setApiLogUser } from "@/lib/api-log";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import jwt from "jsonwebtoken";
 import { env } from "@/lib/env";
+import { hasValidCsrfOrigin } from "@/lib/csrf";
 
 // Pre-computed bcrypt hash — used for constant-time dummy comparison when user not found.
 // Prevents timing-based email enumeration (user-not-found would otherwise return ~0ms vs ~100ms).
@@ -22,6 +23,10 @@ function getClientIp(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   startApiLog(req);
+
+  if (!hasValidCsrfOrigin(req)) {
+    return apiError(new ApiError(403, "CSRF: invalid origin", ERROR_CODES.FORBIDDEN));
+  }
 
   // Rate limit BEFORE any auth logic — prevents brute-force
   const ip = getClientIp(req);

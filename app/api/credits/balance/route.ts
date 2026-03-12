@@ -16,6 +16,10 @@ export async function GET() {
     const expiry = quota.packages[0]?.expiresAt ?? null;
 
     return apiResponse({
+      remaining_credits: quota.totalRemaining,
+      remaining_messages: quota.totalRemaining,
+      total_quota: quota.totalSms,
+      used_quota: quota.totalUsed,
       balance: quota.totalRemaining,
       smsRemaining: quota.totalRemaining,
       remaining: quota.totalRemaining,

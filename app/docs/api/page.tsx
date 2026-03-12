@@ -80,7 +80,7 @@ const CATEGORIES: { id: string; label: string; endpoints: string[] }[] = [
   },
   {
     id: "credits",
-    label: "Credits",
+    label: "SMS Quota",
     endpoints: ["credits-balance", "credits-usage"],
   },
 ];
@@ -213,7 +213,7 @@ const ENDPOINTS: Record<string, Endpoint> = {
       { name: "schedule_at", type: "string", required: false, description: "ISO 8601 datetime to schedule the message." },
     ],
     statusCodes: [
-      { code: "200", label: "OK", response: `{\n  "id": "sms_xyz789",\n  "status": "queued",\n  "to": "0812345678",\n  "credits_used": 1,\n  "credits_remaining": 1499\n}` },
+      { code: "200", label: "OK", response: `{\n  "id": "sms_xyz789",\n  "status": "queued",\n  "to": "0812345678",\n  "sms_used": 1,\n  "sms_remaining": 1499\n}` },
       { code: "400", label: "Bad Request", response: `{\n  "error": "invalid_phone",\n  "message": "The 'to' field is not a valid phone number."\n}` },
       { code: "401", label: "Unauthorized", response: `{\n  "error": "unauthorized",\n  "message": "Invalid or missing API key."\n}` },
       { code: "429", label: "Too Many Requests", response: `{\n  "error": "rate_limited",\n  "retry_after": 30\n}` },
@@ -233,7 +233,7 @@ const ENDPOINTS: Record<string, Endpoint> = {
       { name: "schedule_at", type: "string", required: false, description: "ISO 8601 datetime to schedule the bulk send." },
     ],
     statusCodes: [
-      { code: "200", label: "OK", response: `{\n  "batch_id": "bat_abc456",\n  "queued": 250,\n  "credits_used": 250,\n  "credits_remaining": 1250\n}` },
+      { code: "200", label: "OK", response: `{\n  "batch_id": "bat_abc456",\n  "queued": 250,\n  "sms_used": 250,\n  "sms_remaining": 1250\n}` },
       { code: "400", label: "Bad Request", response: `{\n  "error": "too_many_recipients",\n  "message": "Maximum 1,000 recipients per request."\n}` },
       { code: "401", label: "Unauthorized", response: `{\n  "error": "unauthorized",\n  "message": "Invalid or missing API key."\n}` },
       { code: "429", label: "Too Many Requests", response: `{\n  "error": "rate_limited",\n  "retry_after": 60\n}` },
@@ -447,7 +447,7 @@ const ENDPOINTS: Record<string, Endpoint> = {
     category: "credits",
     params: [],
     statusCodes: [
-      { code: "200", label: "OK", response: `{\n  "balance": 1500,\n  "currency": "credits",\n  "last_updated": "2026-01-15T10:00:00Z"\n}` },
+      { code: "200", label: "OK", response: `{\n  "balance": 1500,\n  "currency": "sms",\n  "last_updated": "2026-01-15T10:00:00Z"\n}` },
       { code: "401", label: "Unauthorized", response: `{\n  "error": "unauthorized",\n  "message": "Invalid or missing API key."\n}` },
     ],
     examples: [
@@ -468,7 +468,7 @@ const ENDPOINTS: Record<string, Endpoint> = {
       { name: "to", type: "string", required: false, description: "End date in YYYY-MM-DD format." },
     ],
     statusCodes: [
-      { code: "200", label: "OK", response: `{\n  "data": [\n    { "date": "2026-01-15", "credits_used": 50, "messages_sent": 50 }\n  ],\n  "total_used": 50\n}` },
+      { code: "200", label: "OK", response: `{\n  "data": [\n    { "date": "2026-01-15", "sms_used": 50, "messages_sent": 50 }\n  ],\n  "total_used": 50\n}` },
       { code: "401", label: "Unauthorized", response: `{\n  "error": "unauthorized",\n  "message": "Invalid or missing API key."\n}` },
     ],
     examples: [

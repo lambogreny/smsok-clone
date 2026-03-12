@@ -311,7 +311,7 @@ export default function RegisterPage() {
                                 onKeyUp={(e) => setCapsLockOn(e.getModifierState("CapsLock"))}
                                 onBlur={(e) => { setCapsLockOn(false); field.onBlur(); }}
                               />
-                              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors duration-150">
+                              <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors duration-150">
                                 {showPassword ? <EyeOff className="w-[18px] h-[18px]" /> : <Eye className="w-[18px] h-[18px]" />}
                               </button>
                             </div>

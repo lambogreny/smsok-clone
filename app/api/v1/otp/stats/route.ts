@@ -155,7 +155,7 @@ export async function GET(req: NextRequest) {
               return sum + Math.max(0, (otp.verifiedAt.getTime() - otp.createdAt.getTime()) / 1000);
             }, 0) / verifiedForAverage.length
           )
-        : 0;
+        : null;
 
     const chartMap = new Map<string, { sent: number; verified: number; expired: number }>();
     for (let i = 0; i < 7; i += 1) {

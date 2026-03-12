@@ -170,6 +170,7 @@ function TagChip({
             e.stopPropagation();
             onRemove();
           }}
+          aria-label={`ลบแท็ก ${tag}`}
           className="ml-0.5 hover:opacity-70 transition-opacity"
         >
           <X className="w-2.5 h-2.5" />

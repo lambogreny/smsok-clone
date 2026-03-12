@@ -336,12 +336,12 @@ const endpoints: Endpoint[] = [
     description: "ตรวจสอบจำนวนข้อความคงเหลือ",
     headers: "Authorization: Bearer <API_KEY>",
     response: `{
-  "credits": 1500,
+  "sms_remaining": 1500,
   "name": "สมชาย ใจดี",
   "email": "user@example.com"
 }`,
     responseFields: [
-      { name: "credits", type: "number", description: "SMS คงเหลือ" },
+      { name: "sms_remaining", type: "number", description: "SMS คงเหลือ" },
       { name: "name", type: "string", description: "ชื่อบัญชี" },
       { name: "email", type: "string", description: "อีเมล" },
     ],

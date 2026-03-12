@@ -56,6 +56,7 @@ export function MobileSidebarDrawer({ open, onClose, badges }: MobileSidebarDraw
         <button
           type="button"
           onClick={onClose}
+          aria-label="ปิดเมนู"
           className="absolute top-4 right-3 z-50 w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.05)] cursor-pointer transition-colors"
         >
           <X size={16} />

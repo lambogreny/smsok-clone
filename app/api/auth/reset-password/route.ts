@@ -1,8 +1,10 @@
 import { NextRequest } from "next/server";
-import { apiError, apiResponse } from "@/lib/api-auth";
+import { ApiError, apiError, apiResponse } from "@/lib/api-auth";
+import { ERROR_CODES } from "@/lib/api-log";
 import { resetPassword } from "@/lib/actions/auth";
 import { resetPasswordSchema } from "@/lib/validations";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { hasValidCsrfOrigin } from "@/lib/csrf";
 
 function getClientIp(req: NextRequest) {
   return (
@@ -13,6 +15,10 @@ function getClientIp(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  if (!hasValidCsrfOrigin(req)) {
+    return apiError(new ApiError(403, "CSRF: invalid origin", ERROR_CODES.FORBIDDEN));
+  }
+
   // Rate limit BEFORE processing — prevents token brute-force
   const ip = getClientIp(req);
   const limit = await checkRateLimit(ip, "password");

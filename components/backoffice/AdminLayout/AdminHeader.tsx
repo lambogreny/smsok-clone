@@ -17,6 +17,7 @@ export function AdminHeader({ onMobileMenu, hasNotifications }: AdminHeaderProps
           variant="ghost"
           size="icon-sm"
           onClick={onMobileMenu}
+          aria-label="เปิดเมนู"
           className="md:hidden"
         >
           <Menu size={18} />
@@ -25,7 +26,7 @@ export function AdminHeader({ onMobileMenu, hasNotifications }: AdminHeaderProps
 
       {/* Right: notification + avatar */}
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon-sm" className="relative">
+        <Button variant="ghost" size="icon-sm" aria-label="การแจ้งเตือน" className="relative">
           <Bell size={16} />
           {hasNotifications && (
             <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-[var(--error)]" />

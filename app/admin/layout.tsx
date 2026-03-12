@@ -157,6 +157,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           <button
             type="button"
             onClick={() => setCollapsed(!collapsed)}
+            aria-label={collapsed ? "ขยายเมนูด้านข้าง" : "ย่อเมนูด้านข้าง"}
             className="ml-auto w-6 h-6 rounded-md flex items-center justify-center text-[var(--text-muted)] hover:text-white transition-colors cursor-pointer"
           >
             {collapsed ? (
@@ -232,6 +233,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-3">
             <button
               type="button"
+              aria-label="การแจ้งเตือน"
               className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:text-white transition-colors cursor-pointer relative"
             >
               <Bell className="w-4 h-4" />

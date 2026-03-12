@@ -327,7 +327,7 @@ export default function DashboardShell({
 
             {/* Notifications */}
             <DropdownMenu onOpenChange={(open) => { if (open) handleNotifOpen(); }}>
-              <DropdownMenuTrigger className="relative w-10 h-10 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-default)] hover:border-[rgba(var(--accent-rgb),0.3)] flex items-center justify-center transition-colors duration-200 cursor-pointer">
+              <DropdownMenuTrigger aria-label={unreadCount > 0 ? `การแจ้งเตือน (${unreadCount} ยังไม่อ่าน)` : "การแจ้งเตือน"} className="relative w-10 h-10 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-default)] hover:border-[rgba(var(--accent-rgb),0.3)] flex items-center justify-center transition-colors duration-200 cursor-pointer">
                 <Bell className="w-4 h-4 text-[var(--text-muted)]" />
                 {unreadCount > 0 && (
                   <Badge className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--error)] border-2 border-[var(--bg-base)] text-[10px] font-bold text-[var(--text-primary)] flex items-center justify-center p-0">

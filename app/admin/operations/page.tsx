@@ -635,7 +635,7 @@ export default function OperationsPage() {
         <div className="grid grid-cols-[1fr_100px_120px_80px_100px_80px_60px] gap-x-4 px-5 py-3 bg-[var(--table-header)] text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">
           <span>Provider</span>
           <span>สถานะ</span>
-          <span>Balance</span>
+          <span>คงเหลือ</span>
           <span>Rate</span>
           <span>Priority</span>
           <span>Failover</span>

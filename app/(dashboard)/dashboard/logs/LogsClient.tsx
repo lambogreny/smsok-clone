@@ -202,6 +202,7 @@ function JsonViewer({ data }: { data: unknown }) {
     <div className="relative rounded-lg bg-black/40 border border-white/[0.04] overflow-hidden">
       <button
         onClick={handleCopy}
+        aria-label="คัดลอก JSON"
         className="absolute top-2 right-2 z-10 w-6 h-6 rounded-md bg-white/5 hover:bg-white/10 flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
         title="Copy"
       >

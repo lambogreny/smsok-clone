@@ -3,11 +3,12 @@ import jwt from "jsonwebtoken"
 import { prisma } from "@/lib/db"
 import { setSession } from "@/lib/auth"
 import { ApiError, apiError, apiResponse } from "@/lib/api-auth"
-import { startApiLog, setApiLogUser } from "@/lib/api-log"
+import { ERROR_CODES, startApiLog, setApiLogUser } from "@/lib/api-log"
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit"
 import { env } from "@/lib/env"
 import { verify2FAChallenge } from "@/lib/actions/two-factor"
 import { challenge2FASchema } from "@/lib/validations"
+import { hasValidCsrfOrigin } from "@/lib/csrf"
 
 function getClientIp(req: NextRequest) {
   return (
@@ -19,6 +20,10 @@ function getClientIp(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   startApiLog(req)
+
+  if (!hasValidCsrfOrigin(req)) {
+    return apiError(new ApiError(403, "CSRF: invalid origin", ERROR_CODES.FORBIDDEN))
+  }
 
   // Rate limit BEFORE auth — prevents TOTP brute-force
   const ip = getClientIp(req)

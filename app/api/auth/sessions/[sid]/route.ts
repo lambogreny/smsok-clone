@@ -1,6 +1,8 @@
 import { ApiError, apiError, apiResponse } from "@/lib/api-auth";
+import { ERROR_CODES } from "@/lib/api-log";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { revokeUserSession, verifyOrRefreshSession } from "@/lib/auth";
+import { hasValidCsrfOrigin } from "@/lib/csrf";
 
 type RouteContext = {
   params: Promise<{ sid: string }>;
@@ -9,6 +11,10 @@ type RouteContext = {
 // DELETE /api/auth/sessions/:sid — revoke one device session
 export async function DELETE(req: Request, ctx: RouteContext) {
   try {
+    if (!hasValidCsrfOrigin(req)) {
+      throw new ApiError(403, "CSRF: invalid origin", ERROR_CODES.FORBIDDEN);
+    }
+
     const result = await verifyOrRefreshSession({ headers: req.headers });
     if (!result) {
       throw new ApiError(401, "กรุณาเข้าสู่ระบบ");
