@@ -143,8 +143,10 @@ export async function createCampaign(userIdOrData: string | unknown, maybeData?:
 
 export async function executeCampaign(campaignId: string, orgId?: string): Promise<ExecuteCampaignResult>;
 export async function executeCampaign(userId: string, campaignId: string, orgId?: string): Promise<ExecuteCampaignResult>;
-export async function executeCampaign(userIdOrCampaignId: string, campaignIdOrOrgId?: string, maybeOrgId?: string) {
-  const hasExplicitUserId = maybeOrgId !== undefined;
+export async function executeCampaign(...args: [string, string?, string?]) {
+  // Detect 3-arg form via rest params length (works with Turbopack)
+  const hasExplicitUserId = args.length >= 3;
+  const [userIdOrCampaignId, campaignIdOrOrgId, maybeOrgId] = args;
   const userId = await resolveActionUserId(hasExplicitUserId ? userIdOrCampaignId : undefined);
   const campaignId = hasExplicitUserId ? campaignIdOrOrgId as string : userIdOrCampaignId;
   const orgId = hasExplicitUserId ? maybeOrgId : campaignIdOrOrgId;

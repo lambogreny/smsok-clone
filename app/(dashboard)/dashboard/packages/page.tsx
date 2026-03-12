@@ -660,7 +660,38 @@ export default function PricingPage() {
   useEffect(() => {
     fetch("/api/v1/packages")
       .then((res) => (res.ok ? res.json() : Promise.reject()))
-      .then((data) => setPackageTiers(data.data ?? data.packages ?? data.tiers ?? []))
+      .then((data) => {
+        const raw = data.data ?? data.packages ?? data.tiers ?? [];
+        if (!Array.isArray(raw) || raw.length === 0) {
+          setPackageTiers([]);
+          return;
+        }
+        // Map API response → PackageTier shape
+        const mapped: PackageTier[] = raw.map((t: Record<string, unknown>, i: number) => {
+          const price = Number(t.price ?? 0);
+          const smsQuota = Number(t.smsQuota ?? t.smsCredits ?? 0);
+          const totalSms = Number(t.totalSms ?? smsQuota);
+          const bonusPercent = Number(t.bonusPercent ?? 0);
+          const bonusCredits = totalSms - smsQuota;
+          const senderLimit = t.senderNameLimit ?? t.senderNames ?? null;
+          const expiryMonths = Number(t.expiryMonths ?? 12);
+          return {
+            id: (t.id as string) ?? `tier-${i}`,
+            tier: (t.tierCode as string) ?? (t.tier as string) ?? String.fromCharCode(65 + i),
+            name: (t.name as string) ?? `Tier ${String.fromCharCode(65 + i)}`,
+            group: (t.group as PackageGroup) ?? (price >= 100000 ? "enterprise" : "sme"),
+            smsCredits: smsQuota,
+            bonusCredits,
+            priceNet: price,
+            pricePerSms: totalSms > 0 ? Math.round((price / totalSms) * 100) / 100 : 0,
+            features: (t.features as string[]) ?? [],
+            isBestValue: (t.isBestValue as boolean) ?? i === 2,
+            senderNames: senderLimit === null ? -1 : Number(senderLimit),
+            validity: expiryMonths * 30,
+          };
+        });
+        setPackageTiers(mapped);
+      })
       .catch(() => setPackageTiers([]))
       .finally(() => setTiersLoading(false));
   }, []);
