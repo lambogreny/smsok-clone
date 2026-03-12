@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
 
   for (const campaign of dueCampaigns) {
     try {
-      const result = await executeCampaign(campaign.userId, campaign.id);
+      const result = await executeCampaign(campaign.userId, campaign.id, undefined);
       results.push({ id: campaign.id, name: campaign.name, status: result.status });
     } catch (error) {
       const msg = error instanceof Error ? error.message : "Unknown error";

@@ -20,7 +20,7 @@ export async function POST(
     if (!limit.allowed) return rateLimitResponse(limit.resetIn);
 
     const { id } = await params;
-    const result = await executeCampaign(user.id, id);
+    const result = await executeCampaign(user.id, id, undefined);
     return apiResponse(result);
   } catch (error) {
     return apiError(error);
