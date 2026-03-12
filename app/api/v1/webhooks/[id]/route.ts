@@ -1,27 +1,39 @@
 import { NextRequest } from "next/server"
 import { authenticateRequest, ApiError, apiError, apiResponse } from "@/lib/api-auth"
-import { updateWebhook, deleteWebhook, testWebhook } from "@/lib/actions/webhooks"
-import { updateWebhookSchema, webhookTestActionSchema } from "@/lib/validations"
+import { updateWebhook, deleteWebhook } from "@/lib/actions/webhooks"
+import { updateWebhookSchema } from "@/lib/validations"
 
 type Params = { params: Promise<{ id: string }> }
 
-// PUT /api/v1/webhooks/:id — Update webhook
-export async function PUT(req: NextRequest, { params }: Params) {
+async function handleUpdateWebhook(req: NextRequest, params: Params) {
+  const user = await authenticateRequest(req)
+  const { id } = await params.params
+
+  let body: unknown
   try {
-    await authenticateRequest(req)
-    const { id } = await params
+    body = await req.json()
+  } catch {
+    throw new ApiError(400, "กรุณาส่งข้อมูล JSON")
+  }
 
-    let body: unknown
-    try {
-      body = await req.json()
-    } catch {
-      throw new ApiError(400, "กรุณาส่งข้อมูล JSON")
-    }
+  const data = updateWebhookSchema.parse(body)
+  const webhook = await updateWebhook(id, data, user.id)
+  return apiResponse({ webhook })
+}
 
-    const data = updateWebhookSchema.parse(body)
+// PATCH /api/v1/webhooks/:id — Update webhook
+export async function PATCH(req: NextRequest, params: Params) {
+  try {
+    return await handleUpdateWebhook(req, params)
+  } catch (error) {
+    return apiError(error)
+  }
+}
 
-    const webhook = await updateWebhook(id, data)
-    return apiResponse({ webhook })
+// PUT /api/v1/webhooks/:id — compatibility alias for older clients
+export async function PUT(req: NextRequest, params: Params) {
+  try {
+    return await handleUpdateWebhook(req, params)
   } catch (error) {
     return apiError(error)
   }
@@ -30,32 +42,10 @@ export async function PUT(req: NextRequest, { params }: Params) {
 // DELETE /api/v1/webhooks/:id — Delete webhook
 export async function DELETE(req: NextRequest, { params }: Params) {
   try {
-    await authenticateRequest(req)
+    const user = await authenticateRequest(req)
     const { id } = await params
-    await deleteWebhook(id)
+    await deleteWebhook(id, user.id)
     return apiResponse({ success: true })
-  } catch (error) {
-    return apiError(error)
-  }
-}
-
-// POST /api/v1/webhooks/:id/test — handled via query param or separate route
-// Using PATCH as test action
-export async function PATCH(req: NextRequest, { params }: Params) {
-  try {
-    await authenticateRequest(req)
-    const { id } = await params
-
-    let body: unknown
-    try {
-      body = await req.json()
-    } catch {
-      body = {}
-    }
-
-    const { action } = webhookTestActionSchema.parse(body)
-    const result = await testWebhook(id)
-    return apiResponse(result)
   } catch (error) {
     return apiError(error)
   }

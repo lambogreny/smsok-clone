@@ -20,12 +20,17 @@ const VALID_EVENTS: WebhookEvent[] = [
   "credits.depleted",
 ]
 
-// ── List webhooks ───────────────────────────────────────
-
-export async function listWebhooks(apiUserId?: string) {
+async function resolveWebhookUserId(apiUserId?: string) {
   const sessionUser = await getSession()
   const userId = apiUserId ?? sessionUser?.id
   if (!userId) throw new Error("กรุณาเข้าสู่ระบบ")
+  return userId
+}
+
+// ── List webhooks ───────────────────────────────────────
+
+export async function listWebhooks(apiUserId?: string) {
+  const userId = await resolveWebhookUserId(apiUserId)
   const user = { id: userId }
 
   const webhooks = await prisma.webhook.findMany({
@@ -53,9 +58,7 @@ export async function createWebhook(input: {
   events: string[]
   userId?: string
 }) {
-  const sessionUser = await getSession()
-  const userId = input.userId ?? sessionUser?.id
-  if (!userId) throw new Error("กรุณาเข้าสู่ระบบ")
+  const userId = await resolveWebhookUserId(input.userId)
   const user = { id: userId }
 
   // Validate URL
@@ -113,10 +116,11 @@ export async function createWebhook(input: {
 
 export async function updateWebhook(
   id: string,
-  input: { url?: string; events?: string[]; active?: boolean }
+  input: { url?: string; events?: string[]; active?: boolean },
+  apiUserId?: string
 ) {
-  const user = await getSession()
-  if (!user) throw new Error("กรุณาเข้าสู่ระบบ")
+  const userId = await resolveWebhookUserId(apiUserId)
+  const user = { id: userId }
 
   // Verify ownership
   const webhook = await prisma.webhook.findFirst({
@@ -175,9 +179,9 @@ export async function updateWebhook(
 
 // ── Delete webhook ──────────────────────────────────────
 
-export async function deleteWebhook(id: string) {
-  const user = await getSession()
-  if (!user) throw new Error("กรุณาเข้าสู่ระบบ")
+export async function deleteWebhook(id: string, apiUserId?: string) {
+  const userId = await resolveWebhookUserId(apiUserId)
+  const user = { id: userId }
 
   const webhook = await prisma.webhook.findFirst({
     where: { id, userId: user.id },
@@ -192,9 +196,9 @@ export async function deleteWebhook(id: string) {
 
 // ── Test webhook ────────────────────────────────────────
 
-export async function testWebhook(id: string) {
-  const user = await getSession()
-  if (!user) throw new Error("กรุณาเข้าสู่ระบบ")
+export async function testWebhook(id: string, apiUserId?: string) {
+  const userId = await resolveWebhookUserId(apiUserId)
+  const user = { id: userId }
 
   const webhook = await prisma.webhook.findFirst({
     where: { id, userId: user.id },
@@ -277,9 +281,9 @@ export async function testWebhook(id: string) {
 
 // ── Rotate webhook secret ───────────────────────────────
 
-export async function rotateWebhookSecret(id: string) {
-  const user = await getSession()
-  if (!user) throw new Error("กรุณาเข้าสู่ระบบ")
+export async function rotateWebhookSecret(id: string, apiUserId?: string) {
+  const userId = await resolveWebhookUserId(apiUserId)
+  const user = { id: userId }
 
   const webhook = await prisma.webhook.findFirst({
     where: { id, userId: user.id },
@@ -302,10 +306,11 @@ export async function rotateWebhookSecret(id: string) {
 
 export async function getWebhookLogs(
   webhookId: string,
-  options: { page?: number; limit?: number } = {}
+  options: { page?: number; limit?: number } = {},
+  apiUserId?: string
 ) {
-  const user = await getSession()
-  if (!user) throw new Error("กรุณาเข้าสู่ระบบ")
+  const userId = await resolveWebhookUserId(apiUserId)
+  const user = { id: userId }
 
   // Verify ownership
   const webhook = await prisma.webhook.findFirst({

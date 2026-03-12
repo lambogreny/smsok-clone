@@ -1664,7 +1664,7 @@ export function generateOpenAPISpec() {
           parameters: [{ $ref: "#/components/parameters/IdPath" }],
           responses: { "200": { description: "Webhook details" } },
         },
-        put: {
+        patch: {
           tags: ["Webhooks"],
           summary: "Update webhook",
           parameters: [{ $ref: "#/components/parameters/IdPath" }],
@@ -1697,6 +1697,14 @@ export function generateOpenAPISpec() {
           summary: "Get webhook delivery logs",
           parameters: [{ $ref: "#/components/parameters/IdPath" }],
           responses: { "200": { description: "Webhook delivery logs" } },
+        },
+      },
+      "/webhooks/{id}/test": {
+        post: {
+          tags: ["Webhooks"],
+          summary: "Send a test webhook delivery",
+          parameters: [{ $ref: "#/components/parameters/IdPath" }],
+          responses: { "200": { description: "Test delivery result" } },
         },
       },
       "/webhooks/{id}/rotate-secret": {

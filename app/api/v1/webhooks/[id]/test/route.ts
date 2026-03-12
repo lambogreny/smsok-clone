@@ -1,15 +1,15 @@
 import { NextRequest } from "next/server"
-import { authenticateRequest, apiResponse, apiError } from "@/lib/api-auth"
-import { rotateWebhookSecret } from "@/lib/actions/webhooks"
+import { authenticateRequest, apiError, apiResponse } from "@/lib/api-auth"
+import { testWebhook } from "@/lib/actions/webhooks"
 
 type Params = { params: Promise<{ id: string }> }
 
-// POST /api/v1/webhooks/:id/rotate-secret — Rotate webhook signing secret
+// POST /api/v1/webhooks/:id/test — send a test delivery to the configured webhook URL
 export async function POST(req: NextRequest, { params }: Params) {
   try {
     const user = await authenticateRequest(req)
     const { id } = await params
-    const result = await rotateWebhookSecret(id, user.id)
+    const result = await testWebhook(id, user.id)
     return apiResponse(result)
   } catch (error) {
     return apiError(error)
