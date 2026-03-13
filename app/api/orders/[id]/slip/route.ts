@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import { type SlipVerifyResult, verifySlip } from "@/lib/slipok";
+import { type SlipVerifyResult, type FileLike, verifySlip } from "@/lib/slipok";
 import { ApiError, apiError, apiResponse } from "@/lib/api-auth";
 import { getSession } from "@/lib/auth";
 import { prisma as db } from "@/lib/db";

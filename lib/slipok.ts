@@ -81,8 +81,15 @@ const ERROR_MAP: Record<string, { error: string; isDuplicate?: boolean }> = {
  * Sends the file as multipart/form-data.
  * Optionally sends `amount` for server-side amount validation (error 1013).
  */
+export type FileLike = {
+  name?: string;
+  type: string;
+  size: number;
+  arrayBuffer(): Promise<ArrayBuffer>;
+};
+
 export async function verifySlip(
-  file: File | Blob,
+  file: File | Blob | FileLike,
   options?: { amount?: number },
 ): Promise<SlipVerifyResult> {
   if (!SLIPOK_BRANCH_ID || !SLIPOK_API_KEY) {
@@ -90,7 +97,12 @@ export async function verifySlip(
   }
 
   const formData = new FormData();
-  formData.append("files", file);
+  // Convert FileLike to Blob if needed (FormData.append requires Blob/File)
+  const blob =
+    file instanceof Blob
+      ? file
+      : new Blob([await file.arrayBuffer()], { type: file.type });
+  formData.append("files", blob, (file as { name?: string }).name ?? "slip.png");
   if (options?.amount != null) {
     formData.append("amount", String(options.amount));
   }
