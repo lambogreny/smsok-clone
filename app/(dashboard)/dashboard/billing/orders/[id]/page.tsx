@@ -22,6 +22,7 @@ import {
   Trash2,
   Receipt,
   Package,
+  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -703,7 +704,7 @@ function DocumentsCard({ order }: { order: Order }) {
     {
       label: "ใบแจ้งหนี้",
       number: order.invoice_number ?? null,
-      url: order.invoice_url ?? (order.invoice_number ? `/api/v1/orders/${order.id}/invoice` : null),
+      url: order.invoice_url ?? (order.invoice_number ? `/api/v1/orders/${order.id}/documents/invoice` : null),
     },
     {
       label: "ใบกำกับภาษี",
@@ -804,16 +805,30 @@ function DocumentsCard({ order }: { order: Order }) {
                 </div>
               </div>
               {hasDoc && doc.url && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="gap-1.5 text-xs h-8"
-                  style={{ color: "var(--accent)" }}
-                  onClick={() => openDocument(doc.url!)}
-                >
-                  <Download size={14} />
-                  PDF
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1 text-xs h-8 px-2"
+                    style={{ color: "var(--text-secondary)" }}
+                    onClick={() => openDocument(doc.url!)}
+                    title="ดูตัวอย่าง"
+                  >
+                    <Eye size={14} />
+                    ดู
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1 text-xs h-8 px-2"
+                    style={{ color: "var(--accent)" }}
+                    onClick={() => openDocument(doc.url! + (doc.url!.includes("?") ? "&" : "?") + "download=1")}
+                    title="ดาวน์โหลด PDF"
+                  >
+                    <Download size={14} />
+                    PDF
+                  </Button>
+                </div>
               )}
             </div>
           );

@@ -57,8 +57,11 @@ type ApiKey = {
   name: string;
   key: string;
   permissions: string[];
+  rateLimit: number;
+  ipWhitelist: string[];
   isActive: boolean;
   lastUsed: string | null;
+  revokedAt: string | null;
   createdAt: string;
 };
 
@@ -85,6 +88,10 @@ const PERM_LABEL: Record<string, string> = Object.fromEntries(
 function maskKey(key: string): string {
   if (key.length <= 12) return key;
   return `${key.substring(0, 8)}...${key.substring(key.length - 4)}`;
+}
+
+function parseIpWhitelist(input: string): string[] {
+  return [...new Set(input.split(",").map((entry) => entry.trim()).filter(Boolean))];
 }
 
 function relativeTime(iso: string): string {
@@ -146,6 +153,8 @@ export default function ApiKeysContent({
       const result = await createApiKey({
         name: keyName,
         permissions: selectedPerms,
+        rateLimit: Number(rateLimit) || 60,
+        ipWhitelist: parseIpWhitelist(ipWhitelist),
       });
       setApiKeys((prev) => [
         {
@@ -153,8 +162,11 @@ export default function ApiKeysContent({
           name: result.name ?? keyName,
           key: maskKey(result.key),
           permissions: selectedPerms,
+          rateLimit: result.rateLimit ?? (Number(rateLimit) || 60),
+          ipWhitelist: result.ipWhitelist ?? parseIpWhitelist(ipWhitelist),
           isActive: true,
           lastUsed: null,
+          revokedAt: null,
           createdAt: new Date().toISOString(),
         },
         ...prev,
@@ -198,8 +210,14 @@ export default function ApiKeysContent({
     if (!deleteTarget) return;
     try {
       await deleteApiKey(deleteTarget.id);
-      setApiKeys((prev) => prev.filter((k) => k.id !== deleteTarget.id));
-      toast.success("ลบ API Key สำเร็จ");
+      setApiKeys((prev) =>
+        prev.map((k) =>
+          k.id === deleteTarget.id
+            ? { ...k, isActive: false, revokedAt: new Date().toISOString() }
+            : k
+        )
+      );
+      toast.success("เพิกถอน API Key แล้ว");
     } catch (e) {
       toast.error(safeErrorMessage(e));
     } finally {
@@ -246,7 +264,8 @@ export default function ApiKeysContent({
     );
   }
 
-  const activeCount = apiKeys.filter((k) => k.isActive).length;
+  const activeCount = apiKeys.filter((k) => k.isActive && !k.revokedAt).length;
+  const managedCount = apiKeys.filter((k) => !k.revokedAt).length;
 
   return (
     <PageLayout>
@@ -270,7 +289,7 @@ export default function ApiKeysContent({
           iconColor="var(--accent-rgb)"
           value={`${activeCount}/${apiKeys.length}`}
           label="Keys ที่ใช้งาน"
-          subtitle={`สร้างได้สูงสุด 5 keys (${apiKeys.length}/5)`}
+          subtitle={`สร้างได้สูงสุด 5 keys (${managedCount}/5)`}
         />
         <StatCard
           icon={<Activity className="w-5 h-5 text-[var(--info)]" />}
@@ -441,11 +460,12 @@ export default function ApiKeysContent({
                     ) : (
                       <button
                         type="button"
-                        className="flex items-center gap-1.5 text-sm font-semibold text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors cursor-pointer group"
+                        className="flex items-center gap-1.5 text-sm font-semibold text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors cursor-pointer group disabled:cursor-not-allowed disabled:opacity-60"
                         onClick={() => {
                           setEditingId(k.id);
                           setEditName(k.name);
                         }}
+                        disabled={Boolean(k.revokedAt)}
                       >
                         {k.name}
                         <Edit2
@@ -510,12 +530,14 @@ export default function ApiKeysContent({
                     <Badge
                       variant={k.isActive ? "default" : "destructive"}
                       className={
-                        k.isActive
+                        k.revokedAt
+                          ? "bg-[rgba(var(--error-rgb),0.1)] text-[var(--error)] border border-[rgba(var(--error-rgb),0.15)]"
+                          : k.isActive
                           ? "bg-[rgba(var(--success-rgb),0.1)] text-[var(--success)] border border-[rgba(var(--success-rgb),0.15)] hover:bg-[rgba(var(--success-rgb),0.15)]"
                           : "bg-[rgba(var(--error-rgb),0.1)] text-[var(--error)] border border-[rgba(var(--error-rgb),0.15)]"
                       }
                     >
-                      {k.isActive ? "ใช้งาน" : "ปิดใช้งาน"}
+                      {k.revokedAt ? "เพิกถอน" : k.isActive ? "ใช้งาน" : "ปิดใช้งาน"}
                     </Badge>
                   </TableCell>
 
@@ -531,19 +553,21 @@ export default function ApiKeysContent({
                     <div className="flex items-center justify-end gap-1">
                       <button
                         type="button"
-                        className={`p-1.5 rounded-md cursor-pointer hover:bg-white/[0.05] transition-colors ${
+                        className={`p-1.5 rounded-md cursor-pointer hover:bg-white/[0.05] transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
                           k.isActive ? "text-[var(--text-muted)]" : "text-[var(--accent)]"
                         }`}
                         onClick={() => handleToggle(k.id)}
                         aria-label={k.isActive ? "ปิดใช้งาน" : "เปิดใช้งาน"}
+                        disabled={Boolean(k.revokedAt)}
                       >
                         {k.isActive ? <PowerOff size={14} /> : <Power size={14} />}
                       </button>
                       <button
                         type="button"
-                        className="p-1.5 rounded-md cursor-pointer hover:bg-[rgba(var(--error-rgb),0.06)] transition-colors text-[var(--error)]"
+                        className="p-1.5 rounded-md cursor-pointer hover:bg-[rgba(var(--error-rgb),0.06)] transition-colors text-[var(--error)] disabled:cursor-not-allowed disabled:opacity-40"
                         onClick={() => setDeleteTarget(k)}
-                        aria-label={`ลบ API Key ${k.name}`}
+                        aria-label={`เพิกถอน API Key ${k.name}`}
+                        disabled={Boolean(k.revokedAt)}
                       >
                         <Trash2 size={14} />
                       </button>
@@ -735,11 +759,11 @@ export default function ApiKeysContent({
         <AlertDialogContent className="bg-[var(--bg-elevated,#0f1724)] border-[var(--border-default)]">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-[var(--text-primary)]">
-              ลบ API Key &quot;{deleteTarget?.name}&quot;?
+              เพิกถอน API Key &quot;{deleteTarget?.name}&quot;?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-[var(--text-muted)]">
               ระบบที่ใช้คีย์นี้จะไม่สามารถเชื่อมต่อได้อีก
-              การดำเนินการนี้ไม่สามารถย้อนกลับได้
+              แต่ประวัติการใช้งานจะยังถูกเก็บไว้
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -748,7 +772,7 @@ export default function ApiKeysContent({
               onClick={handleDelete}
               className="text-xs bg-[var(--error)] text-white hover:bg-[var(--error)]/90"
             >
-              ยืนยันลบ
+              ยืนยันเพิกถอน
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

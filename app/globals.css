@@ -5,41 +5,40 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ═══════════════════════════════════════════════
-   SMSOK — Nansen Design System (v3 — REVERSED FROM ACTUAL APP)
-   Source: app.nansen.ai JS bundles + CSS (March 2026)
-   Extracted from: /Users/lambogreny/Downloads/app.nansen.ai/
+   SMSOK — Nansen Design System (DNA v2)
+   Updated: 2026-03-13 per UXUI Spec #65
 
-   Key palette (frequency-ranked from JS bundles):
-   Backgrounds: #061019 → #121C26 → #16222D → #1F2833 → #2B3540
-   Text: #F2F4F5 (primary) → #949FA8 (secondary/muted/subdued — minimum threshold)
-   Accent: #00FFA7 (green), #4779FF (blue), #5B4FFF (purple)
+   Key palette (Nansen DNA v2):
+   Backgrounds: #0b1118 → #10161c → #151b22 → #1a2028 → #20252c
+   Text: #F2F4F5 (primary) → #b2bacd (secondary) → #6b7280 (subdued)
+   Accent: #00E2B5 (teal), #4779FF (blue), #5B4FFF (purple)
 
    CRITICAL: All custom CSS inside @layer
    so Tailwind utilities can override.
    ═══════════════════════════════════════════════ */
 
-/* ── Nansen REAL Design Tokens (v3 — reversed) ── */
+/* ── Nansen Design Tokens (DNA v2) ── */
 @layer base {
   :root {
-    /* BACKGROUNDS — from app.nansen.ai JS bundles */
-    --bg-base: #061019;
-    --bg-surface: #121C26;
-    --bg-surface-hover: #16222D;
-    --bg-elevated: #1F2833;
-    --bg-muted: #2B3540;
-    --bg-secondary: #16222D;
+    /* BACKGROUNDS — Nansen DNA v2 */
+    --bg-base: #0b1118;
+    --bg-surface: #10161c;
+    --bg-surface-hover: #151b22;
+    --bg-elevated: #1a2028;
+    --bg-muted: #20252c;
+    --bg-secondary: #151b22;
 
-    /* Table colors — V2 neutral (no blue tint) */
-    --table-header: #1a1d1e;
-    --table-alt-row: #0d0f10;
-    --table-border: #232729;
+    /* Table colors — Nansen DNA v2 */
+    --table-header: #151b22;
+    --table-alt-row: #0e1319;
+    --table-border: #20252c;
 
-    /* ACCENT / BRAND (from app.nansen.ai) */
-    --accent: #00FFA7;
-    --accent-rgb: 0,255,167;
-    --accent-alt: #00ffc0;
-    --accent-hover: #aaffe6;
-    --accent-mobile: #00FFA3;
+    /* ACCENT / BRAND — Nansen DNA v2 */
+    --accent: #00E2B5;
+    --accent-rgb: 0,226,181;
+    --accent-alt: #00d4a8;
+    --accent-hover: #80f0d4;
+    --accent-mobile: #00E2B5;
     --accent-secondary: #4779FF;
     --accent-blue: #4779FF;
     --accent-warm: #eaa879;
@@ -47,19 +46,19 @@
     --accent-purple: #8B5CF6;
     --accent-purple-rgb: 139,92,246;
 
-    /* TEXT — from app.nansen.ai (high contrast on dark) */
+    /* TEXT — Nansen DNA v2 */
     --text-primary: #F2F4F5;
-    --text-secondary: #B0BAC3;
-    --text-muted: #B0BAC3;
-    --text-muted-rgb: 176,186,195;
-    --text-subdued: #B0BAC3;
-    --text-placeholder: #949FA8;
-    --text-body: #B0B4B8;
-    --text-on-accent: #061019;
+    --text-secondary: #b2bacd;
+    --text-muted: #8a95a0;
+    --text-muted-rgb: 138,149,160;
+    --text-subdued: #6b7280;
+    --text-placeholder: #6b7280;
+    --text-body: #b2bacd;
+    --text-on-accent: #0b1118;
 
-    /* BORDERS — from app.nansen.ai */
-    --border-default: #2B3540;
-    --border-subtle: #1F2833;
+    /* BORDERS — Nansen DNA v2 */
+    --border-default: #20252c;
+    --border-subtle: #1a2028;
     --border-light: rgba(255,255,255,0.12);
     --border-focus: rgba(var(--accent-rgb),0.5);
 
@@ -68,24 +67,24 @@
     --overlay-light: rgba(255,255,255,0.10);
     --overlay-dark: rgba(0,0,0,0.75);
 
-    /* SIDEBAR */
-    --sidebar-bg: #061019;
-    --sidebar-active-bg: #1F2833;
-    --sidebar-text: #B0BAC3;
+    /* SIDEBAR — Nansen DNA v2 */
+    --sidebar-bg: #0b1118;
+    --sidebar-active-bg: #1a2028;
+    --sidebar-text: #b2bacd;
     --sidebar-text-active: #F2F4F5;
-    --sidebar-icon: #B0BAC3;
+    --sidebar-icon: #b2bacd;
     --sidebar-icon-active: var(--accent);
-    --sidebar-divider: #2B3540;
-    --sidebar-hover: #121C26;
+    --sidebar-divider: #20252c;
+    --sidebar-hover: #10161c;
 
-    /* BUTTONS */
+    /* BUTTONS — Nansen DNA v2 */
     --btn-primary-bg: var(--accent);
-    --btn-primary-text: #061019;
-    --btn-primary-hover: #aaffe6;
+    --btn-primary-text: #0b1118;
+    --btn-primary-hover: #80f0d4;
     --btn-ghost-text: var(--accent);
     --btn-ghost-hover-bg: rgba(var(--accent-rgb),0.1);
-    --btn-disabled-bg: #1F2833;
-    --btn-disabled-text: #949FA8;
+    --btn-disabled-bg: #1a2028;
+    --btn-disabled-text: #6b7280;
 
     /* STATUS — from app.nansen.ai */
     --success: #089981;
@@ -102,7 +101,7 @@
     --info-bg: rgba(71,121,255,0.15);
 
     /* CODE */
-    --code-bg: #0d1117;
+    --code-bg: #0e1319;
 
     /* RADII (tightened per spec — xl/2xl banned) */
     --radius-sm: 6px;
@@ -987,53 +986,53 @@
    ═══════════════════════════════════════════════ */
 
 :root {
-  --background: #061019;
+  --background: #0b1118;
   --foreground: #F2F4F5;
-  --card: #121C26;
+  --card: #10161c;
   --card-foreground: #F2F4F5;
-  --popover: #121C26;
+  --popover: #10161c;
   --popover-foreground: #F2F4F5;
-  --primary: #00FFA7;
-  --primary-foreground: #061019;
-  --secondary: #16222D;
+  --primary: #00E2B5;
+  --primary-foreground: #0b1118;
+  --secondary: #151b22;
   --secondary-foreground: #F2F4F5;
-  --muted: #2B3540;
-  --muted-foreground: #949FA8;
-  --accent: #00FFA7;
+  --muted: #20252c;
+  --muted-foreground: #6b7280;
+  --accent: #00E2B5;
   --accent-foreground: #F2F4F5;
   --destructive: #F23645;
-  --border: #2B3540;
-  --input: #2B3540;
-  --ring: #00FFA7;
+  --border: #20252c;
+  --input: #20252c;
+  --ring: #00E2B5;
   --radius: 0.5rem;
 
-  /* Nansen-specific tokens (from real app) */
-  --nansen-gradient: linear-gradient(90deg, #00FFA7, #4779FF);
-  --nansen-selection: #00ffa7;
+  /* Nansen-specific tokens (v2) */
+  --nansen-gradient: linear-gradient(90deg, #00E2B5, #4779FF);
+  --nansen-selection: #00E2B5;
   --nansen-link: #4779FF;
-  --nansen-hover: #16222D;
-  --nansen-table-header: #1a1d1e;
-  --nansen-table-alt: #0d0f10;
-  --nansen-card: #121C26;
-  --nansen-elevated: #1F2833;
+  --nansen-hover: #151b22;
+  --nansen-table-header: #151b22;
+  --nansen-table-alt: #0e1319;
+  --nansen-card: #10161c;
+  --nansen-elevated: #1a2028;
   --nansen-warm: #eaa879;
 
-  /* Chart colors — Nansen palette */
-  --chart-1: #00FFA7;
+  /* Chart colors — Nansen v2 palette */
+  --chart-1: #00E2B5;
   --chart-2: #4779FF;
   --chart-3: #eaa879;
-  --chart-4: #00FFA7;
-  --chart-5: #00ffa7;
+  --chart-4: #00E2B5;
+  --chart-5: #00E2B5;
 
-  /* Sidebar — Nansen dark */
-  --sidebar: #061019;
-  --sidebar-foreground: #9ba3b0;
-  --sidebar-primary: #00FFA7;
-  --sidebar-primary-foreground: #04101b;
+  /* Sidebar — Nansen v2 */
+  --sidebar: #0b1118;
+  --sidebar-foreground: #b2bacd;
+  --sidebar-primary: #00E2B5;
+  --sidebar-primary-foreground: #0b1118;
   --sidebar-accent: rgba(var(--accent-rgb),0.08);
-  --sidebar-accent-foreground: #00FFA7;
-  --sidebar-border: #2d333b;
-  --sidebar-ring: #00FFA7;
+  --sidebar-accent-foreground: #00E2B5;
+  --sidebar-border: #20252c;
+  --sidebar-ring: #00E2B5;
 }
 
 @theme inline {

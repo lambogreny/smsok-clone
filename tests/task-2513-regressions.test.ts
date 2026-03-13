@@ -31,9 +31,7 @@ describe("Task #2513: sender quota, session cap, verify-slip content-type harden
   });
 
   it("returns 400 instead of 500 when order slip routes receive a non-form payload", () => {
-    expect(orderVerifySlipRoute).toContain("let formData: FormData;");
-    expect(orderVerifySlipRoute).toContain("formData = await req.formData();");
-    expect(orderVerifySlipRoute).toContain('throw new ApiError(400, "กรุณาแนบสลิป");');
+    expect(orderVerifySlipRoute).toContain('export { POST } from "@/app/api/orders/[id]/slip/route";');
     expect(canonicalOrderSlipRoute).toContain("let formData: FormData;");
     expect(canonicalOrderSlipRoute).toContain("formData = await req.formData();");
     expect(canonicalOrderSlipRoute).toContain('throw new ApiError(400, "กรุณาแนบสลิป");');

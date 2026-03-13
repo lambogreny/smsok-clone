@@ -18,6 +18,7 @@ export default async function ApiKeysPage() {
   const serialized = apiKeys.map((k) => ({
     ...k,
     lastUsed: k.lastUsed ? new Date(k.lastUsed).toISOString() : null,
+    revokedAt: k.revokedAt ? new Date(k.revokedAt).toISOString() : null,
     createdAt: new Date(k.createdAt).toISOString(),
   }));
 

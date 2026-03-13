@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import {
   Shield,
   Share2,
@@ -10,8 +10,6 @@ import {
   AlertTriangle,
   History,
   Lock,
-  Loader2,
-  RefreshCw,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import PageLayout, { PageHeader } from "@/components/blocks/PageLayout";
@@ -275,30 +273,8 @@ export default function PrivacySettingsPage() {
     cookie: true,
   });
 
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
-  const [historyLoading, setHistoryLoading] = useState(true);
-  const [historyError, setHistoryError] = useState<string | null>(null);
-
-  const fetchHistory = useCallback(async () => {
-    setHistoryLoading(true);
-    setHistoryError(null);
-    try {
-      const res = await fetch("/api/v1/audit-logs?limit=20");
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      setHistory(Array.isArray(data) ? data : data.data ?? []);
-    } catch (err) {
-      setHistoryError(
-        err instanceof Error ? err.message : "ไม่สามารถโหลดประวัติได้"
-      );
-    } finally {
-      setHistoryLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchHistory();
-  }, [fetchHistory]);
+  const [history] = useState<HistoryEntry[]>([]);
+  const historyLoading = false;
 
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
@@ -391,28 +367,9 @@ export default function PrivacySettingsPage() {
               {historyLoading ? (
                 <tr>
                   <td colSpan={4} className="px-5 py-10 text-center">
-                    <div className="flex items-center justify-center gap-2 text-[var(--text-muted)]">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span className="text-[13px]">กำลังโหลดประวัติ...</span>
-                    </div>
-                  </td>
-                </tr>
-              ) : historyError ? (
-                <tr>
-                  <td colSpan={4} className="px-5 py-10 text-center">
-                    <div className="flex flex-col items-center gap-2">
-                      <span className="text-[13px] text-[var(--error)]">
-                        {historyError}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={fetchHistory}
-                        className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--accent)] hover:text-[var(--accent)]/80 transition-colors cursor-pointer"
-                      >
-                        <RefreshCw className="w-3.5 h-3.5" />
-                        ลองใหม่
-                      </button>
-                    </div>
+                    <span className="text-[13px] text-[var(--text-muted)]">
+                      กำลังโหลดประวัติ...
+                    </span>
                   </td>
                 </tr>
               ) : history.length === 0 ? (

@@ -45,6 +45,8 @@ describe("Task #1828: campaigns page data loader", () => {
 
   it("normalizes campaign statuses to the lowercase client-safe values", () => {
     expect(normalizeCampaignStatus("DRAFT")).toBe("draft");
+    expect(normalizeCampaignStatus("QUEUING")).toBe("sending");
+    expect(normalizeCampaignStatus("PAUSED")).toBe("paused");
     expect(normalizeCampaignStatus("RUNNING")).toBe("running");
     expect(normalizeCampaignStatus("unexpected")).toBe("draft");
     expect(normalizeCampaignStatus(undefined)).toBe("draft");

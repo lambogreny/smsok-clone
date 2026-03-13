@@ -390,88 +390,98 @@ export default function RegisterPage() {
                       )}
                     />
 
-                    {/* PDPA Consent Checkboxes */}
-                    <div className="space-y-3 pt-1">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[var(--text-secondary)]">ความยินยอม PDPA</p>
+                    {/* PDPA Consent */}
+                    <div className="space-y-3 pt-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[var(--text-secondary)]">
+                        ความยินยอม
+                      </p>
 
-                      {/* Service Consent — Required */}
-                      <FormField
-                        control={form.control}
-                        name="consentService"
-                        render={({ field }) => (
-                          <FormItem className="flex items-start gap-2.5 space-y-0">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                                className="mt-0.5 border-[var(--border-subtle)] data-[state=checked]:bg-[var(--accent)] data-[state=checked]:border-[var(--accent)]"
-                              />
-                            </FormControl>
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-[13px] text-[var(--text-secondary)] font-normal leading-snug">
-                                ฉันยอมรับ{" "}
-                                <Link href="/terms" className="text-[var(--accent-blue)] hover:underline" target="_blank">
-                                  ข้อกำหนดการใช้งาน
-                                </Link>{" "}
-                                และ{" "}
-                                <Link href="/privacy" className="text-[var(--accent-blue)] hover:underline" target="_blank">
-                                  นโยบายความเป็นส่วนตัว
-                                </Link>{" "}
-                                <span className="text-[var(--error)] text-[11px]">*</span>
-                              </FormLabel>
-                              <FormMessage />
-                            </div>
-                          </FormItem>
-                        )}
-                      />
+                      {/* Required Group */}
+                      <div className="rounded-[10px] border border-[var(--border-default)]/50 bg-white/[0.02] p-3.5 space-y-3.5">
+                        {/* 1. Service Terms — Required */}
+                        <FormField
+                          control={form.control}
+                          name="consentService"
+                          render={({ field }) => (
+                            <FormItem className="flex items-start gap-3 space-y-0">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                  className="mt-0.5 h-[18px] w-[18px] shrink-0 rounded-[5px] border-[1.5px] border-[#3a4049] data-[state=checked]:border-transparent data-[state=checked]:bg-[var(--accent)] data-[state=checked]:text-[var(--bg-base)]"
+                                />
+                              </FormControl>
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-[13px] text-[var(--text-secondary)] font-normal leading-relaxed">
+                                  ฉันยอมรับ
+                                  <Link
+                                    href="/terms"
+                                    className="text-[var(--accent-blue)] font-medium hover:underline mx-0.5"
+                                    target="_blank"
+                                  >
+                                    <span className="whitespace-nowrap">ข้อกำหนดการใช้งาน</span>
+                                  </Link>
+                                  และ
+                                  <Link
+                                    href="/privacy"
+                                    className="text-[var(--accent-blue)] font-medium hover:underline mx-0.5"
+                                    target="_blank"
+                                  >
+                                    <span className="whitespace-nowrap">นโยบายความเป็นส่วนตัว</span>
+                                  </Link>
+                                </FormLabel>
+                                <p className="text-[11px] font-medium text-[var(--error)]">จำเป็น</p>
+                                <FormMessage className="text-[12px]" />
+                              </div>
+                            </FormItem>
+                          )}
+                        />
 
-                      {/* Third-party Consent — Required */}
-                      <FormField
-                        control={form.control}
-                        name="consentThirdParty"
-                        render={({ field }) => (
-                          <FormItem className="flex items-start gap-2.5 space-y-0">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                                className="mt-0.5 border-[var(--border-subtle)] data-[state=checked]:bg-[var(--accent)] data-[state=checked]:border-[var(--accent)]"
-                              />
-                            </FormControl>
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-[13px] text-[var(--text-secondary)] font-normal leading-snug">
-                                ฉันยินยอมให้ส่งข้อมูลไปยังผู้ให้บริการ SMS ภายนอก{" "}
-                                <span className="text-[var(--error)] text-[11px]">*</span>
-                              </FormLabel>
-                              <FormMessage />
-                            </div>
-                          </FormItem>
-                        )}
-                      />
+                        {/* 2. Third-Party — Required */}
+                        <FormField
+                          control={form.control}
+                          name="consentThirdParty"
+                          render={({ field }) => (
+                            <FormItem className="flex items-start gap-3 space-y-0">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                  className="mt-0.5 h-[18px] w-[18px] shrink-0 rounded-[5px] border-[1.5px] border-[#3a4049] data-[state=checked]:border-transparent data-[state=checked]:bg-[var(--accent)] data-[state=checked]:text-[var(--bg-base)]"
+                                />
+                              </FormControl>
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-[13px] text-[var(--text-secondary)] font-normal leading-relaxed">
+                                  ฉันยินยอมให้ส่งข้อมูลแก่ผู้ให้บริการ SMS ภายนอก เพื่อจัดส่ง SMS
+                                </FormLabel>
+                                <p className="text-[11px] font-medium text-[var(--error)]">จำเป็น</p>
+                                <FormMessage className="text-[12px]" />
+                              </div>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
 
-                      {/* Marketing Consent — Optional */}
+                      {/* 3. Marketing — Optional (outside required group) */}
                       <FormField
                         control={form.control}
                         name="consentMarketing"
                         render={({ field }) => (
-                          <FormItem className="flex items-start gap-2.5 space-y-0">
+                          <FormItem className="flex items-start gap-3 space-y-0">
                             <FormControl>
                               <Checkbox
                                 checked={field.value}
                                 onCheckedChange={field.onChange}
-                                className="mt-0.5 border-[var(--border-subtle)] data-[state=checked]:bg-[var(--accent)] data-[state=checked]:border-[var(--accent)]"
+                                className="mt-0.5 h-[18px] w-[18px] shrink-0 rounded-[5px] border-[1.5px] border-[#3a4049] data-[state=checked]:border-transparent data-[state=checked]:bg-[var(--accent)] data-[state=checked]:text-[var(--bg-base)]"
                               />
                             </FormControl>
-                            <FormLabel className="text-[13px] text-[var(--text-muted)] font-normal leading-snug">
-                              ฉันยินยอมรับ SMS/Email โปรโมชั่นและข่าวสารจาก SMSOK
+                            <FormLabel className="text-[13px] text-[var(--text-muted)] font-normal leading-relaxed">
+                              รับข่าวสาร โปรโมชั่น และข้อเสนอพิเศษทาง SMS/Email จาก SMSOK{" "}
+                              <span className="text-[11px] text-[#556677]">(ไม่บังคับ)</span>
                             </FormLabel>
                           </FormItem>
                         )}
                       />
-
-                      <p className="text-[11px] text-[var(--text-muted)]">
-                        <span className="text-[var(--error)]">*</span> จำเป็น
-                      </p>
                     </div>
 
                     <Button

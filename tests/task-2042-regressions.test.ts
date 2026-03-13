@@ -34,7 +34,7 @@ describe("Task #2042: package-purchase terminology + deprecated wallet flows", (
     expect(getResponse.status).toBe(410);
     expect(postResponse.status).toBe(410);
     await expect(getResponse.json()).resolves.toMatchObject({
-      error: "Auto top-up ถูกยกเลิกแล้ว ใช้การซื้อแพ็กเกจและแนบสลิปตาม flow ใหม่แทน",
+      error: "การซื้อแพ็กเกจอัตโนมัติถูกยกเลิกแล้ว ใช้การซื้อแพ็กเกจและแนบสลิปตามขั้นตอนใหม่แทน",
     });
   });
 

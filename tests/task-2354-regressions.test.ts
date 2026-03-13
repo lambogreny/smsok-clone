@@ -20,14 +20,15 @@ const excelImportActions = readFileSync(resolve(ROOT, "lib/actions/excel-import.
 
 describe("Task #2354: userId hardening across dashboard actions", () => {
   it("action-user resolves against session or trusted request context before any caller-supplied userId", () => {
-    expect(actionUser).toContain("const currentUserId = sessionUser?.id ?? trustedUserId;");
+    expect(actionUser).toContain("const requestUserId = await getTrustedRequestUserId();");
+    expect(actionUser).toContain("const currentUserId = sessionUser?.id ?? trustedUserId ?? requestUserId;");
     expect(actionUser).toContain("if (!isInternalCall && currentUserId)");
     expect(actionUser).toContain("return currentUserId;");
   });
 
   it("authenticateRequest binds authenticated users into the action context", () => {
-    expect(apiAuth).toContain("trustActionUserId(session.id);");
-    expect(apiAuth).toContain("trustActionUserId(apiKey.user.id);");
+    expect(apiAuth).toContain('trustActionUserId(session.id, req.headers.get("x-request-id"));');
+    expect(apiAuth).toContain('trustActionUserId(apiKey.user.id, req.headers.get("x-request-id"));');
   });
 
   it("dashboard pages stop passing user.id into client-facing server actions", () => {

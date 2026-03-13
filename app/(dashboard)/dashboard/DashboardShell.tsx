@@ -63,6 +63,8 @@ import {
   BookOpen,
   Settings,
   Receipt,
+  ClipboardList,
+  Megaphone,
   Bell,
   Search,
   LogOut,
@@ -76,7 +78,7 @@ type SidebarItem = {
   icon: LucideIcon;
   label: string;
   href: string;
-  section: "main" | "audience" | "manage" | "settings";
+  section: "main" | "billing" | "audience" | "manage" | "settings";
 };
 
 const sidebarItems: SidebarItem[] = [
@@ -85,18 +87,19 @@ const sidebarItems: SidebarItem[] = [
   { icon: MessageSquare, label: "ประวัติการส่ง", href: "/dashboard/messages", section: "main" },
   { icon: Lock, label: "บริการ OTP", href: "/dashboard/otp", section: "main" },
   { icon: FileText, label: "เทมเพลต", href: "/dashboard/templates", section: "main" },
+  { icon: CircleDollarSign, label: "ซื้อแพ็กเกจ", href: "/dashboard/packages", section: "billing" },
+  { icon: Receipt, label: "แพ็กเกจของฉัน", href: "/dashboard/packages/my", section: "billing" },
+  { icon: ClipboardList, label: "ประวัติคำสั่งซื้อ", href: "/dashboard/billing/orders", section: "billing" },
   { icon: User, label: "รายชื่อผู้ติดต่อ", href: "/dashboard/contacts", section: "audience" },
   { icon: Tag, label: "แท็ก", href: "/dashboard/tags", section: "audience" },
   { icon: FolderOpen, label: "กลุ่ม", href: "/dashboard/groups", section: "audience" },
   { icon: SlidersHorizontal, label: "ชื่อผู้ส่ง", href: "/dashboard/senders", section: "manage" },
-  { icon: Users, label: "แคมเปญ", href: "/dashboard/campaigns", section: "manage" },
+  { icon: Megaphone, label: "แคมเปญ", href: "/dashboard/campaigns", section: "manage" },
   { icon: BarChart3, label: "รายงาน", href: "/dashboard/analytics", section: "manage" },
-  { icon: CircleDollarSign, label: "ซื้อแพ็กเกจ", href: "/dashboard/packages", section: "settings" },
   { icon: Key, label: "คีย์ API", href: "/dashboard/api-keys", section: "settings" },
   { icon: ScrollText, label: "API Logs", href: "/dashboard/logs", section: "settings" },
   { icon: BookOpen, label: "เอกสาร API", href: "/dashboard/docs", section: "settings" },
   { icon: Settings, label: "ตั้งค่า", href: "/dashboard/settings", section: "settings" },
-  { icon: Receipt, label: "แพ็กเกจของฉัน", href: "/dashboard/packages/my", section: "settings" },
 ];
 
 function SidebarLink({ item, isActive }: { item: SidebarItem; isActive: boolean }) {
@@ -176,9 +179,15 @@ export default function DashboardShell({
   }
 
   const mainItems = sidebarItems.filter((i) => i.section === "main");
+  const billingItems = sidebarItems.filter((i) => i.section === "billing");
   const audienceItems = sidebarItems.filter((i) => i.section === "audience");
   const manageItems = sidebarItems.filter((i) => i.section === "manage");
   const settingsItems = sidebarItems.filter((i) => i.section === "settings");
+
+  function isItemActive(item: SidebarItem) {
+    if (item.href === "/dashboard") return pathname === "/dashboard";
+    return pathname === item.href || pathname.startsWith(item.href + "/");
+  }
 
   return (
     <div className="min-h-screen flex bg-[var(--bg-base)]">
@@ -199,7 +208,16 @@ export default function DashboardShell({
           </div>
           <nav className="space-y-0.5 mb-4">
             {mainItems.map((item) => (
-              <SidebarLink key={item.href} item={item} isActive={pathname === item.href} />
+              <SidebarLink key={item.href} item={item} isActive={isItemActive(item)} />
+            ))}
+          </nav>
+
+          <div className="text-[10px] uppercase tracking-[0.12em] text-[var(--text-muted)] px-3 mb-2 font-medium">
+            การเงิน
+          </div>
+          <nav className="space-y-0.5 mb-4">
+            {billingItems.map((item) => (
+              <SidebarLink key={item.href} item={item} isActive={isItemActive(item)} />
             ))}
           </nav>
 
@@ -224,14 +242,14 @@ export default function DashboardShell({
               <CollapsibleContent className="pl-2">
                 <div className="space-y-0.5 pt-0.5">
                   {audienceItems.map((item) => (
-                    <SidebarLink key={item.href} item={item} isActive={pathname === item.href} />
+                    <SidebarLink key={item.href} item={item} isActive={isItemActive(item)} />
                   ))}
                 </div>
               </CollapsibleContent>
             </Collapsible>
 
             {manageItems.map((item) => (
-              <SidebarLink key={item.href} item={item} isActive={pathname === item.href} />
+              <SidebarLink key={item.href} item={item} isActive={isItemActive(item)} />
             ))}
           </nav>
 
@@ -240,7 +258,7 @@ export default function DashboardShell({
           </div>
           <nav className="space-y-0.5">
             {settingsItems.map((item) => (
-              <SidebarLink key={item.href} item={item} isActive={pathname === item.href} />
+              <SidebarLink key={item.href} item={item} isActive={isItemActive(item)} />
             ))}
           </nav>
         </ScrollArea>
@@ -430,6 +448,23 @@ export default function DashboardShell({
             <CommandEmpty>ไม่พบผลลัพธ์</CommandEmpty>
             <CommandGroup heading="เมนูหลัก">
               {mainItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <CommandItem
+                    key={item.href}
+                    onSelect={() => {
+                      router.push(item.href);
+                      setCmdkOpen(false);
+                    }}
+                  >
+                    <Icon className="w-4 h-4 text-[var(--text-muted)]" />
+                    {item.label}
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+            <CommandGroup heading="การเงิน">
+              {billingItems.map((item) => {
                 const Icon = item.icon;
                 return (
                   <CommandItem

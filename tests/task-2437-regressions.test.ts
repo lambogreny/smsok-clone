@@ -17,9 +17,10 @@ describe("Task #2437: slip upload alias + terms action hardening", () => {
   });
 
   it("derives terms identity from session or trusted request context", () => {
-    expect(termsActions).toContain("const userId = await resolveActionUserId(options?.userId)");
-    expect(termsActions).toContain("const userId = await resolveActionUserId(apiUserId)");
-    expect(termsActions).toContain("const userId = await resolveActionUserId()");
+    expect(termsActions).toContain("type InternalActionUserToken");
+    expect(termsActions).toContain("const userId = await resolveActionUserId(options?.userId, token)");
+    expect(termsActions).toContain("const userId = await resolveActionUserId(apiUserId, token)");
+    expect(termsActions).toContain("const userId = await resolveActionUserId(apiUserId, token)");
     expect(termsActions).not.toContain("options?.userId ?? sessionUser?.id");
     expect(termsActions).not.toContain("apiUserId ?? sessionUser?.id");
   });
