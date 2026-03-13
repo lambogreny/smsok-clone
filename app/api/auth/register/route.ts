@@ -2,17 +2,10 @@ import { NextRequest } from "next/server";
 import { ApiError, apiError, apiResponse } from "@/lib/api-auth";
 import { registerWithOtp } from "@/lib/actions";
 import { ERROR_CODES, startApiLog } from "@/lib/api-log";
-import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { applyRateLimit } from "@/lib/rate-limit";
+import { getClientIp } from "@/lib/session-utils";
 import { registerRouteSchema } from "@/lib/validations";
 import { hasValidCsrfOrigin } from "@/lib/csrf";
-
-function getClientIp(req: NextRequest) {
-  return (
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    req.headers.get("x-real-ip") ||
-    "unknown"
-  );
-}
 
 export async function POST(req: NextRequest) {
   startApiLog(req);
@@ -22,11 +15,10 @@ export async function POST(req: NextRequest) {
   }
 
   // Rate limit BEFORE processing — prevents spam registration
-  const ip = getClientIp(req);
-  const limit = await checkRateLimit(ip, "auth_register");
-  if (!limit.allowed) {
-    return rateLimitResponse(limit.resetIn);
-  }
+  const ip = getClientIp(req.headers);
+  const userAgent = req.headers.get("user-agent") || undefined;
+  const rl = await applyRateLimit(ip, "auth_register");
+  if (rl.blocked) return rl.blocked;
 
   try {
     let body: unknown;
@@ -39,13 +31,19 @@ export async function POST(req: NextRequest) {
     const data = registerRouteSchema.parse(body);
 
     await registerWithOtp({
-      name: data.name,
+      firstName: data.firstName,
+      lastName: data.lastName,
       email: data.email,
       phone: data.phone,
       password: data.password,
       otpRef: data.otpRef,
       otpCode: data.otpCode,
-      acceptTerms: data.acceptTerms as boolean,
+      acceptTerms: data.acceptTerms,
+      consentService: data.consentService,
+      consentThirdParty: data.consentThirdParty,
+      consentMarketing: data.consentMarketing,
+      ipAddress: ip,
+      userAgent,
     });
 
     return apiResponse({ success: true, redirectTo: "/dashboard" }, 201);

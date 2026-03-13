@@ -16,7 +16,34 @@ const PUBLIC_SESSION_PAGES = new Set([
   "/reset-password",
 ]);
 
-function applySecurityHeaders(response: NextResponse) {
+function buildContentSecurityPolicy(pathname: string) {
+  const scriptSrc = process.env.NODE_ENV === "production"
+    ? ["'self'"]
+    : ["'self'", "'unsafe-inline'", "'unsafe-eval'"];
+  const styleSrc = ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"];
+  const connectSrc = ["'self'", "https://*.ingest.sentry.io"];
+
+  if (pathname.startsWith("/api/v1/docs")) {
+    scriptSrc.push("https://cdn.jsdelivr.net");
+    styleSrc.push("https://cdn.jsdelivr.net");
+  }
+
+  if (process.env.NODE_ENV !== "production") {
+    connectSrc.push("ws:", "http://localhost:*", "https://localhost:*");
+  }
+
+  return [
+    "default-src 'self'",
+    `script-src ${scriptSrc.join(" ")}`,
+    `style-src ${styleSrc.join(" ")}`,
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' data: https://fonts.gstatic.com",
+    `connect-src ${connectSrc.join(" ")}`,
+    "frame-ancestors 'none'",
+  ].join("; ");
+}
+
+function applySecurityHeaders(response: NextResponse, pathname: string) {
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("X-Frame-Options", "DENY");
   response.headers.set("X-XSS-Protection", "1; mode=block");
@@ -24,7 +51,7 @@ function applySecurityHeaders(response: NextResponse) {
   response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
   response.headers.set(
     "Content-Security-Policy",
-    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self'; frame-ancestors 'none'"
+    buildContentSecurityPolicy(pathname),
   );
 
   if (process.env.NODE_ENV === "production") {
@@ -46,6 +73,8 @@ function applyApiHeaders(response: NextResponse, origin: string | null) {
 
 function shouldVerifySession(pathname: string, hasApiKeyAuth: boolean) {
   if (pathname.startsWith("/api/auth/")) return false;
+  if (pathname.startsWith("/api/health")) return false;
+  if (pathname.startsWith("/api/storage/")) return false;
   if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) return true;
   if (pathname.startsWith("/api/")) {
     if (pathname.startsWith("/api/v1/")) {
@@ -64,7 +93,7 @@ function unauthorizedResponse(req: NextRequest, base: NextResponse, pathname: st
   if (isPageNavigation(pathname)) {
     const target = new URL("/login", req.url);
     const redirect = NextResponse.redirect(target);
-    applySecurityHeaders(redirect);
+    applySecurityHeaders(redirect, target.pathname);
     redirect.headers.set("X-Request-Id", base.headers.get("X-Request-Id") || crypto.randomUUID());
     redirect.cookies.delete("session");
     redirect.cookies.delete("refresh_token");
@@ -88,6 +117,9 @@ export async function middleware(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
   const apiKey = req.headers.get("x-api-key")?.trim();
   const hasApiKeyAuth = Boolean(authHeader || apiKey);
+  const accessToken = req.cookies.get(ACCESS_COOKIE_NAME)?.value;
+  const refreshToken = req.cookies.get(REFRESH_COOKIE_NAME)?.value;
+  const hasSessionCookies = Boolean(accessToken || refreshToken);
 
   // Forward pathname to server components (for conditional auth in layout)
   requestHeaders.set("x-pathname", pathname);
@@ -96,12 +128,34 @@ export async function middleware(req: NextRequest) {
   const requestId = req.headers.get("x-request-id") || crypto.randomUUID();
   requestHeaders.set("x-request-id", requestId);
 
+  const orderDocumentMatch = pathname.match(/^\/api\/v1\/orders\/([^/]+)\/documents\/([^/]+)$/);
+  if (orderDocumentMatch && req.method === "GET") {
+    const rewriteUrl = req.nextUrl.clone();
+    rewriteUrl.pathname = `/order-documents/${orderDocumentMatch[1]}/${orderDocumentMatch[2]}`;
+    const rewrite = NextResponse.rewrite(rewriteUrl, { request: { headers: requestHeaders } });
+    rewrite.headers.set("X-Request-Id", requestId);
+    applySecurityHeaders(rewrite, rewriteUrl.pathname);
+    return rewrite;
+  }
+
+  const legacyOrderSlipMatch = pathname.match(/^\/api\/v1\/orders\/([^/]+)\/(?:upload|verify-slip)$/);
+  if (legacyOrderSlipMatch && req.method === "POST") {
+    const rewriteUrl = req.nextUrl.clone();
+    rewriteUrl.pathname = `/api/orders/${legacyOrderSlipMatch[1]}/slip`;
+    const rewrite = NextResponse.rewrite(rewriteUrl, { request: { headers: requestHeaders } });
+    rewrite.headers.set("X-Request-Id", requestId);
+    applySecurityHeaders(rewrite, rewriteUrl.pathname);
+    applyApiHeaders(rewrite, req.headers.get("origin"));
+    return rewrite;
+  }
+
   let response = NextResponse.next({ request: { headers: requestHeaders } });
+  response.headers.delete("Content-Type");
 
   // Attach X-Request-Id to every response
   response.headers.set("X-Request-Id", requestId);
 
-  applySecurityHeaders(response);
+  applySecurityHeaders(response, pathname);
 
   // --- CORS for API routes ---
   if (pathname.startsWith("/api/v1/")) {
@@ -120,7 +174,8 @@ export async function middleware(req: NextRequest) {
     if (!authHeader && apiKey) {
       requestHeaders.set("authorization", `Bearer ${apiKey}`);
       response = NextResponse.next({ request: { headers: requestHeaders } });
-      applySecurityHeaders(response);
+      response.headers.delete("Content-Type");
+      applySecurityHeaders(response, pathname);
       applyApiHeaders(response, origin);
     }
 
@@ -140,9 +195,9 @@ export async function middleware(req: NextRequest) {
         );
       }
 
-      if (!authHeader && !apiKey) {
+      if (!authHeader && !apiKey && !hasSessionCookies) {
         return NextResponse.json(
-          { error: "Missing API key" },
+          { error: "Missing authentication" },
           { status: 401, headers: response.headers }
         );
       }
@@ -150,8 +205,16 @@ export async function middleware(req: NextRequest) {
 
     // Rate limit write operations only (GET/HEAD pass freely)
     if (req.method !== "GET" && req.method !== "HEAD") {
-      const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+      const forwardedFor = req.headers.get("x-forwarded-for");
+      const ip = forwardedFor
+        ?.split(",")
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .at(-1)
         || req.headers.get("x-real-ip")
+        || req.headers.get("cf-connecting-ip")
+        || req.headers.get("fly-client-ip")
+        || req.headers.get("true-client-ip")
         || "unknown";
 
       const result = await checkRateLimit(ip, "api");
@@ -182,8 +245,16 @@ export async function middleware(req: NextRequest) {
   // --- Auth rate limiting for login/register pages ---
   if (pathname === "/login" || pathname === "/register") {
     if (req.method === "POST") {
-      const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+      const forwardedFor = req.headers.get("x-forwarded-for");
+      const ip = forwardedFor
+        ?.split(",")
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .at(-1)
         || req.headers.get("x-real-ip")
+        || req.headers.get("cf-connecting-ip")
+        || req.headers.get("fly-client-ip")
+        || req.headers.get("true-client-ip")
         || "unknown";
 
       const result = await checkRateLimit(ip, "auth");
@@ -194,10 +265,6 @@ export async function middleware(req: NextRequest) {
   }
 
   const requiresSessionVerification = shouldVerifySession(pathname, hasApiKeyAuth);
-  const accessToken = req.cookies.get(ACCESS_COOKIE_NAME)?.value;
-  const refreshToken = req.cookies.get(REFRESH_COOKIE_NAME)?.value;
-  const hasSessionCookies = Boolean(accessToken || refreshToken);
-
   if (requiresSessionVerification && !PUBLIC_SESSION_PAGES.has(pathname)) {
     if (!hasSessionCookies) {
       return unauthorizedResponse(req, response, pathname);

@@ -1,11 +1,10 @@
 /**
- * Rate Limiter — Redis sliding window (primary) + in-memory fallback
+ * Rate Limiter — Redis sliding window
  * Uses Redis sorted sets for distributed rate limiting across instances.
- * Falls back to in-memory when Redis unavailable.
  */
 
 // NOTE: Do NOT import redis at top-level — this file is used by middleware
-// (edge runtime) where ioredis cannot load.  Use dynamic import inside
+// (edge runtime) where ioredis cannot load. Use dynamic import inside
 // checkRateLimitAsync / applyRateLimit instead.
 
 export type RateLimitConfig = {
@@ -72,6 +71,18 @@ export async function checkRateLimitAsync(
   return redisRateLimit(key, config.maxRequests, config.windowMs);
 }
 
+export async function checkCustomRateLimit(
+  identifier: string,
+  config: RateLimitConfig,
+): Promise<{ allowed: boolean; remaining: number; resetIn: number }> {
+  if (shouldBypassRateLimit()) {
+    return { allowed: true, remaining: Number.MAX_SAFE_INTEGER, resetIn: 0 };
+  }
+
+  const { redisRateLimit } = await import("./redis");
+  return redisRateLimit(identifier, config.maxRequests, config.windowMs);
+}
+
 /**
  * Apply rate limit and return 429 Response if blocked, null if allowed.
  * Sets X-RateLimit headers.
@@ -123,43 +134,14 @@ export async function applyRateLimit(
 }
 
 /**
- * Sync rate limiter (in-memory) — used by existing routes.
- * For new routes, prefer applyRateLimit() which uses Redis.
+ * Backward-compatible wrapper around the Redis limiter.
+ * Prefer applyRateLimit() for route handlers.
  */
-const memStore = new Map<string, { count: number; resetAt: number }>();
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of memStore) {
-    if (entry.resetAt < now) memStore.delete(key);
-  }
-}, 5 * 60 * 1000);
-
-export function checkRateLimit(
+export async function checkRateLimit(
   identifier: string,
   type: keyof typeof DEFAULTS = "api",
-): { allowed: boolean; remaining: number; resetIn: number } {
-  if (shouldBypassRateLimit()) {
-    return { allowed: true, remaining: Number.MAX_SAFE_INTEGER, resetIn: 0 };
-  }
-
-  const config = DEFAULTS[type];
-  if (!config) return { allowed: true, remaining: 999, resetIn: 0 };
-
-  const key = `${type}:${identifier}`;
-  const now = Date.now();
-  const entry = memStore.get(key);
-
-  if (!entry || entry.resetAt < now) {
-    memStore.set(key, { count: 1, resetAt: now + config.windowMs });
-    return { allowed: true, remaining: config.maxRequests - 1, resetIn: config.windowMs };
-  }
-
-  entry.count++;
-  if (entry.count > config.maxRequests) {
-    return { allowed: false, remaining: 0, resetIn: entry.resetAt - now };
-  }
-
-  return { allowed: true, remaining: config.maxRequests - entry.count, resetIn: entry.resetAt - now };
+): Promise<{ allowed: boolean; remaining: number; resetIn: number }> {
+  return checkRateLimitAsync(identifier, type);
 }
 
 export function rateLimitResponse(resetIn: number) {

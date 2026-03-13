@@ -3,16 +3,9 @@ import { ApiError, apiError, apiResponse } from "@/lib/api-auth";
 import { ERROR_CODES } from "@/lib/api-log";
 import { resetPassword } from "@/lib/actions/auth";
 import { resetPasswordSchema } from "@/lib/validations";
-import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { applyRateLimit } from "@/lib/rate-limit";
+import { getClientIp } from "@/lib/session-utils";
 import { hasValidCsrfOrigin } from "@/lib/csrf";
-
-function getClientIp(req: NextRequest) {
-  return (
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    req.headers.get("x-real-ip") ||
-    "unknown"
-  );
-}
 
 export async function POST(req: NextRequest) {
   if (!hasValidCsrfOrigin(req)) {
@@ -20,11 +13,9 @@ export async function POST(req: NextRequest) {
   }
 
   // Rate limit BEFORE processing — prevents token brute-force
-  const ip = getClientIp(req);
-  const limit = await checkRateLimit(ip, "password");
-  if (!limit.allowed) {
-    return rateLimitResponse(limit.resetIn);
-  }
+  const ip = getClientIp(req.headers);
+  const rl = await applyRateLimit(ip, "password");
+  if (rl.blocked) return rl.blocked;
 
   try {
     const body = await req.json();

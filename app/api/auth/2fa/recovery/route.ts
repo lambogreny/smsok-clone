@@ -4,19 +4,12 @@ import { prisma } from "@/lib/db"
 import { setSession } from "@/lib/auth"
 import { ApiError, apiError, apiResponse } from "@/lib/api-auth"
 import { ERROR_CODES, startApiLog, setApiLogUser } from "@/lib/api-log"
-import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit"
+import { applyRateLimit } from "@/lib/rate-limit"
 import { env } from "@/lib/env"
+import { getClientIp } from "@/lib/session-utils"
 import { useRecoveryCode } from "@/lib/actions/two-factor"
 import { recovery2FASchema } from "@/lib/validations"
 import { hasValidCsrfOrigin } from "@/lib/csrf"
-
-function getClientIp(req: NextRequest) {
-  return (
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    req.headers.get("x-real-ip") ||
-    "unknown"
-  )
-}
 
 export async function POST(req: NextRequest) {
   startApiLog(req)
@@ -26,11 +19,9 @@ export async function POST(req: NextRequest) {
   }
 
   // Rate limit BEFORE auth — prevents recovery code brute-force
-  const ip = getClientIp(req)
-  const limit = await checkRateLimit(ip, "auth")
-  if (!limit.allowed) {
-    return rateLimitResponse(limit.resetIn)
-  }
+  const ip = getClientIp(req.headers)
+  const rl = await applyRateLimit(ip, "auth")
+  if (rl.blocked) return rl.blocked
 
   try {
     let body: unknown

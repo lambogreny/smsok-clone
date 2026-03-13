@@ -4,7 +4,8 @@ import { verifyPassword, setSession } from "@/lib/auth";
 import { ApiError, apiError, apiResponse } from "@/lib/api-auth";
 import { loginSchema } from "@/lib/validations";
 import { ERROR_CODES, startApiLog, setApiLogUser } from "@/lib/api-log";
-import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { applyRateLimit } from "@/lib/rate-limit";
+import { getClientIp } from "@/lib/session-utils";
 import jwt from "jsonwebtoken";
 import { env } from "@/lib/env";
 import { hasValidCsrfOrigin } from "@/lib/csrf";
@@ -12,14 +13,6 @@ import { hasValidCsrfOrigin } from "@/lib/csrf";
 // Pre-computed bcrypt hash — used for constant-time dummy comparison when user not found.
 // Prevents timing-based email enumeration (user-not-found would otherwise return ~0ms vs ~100ms).
 const DUMMY_HASH = "$2b$12$qF1xea/GGCtjbQ6FC32FAu0YSQWxmgOuBDgvb4IVBhTrnjXPVYwoC";
-
-function getClientIp(req: NextRequest) {
-  return (
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    req.headers.get("x-real-ip") ||
-    "unknown"
-  );
-}
 
 export async function POST(req: NextRequest) {
   startApiLog(req);
@@ -29,11 +22,9 @@ export async function POST(req: NextRequest) {
   }
 
   // Rate limit BEFORE any auth logic — prevents brute-force
-  const ip = getClientIp(req);
-  const limit = await checkRateLimit(ip, "auth_login");
-  if (!limit.allowed) {
-    return rateLimitResponse(limit.resetIn);
-  }
+  const ip = getClientIp(req.headers);
+  const rl = await applyRateLimit(ip, "auth_login");
+  if (rl.blocked) return rl.blocked;
 
   try {
     let body: unknown;
