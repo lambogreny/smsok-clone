@@ -213,7 +213,7 @@ function ActivePackagesList({ packages }: { packages: ActivePackage[] }) {
               className="text-[13px] ml-auto max-sm:ml-0"
               style={{ color: isNearExpiry ? "var(--warning)" : "var(--text-muted)" }}
             >
-              หมดอายุ {pkg.expiresAt}
+              หมดอายุ {formatThaiDateOnly(pkg.expiresAt)}
             </span>
 
             {pkg.isFifo && (

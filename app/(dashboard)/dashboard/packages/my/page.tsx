@@ -11,6 +11,7 @@ import {
   Plus,
   Info,
 } from "lucide-react";
+import { formatThaiDateOnly } from "@/lib/format-thai-date";
 import {
   BarChart,
   Bar,
@@ -283,9 +284,9 @@ export default function MyPackagesPage() {
                 </div>
 
                 <div className="text-[13px] leading-7 text-[var(--text-muted)]">
-                  <p>ซื้อเมื่อ: {pkg.purchasedAt}</p>
+                  <p>ซื้อเมื่อ: {formatThaiDateOnly(pkg.purchasedAt)}</p>
                   <p>
-                    หมดอายุ: {pkg.expiresAt}{" "}
+                    หมดอายุ: {formatThaiDateOnly(pkg.expiresAt)}{" "}
                     <span className={isNearExpiry ? "text-[var(--warning)]" : ""}>
                       ({pkg.daysLeft} วัน)
                     </span>
@@ -392,7 +393,7 @@ export default function MyPackagesPage() {
             >
               <span className="text-[13px] line-through text-[var(--text-muted)]">📦 {ep.name}</span>
               <span className="text-xs ml-3 text-[var(--text-muted)]">
-                ใช้ {(ep.smsUsed ?? 0).toLocaleString()}/{(ep.smsTotal ?? 0).toLocaleString()} SMS — หมดเมื่อ {ep.expiresAt}
+                ใช้ {(ep.smsUsed ?? 0).toLocaleString()}/{(ep.smsTotal ?? 0).toLocaleString()} SMS — หมดเมื่อ {formatThaiDateOnly(ep.expiresAt)}
               </span>
             </div>
           ))}
