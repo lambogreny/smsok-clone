@@ -2,17 +2,22 @@ import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getApprovedSenderNames } from "@/lib/actions/sender-names";
 import SendSmsForm from "./SendSmsForm";
+import { ErrorState } from "@/components/ErrorState";
 
 export default async function SendPage() {
   const user = await getSession();
   if (!user) redirect("/login");
 
-  const approved = await getApprovedSenderNames();
-  const names = approved.map(s => s.name);
-  // Always include "EasySlip" as default sender
-  const senderNames = names.includes("EasySlip") ? names : ["EasySlip", ...names];
+  try {
+    const approved = await getApprovedSenderNames();
+    const names = approved.map(s => s.name);
+    // Always include "EasySlip" as default sender
+    const senderNames = names.includes("EasySlip") ? names : ["EasySlip", ...names];
 
-  return (
-    <SendSmsForm senderNames={senderNames} />
-  );
+    return (
+      <SendSmsForm senderNames={senderNames} />
+    );
+  } catch {
+    return <ErrorState type="SERVER_ERROR" />;
+  }
 }
