@@ -94,7 +94,7 @@ export async function resolveStoredFileVerificationUrl(value: string) {
 }
 
 export async function readStoredFile(value: string) {
-  const key = extractStoredFileKey(value);
+  const key = extractStoredFileKey(value) ?? value;
   if (!key) {
     throw new Error("Stored file key missing");
   }

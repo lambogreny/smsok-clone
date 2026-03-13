@@ -1,9 +1,18 @@
 import { NextRequest } from "next/server";
 import { authenticateRequest, apiResponse, apiError, ApiError } from "@/lib/api-auth";
-import { getActivePolicies, createPolicy } from "@/lib/actions/consent";
+import { bumpPolicyVersion, createPolicy, getActivePolicies } from "@/lib/actions/consent";
 import type { PolicyDocType } from "@prisma/client";
+import { z } from "zod";
 
 const VALID_POLICY_TYPES: PolicyDocType[] = ["PRIVACY", "TERMS", "MARKETING", "COOKIE"];
+const policySchema = z.object({
+  version: z.string().trim().min(1, "กรุณาระบุ version").optional(),
+  type: z.enum(["PRIVACY", "TERMS", "MARKETING", "COOKIE"]),
+  title: z.string().trim().min(1, "กรุณาระบุ title"),
+  content: z.string().trim().min(1, "กรุณาระบุ content"),
+  summary: z.string().trim().optional(),
+  requiresReconsent: z.boolean().optional(),
+});
 
 // GET /api/v1/consent/policies — list active policies
 export async function GET(req: NextRequest) {
@@ -28,14 +37,8 @@ export async function POST(req: NextRequest) {
       throw new ApiError(400, "กรุณาส่งข้อมูล JSON");
     }
 
-    const { version, type, title, content, summary, requiresReconsent } = body as {
-      version: string;
-      type: PolicyDocType;
-      title: string;
-      content: string;
-      summary?: string;
-      requiresReconsent?: boolean;
-    };
+    const input = policySchema.parse(body);
+    const { version, type, title, content, summary, requiresReconsent } = input;
 
     if (!version || !type || !title || !content) {
       throw new ApiError(400, "กรุณาระบุ version, type, title, content");
@@ -54,6 +57,32 @@ export async function POST(req: NextRequest) {
     });
 
     return apiResponse({ policy }, 201);
+  } catch (error) {
+    return apiError(error);
+  }
+}
+
+// PUT /api/v1/consent/policies — bump active policy version and require re-consent
+export async function PUT(req: NextRequest) {
+  try {
+    const user = await authenticateRequest(req);
+
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      throw new ApiError(400, "กรุณาส่งข้อมูล JSON");
+    }
+
+    const input = policySchema.omit({ requiresReconsent: true }).parse(body);
+
+    if (!VALID_POLICY_TYPES.includes(input.type)) {
+      throw new ApiError(400, `type ต้องเป็น: ${VALID_POLICY_TYPES.join(", ")}`);
+    }
+
+    const policy = await bumpPolicyVersion(user.id, input);
+
+    return apiResponse({ policy, requiresReconsent: true });
   } catch (error) {
     return apiError(error);
   }

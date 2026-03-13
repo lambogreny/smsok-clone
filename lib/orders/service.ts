@@ -80,6 +80,7 @@ type OrderSlipRecord = {
 type OrderSerializeInput = OrderRecord & {
   documents?: OrderDocumentRecord[];
   history?: OrderHistoryRecord[];
+  slips?: OrderSlipRecord[];
 };
 
 export type LegacyOrderStatus =
@@ -329,6 +330,47 @@ function attachOrderTimeline(
   };
 }
 
+function attachLatestSlip(
+  payload: Record<string, unknown>,
+  slips: OrderSlipRecord[] | undefined,
+) {
+  if (!slips?.length) {
+    return payload;
+  }
+
+  const latestSlip = [...slips]
+    .filter((slip) => !slip.deletedAt)
+    .sort((a, b) => a.uploadedAt.getTime() - b.uploadedAt.getTime())
+    .at(-1);
+
+  if (!latestSlip) {
+    return payload;
+  }
+
+  return {
+    ...payload,
+    latest_slip_uploaded_at: latestSlip.uploadedAt.toISOString(),
+  };
+}
+
+function attachLatestStatusNote(
+  payload: Record<string, unknown>,
+  history: OrderHistoryRecord[] | undefined,
+) {
+  const latestNote = [...(history ?? [])]
+    .reverse()
+    .find((event) => event.note?.trim())?.note;
+
+  if (!latestNote) {
+    return payload;
+  }
+
+  return {
+    ...payload,
+    latest_status_note: latestNote,
+  };
+}
+
 export function serializeOrder(order: OrderSerializeInput) {
   const base = {
     id: order.id,
@@ -368,8 +410,14 @@ export function serializeOrder(order: OrderSerializeInput) {
     created_at: order.createdAt.toISOString(),
   };
 
-  return attachOrderTimeline(
-    attachOrderDocuments(base, order.documents),
+  return attachLatestStatusNote(
+    attachOrderTimeline(
+      attachLatestSlip(
+        attachOrderDocuments(base, order.documents),
+        order.slips,
+      ),
+      order.history,
+    ),
     order.history,
   );
 }

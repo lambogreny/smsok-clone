@@ -17,6 +17,8 @@ export type SlipVerifyResult = {
     receiver: { name: string; bank: string; account: string };
   };
   error?: string;
+  providerCode?: string;
+  providerStatus?: number;
   isDuplicate?: boolean;
 };
 
@@ -48,7 +50,30 @@ export async function verifySlipByUrl(imageUrl: string): Promise<SlipVerifyResul
   if (!res.ok) {
     const body = await res.text();
     console.error("[easyslip] verify failed:", res.status, body);
-    return { success: false, error: "ตรวจสอบสลิปไม่สำเร็จ กรุณาลองใหม่" };
+
+    let providerCode: string | undefined;
+    try {
+      const parsed = JSON.parse(body) as { message?: string };
+      providerCode = typeof parsed.message === "string" ? parsed.message : undefined;
+    } catch {
+      providerCode = undefined;
+    }
+
+    if (providerCode === "application_expired") {
+      return {
+        success: false,
+        error: "EasySlip application expired",
+        providerCode,
+        providerStatus: res.status,
+      };
+    }
+
+    return {
+      success: false,
+      error: providerCode || "ตรวจสอบสลิปไม่สำเร็จ กรุณาลองใหม่",
+      providerCode,
+      providerStatus: res.status,
+    };
   }
 
   const data = await res.json();

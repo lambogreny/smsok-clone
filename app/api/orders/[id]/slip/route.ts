@@ -24,7 +24,7 @@ type RouteContext = {
 
 function getManualReviewNote(verification: SlipVerifyResult, expectedAmount: number) {
   if (!verification.success) {
-    return `EasySlip: ${verification.error ?? "verification pending manual review"}`;
+    return `EasySlip: ${verification.providerCode ?? verification.error ?? "verification pending manual review"}`;
   }
 
   if (!verification.data) {
@@ -32,6 +32,18 @@ function getManualReviewNote(verification: SlipVerifyResult, expectedAmount: num
   }
 
   return `EasySlip: amount mismatch (expected ${expectedAmount}, got ${verification.data.amount})`;
+}
+
+function getPendingReviewMessage(verification: SlipVerifyResult) {
+  if (!verification.success) {
+    if (verification.providerCode === "application_expired") {
+      return "ระบบตรวจสอบสลิปอัตโนมัติไม่พร้อม กรุณารอเจ้าหน้าที่ตรวจสลิป";
+    }
+
+    return "กำลังรอเจ้าหน้าที่ตรวจสลิป";
+  }
+
+  return "ยอดสลิปต้องตรวจสอบเพิ่มเติมโดยเจ้าหน้าที่";
 }
 
 export async function POST(req: Request, ctx: RouteContext) {
@@ -153,6 +165,7 @@ export async function POST(req: Request, ctx: RouteContext) {
         });
 
         if (!autoApprove) {
+          const pendingReviewMessage = getPendingReviewMessage(verification);
           const updatedOrder = await tx.order.update({
             where: { id: order.id },
             data: {
@@ -164,6 +177,7 @@ export async function POST(req: Request, ctx: RouteContext) {
               whtCertVerified: whtCertUrl ? null : false,
               easyslipVerified: verification.success,
               easyslipResponse: verification as unknown as Prisma.InputJsonValue,
+              adminNote: pendingReviewMessage,
               rejectReason: null,
               paidAt: null,
               completedAt: null,
@@ -192,6 +206,7 @@ export async function POST(req: Request, ctx: RouteContext) {
             whtCertVerified: whtCertUrl ? null : false,
             easyslipVerified: true,
             easyslipResponse: verificationData,
+            adminNote: null,
             paidAt: new Date(),
             completedAt: new Date(),
           },

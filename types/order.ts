@@ -64,6 +64,8 @@ export interface Order {
 
   documents?: OrderDocument[];
   timeline?: OrderStatusEvent[];
+  latest_slip_uploaded_at?: string;
+  latest_status_note?: string;
 
   slip_url?: string;
   wht_cert_url?: string;

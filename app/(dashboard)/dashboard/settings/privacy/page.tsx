@@ -30,10 +30,15 @@ type ConsentConfig = {
   title: string;
   description: string;
   required: boolean;
-  policyVersion: string;
-  acceptedDate: string;
+  policyVersion: string | null;
+  acceptedDate: string | null;
   policyLink: string;
   withdrawWarning: string;
+};
+
+type ConsentMeta = {
+  policyVersion: string | null;
+  acceptedDate: string | null;
 };
 
 type HistoryEntry = {
@@ -41,6 +46,13 @@ type HistoryEntry = {
   type: string;
   action: "ยินยอม" | "ถอนความยินยอม";
   version: string;
+};
+
+const EMPTY_CONSENT_META: Record<ConsentType, ConsentMeta> = {
+  service: { policyVersion: null, acceptedDate: null },
+  third_party: { policyVersion: null, acceptedDate: null },
+  marketing: { policyVersion: null, acceptedDate: null },
+  cookie: { policyVersion: null, acceptedDate: null },
 };
 
 /* ─── Config ─── */
@@ -171,11 +183,13 @@ function ConfirmDialog({
 
 function ConsentCard({
   consent,
+  meta,
   enabled,
   onToggle,
   index,
 }: {
   consent: ConsentConfig;
+  meta: ConsentMeta;
   enabled: boolean;
   onToggle: () => void;
   index: number;
@@ -266,7 +280,7 @@ function ConsentCard({
                   style={{ background: consent.accentColor }}
                 />
                 <span className="text-[var(--text-secondary)] font-medium">
-                  {consent.policyVersion}
+                  {meta.policyVersion ?? consent.policyVersion ?? "ยังไม่มีเวอร์ชัน"}
                 </span>
               </div>
 
@@ -275,7 +289,7 @@ function ConsentCard({
               <span className="text-[11px] text-[var(--text-muted)]">
                 ยินยอมเมื่อ{" "}
                 <span className="text-[var(--text-secondary)]">
-                  {consent.acceptedDate}
+                  {meta.acceptedDate ?? consent.acceptedDate ?? "ยังไม่มีข้อมูล"}
                 </span>
               </span>
 
@@ -327,8 +341,14 @@ export default function PrivacySettingsPage() {
   const [consents, setConsents] = useState<Record<ConsentType, boolean>>({
     service: true,
     third_party: true,
-    marketing: true,
-    cookie: true,
+    marketing: false,
+    cookie: false,
+  });
+  const [consentMeta, setConsentMeta] = useState<Record<ConsentType, ConsentMeta>>({
+    service: { ...EMPTY_CONSENT_META.service },
+    third_party: { ...EMPTY_CONSENT_META.third_party },
+    marketing: { ...EMPTY_CONSENT_META.marketing },
+    cookie: { ...EMPTY_CONSENT_META.cookie },
   });
   const [, setLoading] = useState(true);
 
@@ -478,6 +498,7 @@ export default function PrivacySettingsPage() {
           <ConsentCard
             key={consent.type}
             consent={consent}
+            meta={consentMeta[consent.type]}
             enabled={consents[consent.type]}
             onToggle={() => handleToggle(consent)}
             index={i}

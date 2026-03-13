@@ -63,6 +63,24 @@ function openDocument(url?: string) {
   window.open(url, "_blank", "noopener,noreferrer");
 }
 
+function getPendingReviewDescription(order: Order) {
+  const note = order.admin_note ?? order.latest_status_note ?? "";
+
+  if (
+    note.includes("application_expired") ||
+    note.includes("API key not configured") ||
+    note.includes("EasySlip unavailable")
+  ) {
+    return "ระบบตรวจสอบอัตโนมัติไม่พร้อม กรุณารอเจ้าหน้าที่ตรวจสลิป";
+  }
+
+  if (note.includes("amount mismatch")) {
+    return "ยอดในสลิปไม่ตรง ระบบส่งให้เจ้าหน้าที่ตรวจต่อ";
+  }
+
+  return "เรากำลังตรวจสอบหลักฐานการชำระเงิน โดยปกติใช้เวลาไม่เกิน 30 นาที";
+}
+
 // ── Status Banner Config ──
 
 const STATUS_BANNER_CONFIG: Record<
@@ -85,8 +103,7 @@ const STATUS_BANNER_CONFIG: Record<
   },
   SLIP_UPLOADED: {
     title: "กำลังตรวจสอบสลิป",
-    description: () =>
-      "เรากำลังตรวจสอบหลักฐานการชำระเงิน โดยปกติใช้เวลาไม่เกิน 30 นาที",
+    description: (o) => getPendingReviewDescription(o),
     accent: "var(--warning)",
     bg: "rgba(var(--warning-rgb),0.04)",
     border: "1px solid rgba(var(--warning-rgb),0.2)",
@@ -100,8 +117,7 @@ const STATUS_BANNER_CONFIG: Record<
   },
   PENDING_REVIEW: {
     title: "กำลังตรวจสอบสลิป",
-    description: () =>
-      "เรากำลังตรวจสอบหลักฐานการชำระเงิน โดยปกติใช้เวลาไม่เกิน 30 นาที",
+    description: (o) => getPendingReviewDescription(o),
     accent: "var(--warning)",
     bg: "rgba(var(--warning-rgb),0.04)",
     border: "1px solid rgba(var(--warning-rgb),0.2)",
@@ -1006,7 +1022,7 @@ function PaymentProofCard({
               }}
             >
               <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
-                อัปโหลดเมื่อ {order.created_at ? formatThaiShortDate(order.created_at) : "—"}
+                อัปโหลดเมื่อ {order.latest_slip_uploaded_at ? formatThaiShortDate(order.latest_slip_uploaded_at) : "—"}
               </span>
               {isVerifying && (
                 <span

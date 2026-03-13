@@ -2,6 +2,27 @@ import { prisma as db } from "../db";
 import type { ConsentType, ConsentAction, PolicyDocType } from "@prisma/client";
 import type { Prisma } from "@prisma/client";
 
+const CONSENT_TO_POLICY_TYPE: Record<ConsentType, PolicyDocType> = {
+  SERVICE: "TERMS",
+  MARKETING: "MARKETING",
+  THIRD_PARTY: "PRIVACY",
+  COOKIE: "COOKIE",
+};
+
+function getNextPolicyVersion(currentVersion?: string | null) {
+  if (!currentVersion) return "1.0";
+
+  const [major, minor = "0"] = currentVersion.split(".");
+  const majorNumber = Number(major);
+  const minorNumber = Number(minor);
+
+  if (Number.isNaN(majorNumber) || Number.isNaN(minorNumber)) {
+    return currentVersion;
+  }
+
+  return `${majorNumber}.${minorNumber + 1}`;
+}
+
 // ── Log Consent (append-only) ───────────────────────────
 
 export async function logConsent(opts: {
@@ -45,17 +66,9 @@ export async function logRegistrationConsent(opts: {
 
   const policyMap = new Map(policies.map((p) => [p.type as string, p.id]));
 
-  // Map consent types to policy doc types
-  const consentToPolicyType: Record<string, PolicyDocType> = {
-    SERVICE: "TERMS",
-    MARKETING: "MARKETING",
-    THIRD_PARTY: "PRIVACY",
-    COOKIE: "COOKIE",
-  };
-
   const logs = opts.consents
     .map((c) => {
-      const policyType = consentToPolicyType[c.consentType];
+      const policyType = CONSENT_TO_POLICY_TYPE[c.consentType];
       const policyId = policyMap.get(policyType);
       if (!policyId) return null;
       return {
@@ -121,7 +134,7 @@ export async function withdrawConsent(opts: {
   }
 
   // Find the active policy for this consent type
-  const policyType: PolicyDocType = opts.consentType === "MARKETING" ? "MARKETING" : "COOKIE";
+  const policyType = CONSENT_TO_POLICY_TYPE[opts.consentType];
   const policy = await db.pdpaPolicy.findFirst({
     where: { type: policyType, isActive: true },
     select: { id: true },
@@ -224,6 +237,29 @@ export async function createPolicy(adminId: string, data: {
       isActive: true,
       createdBy: adminId,
     },
+  });
+}
+
+export async function bumpPolicyVersion(adminId: string, data: {
+  type: PolicyDocType;
+  title: string;
+  content: string;
+  summary?: string;
+  version?: string;
+}) {
+  const currentPolicy = await db.pdpaPolicy.findFirst({
+    where: { type: data.type, isActive: true },
+    select: { version: true },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return createPolicy(adminId, {
+    version: data.version?.trim() || getNextPolicyVersion(currentPolicy?.version),
+    type: data.type,
+    title: data.title,
+    content: data.content,
+    summary: data.summary,
+    requiresReconsent: true,
   });
 }
 
