@@ -225,7 +225,7 @@ export default function MessagesClient({
                       </TableCell>
                       <TableCell className="text-sm text-[var(--text-primary)] font-mono py-2">{msg.recipient}</TableCell>
                       <TableCell className="hidden md:table-cell py-2">
-                        <span className="text-xs text-[var(--text-muted)] truncate block max-w-[200px]" title={msg.content}>
+                        <span className="text-xs text-[var(--text-muted)] truncate block max-w-[150px] lg:max-w-[300px]" title={msg.content}>
                           {msg.content.length > 40 ? `${msg.content.slice(0, 40)}...` : msg.content}
                         </span>
                       </TableCell>

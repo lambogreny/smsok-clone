@@ -75,6 +75,7 @@ export default function ReconsentModal({
         <Link
           href={policyUrl}
           target="_blank"
+          rel="noopener noreferrer"
           className="flex items-center justify-center gap-1.5 text-[13px] text-[var(--accent-blue)] hover:underline mb-5"
         >
           <FileText className="w-3.5 h-3.5" />

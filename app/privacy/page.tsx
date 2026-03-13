@@ -93,7 +93,7 @@ const sections = [
         <List
           items={[
             "ผู้ให้บริการ SMS Gateway ที่จำเป็นสำหรับการส่งข้อความ",
-            "ผู้ให้บริการชำระเงิน (ธนาคาร, EasySlip)",
+            "ผู้ให้บริการชำระเงิน (ธนาคาร, SlipOK)",
             "หน่วยงานราชการตามที่กฎหมายกำหนด",
             "ด้วยความยินยอมของคุณ",
           ]}
@@ -106,7 +106,7 @@ const sections = [
         <List
           items={[
             "SMS Gateway providers necessary for message delivery",
-            "Payment processors (banks, EasySlip)",
+            "Payment processors (banks, SlipOK)",
             "Government authorities as required by law",
             "With your explicit consent",
           ]}

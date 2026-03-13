@@ -180,7 +180,7 @@ export default function ActivityLogPage() {
 
       <TableWrapper>
         {/* Header */}
-        <div className="grid grid-cols-[140px_80px_140px_1fr_120px] gap-x-4 px-5 py-3 bg-[var(--table-header)] text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">
+        <div className="grid grid-cols-[80px_60px_90px_1fr] md:grid-cols-[140px_80px_140px_1fr_120px] gap-x-4 px-5 py-3 bg-[var(--table-header)] text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">
           <span>เวลา</span>
           <span>สมาชิก</span>
           <span>กิจกรรม</span>
@@ -202,7 +202,7 @@ export default function ActivityLogPage() {
             return (
               <div
                 key={activity.id}
-                className={`grid grid-cols-[140px_80px_140px_1fr_120px] gap-x-4 items-center px-5 py-3.5 border-b border-[var(--table-border)] hover:bg-[rgba(255,255,255,0.015)] transition-colors ${
+                className={`grid grid-cols-[80px_60px_90px_1fr] md:grid-cols-[140px_80px_140px_1fr_120px] gap-x-4 items-center px-5 py-3.5 border-b border-[var(--table-border)] hover:bg-[rgba(255,255,255,0.015)] transition-colors ${
                   i % 2 === 1 ? "bg-[var(--table-alt-row)]" : ""
                 }`}
               >

@@ -519,7 +519,7 @@ export default function BillingPage() {
           </div>
 
           {/* ── Desktop Table ── */}
-          <div className="hidden sm:block rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] overflow-hidden">
+          <div className="hidden sm:block rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="border-b border-[var(--border-default)] hover:bg-transparent">

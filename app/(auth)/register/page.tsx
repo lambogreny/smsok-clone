@@ -514,6 +514,7 @@ export default function RegisterPage() {
                                 <Checkbox
                                   checked={field.value}
                                   onCheckedChange={field.onChange}
+                                  aria-required="true"
                                   className="mt-0.5 h-[18px] w-[18px] shrink-0 rounded-[5px] border-[1.5px] border-[#3a4049] data-[state=checked]:border-transparent data-[state=checked]:bg-[var(--accent)] data-[state=checked]:text-[var(--bg-base)]"
                                 />
                               </FormControl>
@@ -524,6 +525,7 @@ export default function RegisterPage() {
                                     href="/terms"
                                     className="font-medium text-[var(--accent-blue)] hover:underline"
                                     target="_blank"
+                                    rel="noopener noreferrer"
                                   >
                                     ข้อกำหนดการใช้งาน
                                   </Link>
@@ -532,6 +534,7 @@ export default function RegisterPage() {
                                     href="/privacy"
                                     className="font-medium text-[var(--accent-blue)] hover:underline"
                                     target="_blank"
+                                    rel="noopener noreferrer"
                                   >
                                     นโยบายความเป็นส่วนตัว
                                   </Link>
@@ -554,6 +557,7 @@ export default function RegisterPage() {
                                 <Checkbox
                                   checked={field.value}
                                   onCheckedChange={field.onChange}
+                                  aria-required="true"
                                   className="mt-0.5 h-[18px] w-[18px] shrink-0 rounded-[5px] border-[1.5px] border-[#3a4049] data-[state=checked]:border-transparent data-[state=checked]:bg-[var(--accent)] data-[state=checked]:text-[var(--bg-base)]"
                                 />
                               </FormControl>
@@ -561,9 +565,10 @@ export default function RegisterPage() {
                                 <FormLabel className="block text-[13px] text-[var(--text-secondary)] font-normal leading-relaxed break-words">
                                   ฉันยินยอมให้ส่งข้อมูลแก่ผู้ให้บริการ SMS ภายนอกเพื่อจัดส่งข้อความ{" "}
                                   <Link
-                                    href="/privacy#third-party"
+                                    href="/privacy#sharing"
                                     className="font-medium text-[var(--accent-blue)] hover:underline"
                                     target="_blank"
+                                    rel="noopener noreferrer"
                                   >
                                     อ่านเพิ่มเติม
                                   </Link>
