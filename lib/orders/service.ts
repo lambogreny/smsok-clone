@@ -3,6 +3,7 @@ import {
   type OrderStatus,
   type PrismaClient,
 } from "@prisma/client";
+import { calculateVat, calculateWithWht } from "@/lib/accounting/vat";
 import { prisma as db } from "@/lib/db";
 import { resolveStoredFileUrl } from "@/lib/storage/files";
 
@@ -187,13 +188,23 @@ export function getOrderExpirationDate(method: "promptpay" | "bank_transfer" = "
   return new Date(now + durationMs);
 }
 
-export function calculateOrderAmounts(priceIncVat: number, hasWht: boolean) {
-  // Price from package tier is VAT-inclusive — extract VAT from total
-  const totalAmount = Math.round(priceIncVat * 100) / 100;
-  const netAmount = Math.round((totalAmount / 1.07) * 100) / 100;
-  const vatAmount = Math.round((totalAmount - netAmount) * 100) / 100;
-  const whtAmount = hasWht ? Math.round(netAmount * 0.03 * 100) / 100 : 0;
-  const payAmount = Math.round((totalAmount - whtAmount) * 100) / 100;
+export function calculateOrderAmounts(priceBeforeVat: number, hasWht: boolean) {
+  if (hasWht) {
+    const totals = calculateWithWht(priceBeforeVat);
+    return {
+      netAmount: totals.subtotal,
+      vatAmount: totals.vat,
+      totalAmount: totals.total,
+      whtAmount: totals.wht3pct,
+      payAmount: totals.netPayable,
+    };
+  }
+  const totals = calculateVat(priceBeforeVat);
+  const netAmount = totals.subtotal;
+  const vatAmount = totals.vat7pct;
+  const totalAmount = totals.total;
+  const whtAmount = 0;
+  const payAmount = totals.total;
 
   return {
     netAmount,

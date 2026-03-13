@@ -73,6 +73,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { UserData } from "@/lib/types/api-responses";
+import { formatThaiDateTimeShort } from "@/lib/format-thai-date";
 
 type SidebarItem = {
   icon: LucideIcon;
@@ -382,7 +383,7 @@ export default function DashboardShell({
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-[var(--text-secondary)] leading-snug">{n.message}</p>
                         <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                          {new Date(n.createdAt).toLocaleString("th-TH", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                          {formatThaiDateTimeShort(n.createdAt)}
                         </p>
                       </div>
                       {!n.read && <span className="w-2 h-2 rounded-full bg-[var(--accent)] shrink-0 mt-1.5" />}

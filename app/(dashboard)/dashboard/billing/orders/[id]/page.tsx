@@ -50,6 +50,7 @@ import {
 } from "@/types/order";
 import { OrderStatusBadge } from "@/components/order/OrderStatusBadge";
 import { formatBaht } from "@/types/purchase";
+import { formatThaiDate, formatThaiDateTimeShort } from "@/lib/format-thai-date";
 
 interface BankAccount {
   bank: string;
@@ -208,25 +209,6 @@ const STATUS_BANNER_CONFIG: Record<
   },
 };
 
-function formatThaiDate(iso: string): string {
-  return new Date(iso).toLocaleString("th-TH", {
-    day: "numeric",
-    month: "short",
-    year: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function formatThaiShortDate(iso: string): string {
-  return new Date(iso).toLocaleString("th-TH", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 // ── Countdown Timer (inline in banner) ──
 
 function CountdownInline({ expiresAt }: { expiresAt: string }) {
@@ -373,7 +355,7 @@ function OrderTimeline({ order }: { order: Order }) {
                   className="text-[10px] mt-0.5 font-mono"
                   style={{ color: "var(--text-muted)" }}
                 >
-                  {formatThaiShortDate(ts)}
+                  {formatThaiDateTimeShort(ts)}
                 </span>
               )}
             </div>
@@ -1067,7 +1049,7 @@ function PaymentProofCard({
               }}
             >
               <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
-                อัปโหลดเมื่อ {order.latest_slip_uploaded_at ? formatThaiShortDate(order.latest_slip_uploaded_at) : "—"}
+                อัปโหลดเมื่อ {order.latest_slip_uploaded_at ? formatThaiDateTimeShort(order.latest_slip_uploaded_at) : "—"}
               </span>
               {isVerifying && (
                 <span

@@ -18,6 +18,7 @@ import { searchContactsBasic } from "@/lib/actions/contacts";
 import { safeErrorMessage } from "@/lib/error-messages";
 import type { GroupItem, GroupContactStub, GroupMember } from "@/lib/types/api-responses";
 import { useToast } from "@/app/components/ui/Toast";
+import { formatThaiDateShort } from "@/lib/format-thai-date";
 
 // shadcn
 import { Button } from "@/components/ui/button";
@@ -430,11 +431,7 @@ export default function GroupsPageClient({
                       </Badge>
                     </TableCell>
                     <TableCell className="py-3.5 text-xs text-[var(--text-muted)] hidden lg:table-cell">
-                      {new Date(g.createdAt).toLocaleDateString("th-TH", {
-                        day: "numeric",
-                        month: "short",
-                        year: "2-digit",
-                      })}
+                      {formatThaiDateShort(g.createdAt)}
                     </TableCell>
                     <TableCell className="py-3.5 text-right">
                       <div className="flex items-center justify-end gap-1.5">

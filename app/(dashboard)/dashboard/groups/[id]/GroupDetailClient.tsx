@@ -7,6 +7,7 @@ import { removeContactFromGroup, bulkRemoveFromGroup, getContactsNotInGroup } fr
 import { importContacts, addContactsToGroup } from "@/lib/actions/contacts";
 import { safeErrorMessage } from "@/lib/error-messages";
 import { useToast } from "@/app/components/ui/Toast";
+import { formatThaiDateOnly } from "@/lib/format-thai-date";
 import { getTagColor, parseTags } from "@/lib/tag-utils";
 import type { GroupDetailMember, GroupDetailContactStub } from "@/lib/types/api-responses";
 
@@ -442,11 +443,7 @@ export default function GroupDetailClient({
             </h2>
             <p className="text-sm text-[var(--text-muted)] mt-0.5">
               {members.length} สมาชิก &middot; สร้างเมื่อ{" "}
-              {new Date(createdAt).toLocaleDateString("th-TH", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}
+              {formatThaiDateOnly(createdAt)}
             </p>
           </div>
         </div>

@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { safeErrorMessage } from "@/lib/error-messages";
+import { formatThaiDateOnly } from "@/lib/format-thai-date";
 import {
   createContact,
   updateContact,
@@ -1161,10 +1162,7 @@ export default function ContactsClient({
                         </div>
                       </TableCell>
                       <TableCell className="py-3.5 text-xs text-[var(--text-muted)] hidden lg:table-cell">
-                        {new Date(contact.createdAt).toLocaleDateString(
-                          "th-TH",
-                          { day: "numeric", month: "short", year: "2-digit" },
-                        )}
+                        {formatThaiDateOnly(contact.createdAt)}
                       </TableCell>
                       <TableCell className="py-3.5 text-right">
                         <div className="flex items-center justify-end gap-1.5">
@@ -1413,10 +1411,7 @@ export default function ContactsClient({
                         </div>
                       )}
                       <p className="text-[10px] text-[var(--text-muted)] mt-2">
-                        {new Date(contact.createdAt).toLocaleDateString(
-                          "th-TH",
-                          { day: "numeric", month: "short", year: "2-digit" },
-                        )}
+                        {formatThaiDateOnly(contact.createdAt)}
                       </p>
                     </div>
                   </div>

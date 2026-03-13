@@ -8,6 +8,7 @@ import {
 import { getContactActivity } from "@/lib/actions/activity";
 import type { ActivityItem } from "@/lib/actions/activity";
 import { safeErrorMessage } from "@/lib/error-messages";
+import { formatThaiDateTimeShort } from "@/lib/format-thai-date";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -160,12 +161,7 @@ export default function ActivityTimeline({
                         )}
                       </div>
                       <span className="text-xs text-muted-foreground">
-                        {new Date(activity.timestamp).toLocaleString("th-TH", {
-                          day: "numeric",
-                          month: "short",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                        {formatThaiDateTimeShort(activity.timestamp)}
                       </span>
                     </div>
 

@@ -11,6 +11,7 @@ import { safeErrorMessage } from "@/lib/error-messages";
 import { useToast } from "@/app/components/ui/Toast";
 import { TAG_COLORS } from "@/lib/tag-utils";
 import type { TagItem } from "@/lib/types/api-responses";
+import { formatThaiDateShort } from "@/lib/format-thai-date";
 
 // PageLayout
 import PageLayout, {
@@ -83,15 +84,6 @@ const tagFormSchema = z.object({
 });
 
 type TagFormValues = z.infer<typeof tagFormSchema>;
-
-// ==========================================
-// Date formatter
-// ==========================================
-
-function formatThaiDate(dateStr: string | Date) {
-  const d = typeof dateStr === "string" ? new Date(dateStr) : dateStr;
-  return d.toLocaleDateString("th-TH", { day: "numeric", month: "short" });
-}
 
 // ==========================================
 // Main Component
@@ -293,7 +285,7 @@ export default function TagsPageClient({
                     </td>
                     {/* Created date */}
                     <td className="hidden lg:table-cell text-sm text-[var(--text-secondary)]">
-                      {formatThaiDate(tag.createdAt)}
+                      {formatThaiDateShort(tag.createdAt)}
                     </td>
                     {/* Actions */}
                     <td className="text-center">

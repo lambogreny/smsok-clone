@@ -37,13 +37,13 @@ describe("Task #2606: P0 backend bug fixes", () => {
     expect(orderRouteSource).toContain("tax_address: z.string().trim().transform(stripHtml)");
   });
 
-  it("uses VAT-inclusive order math to keep the total equal to the customer-facing package price", () => {
+  it("treats package prices as VAT-exclusive so the payable total adds 7% VAT on top", () => {
     expect(calculateOrderAmounts(500, false)).toEqual({
-      netAmount: 467.29,
-      vatAmount: 32.71,
-      totalAmount: 500,
+      netAmount: 500,
+      vatAmount: 35,
+      totalAmount: 535,
       whtAmount: 0,
-      payAmount: 500,
+      payAmount: 535,
     });
   });
 

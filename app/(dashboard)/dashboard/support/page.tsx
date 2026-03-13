@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import EmptyState from "@/components/EmptyState";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { cn } from "@/lib/utils";
+import { timeAgo } from "@/lib/format-thai-date";
 import {
   Plus,
   Search,
@@ -193,25 +194,6 @@ const FAQ_LINKS = [
     href: "/dashboard/support/kb#content-policy",
   },
 ];
-
-// ─── Helpers ──────────────────────────────────────────────────────────────
-
-function timeAgo(dateStr: string): string {
-  const now = new Date();
-  const date = new Date(dateStr);
-  const diffMs = now.getTime() - date.getTime();
-  const diffSec = Math.floor(diffMs / 1000);
-  const diffMin = Math.floor(diffSec / 60);
-  const diffHour = Math.floor(diffMin / 60);
-  const diffDay = Math.floor(diffHour / 24);
-
-  if (diffMin < 1) return "เมื่อสักครู่";
-  if (diffMin < 60) return `${diffMin} นาทีที่แล้ว`;
-  if (diffHour < 24) return `${diffHour} ชั่วโมงที่แล้ว`;
-  if (diffDay < 7) return `${diffDay} วันที่แล้ว`;
-  if (diffDay < 30) return `${Math.floor(diffDay / 7)} สัปดาห์ที่แล้ว`;
-  return date.toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" });
-}
 
 // ─── Skeleton Loader ──────────────────────────────────────────────────────
 

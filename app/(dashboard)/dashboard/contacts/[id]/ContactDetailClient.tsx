@@ -6,6 +6,7 @@ import {
   ArrowLeft, User, Clock, Settings, Phone, Mail,
   Tag, Users, Shield, ShieldOff, Calendar,
 } from "lucide-react";
+import { formatThaiDateOnly } from "@/lib/format-thai-date";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -163,11 +164,7 @@ export default function ContactDetailClient({
             <p className="text-xs text-muted-foreground mb-1">สร้างเมื่อ</p>
             <p className="text-sm font-medium flex items-center gap-1">
               <Calendar className="w-3 h-3" />
-              {new Date(contact.createdAt).toLocaleDateString("th-TH", {
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              })}
+              {formatThaiDateOnly(contact.createdAt)}
             </p>
           </CardContent>
         </Card>

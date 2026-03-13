@@ -56,6 +56,7 @@ import {
 import { OrderStatusBadge } from "@/components/order/OrderStatusBadge";
 import { formatBaht } from "@/types/purchase";
 import PageLayout, { PageHeader } from "@/components/blocks/PageLayout";
+import { formatThaiDateOnly } from "@/lib/format-thai-date";
 
 // ── Types ──
 
@@ -100,16 +101,6 @@ function StatCard({
       </CardContent>
     </Card>
   );
-}
-
-// ── Format Date ──
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("th-TH", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "2-digit",
-  });
 }
 
 // ── Admin Review Dialog ──
@@ -752,7 +743,7 @@ export default function AdminOrderDashboard() {
                         #{order.order_number}
                       </p>
                       <p className="text-xs text-[var(--text-muted)]">
-                        {formatDate(order.created_at)}
+                        {formatThaiDateOnly(order.created_at)}
                       </p>
                     </TableCell>
                     <TableCell>

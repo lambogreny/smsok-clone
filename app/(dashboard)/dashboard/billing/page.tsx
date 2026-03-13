@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { formatThaiDateSplit } from "@/lib/format-thai-date";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -79,20 +80,6 @@ function formatBaht(satang: number): string {
   return `฿${(satang / 100).toLocaleString("th-TH", { minimumFractionDigits: 2 })}`;
 }
 
-function formatDate(iso: string): { date: string; time: string } {
-  const d = new Date(iso);
-  return {
-    date: d.toLocaleDateString("th-TH", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    }),
-    time: d.toLocaleTimeString("th-TH", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
-  };
-}
 
 const STATUS_CONFIG: Record<
   PaymentStatus,
@@ -241,7 +228,7 @@ function MobilePaymentCard({
   payment: Payment;
   onInvoice: (id: string) => void;
 }) {
-  const { date, time } = formatDate(payment.createdAt);
+  const { date, time } = formatThaiDateSplit(payment.createdAt);
 
   return (
     <Card className="border-[var(--border-default)] bg-[var(--bg-surface)]">
@@ -552,7 +539,7 @@ export default function BillingPage() {
                   </TableRow>
                 ) : (
                   payments.map((payment) => {
-                    const { date, time } = formatDate(payment.createdAt);
+                    const { date, time } = formatThaiDateSplit(payment.createdAt);
                     const isExpanded = expandedId === payment.id;
 
                     return (

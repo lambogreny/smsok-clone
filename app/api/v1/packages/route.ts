@@ -1,11 +1,6 @@
 import { apiResponse, apiError } from "@/lib/api-auth";
+import { calculateVat } from "@/lib/accounting/vat";
 import { prisma as db } from "@/lib/db";
-
-const VAT_RATE = 7;
-
-function round2(n: number): number {
-  return Math.round(n * 100) / 100;
-}
 
 // GET /api/v1/packages — list available package tiers (public)
 export async function GET() {
@@ -29,8 +24,7 @@ export async function GET() {
     // Serialize Decimal → number + add VAT breakdown
     const result = tiers.map((t) => {
       const price = Number(t.price);
-      const subtotal = round2(price / (1 + VAT_RATE / 100));
-      const vat = round2(price - subtotal);
+      const vat = calculateVat(price);
       return {
         id: t.id,
         name: t.name,
@@ -41,7 +35,11 @@ export async function GET() {
         totalSms: t.totalSms,
         senderNameLimit: t.senderNameLimit,
         expiryMonths: t.expiryMonths,
-        vat: { subtotal, vat, total: price },
+        vat: {
+          subtotal: vat.subtotal,
+          vat: vat.vat7pct,
+          total: vat.total,
+        },
       };
     });
 

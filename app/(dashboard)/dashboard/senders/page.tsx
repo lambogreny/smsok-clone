@@ -18,6 +18,7 @@ import {
   Trash2,
   AlertTriangle,
 } from "lucide-react";
+import { formatThaiDateOnly } from "@/lib/format-thai-date";
 import { Button } from "@/components/ui/button";
 import EmptyState from "@/components/EmptyState";
 import { Skeleton } from "@/components/skeletons/Skeleton";
@@ -511,11 +512,7 @@ export default function SendersPage() {
 
                         {/* Created */}
                         <td className="px-5 py-3.5 text-[var(--text-muted)] text-xs">
-                          {new Date(sender.createdAt).toLocaleDateString("th-TH", {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                          })}
+                          {formatThaiDateOnly(sender.createdAt)}
                         </td>
 
                         {/* Kebab */}
@@ -560,7 +557,7 @@ export default function SendersPage() {
                                   <Calendar className="size-4 text-[var(--text-muted)]" />
                                   <div>
                                     <p className="text-sm font-medium text-[var(--text-primary)]">
-                                      {new Date(sender.createdAt).toLocaleDateString("th-TH")}
+                                      {formatThaiDateOnly(sender.createdAt)}
                                     </p>
                                     <p className="text-xs text-[var(--text-muted)]">วันที่สร้าง</p>
                                   </div>
@@ -582,7 +579,7 @@ export default function SendersPage() {
                               {/* Metadata */}
                               <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs text-[var(--text-muted)] mb-4">
                                 {sender.approvedAt && (
-                                  <span>อนุมัติเมื่อ: {new Date(sender.approvedAt).toLocaleDateString("th-TH")}</span>
+                                  <span>อนุมัติเมื่อ: {formatThaiDateOnly(sender.approvedAt)}</span>
                                 )}
                                 {sender.rejectNote && (
                                   <span>เหตุผลที่ปฏิเสธ: {sender.rejectNote}</span>

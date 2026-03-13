@@ -50,6 +50,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { timeAgo } from "@/lib/format-thai-date";
 import PageLayout, { PageHeader, StatsRow, StatCard, TableWrapper } from "@/components/blocks/PageLayout";
 
 type ApiKey = {
@@ -94,21 +95,6 @@ function parseIpWhitelist(input: string): string[] {
   return [...new Set(input.split(",").map((entry) => entry.trim()).filter(Boolean))];
 }
 
-function relativeTime(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "เมื่อสักครู่";
-  if (mins < 60) return `${mins} นาทีที่แล้ว`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours} ชม.ที่แล้ว`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days} วันที่แล้ว`;
-  return new Date(iso).toLocaleDateString("th-TH", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
 
 export default function ApiKeysContent({
   apiKeys: initialKeys,
@@ -544,7 +530,7 @@ export default function ApiKeysContent({
                   {/* Last used */}
                   <TableCell className="hidden md:table-cell">
                     <span className="text-xs text-[var(--text-muted)]">
-                      {k.lastUsed ? relativeTime(k.lastUsed) : "ยังไม่เคยใช้"}
+                      {k.lastUsed ? timeAgo(k.lastUsed) : "ยังไม่เคยใช้"}
                     </span>
                   </TableCell>
 

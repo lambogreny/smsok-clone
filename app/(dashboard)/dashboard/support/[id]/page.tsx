@@ -19,6 +19,7 @@ import {
 import { toast } from "sonner";
 import ConfirmDialog from "@/app/components/ui/ConfirmDialog";
 import ErrorState from "@/app/components/ui/ErrorState";
+import { formatThaiDateOnly, formatThaiTime, formatThaiDate } from "@/lib/format-thai-date";
 
 // ---------- Types ----------
 type Reply = {
@@ -56,26 +57,6 @@ const priorityConfig: Record<string, { cls: string; label: string }> = {
   HIGH: { cls: "bg-[rgba(var(--warning-rgb),0.1)] text-[var(--warning)]", label: "สูง" },
   URGENT: { cls: "bg-[rgba(var(--error-rgb),0.1)] text-[var(--error)]", label: "เร่งด่วน" },
 };
-
-// ---------- Helpers ----------
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("th-TH", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
-
-function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("th-TH", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function formatDateTime(iso: string) {
-  return `${formatDate(iso)} ${formatTime(iso)}`;
-}
 
 // ---------- Skeleton ----------
 function TicketDetailSkeleton() {
@@ -313,7 +294,7 @@ export default function TicketDetailPage() {
               {/* Created date */}
               <span className="text-[10px] text-[var(--text-muted)] inline-flex items-center gap-1">
                 <Clock size={10} />
-                {formatDate(ticket.createdAt)}
+                {formatThaiDateOnly(ticket.createdAt)}
               </span>
             </div>
           </div>
@@ -432,7 +413,7 @@ export default function TicketDetailPage() {
                         isUser ? "text-left" : "text-right"
                       }`}
                     >
-                      {formatDateTime(reply.createdAt)}
+                      {formatThaiDate(reply.createdAt)}
                     </span>
                   </div>
                 </div>

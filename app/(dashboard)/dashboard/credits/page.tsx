@@ -21,6 +21,7 @@ import PageLayout, {
   PageHeader,
   PaginationBar,
 } from "@/components/blocks/PageLayout";
+import { formatThaiDateSplit, formatThaiDateOnly } from "@/lib/format-thai-date";
 
 /* ─── Types ─── */
 
@@ -63,14 +64,6 @@ function progressColor(pct: number) {
   if (pct > 50) return "var(--accent)";
   if (pct >= 20) return "var(--warning)";
   return "var(--error)";
-}
-
-function formatEventDate(iso: string) {
-  const d = new Date(iso);
-  return {
-    date: d.toLocaleDateString("th-TH", { day: "numeric", month: "short" }),
-    time: d.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }),
-  };
 }
 
 const EVENT_TYPE_CONFIG: Record<CreditEventType, { icon: typeof ArrowUpRight; color: string; label: string }> = {
@@ -324,7 +317,7 @@ function CreditHistoryTable({ events }: { events: CreditEvent[] }) {
           </div>
         ) : (
           paged.map((event) => {
-            const { date, time } = formatEventDate(event.date);
+            const { date, time } = formatThaiDateSplit(event.date);
             const config = EVENT_TYPE_CONFIG[event.type] ?? EVENT_TYPE_CONFIG.usage;
             const Icon = config.icon;
             const isPositive = event.amount > 0;
@@ -437,7 +430,7 @@ export default function CreditsPage() {
             name: h.packageName ?? "",
             remaining: h.smsRemaining ?? 0,
             total: h.smsTotal ?? 0,
-            expiresAt: exp.toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" }),
+            expiresAt: formatThaiDateOnly(h.expiresAt),
             rawExpiresAt: h.expiresAt,
             daysLeft,
             isFifo: false,

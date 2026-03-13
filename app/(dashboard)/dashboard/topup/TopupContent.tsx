@@ -34,6 +34,7 @@ import PageLayout, {
   TableWrapper,
   PaginationBar,
 } from "@/components/blocks/PageLayout";
+import { formatThaiDate } from "@/lib/format-thai-date";
 
 /* ─── Types ─── */
 
@@ -139,7 +140,7 @@ export default function TopupContent({
           .filter((h: { status: string }) => h.status === "ACTIVE" || h.status === "EXPIRED")
           .map((h: { id: string; purchasedAt: string; packageName: string; status: string; smsTotal: number; pricePaid?: number }) => ({
             id: h.id,
-            date: new Date(h.purchasedAt).toLocaleString("th-TH", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }),
+            date: formatThaiDate(h.purchasedAt),
             amount: h.pricePaid ?? h.smsTotal ?? 0,
             method: "bank_transfer" as const,
             status: "success" as const,

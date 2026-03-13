@@ -13,6 +13,7 @@ import PageLayout, {
   EmptyState,
 } from "@/components/blocks/PageLayout";
 import Link from "next/link";
+import { formatThaiDateShort } from "@/lib/format-thai-date";
 
 /* ─── Types (matching backend API) ─── */
 
@@ -78,13 +79,6 @@ const MONTH_FILTER_OPTIONS = [
   { value: "2026-02", label: "ก.พ. 2026" },
   { value: "2026-01", label: "ม.ค. 2026" },
 ];
-
-/* ─── Helpers ─── */
-
-function formatThaiDate(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleDateString("th-TH", { day: "numeric", month: "short" });
-}
 
 const PAGE_SIZE = 10;
 
@@ -274,7 +268,7 @@ export default function QuotationsPage() {
 
                 {/* Date */}
                 <span className="text-xs text-[var(--text-secondary)]">
-                  {formatThaiDate(q.createdAt)}
+                  {formatThaiDateShort(q.createdAt)}
                 </span>
 
                 {/* Subtotal */}
@@ -294,7 +288,7 @@ export default function QuotationsPage() {
 
                 {/* Valid Until */}
                 <span className="text-xs text-[var(--text-secondary)]">
-                  {formatThaiDate(q.validUntil)}
+                  {formatThaiDateShort(q.validUntil)}
                 </span>
 
                 {/* Status Badge */}

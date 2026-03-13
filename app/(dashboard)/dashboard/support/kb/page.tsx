@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import DOMPurify from "dompurify";
 import { cn } from "@/lib/utils";
+import { formatThaiDateOnly } from "@/lib/format-thai-date";
 
 // shadcn/ui
 import { Button } from "@/components/ui/button";
@@ -390,11 +391,7 @@ export default function KnowledgeBasePage() {
 
   function formatDate(dateStr: string) {
     try {
-      return new Date(dateStr).toLocaleDateString("th-TH", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
+      return formatThaiDateOnly(dateStr);
     } catch {
       return dateStr;
     }

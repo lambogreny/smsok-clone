@@ -5,6 +5,7 @@ import { ArrowLeft, FileDown, Pencil, Trash2, Loader2, FileText } from "lucide-r
 import { Button } from "@/components/ui/button";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { formatThaiDateOnly } from "@/lib/format-thai-date";
 
 /* ─── Types ─── */
 
@@ -66,17 +67,6 @@ const STATUS_CONFIG: Record<
     bg: "var(--warning-bg)",
   },
 };
-
-/* ─── Helpers ─── */
-
-function formatThaiDate(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleDateString("th-TH", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-}
 
 /* ─── Main Component ─── */
 
@@ -263,12 +253,12 @@ export default function QuotationDetailPage() {
           )}
           <div>
             <span className="block text-xs text-[var(--text-muted)] mb-0.5">วันที่สร้าง</span>
-            <span className="text-sm text-[var(--text-primary)]">{formatThaiDate(quotation.createdAt)}</span>
+            <span className="text-sm text-[var(--text-primary)]">{formatThaiDateOnly(quotation.createdAt)}</span>
           </div>
           {quotation.validUntil && (
             <div>
               <span className="block text-xs text-[var(--text-muted)] mb-0.5">ใช้ได้ถึง</span>
-              <span className="text-sm text-[var(--text-primary)]">{formatThaiDate(quotation.validUntil)}</span>
+              <span className="text-sm text-[var(--text-primary)]">{formatThaiDateOnly(quotation.validUntil)}</span>
             </div>
           )}
         </div>

@@ -20,6 +20,7 @@ import {
 
 import { Search, ArrowRight, Inbox, ChevronLeft, ChevronRight, MessageSquare } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
+import { formatThaiDateTimeShort } from "@/lib/format-thai-date";
 import type { MessageItem, PaginationMeta } from "@/lib/types/api-responses";
 
 const statusConfig: Record<string, { badge: string; label: string }> = {
@@ -182,9 +183,7 @@ export default function MessagesClient({
                     <div className="flex items-center gap-3">
                       <span className="font-mono">{msg.creditCost} SMS</span>
                       <span>
-                        {new Date(msg.createdAt).toLocaleString("th-TH", {
-                          month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
-                        })}
+                        {formatThaiDateTimeShort(msg.createdAt)}
                       </span>
                     </div>
                   </div>
@@ -219,9 +218,7 @@ export default function MessagesClient({
                       className={`border-b border-[var(--border-default)] hover:bg-[var(--bg-elevated)] transition-colors duration-150 h-10 ${i % 2 === 1 ? "bg-[var(--table-alt-row)]" : "bg-transparent"}`}
                     >
                       <TableCell className="text-xs text-[var(--text-muted)] whitespace-nowrap py-2">
-                        {new Date(msg.createdAt).toLocaleString("th-TH", {
-                          year: "2-digit", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
-                        })}
+                        {formatThaiDateTimeShort(msg.createdAt)}
                       </TableCell>
                       <TableCell className="text-sm text-[var(--text-primary)] font-mono py-2">{msg.recipient}</TableCell>
                       <TableCell className="hidden md:table-cell py-2">

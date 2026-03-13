@@ -28,6 +28,7 @@ import { safeErrorMessage } from "@/lib/error-messages";
 import { useToast } from "@/app/components/ui/Toast";
 import SendingHoursWarning from "@/components/blocks/SendingHoursWarning";
 import EmptyStateShared from "@/components/EmptyState";
+import { formatThaiDateShort } from "@/lib/format-thai-date";
 
 // ─── Campaign form validation schema ────────────────────────────────────────
 const campaignFormSchema = z.object({
@@ -121,12 +122,6 @@ function StatusBadge({ status }: { status: CampaignStatus }) {
       {cfg.label}
     </span>
   );
-}
-
-function formatThaiDate(iso: string | null): string {
-  if (!iso) return "-";
-  const d = new Date(iso);
-  return d.toLocaleDateString("th-TH", { day: "numeric", month: "short" });
 }
 
 function NansenProgressBar({
@@ -682,7 +677,7 @@ export default function CampaignsClient({
                 { label: "กลุ่มผู้รับ", value: selectedCampaign.groupName },
                 { label: "เทมเพลต", value: selectedCampaign.templateName },
                 { label: "ผู้ส่ง", value: selectedCampaign.senderName, mono: true },
-                { label: "กำหนดส่ง", value: formatThaiDate(selectedCampaign.scheduledAt) || formatThaiDate(selectedCampaign.createdAt) },
+                { label: "กำหนดส่ง", value: selectedCampaign.scheduledAt ? formatThaiDateShort(selectedCampaign.scheduledAt) : formatThaiDateShort(selectedCampaign.createdAt) },
               ].map((item) => (
                 <div key={item.label}>
                   <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">{item.label}</p>
@@ -812,7 +807,7 @@ export default function CampaignsClient({
                     </td>
                     {/* Date */}
                     <td className="px-4 py-2.5 hidden lg:table-cell">
-                      <span className="text-sm text-[var(--text-muted)]">{formatThaiDate(campaign.createdAt)}</span>
+                      <span className="text-sm text-[var(--text-muted)]">{formatThaiDateShort(campaign.createdAt)}</span>
                     </td>
                     {/* Actions dropdown */}
                     <td className="px-4 py-2.5 text-center" onClick={(e) => e.stopPropagation()}>
@@ -914,7 +909,7 @@ export default function CampaignsClient({
                   <span className="text-xs text-[var(--text-muted)] tabular-nums">
                     {campaign.sentCount.toLocaleString()}/{campaign.totalRecipients.toLocaleString()}
                   </span>
-                  <span className="text-xs text-[var(--text-muted)]">{formatThaiDate(campaign.createdAt)}</span>
+                  <span className="text-xs text-[var(--text-muted)]">{formatThaiDateShort(campaign.createdAt)}</span>
                 </div>
               </div>
             ))}

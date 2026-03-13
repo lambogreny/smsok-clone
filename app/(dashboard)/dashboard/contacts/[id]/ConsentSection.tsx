@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { updateContactConsent } from "@/lib/actions/contacts";
 import { safeErrorMessage } from "@/lib/error-messages";
+import { formatThaiDate } from "@/lib/format-thai-date";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -56,13 +57,7 @@ export default function ConsentSection({
 
   const formatDate = (d: string | null) => {
     if (!d) return "—";
-    return new Date(d).toLocaleString("th-TH", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return formatThaiDate(d);
   };
 
   return (

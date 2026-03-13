@@ -44,6 +44,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import OnboardingChecklist from "@/components/blocks/OnboardingChecklist";
+import { formatThaiDateOnly, formatThaiDateShort, formatThaiTime } from "@/lib/format-thai-date";
 
 /* ── Types ── */
 
@@ -262,7 +263,7 @@ function StatCardsGrid({
   const firstPkg = quota?.packages?.[0];
   const pkgName = firstPkg?.tier?.name ?? "—";
   const pkgExpiry = firstPkg?.expiresAt
-    ? new Date(firstPkg.expiresAt).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "2-digit" })
+    ? formatThaiDateOnly(firstPkg.expiresAt)
     : "";
 
   const cards = [
@@ -597,7 +598,7 @@ function QuotaWidget({ quota }: { quota?: QuotaData }) {
             <div className="flex justify-between">
               <span>หมดอายุ</span>
               <span className="text-[var(--text-primary)]">
-                {new Date(firstPkg.expiresAt).toLocaleDateString("th-TH", { day: "numeric", month: "long", year: "numeric" })}
+                {formatThaiDateOnly(firstPkg.expiresAt)}
               </span>
             </div>
           </div>
@@ -650,7 +651,7 @@ function QuotaWidget({ quota }: { quota?: QuotaData }) {
                       />
                     </div>
                     <div className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>
-                      หมดอายุ: {new Date(pkg.expiresAt).toLocaleDateString("th-TH", { day: "numeric", month: "short" })}
+                      หมดอายุ: {formatThaiDateShort(pkg.expiresAt)}
                     </div>
                   </div>
                 );
@@ -669,7 +670,7 @@ function ActivityFeed({ messages }: { messages: DashboardStats["recentMessages"]
   const items: ActivityItem[] = useMemo(() => {
     if (!messages?.length) return [];
     return messages.slice(0, 10).map((msg) => {
-      const time = new Date(msg.createdAt).toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
+      const time = formatThaiTime(msg.createdAt);
       if (msg.status === "delivered" || msg.status === "sent") {
         return {
           id: msg.id,
@@ -797,7 +798,7 @@ function RecentMessagesTable({ messages }: { messages: DashboardStats["recentMes
             <TableBody>
               {messages.slice(0, 5).map((msg, i) => {
                 const s = statusConfig[msg.status] || statusConfig.pending;
-                const time = new Date(msg.createdAt).toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
+                const time = formatThaiTime(msg.createdAt);
                 return (
                   <TableRow
                     key={msg.id}

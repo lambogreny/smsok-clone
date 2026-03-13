@@ -39,6 +39,7 @@ import {
 } from "@/types/order";
 import { OrderStatusBadge } from "@/components/order/OrderStatusBadge";
 import { formatBaht } from "@/types/purchase";
+import { formatThaiDateOnly } from "@/lib/format-thai-date";
 
 // OrderStatusBadge imported from @/components/order/OrderStatusBadge
 
@@ -103,16 +104,6 @@ function CountdownMini({ expiresAt }: { expiresAt: string }) {
       {text}
     </span>
   );
-}
-
-// ── Format Date ──
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("th-TH", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "2-digit",
-  });
 }
 
 // ── Status Options ──
@@ -506,7 +497,7 @@ export default function OrderManagementPage() {
                         #{order.order_number}
                       </p>
                       <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                        {formatDate(order.created_at)}
+                        {formatThaiDateOnly(order.created_at)}
                       </p>
                     </TableCell>
                     <TableCell>
@@ -540,7 +531,7 @@ export default function OrderManagementPage() {
                           className="text-[10px] mt-0.5"
                           style={{ color: "var(--text-muted)" }}
                         >
-                          {formatDate(order.paid_at)}
+                          {formatThaiDateOnly(order.paid_at)}
                         </p>
                       )}
                     </TableCell>

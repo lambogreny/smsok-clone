@@ -5,6 +5,7 @@ import { FileDown, Search, FileText, Loader2, Receipt } from "lucide-react";
 import EmptyStateShared from "@/components/EmptyState";
 import { Input } from "@/components/ui/input";
 import CustomSelect from "@/components/ui/CustomSelect";
+import { formatThaiDateShort } from "@/lib/format-thai-date";
 import PageLayout, {
   PageHeader,
   FilterBar,
@@ -75,13 +76,6 @@ const MONTH_FILTER_OPTIONS = [
   { value: "2026-02", label: "ก.พ. 2026" },
   { value: "2026-01", label: "ม.ค. 2026" },
 ];
-
-/* ─── Helpers ─── */
-
-function formatThaiDate(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleDateString("th-TH", { day: "numeric", month: "short" });
-}
 
 const PAGE_SIZE = 10;
 
@@ -263,7 +257,7 @@ export default function InvoicesPage() {
 
                 {/* Date */}
                 <span className="text-xs text-[var(--text-secondary)]">
-                  {formatThaiDate(inv.createdAt)}
+                  {formatThaiDateShort(inv.createdAt)}
                 </span>
 
                 {/* Subtotal */}

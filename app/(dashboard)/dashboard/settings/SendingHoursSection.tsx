@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import CustomSelect from "@/components/ui/CustomSelect";
+import { formatThaiTime } from "@/lib/format-thai-date";
 
 /* ── Types ── */
 interface SendingHoursStatus {
@@ -144,10 +145,7 @@ export default function SendingHoursSection() {
               {!status.allowed && status.nextAllowedAt && (
                 <p className="text-xs mt-1 text-[var(--text-muted)]">
                   ส่งได้อีกครั้ง: {formatRelativeTime(status.nextAllowedAt)} (
-                  {new Date(status.nextAllowedAt).toLocaleTimeString("th-TH", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {formatThaiTime(status.nextAllowedAt)}
                   )
                 </p>
               )}

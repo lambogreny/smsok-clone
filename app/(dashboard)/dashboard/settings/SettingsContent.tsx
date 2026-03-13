@@ -28,6 +28,7 @@ import SessionsSection from "./SessionsSection";
 import ForceChangeModal from "./ForceChangeModal";
 import SettingsAccordion from "./components/SettingsAccordion";
 import MobileQuickLinks from "./components/MobileQuickLinks";
+import { formatThaiDateOnly } from "@/lib/format-thai-date";
 
 /* ─── Types ─── */
 
@@ -431,11 +432,7 @@ export default function SettingsContent({
     [activeTab],
   );
 
-  const memberSince = new Date(user.createdAt).toLocaleDateString("th-TH", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  const memberSince = formatThaiDateOnly(user.createdAt.toISOString());
 
   async function toggleNotif(id: string, channel: "email" | "sms") {
     // Security email alerts cannot be disabled

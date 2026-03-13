@@ -40,6 +40,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { formatThaiDate } from "@/lib/format-thai-date";
 
 /* ─── Types ─── */
 
@@ -176,7 +177,7 @@ function DeliveryLogSection({ webhookId }: { webhookId: string }) {
         setLogs(items.map((l: Record<string, unknown>) => ({
           id: l.id as string,
           webhookId: webhookId,
-          timestamp: new Date(l.createdAt as string).toLocaleString("th-TH"),
+          timestamp: formatThaiDate(l.createdAt as string),
           event: l.event as string,
           status: (l.statusCode as number) < 400 ? "success" : "failed",
           responseCode: l.statusCode as number ?? 0,
@@ -671,7 +672,7 @@ export default function WebhooksPage() {
         events: (w.events as string[]) ?? [],
         status: (w.active === false ? "paused" : "active") as WebhookStatus,
         successRate: (w.successRate as number) ?? 100,
-        lastTriggered: w.lastTriggeredAt ? new Date(w.lastTriggeredAt as string).toLocaleString("th-TH") : "ยังไม่เคย",
+        lastTriggered: w.lastTriggeredAt ? formatThaiDate(w.lastTriggeredAt as string) : "ยังไม่เคย",
       })));
     } catch (err) {
       setFetchError(err instanceof Error ? err.message : "เกิดข้อผิดพลาด");

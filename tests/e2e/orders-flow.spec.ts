@@ -58,7 +58,7 @@ test.describe("Orders & Billing — Facebook Level", () => {
     }
   });
 
-  test("TC-O04: VAT calculation is correct (inclusive)", async ({ request }) => {
+  test("TC-O04: VAT calculation is correct (exclusive)", async ({ request }) => {
     const res = await request.post(`${BASE}/api/v1/orders`, {
       data: {
         package_tier_id: STARTER_TIER,
@@ -70,13 +70,12 @@ test.describe("Orders & Billing — Facebook Level", () => {
       },
     });
     const body = await res.json();
-    const total = body.total_amount; // 500
-    const net = body.net_amount;
+    const subtotal = body.net_amount; // 500
     const vat = body.vat_amount;
-    // VAT inclusive: total = net + vat, net = total / 1.07
-    const expectedNet = Math.round((total / 1.07) * 100) / 100;
-    expect(Math.abs(net - expectedNet)).toBeLessThan(0.02);
-    expect(Math.abs(vat - (total - expectedNet))).toBeLessThan(0.02);
+    const total = body.total_amount;
+    expect(Math.abs(subtotal - 500)).toBeLessThan(0.02);
+    expect(Math.abs(vat - 35)).toBeLessThan(0.02);
+    expect(Math.abs(total - 535)).toBeLessThan(0.02);
   });
 
   test("TC-O05: Order missing required fields → 400", async ({ request }) => {

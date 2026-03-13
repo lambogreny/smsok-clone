@@ -31,6 +31,7 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { toast } from "sonner";
+import { formatThaiDateOnly } from "@/lib/format-thai-date";
 
 /* ── Types ── */
 interface TwoFactorStatus {
@@ -48,14 +49,6 @@ interface SetupData {
 /* ── Helpers ── */
 function formatSecret(secret: string): string {
   return secret.replace(/(.{4})/g, "$1 ").trim().toUpperCase();
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("th-TH", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
 }
 
 function getProgressColor(remaining: number, total: number): string {
@@ -461,7 +454,7 @@ export default function TwoFactorSection() {
                   </p>
                   <p className="text-[13px] mt-0.5" style={{ color: "var(--text-muted)" }}>
                     เปิดใช้เมื่อ:{" "}
-                    {status?.setupAt ? formatDate(status.setupAt) : "ไม่ทราบ"}
+                    {status?.setupAt ? formatThaiDateOnly(status.setupAt) : "ไม่ทราบ"}
                   </p>
                 </div>
               </div>

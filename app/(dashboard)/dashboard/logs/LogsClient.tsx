@@ -7,6 +7,7 @@ import CustomSelect from "@/components/ui/CustomSelect";
 import PillTabs from "@/components/ui/PillTabs";
 import { Input } from "@/components/ui/input";
 import EmptyState from "@/components/EmptyState";
+import { formatThaiTimestamp, formatThaiTimestampFull } from "@/lib/format-thai-date";
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -78,19 +79,6 @@ function statusGroup(code: number) {
   if (code < 400) return "3xx";
   if (code < 500) return "4xx";
   return "5xx";
-}
-
-function formatTimestamp(iso: string) {
-  return new Date(iso).toLocaleString("th-TH", {
-    month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit",
-  });
-}
-
-function formatTimestampFull(iso: string) {
-  return new Date(iso).toLocaleString("th-TH", {
-    year: "numeric", month: "short", day: "numeric",
-    hour: "2-digit", minute: "2-digit", second: "2-digit",
-  });
 }
 
 function maskHeaders(headers: Record<string, string>): Record<string, string> {
@@ -270,7 +258,7 @@ function DetailPane({
           </span>
         </div>
         <p className="text-sm text-[var(--text-primary)] font-mono break-all">{log.url}</p>
-        <p className="text-[11px] text-[var(--text-muted)] mt-1">{formatTimestampFull(log.timestamp)}</p>
+        <p className="text-[11px] text-[var(--text-muted)] mt-1">{formatThaiTimestampFull(log.timestamp)}</p>
       </div>
 
       {/* Meta chips */}
@@ -738,7 +726,7 @@ export default function LogsClient() {
                             </span>
                             <span className="text-xs text-[var(--text-primary)] font-mono truncate">{log.url}</span>
                           </div>
-                          <p className="text-[10px] text-[var(--text-muted)] font-mono mt-0.5">{formatTimestamp(log.timestamp)}</p>
+                          <p className="text-[10px] text-[var(--text-muted)] font-mono mt-0.5">{formatThaiTimestamp(log.timestamp)}</p>
                         </div>
 
                         {/* Status */}

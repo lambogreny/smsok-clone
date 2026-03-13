@@ -17,6 +17,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import PageLayout, { PageHeader } from "@/components/blocks/PageLayout";
 import { cn } from "@/lib/utils";
+import { formatThaiDateOnly } from "@/lib/format-thai-date";
 
 /* ─── Types ─── */
 
@@ -385,7 +386,7 @@ export default function PrivacySettingsPage() {
         if (data?.logs) {
           setHistory(
             data.logs.slice(0, 20).map((l: { createdAt: string; consentType: string; action: string; }) => ({
-              date: new Date(l.createdAt).toLocaleDateString("th-TH", { year: "numeric", month: "short", day: "numeric" }),
+              date: formatThaiDateOnly(l.createdAt),
               type: l.consentType,
               action: l.action === "OPT_IN" ? "ยินยอม" as const : "ถอนความยินยอม" as const,
               version: "v1.0",
