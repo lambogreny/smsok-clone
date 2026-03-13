@@ -9,6 +9,19 @@ const adminOrderStatsRoute = readFileSync(resolve(ROOT, "app/api/admin/orders/st
 const adminOrderApproveRoute = readFileSync(resolve(ROOT, "app/api/admin/orders/[id]/approve/route.ts"), "utf-8");
 const adminOrderRejectRoute = readFileSync(resolve(ROOT, "app/api/admin/orders/[id]/reject/route.ts"), "utf-8");
 const adminOrdersPage = readFileSync(resolve(ROOT, "app/admin/orders/page.tsx"), "utf-8");
+const v1OrdersRoute = readFileSync(resolve(ROOT, "app/api/v1/orders/route.ts"), "utf-8");
+const customerOrdersPage = readFileSync(
+  resolve(ROOT, "app/(dashboard)/dashboard/billing/orders/page.tsx"),
+  "utf-8",
+);
+const orderDocumentTypeRoute = readFileSync(
+  resolve(ROOT, "app/api/v1/orders/[id]/documents/[type]/route.ts"),
+  "utf-8",
+);
+const orderDetailPage = readFileSync(
+  resolve(ROOT, "app/(dashboard)/dashboard/billing/orders/[id]/page.tsx"),
+  "utf-8",
+);
 
 describe("Task #1888: admin order review endpoints", () => {
   it("adds admin list and stats endpoints used by the admin orders page", () => {
@@ -34,5 +47,23 @@ describe("Task #1888: admin order review endpoints", () => {
     expect(adminOrdersPage).toContain('fetch("/api/admin/orders/stats"');
     expect(adminOrdersPage).toContain('fetch(`/api/admin/orders/${orderId}/approve`');
     expect(adminOrdersPage).toContain('fetch(`/api/admin/orders/${orderId}/reject`');
+  });
+
+  it("adds type-based order document downloads used by the order detail page", () => {
+    expect(orderDocumentTypeRoute).toContain('GET /api/v1/orders/:id/documents/:type');
+    expect(orderDocumentTypeRoute).toContain('"tax-invoice": "TAX_INVOICE"');
+    expect(orderDocumentTypeRoute).toContain('receipt: "RECEIPT"');
+    expect(orderDocumentTypeRoute).toContain("renderOrderAccountingDocumentPdf");
+    expect(orderDetailPage).toContain("/api/v1/orders/${order.id}/documents/tax-invoice");
+    expect(orderDetailPage).toContain("/api/v1/orders/${order.id}/documents/receipt");
+  });
+
+  it("keeps the customer orders list filters aligned with the v1 orders API", () => {
+    expect(customerOrdersPage).toContain('params.set("from", dateFrom)');
+    expect(customerOrdersPage).toContain('params.set("to", dateTo)');
+    expect(v1OrdersRoute).toContain('from: z.string().date().optional()');
+    expect(v1OrdersRoute).toContain('to: z.string().date().optional()');
+    expect(v1OrdersRoute).toContain("expiresAt: { lt: new Date() }");
+    expect(v1OrdersRoute).toContain("where.createdAt = {");
   });
 });

@@ -61,6 +61,8 @@ const listSchema = z.object({
     "REJECTED",
   ]).optional(),
   search: z.string().trim().optional(),
+  from: z.string().date().optional(),
+  to: z.string().date().optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });
@@ -73,6 +75,15 @@ export async function GET(req: NextRequest) {
     const rl = await applyRateLimit(session.id, "purchase");
     if (rl.blocked) return rl.blocked;
 
+    await db.order.updateMany({
+      where: {
+        userId: session.id,
+        status: { in: ["DRAFT", "PENDING_PAYMENT"] },
+        expiresAt: { lt: new Date() },
+      },
+      data: { status: "EXPIRED" },
+    });
+
     const input = listSchema.parse(Object.fromEntries(new URL(req.url).searchParams));
     const where: Record<string, unknown> = { userId: session.id };
 
@@ -81,6 +92,13 @@ export async function GET(req: NextRequest) {
       if (mappedStatuses?.length) {
         where.status = { in: mappedStatuses };
       }
+    }
+
+    if (input.from || input.to) {
+      where.createdAt = {
+        ...(input.from ? { gte: new Date(`${input.from}T00:00:00.000Z`) } : {}),
+        ...(input.to ? { lte: new Date(`${input.to}T23:59:59.999Z`) } : {}),
+      };
     }
 
     if (input.search) {
