@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Shield,
   Share2,
@@ -57,7 +57,7 @@ const CONSENTS: ConsentConfig[] = [
     required: true,
     policyVersion: "v1.0",
     acceptedDate: "1 มี.ค. 2026",
-    policyLink: "/legal/terms",
+    policyLink: "/terms",
     withdrawWarning: "ต้องการปิดบัญชี? ติดต่อ support@smsok.com",
   },
   {
@@ -71,7 +71,7 @@ const CONSENTS: ConsentConfig[] = [
     required: true,
     policyVersion: "v1.0",
     acceptedDate: "1 มี.ค. 2026",
-    policyLink: "/legal/third-party",
+    policyLink: "/privacy",
     withdrawWarning: "จะไม่สามารถส่ง SMS ได้",
   },
   {
@@ -85,7 +85,7 @@ const CONSENTS: ConsentConfig[] = [
     required: false,
     policyVersion: "v1.0",
     acceptedDate: "1 มี.ค. 2026",
-    policyLink: "/legal/marketing",
+    policyLink: "/privacy#marketing",
     withdrawWarning: "หยุดรับ SMS/Email โปรโมชั่น?",
   },
   {
@@ -99,7 +99,7 @@ const CONSENTS: ConsentConfig[] = [
     required: false,
     policyVersion: "v1.0",
     acceptedDate: "1 มี.ค. 2026",
-    policyLink: "/legal/cookies",
+    policyLink: "/cookie-policy",
     withdrawWarning: "จะลบ analytics cookies",
   },
 ];
@@ -330,10 +330,52 @@ export default function PrivacySettingsPage() {
     marketing: true,
     cookie: true,
   });
+  const [, setLoading] = useState(true);
 
-  const [history] = useState<HistoryEntry[]>([]);
-  const historyLoading = false;
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
   const [historyExpanded, setHistoryExpanded] = useState(true);
+
+  // Fetch real consent status from API
+  useEffect(() => {
+    fetch("/api/v1/consent/status")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.consents) {
+          const mapped: Record<ConsentType, boolean> = {
+            service: true,
+            third_party: true,
+            marketing: true,
+            cookie: true,
+          };
+          for (const c of data.consents) {
+            const key = c.consentType?.toLowerCase() as ConsentType;
+            if (key in mapped) mapped[key] = c.status === "OPT_IN";
+          }
+          setConsents(mapped);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+
+    // Fetch consent history
+    fetch("/api/v1/consent/logs")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.logs) {
+          setHistory(
+            data.logs.slice(0, 20).map((l: { createdAt: string; consentType: string; action: string; }) => ({
+              date: new Date(l.createdAt).toLocaleDateString("th-TH", { year: "numeric", month: "short", day: "numeric" }),
+              type: l.consentType,
+              action: l.action === "OPT_IN" ? "ยินยอม" as const : "ถอนความยินยอม" as const,
+              version: "v1.0",
+            })),
+          );
+        }
+      })
+      .catch(() => {})
+      .finally(() => setHistoryLoading(false));
+  }, []);
 
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
@@ -341,6 +383,21 @@ export default function PrivacySettingsPage() {
     title: string;
     message: string;
   }>({ open: false, type: null, title: "", message: "" });
+
+  async function persistConsent(type: ConsentType, action: "OPT_IN" | "OPT_OUT") {
+    const apiType = type.toUpperCase() as "SERVICE" | "MARKETING" | "THIRD_PARTY" | "COOKIE";
+    try {
+      const res = await fetch("/api/v1/consent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ consents: [{ consentType: apiType, action }] }),
+      });
+      if (!res.ok) throw new Error("Failed");
+    } catch {
+      // Revert on failure
+      setConsents((prev) => ({ ...prev, [type]: action === "OPT_OUT" }));
+    }
+  }
 
   const handleToggle = (consent: ConsentConfig) => {
     if (consent.required) return;
@@ -354,6 +411,7 @@ export default function PrivacySettingsPage() {
       });
     } else {
       setConsents((prev) => ({ ...prev, [consent.type]: true }));
+      persistConsent(consent.type, "OPT_IN");
     }
   };
 
@@ -363,6 +421,7 @@ export default function PrivacySettingsPage() {
         ...prev,
         [confirmDialog.type!]: false,
       }));
+      persistConsent(confirmDialog.type, "OPT_OUT");
     }
     setConfirmDialog({ open: false, type: null, title: "", message: "" });
   };
