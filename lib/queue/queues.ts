@@ -1,5 +1,5 @@
 /**
- * 6 specialized BullMQ queues — following Twilio Traffic Shaping pattern.
+ * BullMQ queues shared across the app.
  * Queues are created lazily (lazyConnect) and shared across the app.
  *
  * Usage: import { otpQueue } from '@/lib/queue/queues'
@@ -15,6 +15,7 @@ import {
   type WebhookJobData,
   type EmailJobData,
   type DlqJobData,
+  type SlipVerificationJobData,
 } from "./types"
 
 // ── Queue Instances ─────────────────────────────────────
@@ -73,6 +74,15 @@ export const emailQueue = new Queue<EmailJobData>(QUEUE_NAMES.EMAIL, {
   },
 })
 
+export const slipVerifyQueue = new Queue<SlipVerificationJobData>(QUEUE_NAMES.SLIP_VERIFY, {
+  connection: producerConnectionOptions,
+  defaultJobOptions: {
+    ...RETRY_STRATEGIES.slipVerify,
+    removeOnComplete: { age: 3600 },
+    removeOnFail: { age: 604800 },
+  },
+})
+
 export const dlqQueue = new Queue<DlqJobData>(QUEUE_NAMES.SMS_DLQ, {
   connection: producerConnectionOptions,
   defaultJobOptions: {
@@ -90,6 +100,7 @@ export const allQueues = [
   campaignQueue,
   webhookQueue,
   emailQueue,
+  slipVerifyQueue,
   dlqQueue,
 ] as const
 

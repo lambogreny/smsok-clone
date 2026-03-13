@@ -13,6 +13,7 @@ export const QUEUE_NAMES = {
   SMS_WEBHOOK: "sms-webhook",
   SMS_DLQ: "sms-dlq",
   EMAIL: "email",
+  SLIP_VERIFY: "slip-verify",
 } as const
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES]
@@ -82,12 +83,26 @@ export interface EmailJobResult {
   success: boolean
 }
 
+// ── Slip Verification Job Data ──────────────────────────
+
+export interface SlipVerificationJobData {
+  orderId: string
+  orderSlipId: string
+  userId: string
+  queuedAt: string
+}
+
+export interface SlipVerificationJobResult {
+  status: "approved" | "rejected" | "manual_review" | "ignored"
+  note: string
+}
+
 // ── DLQ Job Data ────────────────────────────────────────
 
 export interface DlqJobData {
   originalQueue: string
   originalJobId: string | undefined
-  data: SmsJobData | WebhookJobData | EmailJobData
+  data: SmsJobData | WebhookJobData | EmailJobData | SlipVerificationJobData
   error: string
   failedAt: string        // ISO string
   attempts: number
@@ -137,7 +152,14 @@ export const RETRY_STRATEGIES = {
   campaign: { attempts: 8, backoff: { type: "exponential" as const, delay: 10000 } },
   webhook: { attempts: 3, backoff: { type: "exponential" as const, delay: 1000 } },
   email: { attempts: 3, backoff: { type: "exponential" as const, delay: 3000 } },
+  slipVerify: { attempts: 5, backoff: { type: "slip-verify" as const, delay: 60000 } },
 } as const
+
+const SLIP_VERIFY_RETRY_DELAYS_MS = [60000, 180000, 300000, 420000] as const
+
+export function getSlipVerifyRetryDelay(attemptsMade: number) {
+  return SLIP_VERIFY_RETRY_DELAYS_MS[Math.max(0, attemptsMade - 1)] ?? SLIP_VERIFY_RETRY_DELAYS_MS.at(-1) ?? 420000
+}
 
 // ── Concurrency / Rate Limits ───────────────────────────
 
@@ -149,4 +171,5 @@ export const QUEUE_CONFIG = {
   [QUEUE_NAMES.SMS_WEBHOOK]: { concurrency: 20, rateLimit: { max: 50, duration: 1000 } },
   [QUEUE_NAMES.SMS_DLQ]: { concurrency: 3 },
   [QUEUE_NAMES.EMAIL]: { concurrency: 10, rateLimit: { max: 20, duration: 1000 } },
+  [QUEUE_NAMES.SLIP_VERIFY]: { concurrency: 5 },
 } as const

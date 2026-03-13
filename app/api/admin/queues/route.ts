@@ -8,6 +8,7 @@ import {
   batchQueue,
   campaignQueue,
   webhookQueue,
+  slipVerifyQueue,
   dlqQueue,
 } from "@/lib/queue/queues";
 import { authenticateAdmin } from "@/lib/admin-auth";
@@ -22,6 +23,7 @@ createBullBoard({
     new BullMQAdapter(batchQueue),
     new BullMQAdapter(campaignQueue),
     new BullMQAdapter(webhookQueue),
+    new BullMQAdapter(slipVerifyQueue),
     new BullMQAdapter(dlqQueue),
   ],
   serverAdapter,

@@ -2,7 +2,7 @@
  * Worker process entry point — runs OUTSIDE Next.js.
  * Start with: bun run workers:start
  *
- * Creates all 6 workers and handles graceful shutdown.
+ * Creates all workers and handles graceful shutdown.
  */
 
 import { createOtpWorker } from "../lib/queue/workers/otp-worker"
@@ -10,6 +10,7 @@ import { createSingleWorker } from "../lib/queue/workers/single-worker"
 import { createBatchWorker } from "../lib/queue/workers/batch-worker"
 import { createCampaignWorker } from "../lib/queue/workers/campaign-worker"
 import { createWebhookWorker } from "../lib/queue/workers/webhook-worker"
+import { createSlipVerificationWorker } from "../lib/queue/workers/slip-verification-worker"
 import { createDlqWorker } from "../lib/queue/workers/dlq-worker"
 
 console.log("🚀 Starting SMSOK workers...")
@@ -20,6 +21,7 @@ const workers = [
   createBatchWorker(),
   createCampaignWorker(),
   createWebhookWorker(),
+  createSlipVerificationWorker(),
   createDlqWorker(),
 ]
 

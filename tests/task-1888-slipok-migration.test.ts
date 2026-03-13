@@ -42,49 +42,38 @@ describe("Task #1888 — SlipOK migration for order system", () => {
     });
   });
 
-  describe("order slip route uses SlipOK", () => {
-    it("should import from slipok, not easyslip", () => {
+  describe("order slip verification flow uses SlipOK through the worker service", () => {
+    it("queues the canonical route instead of verifying inside the request", () => {
       const routePath = path.resolve("app/api/orders/[id]/slip/route.ts");
       const content = fs.readFileSync(routePath, "utf-8");
-      expect(content).toContain('from "@/lib/slipok"');
-      expect(content).not.toContain('from "@/lib/easyslip"');
+      expect(content).toContain('from "@/lib/queue/queues"');
+      expect(content).toContain("slipVerifyQueue.add");
+      expect(content).not.toContain("verifySlip(slipBlob");
     });
 
-    it("should call verifySlip with the original file", () => {
-      const content = fs.readFileSync(
-        path.resolve("app/api/orders/[id]/slip/route.ts"),
-        "utf-8",
-      );
+    it("calls verifySlip with the stored slip file inside the worker service", () => {
+      const content = fs.readFileSync(path.resolve("lib/orders/slip-verification.ts"), "utf-8");
       expect(content).toContain("verifySlip(slipBlob");
     });
 
-    it("should support pending manual review when SlipOK cannot auto-verify", () => {
-      const content = fs.readFileSync(
-        path.resolve("app/api/orders/[id]/slip/route.ts"),
-        "utf-8",
-      );
+    it("supports pending manual review when SlipOK cannot auto-verify", () => {
+      const content = fs.readFileSync(path.resolve("lib/orders/slip-verification.ts"), "utf-8");
       expect(content).toContain("getPendingReviewMessage");
       expect(content).toContain("getManualReviewNote");
       expect(content).toContain('status: "VERIFYING"');
-      expect(content).toContain("pending_review: true");
+      expect(content).toContain("manual_review");
     });
 
-    it("should auto-pay on successful verification", () => {
-      const content = fs.readFileSync(
-        path.resolve("app/api/orders/[id]/slip/route.ts"),
-        "utf-8",
-      );
+    it("auto-pays on successful verification inside the worker service", () => {
+      const content = fs.readFileSync(path.resolve("lib/orders/slip-verification.ts"), "utf-8");
       expect(content).toContain('"PAID"');
       expect(content).toContain("activateOrderPurchase");
       expect(content).toContain("ensureOrderDocument");
       expect(content).toContain("SlipOK verified");
     });
 
-    it("should still check for duplicate transRef in our DB", () => {
-      const content = fs.readFileSync(
-        path.resolve("app/api/orders/[id]/slip/route.ts"),
-        "utf-8",
-      );
+    it("still checks for duplicate transRef in our DB", () => {
+      const content = fs.readFileSync(path.resolve("lib/orders/slip-verification.ts"), "utf-8");
       expect(content).toContain("orderSlip.findFirst");
       expect(content).toContain("transRef");
     });

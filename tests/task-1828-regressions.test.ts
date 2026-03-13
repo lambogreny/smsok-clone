@@ -48,7 +48,7 @@ describe("Task #1828: campaigns page data loader", () => {
     expect(normalizeCampaignStatus("QUEUING")).toBe("sending");
     expect(normalizeCampaignStatus("PAUSED")).toBe("paused");
     expect(normalizeCampaignStatus("RUNNING")).toBe("running");
-    expect(normalizeCampaignStatus("unexpected")).toBe("draft");
+    expect(normalizeCampaignStatus("unexpected")).toBe("failed");
     expect(normalizeCampaignStatus(undefined)).toBe("draft");
   });
 

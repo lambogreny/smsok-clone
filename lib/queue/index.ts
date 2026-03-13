@@ -13,6 +13,7 @@ export {
   batchQueue,
   campaignQueue,
   webhookQueue,
+  slipVerifyQueue,
   dlqQueue,
   allQueues,
   closeAllQueues,
@@ -23,11 +24,14 @@ export {
   RETRY_STRATEGIES,
   type SmsJobData,
   type WebhookJobData,
+  type SlipVerificationJobData,
+  type SlipVerificationJobResult,
   type DlqJobData,
   type SmsJobResult,
   type WebhookJobResult,
   type QueueHealthInfo,
   type QueuesHealthResponse,
+  getSlipVerifyRetryDelay,
 } from "./types"
 export {
   createOtpWorker,
@@ -35,5 +39,6 @@ export {
   createBatchWorker,
   createCampaignWorker,
   createWebhookWorker,
+  createSlipVerificationWorker,
   createDlqWorker,
 } from "./workers"

@@ -8,12 +8,14 @@ const mocks = vi.hoisted(() => ({
   orderFindFirst: vi.fn(),
   transaction: vi.fn(),
   orderSlipCreate: vi.fn(),
+  orderSlipUpdate: vi.fn(),
   orderUpdate: vi.fn(),
-  verifySlip: vi.fn(),
+  orderHistoryCreate: vi.fn(),
   createOrderHistory: vi.fn(),
   storeUploadedFile: vi.fn(),
   removeStoredFile: vi.fn(),
   applyRateLimit: vi.fn(),
+  queueAdd: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -27,10 +29,6 @@ vi.mock("@/lib/db", () => ({
     },
     $transaction: mocks.transaction,
   },
-}));
-
-vi.mock("@/lib/slipok", () => ({
-  verifySlip: mocks.verifySlip,
 }));
 
 vi.mock("@/lib/orders/service", () => ({
@@ -48,6 +46,12 @@ vi.mock("@/lib/storage/service", () => ({
 
 vi.mock("@/lib/rate-limit", () => ({
   applyRateLimit: mocks.applyRateLimit,
+}));
+
+vi.mock("@/lib/queue/queues", () => ({
+  slipVerifyQueue: {
+    add: mocks.queueAdd,
+  },
 }));
 
 import { POST as uploadOrderSlip } from "@/app/api/v1/orders/[id]/upload/route";
@@ -147,18 +151,21 @@ describe("Task #2624: slip upload accepts file-like multipart entries", () => {
       callback({
         orderSlip: {
           create: mocks.orderSlipCreate,
+          update: mocks.orderSlipUpdate,
         },
         order: {
           update: mocks.orderUpdate,
         },
+        orderHistory: {
+          create: mocks.orderHistoryCreate,
+        },
       }));
     mocks.orderSlipCreate.mockResolvedValue(createdSlip);
+    mocks.orderSlipUpdate.mockResolvedValue(createdSlip);
     mocks.orderUpdate.mockResolvedValue(verifyingOrder);
-    mocks.verifySlip.mockResolvedValue({
-      success: false,
-      error: "SlipOK API not configured",
-    });
+    mocks.orderHistoryCreate.mockResolvedValue(undefined);
     mocks.applyRateLimit.mockResolvedValue({ blocked: null, headers: {} });
+    mocks.queueAdd.mockResolvedValue({ id: "order-slip:slip_1" });
     mocks.storeUploadedFile.mockResolvedValue({
       key: "users/user_1/orders/order_1/slips/fixture.jpg",
       ref: "r2:users/user_1/orders/order_1/slips/fixture.jpg",
@@ -184,7 +191,7 @@ describe("Task #2624: slip upload accepts file-like multipart entries", () => {
     expect(uploaded?.size).toBe(slipFixture.byteLength);
   });
 
-  it("stores the slip and returns VERIFYING on the v1 route when SlipOK cannot auto-verify", async () => {
+  it("stores the slip and queues background verification on the v1 route", async () => {
     const response = await uploadOrderSlip(createRequestWithSlip(createFileLikeSlip()), {
       params: Promise.resolve({ id: "order_1" }),
     });
@@ -193,15 +200,16 @@ describe("Task #2624: slip upload accepts file-like multipart entries", () => {
     expect(await response.json()).toMatchObject({
       status: "VERIFYING",
       verified: false,
-      pending_review: true,
-      review_note: "SlipOK: SlipOK API not configured",
+      pending_review: false,
+      queued: true,
+      latest_status_note: "เราได้รับสลิปแล้ว กำลังตรวจสอบรายการชำระเงิน",
       latest_slip: {
         id: "slip_1",
       },
     });
-    expect(mocks.verifySlip).toHaveBeenCalledTimes(1);
     expect(mocks.orderSlipCreate).toHaveBeenCalledTimes(1);
     expect(mocks.orderUpdate).toHaveBeenCalledTimes(1);
+    expect(mocks.queueAdd).toHaveBeenCalledTimes(1);
     expect(mocks.storeUploadedFile).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: "user_1",
@@ -210,18 +218,19 @@ describe("Task #2624: slip upload accepts file-like multipart entries", () => {
         kind: "slips",
       }),
     );
-    expect(mocks.createOrderHistory).toHaveBeenCalledWith(
-      expect.anything(),
-      "order_1",
-      "VERIFYING",
+    expect(mocks.queueAdd).toHaveBeenCalledWith(
+      "verify-order-slip",
       expect.objectContaining({
-        note: "SlipOK: SlipOK API not configured",
+        orderId: "order_1",
+        userId: "user_1",
+      }),
+      expect.objectContaining({
+        jobId: expect.stringMatching(/^order-slip:/),
       }),
     );
-    expect(mocks.verifySlip).toHaveBeenCalledTimes(1);
   });
 
-  it("stores the slip and returns VERIFYING on the canonical route when SlipOK cannot auto-verify", async () => {
+  it("stores the slip and returns VERIFYING on the canonical route while the worker processes it", async () => {
     const response = await uploadCanonicalOrderSlip(createRequestWithSlip(createFileLikeSlip()), {
       params: Promise.resolve({ id: "order_1" }),
     });
@@ -230,18 +239,18 @@ describe("Task #2624: slip upload accepts file-like multipart entries", () => {
     expect(await response.json()).toMatchObject({
       status: "VERIFYING",
       verified: false,
-      pending_review: true,
-      review_note: "SlipOK: SlipOK API not configured",
+      pending_review: false,
+      queued: true,
       latest_slip: {
         id: "slip_1",
       },
     });
-    expect(mocks.verifySlip).toHaveBeenCalledTimes(1);
+    expect(mocks.queueAdd).toHaveBeenCalledTimes(1);
     expect(mocks.storeUploadedFile).toHaveBeenCalledTimes(1);
     expect(mocks.applyRateLimit).toHaveBeenCalledWith("user_1", "slip");
   });
 
-  it("cleans up uploaded files when the manual review transaction fails", async () => {
+  it("cleans up uploaded files when persisting the queued slip fails", async () => {
     mocks.transaction.mockRejectedValueOnce(new Error("db write failed"));
 
     const response = await uploadCanonicalOrderSlip(createRequestWithSlip(createFileLikeSlip()), {
@@ -251,6 +260,24 @@ describe("Task #2624: slip upload accepts file-like multipart entries", () => {
     expect(response.status).toBe(500);
     expect(mocks.removeStoredFile).toHaveBeenCalledWith("r2:users/user_1/orders/order_1/slips/fixture.jpg");
     expect(mocks.removeStoredFile).toHaveBeenCalledTimes(1);
+  });
+
+  it("rolls the upload back and cleans up files when queue enqueue fails", async () => {
+    mocks.queueAdd.mockRejectedValueOnce(new Error("redis unavailable"));
+
+    const response = await uploadCanonicalOrderSlip(createRequestWithSlip(createFileLikeSlip()), {
+      params: Promise.resolve({ id: "order_1" }),
+    });
+
+    expect(response.status).toBe(503);
+    expect(mocks.orderSlipUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          deletedAt: expect.any(Date),
+        }),
+      }),
+    );
+    expect(mocks.removeStoredFile).toHaveBeenCalledWith("r2:users/user_1/orders/order_1/slips/fixture.jpg");
   });
 
   it("rewrites legacy v1 slip endpoints to the canonical slip route before the v1 middleware branch runs", () => {
