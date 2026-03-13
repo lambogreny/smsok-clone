@@ -1,0 +1,6 @@
+name,phone,email,tags
+ทดสอบ คนที่ 1,0811111111,test1@example.com,vip
+ทดสอบ คนที่ 2,0822222222,test2@example.com,regular
+ทดสอบ คนที่ 3,0833333333,test3@example.com,vip;regular
+Contact Four,0844444444,test4@example.com,
+Contact Five,0855555555,,new
