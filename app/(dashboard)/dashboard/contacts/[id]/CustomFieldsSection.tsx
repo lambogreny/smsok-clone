@@ -36,12 +36,10 @@ const FIELD_TYPE_ICONS: Record<string, typeof Type> = {
 };
 
 export default function CustomFieldsSection({
-  userId,
   contactId,
   customFields,
   initialValues,
 }: {
-  userId: string;
   contactId: string;
   customFields: CustomField[];
   initialValues: CustomFieldValue[];

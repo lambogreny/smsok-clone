@@ -291,7 +291,6 @@ function TagInput({
 // ==========================================
 
 export default function ContactsClient({
-  userId,
   initialContacts,
   totalContacts,
   initialPage = 1,
@@ -299,7 +298,6 @@ export default function ContactsClient({
   totalPages = 1,
   groups = [],
 }: {
-  userId: string;
   initialContacts: Contact[];
   totalContacts: number;
   initialPage?: number;
@@ -445,7 +443,7 @@ export default function ContactsClient({
     startTransition(async () => {
       try {
         if (editingContact) {
-          await updateContact(userId, editingContact.id, {
+          await updateContact(editingContact.id, {
             name: data.name.trim(),
             phone: data.phone.trim(),
             email: data.email?.trim() || undefined,
@@ -453,7 +451,7 @@ export default function ContactsClient({
           });
           toast("success", "อัปเดตรายชื่อสำเร็จ!");
         } else {
-          await createContact(userId, {
+          await createContact({
             name: data.name.trim(),
             phone: data.phone.trim(),
             email: data.email?.trim() || undefined,
@@ -475,7 +473,7 @@ export default function ContactsClient({
 
     startTransition(async () => {
       try {
-        await deleteContact(userId, contactId);
+        await deleteContact(contactId);
         setSelectedIds((prev) => {
           const next = new Set(prev);
           next.delete(contactId);
@@ -515,7 +513,7 @@ export default function ContactsClient({
 
     startTransition(async () => {
       try {
-        await bulkUpdateTags(userId, Array.from(selectedIds), tag, batchAction);
+        await bulkUpdateTags(Array.from(selectedIds), tag, batchAction);
         toast(
           "success",
           `${batchAction === "add" ? "เพิ่ม" : "ลบ"}แท็ก "${tag}" สำเร็จ ${selectedIds.size} รายชื่อ`,
@@ -534,7 +532,7 @@ export default function ContactsClient({
     if (selectedIds.size === 0) return;
     startTransition(async () => {
       try {
-        const result = await bulkDeleteContacts(userId, Array.from(selectedIds));
+        const result = await bulkDeleteContacts(Array.from(selectedIds));
         toast("success", `ลบ ${result.deleted} รายชื่อสำเร็จ`);
         setSelectedIds(new Set());
         setShowBulkDeleteAlert(false);
@@ -549,7 +547,7 @@ export default function ContactsClient({
     if (!addToGroupId || selectedIds.size === 0) return;
     startTransition(async () => {
       try {
-        await addContactsToGroup(userId, addToGroupId, Array.from(selectedIds));
+        await addContactsToGroup(addToGroupId, Array.from(selectedIds));
         toast("success", `เพิ่ม ${selectedIds.size} รายชื่อเข้ากลุ่มสำเร็จ`);
         setSelectedIds(new Set());
         setShowAddToGroup(false);
@@ -604,7 +602,7 @@ export default function ContactsClient({
 
       startTransition(async () => {
         try {
-          const result = await importContacts(userId, contacts);
+          const result = await importContacts(contacts);
           toast(
             "success",
             `นำเข้าสำเร็จ ${result.imported} รายชื่อ${result.skipped > 0 ? ` (ข้าม ${result.skipped})` : ""}`,
@@ -622,7 +620,7 @@ export default function ContactsClient({
   function handleExport() {
     startTransition(async () => {
       try {
-        const data = await exportContacts(userId);
+        const data = await exportContacts();
         if (data.length === 0) {
           toast("warning", "ไม่มีรายชื่อให้ส่งออก");
           return;
@@ -667,7 +665,7 @@ export default function ContactsClient({
 
     startTransition(async () => {
       try {
-        const result = await importContacts(userId, contacts);
+        const result = await importContacts(contacts);
         toast(
           "success",
           `เพิ่มสำเร็จ ${result.imported} เบอร์${result.skipped > 0 ? ` (ซ้ำ ${result.skipped})` : ""}`,
@@ -704,7 +702,7 @@ export default function ContactsClient({
       : [...currentTags, tag];
     startTransition(async () => {
       try {
-        await updateContact(userId, contactId, { tags: newTags.join(", ") });
+        await updateContact(contactId, { tags: newTags.join(", ") });
         router.refresh();
       } catch {
         toast("error", "เกิดข้อผิดพลาด");
@@ -1859,7 +1857,6 @@ export default function ContactsClient({
 
       {/* Import Wizard */}
       <ImportWizard
-        userId={userId}
         open={showImportWizard}
         onOpenChange={setShowImportWizard}
         onComplete={() => router.refresh()}

@@ -14,8 +14,8 @@ export default async function ContactDetailPage({
 
   const { id } = await params;
   const [contact, customFields] = await Promise.all([
-    getContactById(user.id, id),
-    getCustomFields(user.id),
+    getContactById(id),
+    getCustomFields(),
   ]);
 
   if (!contact) notFound();
@@ -60,10 +60,6 @@ export default async function ContactDetailPage({
   }));
 
   return (
-    <ContactDetailClient
-      userId={user.id}
-      contact={serialized}
-      customFields={serializedFields}
-    />
+    <ContactDetailClient contact={serialized} customFields={serializedFields} />
   );
 }

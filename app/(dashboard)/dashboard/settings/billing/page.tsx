@@ -636,7 +636,7 @@ export default function TaxProfilePage() {
                     className="font-mono tabular-nums"
                     style={{ color: "var(--text-primary)" }}
                   >
-                    10,000.00 บาท
+                    ฿10,000.00
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -645,7 +645,7 @@ export default function TaxProfilePage() {
                     className="font-mono tabular-nums"
                     style={{ color: "var(--text-primary)" }}
                   >
-                    700.00 บาท
+                    ฿700.00
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -654,7 +654,7 @@ export default function TaxProfilePage() {
                     className="font-mono tabular-nums"
                     style={{ color: "var(--text-primary)" }}
                   >
-                    10,700.00 บาท
+                    ฿10,700.00
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -665,7 +665,7 @@ export default function TaxProfilePage() {
                     className="font-mono tabular-nums"
                     style={{ color: "var(--error)" }}
                   >
-                    -300.00 บาท
+                    -฿300.00
                   </span>
                 </div>
                 <div
@@ -682,7 +682,7 @@ export default function TaxProfilePage() {
                     className="font-semibold font-mono tabular-nums"
                     style={{ color: "var(--accent)" }}
                   >
-                    10,400.00 บาท
+                    ฿10,400.00
                   </span>
                 </div>
               </div>

@@ -823,6 +823,77 @@ function DocumentsCard({ order }: { order: Order }) {
   );
 }
 
+// ── Bank Account Card (shown on order detail for PENDING orders) ──
+
+function BankAccountCard({ bankAccount }: { bankAccount: BankAccount | null }) {
+  const [copied, setCopied] = useState(false);
+
+  if (!bankAccount) return null;
+
+  function handleCopy() {
+    navigator.clipboard.writeText(bankAccount!.accountNumber).then(() => {
+      setCopied(true);
+      toast.success("คัดลอกเลขบัญชีแล้ว");
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  return (
+    <div
+      className="rounded-xl p-5 mb-4"
+      style={{
+        background: "var(--bg-surface)",
+        border: "1px solid var(--border-default)",
+      }}
+    >
+      <div className="flex items-center gap-2 mb-4">
+        <Landmark size={18} style={{ color: "var(--accent)" }} />
+        <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+          บัญชีสำหรับโอนเงิน
+        </h3>
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex justify-between items-baseline">
+          <span className="text-xs" style={{ color: "var(--text-muted)" }}>ธนาคาร</span>
+          <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+            {bankAccount.bank}
+          </span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-xs" style={{ color: "var(--text-muted)" }}>เลขที่บัญชี</span>
+          <div className="flex items-center gap-2">
+            <span
+              className="text-base font-semibold font-mono tracking-wide"
+              style={{ color: "var(--text-primary)" }}
+            >
+              {bankAccount.accountNumber}
+            </span>
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="p-1.5 rounded-md transition-colors"
+              style={{
+                color: copied ? "var(--success)" : "var(--text-muted)",
+                background: copied ? "rgba(var(--success-rgb),0.08)" : "transparent",
+              }}
+              aria-label="คัดลอกเลขบัญชี"
+            >
+              {copied ? <Check size={14} /> : <Copy size={14} />}
+            </button>
+          </div>
+        </div>
+        <div className="flex justify-between items-baseline">
+          <span className="text-xs" style={{ color: "var(--text-muted)" }}>ชื่อบัญชี</span>
+          <span className="text-sm" style={{ color: "var(--text-primary)" }}>
+            {bankAccount.accountName}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Payment Proof Card ──
 
 function PaymentProofCard({
@@ -1673,6 +1744,11 @@ export default function OrderDetailPage() {
 
             {/* Section 3: Itemized Breakdown */}
             <ItemizedTable order={order} />
+
+            {/* Section 5: Bank Account (PENDING / SLIP_UPLOADED only) */}
+            {(order.status === "PENDING" || order.status === "SLIP_UPLOADED") && (
+              <BankAccountCard bankAccount={bankAccount} />
+            )}
 
             {/* Section 6: Payment Proof */}
             <PaymentProofCard

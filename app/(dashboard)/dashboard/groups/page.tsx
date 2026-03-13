@@ -7,7 +7,7 @@ export default async function GroupsPage() {
   const user = await getSession();
   if (!user) redirect("/login");
 
-  const groups = await getGroups(user.id);
+  const groups = await getGroups();
 
-  return <GroupsPageClient userId={user.id} initialGroups={groups} />;
+  return <GroupsPageClient initialGroups={groups} />;
 }

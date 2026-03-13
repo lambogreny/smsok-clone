@@ -3,7 +3,7 @@
 import { prisma as db } from "../db";
 import { revalidatePath } from "next/cache";
 import { templateSchema } from "../validations";
-import { resolveActionUserId } from "../action-user";
+import { resolveActionUserId, type InternalActionUserToken } from "../action-user";
 
 /** Extract {{varName}} from template content */
 function extractVariables(content: string): string[] {
@@ -24,8 +24,11 @@ function calculateSegments(content: string): number {
 // List templates
 // ==========================================
 
-export async function getTemplates(userId: string) {
-  userId = await resolveActionUserId(userId);
+export async function getTemplates(): Promise<Awaited<ReturnType<typeof db.messageTemplate.findMany>>>;
+export async function getTemplates(userId: string): Promise<Awaited<ReturnType<typeof db.messageTemplate.findMany>>>;
+export async function getTemplates(userId: string, token: InternalActionUserToken): Promise<Awaited<ReturnType<typeof db.messageTemplate.findMany>>>;
+export async function getTemplates(userId?: string, token?: InternalActionUserToken) {
+  userId = await resolveActionUserId(userId, token);
   return db.messageTemplate.findMany({
     where: { userId, deletedAt: null },
     orderBy: { updatedAt: "desc" },
@@ -38,9 +41,11 @@ export async function getTemplates(userId: string) {
 
 export async function createTemplate(data: unknown): Promise<Awaited<ReturnType<typeof db.messageTemplate.create>>>;
 export async function createTemplate(userId: string, data: unknown): Promise<Awaited<ReturnType<typeof db.messageTemplate.create>>>;
-export async function createTemplate(userIdOrData: string | unknown, maybeData?: unknown) {
+export async function createTemplate(userId: string, data: unknown, token: InternalActionUserToken): Promise<Awaited<ReturnType<typeof db.messageTemplate.create>>>;
+export async function createTemplate(userIdOrData: string | unknown, maybeData?: unknown, token?: InternalActionUserToken) {
   const userId = await resolveActionUserId(
     maybeData === undefined ? undefined : userIdOrData as string,
+    token,
   );
   const input = templateSchema.parse(maybeData === undefined ? userIdOrData : maybeData);
 
@@ -74,9 +79,10 @@ export async function createTemplate(userIdOrData: string | unknown, maybeData?:
 
 export async function updateTemplate(templateId: string, data: unknown): Promise<Awaited<ReturnType<typeof db.messageTemplate.update>>>;
 export async function updateTemplate(userId: string, templateId: string, data: unknown): Promise<Awaited<ReturnType<typeof db.messageTemplate.update>>>;
-export async function updateTemplate(userIdOrTemplateId: string, templateIdOrData: string | unknown, maybeData?: unknown) {
+export async function updateTemplate(userId: string, templateId: string, data: unknown, token: InternalActionUserToken): Promise<Awaited<ReturnType<typeof db.messageTemplate.update>>>;
+export async function updateTemplate(userIdOrTemplateId: string, templateIdOrData: string | unknown, maybeData?: unknown, token?: InternalActionUserToken) {
   const hasExplicitUserId = maybeData !== undefined;
-  const userId = await resolveActionUserId(hasExplicitUserId ? userIdOrTemplateId : undefined);
+  const userId = await resolveActionUserId(hasExplicitUserId ? userIdOrTemplateId : undefined, token);
   const templateId = hasExplicitUserId ? templateIdOrData as string : userIdOrTemplateId;
   const input = templateSchema.partial().parse(hasExplicitUserId ? maybeData : templateIdOrData);
 
@@ -113,9 +119,11 @@ export async function updateTemplate(userIdOrTemplateId: string, templateIdOrDat
 
 export async function deleteTemplate(templateId: string): Promise<void>;
 export async function deleteTemplate(userId: string, templateId: string): Promise<void>;
-export async function deleteTemplate(userIdOrTemplateId: string, maybeTemplateId?: string) {
+export async function deleteTemplate(userId: string, templateId: string, token: InternalActionUserToken): Promise<void>;
+export async function deleteTemplate(userIdOrTemplateId: string, maybeTemplateId?: string, token?: InternalActionUserToken) {
   const userId = await resolveActionUserId(
     maybeTemplateId === undefined ? undefined : userIdOrTemplateId,
+    token,
   );
   const templateId = maybeTemplateId ?? userIdOrTemplateId;
   const existing = await db.messageTemplate.findFirst({

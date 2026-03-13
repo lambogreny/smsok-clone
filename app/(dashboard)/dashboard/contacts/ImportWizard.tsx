@@ -58,12 +58,10 @@ const DUPLICATE_OPTIONS: { value: DuplicateAction; label: string; desc: string }
 const PHONE_REGEX = /^(0[0-9]{8,9}|\+66[0-9]{8,9}|66[0-9]{8,9})$/;
 
 export default function ImportWizard({
-  userId,
   open,
   onOpenChange,
   onComplete,
 }: {
-  userId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onComplete: () => void;
@@ -249,7 +247,6 @@ export default function ImportWizard({
 
     try {
       const importResult = await importContactsFromExcel(
-        userId,
         fileBuffer,
         columnMapping,
         { updateExisting: duplicateAction !== "skip" },

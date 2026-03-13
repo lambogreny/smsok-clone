@@ -19,8 +19,8 @@ export default async function ContactsPage({
   const limit = (VALID_LIMITS as readonly number[]).includes(limitParsed) ? limitParsed : 20;
 
   const [{ contacts, pagination }, groups] = await Promise.all([
-    getContacts(user.id, { page, limit }),
-    getContactGroups(user.id),
+    getContacts({ page, limit }),
+    getContactGroups(),
   ]);
 
   // Serialize dates for client component
@@ -40,7 +40,6 @@ export default async function ContactsPage({
 
   return (
     <ContactsClient
-      userId={user.id}
       initialContacts={serializedContacts}
       totalContacts={pagination.total}
       initialPage={page}

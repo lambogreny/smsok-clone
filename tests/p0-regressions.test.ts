@@ -82,22 +82,22 @@ describe("P0: 2FA settings recovery flows", () => {
 describe("P0: client-facing server actions ignore caller-supplied userId", () => {
   it("campaign actions rebind userId through resolveActionUserId", () => {
     expect(campaignActions).toContain('import { resolveActionUserId } from "../action-user";');
-    expect(campaignActions.match(/resolveActionUserId\(userId\)/g)?.length ?? 0).toBeGreaterThanOrEqual(4);
+    expect(campaignActions.match(/resolveActionUserId\(/g)?.length ?? 0).toBeGreaterThanOrEqual(4);
   });
 
   it("contact actions rebind userId through resolveActionUserId", () => {
     expect(contactActions).toContain('import { resolveActionUserId } from "../action-user";');
-    expect(contactActions.match(/resolveActionUserId\(userId\)/g)?.length ?? 0).toBeGreaterThanOrEqual(10);
+    expect(contactActions.match(/resolveActionUserId\(/g)?.length ?? 0).toBeGreaterThanOrEqual(10);
   });
 
   it("activity actions rebind userId through resolveActionUserId", () => {
     expect(activityActions).toContain('import { resolveActionUserId } from "../action-user";');
-    expect(activityActions).toContain("userId = await resolveActionUserId(userId);");
+    expect(activityActions).toContain("const userId = await resolveActionUserId(");
   });
 
   it("group actions rebind userId through resolveActionUserId", () => {
     expect(groupActions).toContain('import { resolveActionUserId } from "../action-user";');
-    expect(groupActions.match(/resolveActionUserId\(userId\)/g)?.length ?? 0).toBeGreaterThanOrEqual(8);
+    expect(groupActions.match(/resolveActionUserId\(/g)?.length ?? 0).toBeGreaterThanOrEqual(8);
   });
 });
 

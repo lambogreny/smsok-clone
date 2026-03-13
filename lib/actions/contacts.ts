@@ -1,5 +1,6 @@
 "use server";
 
+import type { Prisma } from "@prisma/client";
 import { prisma as db } from "../db";
 import { revalidatePath } from "next/cache";
 import {
@@ -16,22 +17,48 @@ const contactInclude = {
   contactTags: { include: { tag: true } },
 } as const;
 
+const contactDetailInclude = {
+  ...contactInclude,
+  customFieldValues: {
+    include: { field: { select: { id: true, name: true, type: true, options: true } } },
+  },
+} as const;
+
+type ContactListItem = Prisma.ContactGetPayload<{ include: typeof contactInclude }>;
+type ContactDetailItem = Prisma.ContactGetPayload<{ include: typeof contactDetailInclude }>;
+type ContactsResult = {
+  contacts: ContactListItem[];
+  pagination: { page: number; limit: number; total: number; totalPages: number };
+};
+type ExportContactRow = {
+  name: string;
+  phone: string;
+  email: string;
+  tags: string;
+  groups: string;
+  createdAt: string;
+};
+type ContactGroupSummary = { id: string; name: string; memberCount: number };
+type ContactMembershipSummary = { id: string; name: string };
+type GroupsWithMembershipsResult = {
+  groups: ContactGroupSummary[];
+  contactGroups: Record<string, string[]>;
+};
+
 // ==========================================
 // Get single contact by ID (for detail page)
 // ==========================================
 
-export async function getContactById(userId: string, contactId: string) {
-  userId = await resolveActionUserId(userId);
+export async function getContactById(contactId: string): Promise<ContactDetailItem | null>;
+export async function getContactById(userId: string, contactId: string): Promise<ContactDetailItem | null>;
+export async function getContactById(userIdOrContactId: string, maybeContactId?: string) {
+  const userId = await resolveActionUserId(maybeContactId === undefined ? undefined : userIdOrContactId);
+  const contactId = maybeContactId ?? userIdOrContactId;
   idSchema.parse({ id: contactId });
 
   const contact = await db.contact.findFirst({
     where: { id: contactId, userId },
-    include: {
-      ...contactInclude,
-      customFieldValues: {
-        include: { field: { select: { id: true, name: true, type: true, options: true } } },
-      },
-    },
+    include: contactDetailInclude,
   });
 
   if (!contact) return null;
@@ -88,9 +115,14 @@ export async function updateContactConsent(
 // List contacts
 // ==========================================
 
-export async function getContacts(userId: string, filters?: unknown) {
-  userId = await resolveActionUserId(userId);
-  const input = filters ? contactFilterSchema.parse(filters) : { page: 1, limit: 50, tagId: undefined };
+export async function getContacts(filters?: unknown): Promise<ContactsResult>;
+export async function getContacts(userId: string, filters?: unknown): Promise<ContactsResult>;
+export async function getContacts(userIdOrFilters?: string | unknown, maybeFilters?: unknown) {
+  const hasExplicitUserId = typeof userIdOrFilters === "string" && maybeFilters !== undefined;
+  const userId = await resolveActionUserId(hasExplicitUserId ? userIdOrFilters : undefined);
+  const input = (hasExplicitUserId ? maybeFilters : userIdOrFilters)
+    ? contactFilterSchema.parse(hasExplicitUserId ? maybeFilters : userIdOrFilters)
+    : { page: 1, limit: 50, tagId: undefined };
   const skip = (input.page - 1) * input.limit;
   const where = {
     userId,
@@ -363,7 +395,9 @@ export async function importContacts(
 // Export contacts as JSON (for CSV conversion on client)
 // ==========================================
 
-export async function exportContacts(userId: string) {
+export async function exportContacts(): Promise<ExportContactRow[]>;
+export async function exportContacts(userId: string): Promise<ExportContactRow[]>;
+export async function exportContacts(userId?: string) {
   userId = await resolveActionUserId(userId);
   const contacts = await db.contact.findMany({
     where: { userId },
@@ -518,8 +552,11 @@ export async function bulkUpdateTags(
 // Get contacts by group
 // ==========================================
 
-export async function getContactsByGroup(userId: string, groupId: string) {
-  userId = await resolveActionUserId(userId);
+export async function getContactsByGroup(groupId: string): Promise<Awaited<ReturnType<typeof db.contact.findMany>>>;
+export async function getContactsByGroup(userId: string, groupId: string): Promise<Awaited<ReturnType<typeof db.contact.findMany>>>;
+export async function getContactsByGroup(userIdOrGroupId: string, maybeGroupId?: string) {
+  const userId = await resolveActionUserId(maybeGroupId === undefined ? undefined : userIdOrGroupId);
+  const groupId = maybeGroupId ?? userIdOrGroupId;
   idSchema.parse({ id: groupId });
 
   const group = await db.contactGroup.findFirst({
@@ -539,7 +576,9 @@ export async function getContactsByGroup(userId: string, groupId: string) {
 // Get all contact groups (for user)
 // ==========================================
 
-export async function getContactGroups(userId: string) {
+export async function getContactGroups(): Promise<ContactGroupSummary[]>;
+export async function getContactGroups(userId: string): Promise<ContactGroupSummary[]>;
+export async function getContactGroups(userId?: string) {
   userId = await resolveActionUserId(userId);
   const groups = await db.contactGroup.findMany({
     where: { userId },
@@ -558,8 +597,11 @@ export async function getContactGroups(userId: string) {
 // Get groups that a specific contact belongs to
 // ==========================================
 
-export async function getGroupsForContact(userId: string, contactId: string) {
-  userId = await resolveActionUserId(userId);
+export async function getGroupsForContact(contactId: string): Promise<ContactMembershipSummary[]>;
+export async function getGroupsForContact(userId: string, contactId: string): Promise<ContactMembershipSummary[]>;
+export async function getGroupsForContact(userIdOrContactId: string, maybeContactId?: string) {
+  const userId = await resolveActionUserId(maybeContactId === undefined ? undefined : userIdOrContactId);
+  const contactId = maybeContactId ?? userIdOrContactId;
   idSchema.parse({ id: contactId });
 
   // Verify contact ownership
@@ -584,8 +626,12 @@ export async function getGroupsForContact(userId: string, contactId: string) {
 // Get groups + contact-group membership map (for Add to Group checkbox UI)
 // ==========================================
 
-export async function getGroupsWithMemberships(userId: string, contactIds: string[]) {
-  userId = await resolveActionUserId(userId);
+export async function getGroupsWithMemberships(contactIds: string[]): Promise<GroupsWithMembershipsResult>;
+export async function getGroupsWithMemberships(userId: string, contactIds: string[]): Promise<GroupsWithMembershipsResult>;
+export async function getGroupsWithMemberships(userIdOrContactIds: string | string[], maybeContactIds?: string[]) {
+  const hasExplicitUserId = Array.isArray(maybeContactIds);
+  const userId = await resolveActionUserId(hasExplicitUserId ? userIdOrContactIds as string : undefined);
+  const contactIds = hasExplicitUserId ? maybeContactIds : userIdOrContactIds as string[];
   if (contactIds.length > 100) {
     throw new Error("contactIds ต้องไม่เกิน 100 รายการ")
   }
@@ -645,8 +691,11 @@ export async function getGroupsWithMemberships(userId: string, contactIds: strin
 // Create contact group
 // ==========================================
 
-export async function createContactGroup(userId: string, name: string) {
-  userId = await resolveActionUserId(userId);
+export async function createContactGroup(name: string): Promise<Awaited<ReturnType<typeof db.contactGroup.create>>>;
+export async function createContactGroup(userId: string, name: string): Promise<Awaited<ReturnType<typeof db.contactGroup.create>>>;
+export async function createContactGroup(userIdOrName: string, maybeName?: string) {
+  const userId = await resolveActionUserId(maybeName === undefined ? undefined : userIdOrName);
+  const name = maybeName ?? userIdOrName;
   if (!name || name.trim().length === 0) throw new Error("กรุณากรอกชื่อกลุ่ม");
 
   return db.contactGroup.create({

@@ -21,11 +21,9 @@ type ConsentData = {
 };
 
 export default function ConsentSection({
-  userId,
   contactId,
   initialConsent,
 }: {
-  userId: string;
   contactId: string;
   initialConsent: ConsentData;
 }) {
@@ -38,7 +36,7 @@ export default function ConsentSection({
     setSaving(true);
     setError(null);
     try {
-      const result = await updateContactConsent(userId, contactId, {
+      const result = await updateContactConsent(contactId, {
         smsConsent: newValue,
         optOutReason: !newValue ? optOutReason || undefined : undefined,
       });

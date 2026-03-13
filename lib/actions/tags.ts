@@ -4,10 +4,17 @@ import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { prisma as db } from "../db";
 import { assignContactTagSchema, createTagSchema, idSchema, updateTagSchema } from "../validations";
-import { resolveActionUserId } from "../action-user";
+import { resolveActionUserId, type InternalActionUserToken } from "../action-user";
 
-export async function getTags(userId: string) {
-  userId = await resolveActionUserId(userId);
+type TagWithCount = Prisma.TagGetPayload<{
+  include: { _count: { select: { contactTags: true } } };
+}>;
+
+export async function getTags(): Promise<TagWithCount[]>;
+export async function getTags(userId: string): Promise<TagWithCount[]>;
+export async function getTags(userId: string, token: InternalActionUserToken): Promise<Awaited<ReturnType<typeof db.tag.findMany>>>;
+export async function getTags(userId?: string, token?: InternalActionUserToken) {
+  userId = await resolveActionUserId(userId, token);
   return db.tag.findMany({
     where: { userId },
     include: {
@@ -21,9 +28,11 @@ export async function getTags(userId: string) {
 
 export async function createTag(data: unknown): Promise<Awaited<ReturnType<typeof db.tag.create>>>;
 export async function createTag(userId: string, data: unknown): Promise<Awaited<ReturnType<typeof db.tag.create>>>;
-export async function createTag(userIdOrData: string | unknown, maybeData?: unknown) {
+export async function createTag(userId: string, data: unknown, token: InternalActionUserToken): Promise<Awaited<ReturnType<typeof db.tag.create>>>;
+export async function createTag(userIdOrData: string | unknown, maybeData?: unknown, token?: InternalActionUserToken) {
   const userId = await resolveActionUserId(
     maybeData === undefined ? undefined : userIdOrData as string,
+    token,
   );
   const input = createTagSchema.parse(maybeData === undefined ? userIdOrData : maybeData);
 
@@ -48,9 +57,10 @@ export async function createTag(userIdOrData: string | unknown, maybeData?: unkn
 
 export async function updateTag(tagId: string, data: unknown): Promise<Awaited<ReturnType<typeof db.tag.update>>>;
 export async function updateTag(userId: string, tagId: string, data: unknown): Promise<Awaited<ReturnType<typeof db.tag.update>>>;
-export async function updateTag(userIdOrTagId: string, tagIdOrData: string | unknown, maybeData?: unknown) {
+export async function updateTag(userId: string, tagId: string, data: unknown, token: InternalActionUserToken): Promise<Awaited<ReturnType<typeof db.tag.update>>>;
+export async function updateTag(userIdOrTagId: string, tagIdOrData: string | unknown, maybeData?: unknown, token?: InternalActionUserToken) {
   const hasExplicitUserId = maybeData !== undefined;
-  const userId = await resolveActionUserId(hasExplicitUserId ? userIdOrTagId : undefined);
+  const userId = await resolveActionUserId(hasExplicitUserId ? userIdOrTagId : undefined, token);
   const tagId = hasExplicitUserId ? tagIdOrData as string : userIdOrTagId;
   idSchema.parse({ id: tagId });
   const input = updateTagSchema.parse(hasExplicitUserId ? maybeData : tagIdOrData);
@@ -81,8 +91,9 @@ export async function updateTag(userIdOrTagId: string, tagIdOrData: string | unk
 
 export async function deleteTag(tagId: string): Promise<void>;
 export async function deleteTag(userId: string, tagId: string): Promise<void>;
-export async function deleteTag(userIdOrTagId: string, maybeTagId?: string) {
-  const userId = await resolveActionUserId(maybeTagId === undefined ? undefined : userIdOrTagId);
+export async function deleteTag(userId: string, tagId: string, token: InternalActionUserToken): Promise<void>;
+export async function deleteTag(userIdOrTagId: string, maybeTagId?: string, token?: InternalActionUserToken) {
+  const userId = await resolveActionUserId(maybeTagId === undefined ? undefined : userIdOrTagId, token);
   const tagId = maybeTagId ?? userIdOrTagId;
   idSchema.parse({ id: tagId });
 
@@ -114,9 +125,10 @@ async function ensureOwnedTagAndContact(userId: string, contactId: string, tagId
 
 export async function assignTagToContact(contactId: string, data: unknown): Promise<{ success: true }>;
 export async function assignTagToContact(userId: string, contactId: string, data: unknown): Promise<{ success: true }>;
-export async function assignTagToContact(userIdOrContactId: string, contactIdOrData: string | unknown, maybeData?: unknown) {
+export async function assignTagToContact(userId: string, contactId: string, data: unknown, token: InternalActionUserToken): Promise<{ success: true }>;
+export async function assignTagToContact(userIdOrContactId: string, contactIdOrData: string | unknown, maybeData?: unknown, token?: InternalActionUserToken) {
   const hasExplicitUserId = maybeData !== undefined;
-  const userId = await resolveActionUserId(hasExplicitUserId ? userIdOrContactId : undefined);
+  const userId = await resolveActionUserId(hasExplicitUserId ? userIdOrContactId : undefined, token);
   const contactId = hasExplicitUserId ? contactIdOrData as string : userIdOrContactId;
   idSchema.parse({ id: contactId });
   const input = assignContactTagSchema.parse(hasExplicitUserId ? maybeData : contactIdOrData);
@@ -144,9 +156,10 @@ export async function assignTagToContact(userIdOrContactId: string, contactIdOrD
 
 export async function unassignTagFromContact(contactId: string, data: unknown): Promise<{ success: true }>;
 export async function unassignTagFromContact(userId: string, contactId: string, data: unknown): Promise<{ success: true }>;
-export async function unassignTagFromContact(userIdOrContactId: string, contactIdOrData: string | unknown, maybeData?: unknown) {
+export async function unassignTagFromContact(userId: string, contactId: string, data: unknown, token: InternalActionUserToken): Promise<{ success: true }>;
+export async function unassignTagFromContact(userIdOrContactId: string, contactIdOrData: string | unknown, maybeData?: unknown, token?: InternalActionUserToken) {
   const hasExplicitUserId = maybeData !== undefined;
-  const userId = await resolveActionUserId(hasExplicitUserId ? userIdOrContactId : undefined);
+  const userId = await resolveActionUserId(hasExplicitUserId ? userIdOrContactId : undefined, token);
   const contactId = hasExplicitUserId ? contactIdOrData as string : userIdOrContactId;
   idSchema.parse({ id: contactId });
   const input = assignContactTagSchema.parse(hasExplicitUserId ? maybeData : contactIdOrData);

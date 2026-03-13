@@ -111,9 +111,9 @@ export const ORDER_STATUS_CONFIG: Record<
   },
   SLIP_UPLOADED: {
     label: "แนบสลิปแล้ว",
-    color: "#3B82F6",
-    bgColor: "rgba(59,130,246,0.1)",
-    dot: "#3B82F6",
+    color: "var(--info)",
+    bgColor: "rgba(var(--info-rgb),0.1)",
+    dot: "var(--info)",
   },
   VERIFIED: {
     label: "ตรวจสอบแล้ว",
@@ -141,15 +141,15 @@ export const ORDER_STATUS_CONFIG: Record<
   },
   EXPIRED: {
     label: "หมดอายุ",
-    color: "#556677",
-    bgColor: "rgba(85,102,119,0.1)",
-    dot: "#556677",
+    color: "var(--text-muted)",
+    bgColor: "rgba(var(--text-muted-rgb),0.1)",
+    dot: "var(--text-muted)",
   },
   CANCELLED: {
     label: "ยกเลิก",
-    color: "#556677",
-    bgColor: "rgba(85,102,119,0.1)",
-    dot: "#556677",
+    color: "var(--text-muted)",
+    bgColor: "rgba(var(--text-muted-rgb),0.1)",
+    dot: "var(--text-muted)",
   },
   REJECTED: {
     label: "ไม่ผ่าน",

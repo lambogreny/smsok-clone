@@ -57,12 +57,30 @@ export async function parseExcelFile(buffer: ArrayBuffer) {
  * Import contacts from Excel/CSV with column mapping + batch upsert
  */
 export async function importContactsFromExcel(
+  buffer: ArrayBuffer,
+  mapping: ColumnMapping,
+  options?: { updateExisting?: boolean },
+): Promise<ImportResult>;
+export async function importContactsFromExcel(
   userId: string,
   buffer: ArrayBuffer,
   mapping: ColumnMapping,
-  options: { updateExisting?: boolean } = {}
+  options?: { updateExisting?: boolean },
+): Promise<ImportResult>;
+export async function importContactsFromExcel(
+  userIdOrBuffer: string | ArrayBuffer,
+  bufferOrMapping: ArrayBuffer | ColumnMapping,
+  mappingOrOptions?: ColumnMapping | { updateExisting?: boolean },
+  maybeOptions: { updateExisting?: boolean } = {},
 ): Promise<ImportResult> {
-  userId = await resolveActionUserId(userId);
+  const hasExplicitUserId = typeof userIdOrBuffer === "string";
+  const userId = await resolveActionUserId(hasExplicitUserId ? userIdOrBuffer : undefined);
+  const buffer = hasExplicitUserId ? bufferOrMapping as ArrayBuffer : userIdOrBuffer;
+  const mapping = hasExplicitUserId ? mappingOrOptions as ColumnMapping : bufferOrMapping as ColumnMapping;
+  const options = hasExplicitUserId
+    ? maybeOptions
+    : ((mappingOrOptions as { updateExisting?: boolean } | undefined) ?? {});
+
   const workbook = XLSX.read(buffer, { type: "array" });
   const sheetName = workbook.SheetNames[0];
   if (!sheetName) throw new Error("ไม่พบ sheet ในไฟล์");

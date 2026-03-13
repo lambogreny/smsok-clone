@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { startApiLog, setApiLogUser, setApiLogApiKey, finishApiLog, ERROR_CODES } from "./api-log";
 import { hashApiKey } from "./crypto-utils";
 import { InsufficientCreditsError } from "./quota-errors";
+import { trustActionUserId } from "./action-user";
 import {
   hasApiKeyPermission,
   normalizeApiKeyPermissions,
@@ -94,6 +95,7 @@ export async function authenticateApiKey(req: NextRequest) {
 
   setApiLogUser(apiKey.user.id);
   setApiLogApiKey(apiKey.id);
+  trustActionUserId(apiKey.user.id);
 
   return {
     ...apiKey.user,
@@ -110,6 +112,7 @@ export async function authenticateRequest(req: NextRequest) {
   const { getSession } = await import("./auth");
   const session = await getSession({ headers: req.headers });
   if (session?.id) {
+    trustActionUserId(session.id);
     return { id: session.id, role: session.role };
   }
 

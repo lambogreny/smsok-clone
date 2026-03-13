@@ -26,10 +26,8 @@ const FILTERS: { value: string; label: string }[] = [
 ];
 
 export default function ActivityTimeline({
-  userId,
   contactId,
 }: {
-  userId: string;
   contactId: string;
 }) {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
@@ -57,7 +55,7 @@ export default function ActivityTimeline({
     } finally {
       setLoading(false);
     }
-  }, [userId, contactId, page, typeFilter]);
+  }, [contactId, page, typeFilter]);
 
   useEffect(() => {
     fetchActivities();

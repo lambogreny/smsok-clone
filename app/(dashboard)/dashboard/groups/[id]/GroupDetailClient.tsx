@@ -65,7 +65,6 @@ const PAGE_SIZE = 20;
 // ==========================================
 
 export default function GroupDetailClient({
-  userId,
   groupId,
   groupName,
   memberCount,
@@ -73,7 +72,6 @@ export default function GroupDetailClient({
   initialMembers,
   availableContacts,
 }: {
-  userId: string;
   groupId: string;
   groupName: string;
   memberCount: number;
@@ -125,7 +123,7 @@ export default function GroupDetailClient({
     setContactsLoading(true);
     const timer = setTimeout(async () => {
       try {
-        const results = await getContactsNotInGroup(userId, groupId, addSearch);
+        const results = await getContactsNotInGroup(groupId, addSearch);
         setSearchedAvailable(results as ContactStub[]);
       } catch {
         // fallback to initial data on error
@@ -135,7 +133,7 @@ export default function GroupDetailClient({
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [showAddDialog, addSearch, userId, groupId, availableContacts]);
+  }, [showAddDialog, addSearch, groupId, availableContacts]);
 
   // ==========================================
   // Derived — Members
@@ -218,7 +216,7 @@ export default function GroupDetailClient({
     if (selectedIds.size === 0) return;
     startTransition(async () => {
       try {
-        await bulkRemoveFromGroup(userId, groupId, Array.from(selectedIds));
+        await bulkRemoveFromGroup(groupId, Array.from(selectedIds));
         setMembers((prev) =>
           prev.filter((m) => !selectedIds.has(m.contactId)),
         );
@@ -237,7 +235,7 @@ export default function GroupDetailClient({
     setMembers((prev) => prev.filter((m) => m.id !== member.id));
     startTransition(async () => {
       try {
-        await removeContactFromGroup(userId, groupId, member.contactId);
+        await removeContactFromGroup(groupId, member.contactId);
       } catch (e) {
         setMembers((prev) => [...prev, member]);
         toast("error", safeErrorMessage(e));
@@ -285,7 +283,7 @@ export default function GroupDetailClient({
     if (addSelectedIds.size === 0) return;
     startTransition(async () => {
       try {
-        await addContactsToGroup(userId, groupId, Array.from(addSelectedIds));
+        await addContactsToGroup(groupId, Array.from(addSelectedIds));
         toast(
           "success",
           `เพิ่ม ${addSelectedIds.size} รายชื่อเข้ากลุ่มสำเร็จ`,
@@ -368,7 +366,7 @@ export default function GroupDetailClient({
         }
         startTransition(async () => {
           try {
-            const result = await importContacts(userId, contacts);
+            const result = await importContacts(contacts);
             toast(
               "success",
               `นำเข้า ${result.imported} รายชื่อ${result.skipped > 0 ? ` (ซ้ำ ${result.skipped})` : ""}`,
@@ -397,7 +395,7 @@ export default function GroupDetailClient({
     }
     startTransition(async () => {
       try {
-        const result = await importContacts(userId, contacts);
+        const result = await importContacts(contacts);
         if (result.imported > 0) {
           toast(
             "success",

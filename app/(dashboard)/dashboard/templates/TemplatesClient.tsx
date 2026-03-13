@@ -186,10 +186,8 @@ function formatDate(iso: string) {
 // ==========================================
 
 export default function TemplatesClient({
-  userId,
   initialTemplates,
 }: {
-  userId: string;
   initialTemplates: Template[];
 }) {
   const router = useRouter();

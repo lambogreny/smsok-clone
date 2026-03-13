@@ -56,11 +56,9 @@ const TABS: { id: Tab; label: string; icon: typeof User }[] = [
 ];
 
 export default function ContactDetailClient({
-  userId,
   contact,
   customFields,
 }: {
-  userId: string;
   contact: ContactDetail;
   customFields: CustomField[];
 }) {
@@ -198,7 +196,6 @@ export default function ContactDetailClient({
       {/* Tab Content */}
       {activeTab === "info" && (
         <CustomFieldsSection
-          userId={userId}
           contactId={contact.id}
           customFields={customFields}
           initialValues={contact.customFieldValues}
@@ -206,12 +203,11 @@ export default function ContactDetailClient({
       )}
 
       {activeTab === "timeline" && (
-        <ActivityTimeline userId={userId} contactId={contact.id} />
+        <ActivityTimeline contactId={contact.id} />
       )}
 
       {activeTab === "settings" && (
         <ConsentSection
-          userId={userId}
           contactId={contact.id}
           initialConsent={{
             smsConsent: contact.smsConsent,

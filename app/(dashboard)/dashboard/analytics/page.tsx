@@ -9,7 +9,7 @@ export default async function AnalyticsPage() {
   if (!user) redirect("/login");
 
   const [stats, quota] = await Promise.all([
-    getDashboardStats(user.id),
+    getDashboardStats(),
     getRemainingQuota(user.id).catch(() => ({ totalRemaining: 0 })),
   ]);
 

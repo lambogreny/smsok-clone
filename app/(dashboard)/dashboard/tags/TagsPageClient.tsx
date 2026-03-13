@@ -98,10 +98,8 @@ function formatThaiDate(dateStr: string | Date) {
 // ==========================================
 
 export default function TagsPageClient({
-  userId,
   initialTags,
 }: {
-  userId: string;
   initialTags: TagItem[];
 }) {
   const router = useRouter();

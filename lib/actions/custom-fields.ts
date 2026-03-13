@@ -4,7 +4,9 @@ import { prisma } from "@/lib/db";
 import { resolveActionUserId } from "@/lib/action-user";
 
 // ── List custom fields ───────────────────────────────
-export async function getCustomFields(userId: string) {
+export async function getCustomFields(): Promise<Awaited<ReturnType<typeof prisma.customField.findMany>>>;
+export async function getCustomFields(userId: string): Promise<Awaited<ReturnType<typeof prisma.customField.findMany>>>;
+export async function getCustomFields(userId?: string) {
   userId = await resolveActionUserId(userId);
   return prisma.customField.findMany({
     where: { userId },
@@ -85,8 +87,11 @@ export async function deleteCustomField(userId: string, fieldId: string) {
 }
 
 // ── Get custom field values for a contact ────────────
-export async function getCustomFieldValues(userId: string, contactId: string) {
-  userId = await resolveActionUserId(userId);
+export async function getCustomFieldValues(contactId: string): Promise<Awaited<ReturnType<typeof prisma.customFieldValue.findMany>>>;
+export async function getCustomFieldValues(userId: string, contactId: string): Promise<Awaited<ReturnType<typeof prisma.customFieldValue.findMany>>>;
+export async function getCustomFieldValues(userIdOrContactId: string, maybeContactId?: string) {
+  const userId = await resolveActionUserId(maybeContactId === undefined ? undefined : userIdOrContactId);
+  const contactId = maybeContactId ?? userIdOrContactId;
   // Verify contact ownership
   const contact = await prisma.contact.findFirst({
     where: { id: contactId, userId },

@@ -7,7 +7,7 @@ export default async function TagsPage() {
   const user = await getSession();
   if (!user) redirect("/login");
 
-  const tags = await getTags(user.id);
+  const tags = await getTags();
 
-  return <TagsPageClient userId={user.id} initialTags={tags} />;
+  return <TagsPageClient initialTags={tags} />;
 }

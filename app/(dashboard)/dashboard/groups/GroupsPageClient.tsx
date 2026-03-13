@@ -99,10 +99,8 @@ type GroupFormValues = z.infer<typeof groupFormSchema>;
 // ==========================================
 
 export default function GroupsPageClient({
-  userId,
   initialGroups,
 }: {
-  userId: string;
   initialGroups: Group[];
 }) {
   const router = useRouter();
@@ -149,7 +147,7 @@ export default function GroupsPageClient({
     setContactsLoading(true);
     const timer = setTimeout(async () => {
       try {
-        const results = await searchContactsBasic(userId, addSearch, 50);
+        const results = await searchContactsBasic(addSearch, 50);
         setSearchedContacts(results as ContactStub[]);
       } catch {
         // ignore search errors
@@ -159,7 +157,7 @@ export default function GroupsPageClient({
     }, addSearch ? 300 : 0);
 
     return () => clearTimeout(timer);
-  }, [activeGroup, addSearch, userId]);
+  }, [activeGroup, addSearch]);
 
   // ==========================================
   // Derived data for members dialog
@@ -206,7 +204,7 @@ export default function GroupsPageClient({
     startTransition(async () => {
       try {
         if (editingGroup) {
-          const updated = await updateGroup(userId, editingGroup.id, {
+          const updated = await updateGroup(editingGroup.id, {
             name: data.name.trim(),
           });
           setGroups((prev) =>
@@ -216,7 +214,7 @@ export default function GroupsPageClient({
           );
           toast("success", "อัปเดตกลุ่มสำเร็จ!");
         } else {
-          const created = await createGroup(userId, {
+          const created = await createGroup({
             name: data.name.trim(),
           });
           setGroups((prev) => [
@@ -237,7 +235,7 @@ export default function GroupsPageClient({
     if (!deletingGroup) return;
     startTransition(async () => {
       try {
-        await deleteGroup(userId, deletingGroup.id);
+        await deleteGroup(deletingGroup.id);
         setGroups((prev) => prev.filter((g) => g.id !== deletingGroup.id));
         if (activeGroup?.id === deletingGroup.id) setActiveGroup(null);
         toast("success", "ลบกลุ่มสำเร็จ");
@@ -256,7 +254,7 @@ export default function GroupsPageClient({
     setAddSearch("");
     setMembersLoading(true);
     try {
-      const data = await getGroupContacts(userId, g.id);
+      const data = await getGroupContacts(g.id);
       setMembers(data as Member[]);
     } catch {
       toast("error", "โหลดสมาชิกไม่สำเร็จ");
@@ -289,11 +287,7 @@ export default function GroupsPageClient({
 
     startTransition(async () => {
       try {
-        const real = await addContactToGroup(
-          userId,
-          activeGroup.id,
-          contact.id,
-        );
+        const real = await addContactToGroup(activeGroup.id, contact.id);
         setMembers((prev) =>
           prev.map((m) => (m.id === tempMember.id ? (real as Member) : m)),
         );
@@ -340,11 +334,7 @@ export default function GroupsPageClient({
 
     startTransition(async () => {
       try {
-        await removeContactFromGroup(
-          userId,
-          activeGroup.id,
-          member.contactId,
-        );
+        await removeContactFromGroup(activeGroup.id, member.contactId);
       } catch (e) {
         setMembers((prev) => [...prev, member]);
         setGroups((prev) =>

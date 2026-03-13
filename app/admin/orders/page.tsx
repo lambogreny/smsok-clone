@@ -628,7 +628,7 @@ export default function AdminOrderDashboard() {
           icon={ClipboardCheck}
           label="รอตรวจสลิป"
           value={`${stats.pending_review}`}
-          color="#3B82F6"
+          color="var(--info)"
         />
         <StatCard
           icon={CheckCircle2}

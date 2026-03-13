@@ -7,7 +7,7 @@ export default async function TemplatesPage() {
   const user = await getSession();
   if (!user) redirect("/login");
 
-  const templates = await getTemplates(user.id);
+  const templates = await getTemplates();
 
   // Serialize dates for client component
   const serializedTemplates = templates.map((t) => ({
@@ -21,9 +21,6 @@ export default async function TemplatesPage() {
   }));
 
   return (
-    <TemplatesClient
-      userId={user.id}
-      initialTemplates={serializedTemplates}
-    />
+    <TemplatesClient initialTemplates={serializedTemplates} />
   );
 }

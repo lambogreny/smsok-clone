@@ -1,5 +1,6 @@
 "use server";
 
+import type { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { prisma as db } from "../db";
 import { z } from "zod";
@@ -17,8 +18,13 @@ const importContactSchema = z.object({
 });
 
 const MAX_IMPORT_BATCH = 200;
+type GroupWithCount = Prisma.ContactGroupGetPayload<{
+  include: { _count: { select: { members: true } } };
+}>;
 
-export async function getGroups(userId: string) {
+export async function getGroups(): Promise<GroupWithCount[]>;
+export async function getGroups(userId: string): Promise<GroupWithCount[]>;
+export async function getGroups(userId?: string) {
   userId = await resolveActionUserId(userId);
   return db.contactGroup.findMany({
     where: { userId },

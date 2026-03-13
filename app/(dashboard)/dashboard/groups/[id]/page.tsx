@@ -22,8 +22,8 @@ export default async function GroupDetailPage({
   if (!group) notFound();
 
   const [members, availableContacts] = await Promise.all([
-    getGroupContacts(user.id, id),
-    getContactsNotInGroup(user.id, id),
+    getGroupContacts(id),
+    getContactsNotInGroup(id),
   ]);
 
   const serializedMembers = (members as { id: string; groupId: string; contactId: string; contact: { id: string; name: string; phone: string; email: string | null } }[]).map((m) => ({
@@ -43,7 +43,6 @@ export default async function GroupDetailPage({
 
   return (
     <GroupDetailClient
-      userId={user.id}
       groupId={id}
       groupName={group.name}
       memberCount={group._count.members}

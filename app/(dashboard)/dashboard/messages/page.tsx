@@ -15,7 +15,7 @@ export default async function MessagesPage({
   const search = params.search?.trim() || undefined;
   const page = Number(params.page ?? "1") || 1;
 
-  const { messages, pagination } = await getMessages(user.id, { page, limit: 20, search });
+  const { messages, pagination } = await getMessages({ page, limit: 20, search });
 
   return (
     <MessagesClient messages={messages} pagination={pagination} initialSearch={search} />
