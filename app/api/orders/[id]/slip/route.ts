@@ -25,8 +25,10 @@ type RouteContext = {
 export async function POST(req: Request, ctx: RouteContext) {
   let slipUrl: string | null = null;
   let uploadedWhtCert: { ref: string } | null = null;
+  let uploadsCleaned = false;
 
   const cleanupUploads = async () => {
+    uploadsCleaned = true;
     await Promise.allSettled([
       slipUrl ? removeStoredFile(slipUrl) : Promise.resolve(),
       uploadedWhtCert ? removeStoredFile(uploadedWhtCert.ref) : Promise.resolve(),
@@ -241,7 +243,7 @@ export async function POST(req: Request, ctx: RouteContext) {
       queued: queueQueued,
     });
   } catch (error) {
-    if (slipUrl) {
+    if (slipUrl && !uploadsCleaned) {
       await cleanupUploads();
     }
     if (error instanceof StorageUploadError) {

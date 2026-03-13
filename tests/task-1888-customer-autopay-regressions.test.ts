@@ -13,28 +13,24 @@ const canonicalSlipRoute = readFileSync(
   "utf-8",
 );
 
-describe("Task #1888: customer order slip upload auto-pays immediately", () => {
-  it("rejects failed or mismatched EasySlip checks before saving a review state", () => {
-    expect(v1UploadRoute).toContain("if (!verification.success)");
-    expect(v1UploadRoute).toContain('throw new ApiError(400, verification.error ?? "ตรวจสอบสลิปไม่สำเร็จ กรุณาลองใหม่");');
-    expect(v1UploadRoute).toContain('throw new ApiError(400, "จำนวนเงินในสลิปไม่ตรงกับยอดที่ต้องชำระ");');
-    expect(v1UploadRoute).not.toContain('status: nextStatus');
-    expect(v1UploadRoute).not.toContain("awaiting verification");
+describe("Task #1888: customer order slip upload queues worker verification", () => {
+  it("persists the upload and enqueues verification instead of calling SlipOK in the request", () => {
+    expect(v1UploadRoute).toContain('export { POST } from "@/app/api/orders/[id]/slip/route";');
+    expect(canonicalSlipRoute).toContain("slipVerifyQueue.add");
+    expect(canonicalSlipRoute).toContain('status: "VERIFYING"');
+    expect(canonicalSlipRoute).toContain("SLIP_QUEUED_STATUS_NOTE");
+    expect(canonicalSlipRoute).not.toContain("verifySlip(slipBlob");
   });
 
-  it("marks paid immediately and activates the purchased package in the v1 route", () => {
-    expect(v1UploadRoute).toContain('status: "PAID"');
-    expect(v1UploadRoute).toContain("await activateOrderPurchase(tx, {");
-    expect(v1UploadRoute).toContain('await ensureOrderDocument(tx, order, "RECEIPT");');
-    expect(v1UploadRoute).toContain('await ensureOrderDocument(tx, order, "TAX_INVOICE");');
-    expect(v1UploadRoute).toContain('note: "EasySlip verified — order paid automatically"');
+  it("uses the canonical route and v1 alias with the same queued verification flow", () => {
+    expect(canonicalSlipRoute).toContain("slipVerifyQueue.add");
+    expect(canonicalSlipRoute).toContain('pending_review: false');
+    expect(canonicalSlipRoute).toContain("queued: queueQueued");
   });
 
-  it("keeps the canonical customer slip route aligned with the same auto-pay flow", () => {
-    expect(canonicalSlipRoute).toContain('status: "PAID"');
-    expect(canonicalSlipRoute).toContain("await activateOrderPurchase(tx, {");
-    expect(canonicalSlipRoute).toContain('await ensureOrderDocument(tx, order, "RECEIPT");');
-    expect(canonicalSlipRoute).toContain('throw new ApiError(400, "จำนวนเงินในสลิปไม่ตรงกับยอดที่ต้องชำระ");');
-    expect(canonicalSlipRoute).not.toContain('status: "VERIFYING"');
+  it("rolls the upload back if the worker job cannot be queued", () => {
+    expect(canonicalSlipRoute).toContain("Failed to rollback after queue enqueue error");
+    expect(canonicalSlipRoute).toContain('throw new ApiError(503, "ระบบตรวจสอบสลิปยังไม่พร้อม กรุณาลองใหม่")');
+    expect(canonicalSlipRoute).toContain("deletedAt: new Date()");
   });
 });

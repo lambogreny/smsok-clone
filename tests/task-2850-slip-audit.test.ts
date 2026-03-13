@@ -6,18 +6,18 @@ const ROOT = process.cwd();
 
 const schemaSource = readFileSync(resolve(ROOT, "prisma/schema.prisma"), "utf-8");
 const easyslipSource = readFileSync(resolve(ROOT, "lib/easyslip.ts"), "utf-8");
-const slipRouteSource = readFileSync(resolve(ROOT, "app/api/orders/[id]/slip/route.ts"), "utf-8");
+const slipVerificationSource = readFileSync(resolve(ROOT, "lib/orders/slip-verification.ts"), "utf-8");
 
 describe("Task #2850: critical slip duplicate + validation audit fixes", () => {
   it("stores EasySlip transRef with a unique constraint for duplicate protection", () => {
     expect(schemaSource).toContain('transRef   String?   @unique @map("trans_ref")');
-    expect(slipRouteSource).toContain("transRef: verificationData.transRef");
-    expect(slipRouteSource).toContain("db.orderSlip.findFirst");
+    expect(slipVerificationSource).toContain("transRef: verificationData.transRef");
+    expect(slipVerificationSource).toContain("db.orderSlip.findFirst");
   });
 
   it("rejects duplicate slips immediately instead of silently approving them", () => {
-    expect(slipRouteSource).toContain("verification.isDuplicate");
-    expect(slipRouteSource).toContain('throw new ApiError(400, "สลิปนี้ถูกใช้แล้ว")');
+    expect(slipVerificationSource).toContain("verification.isDuplicate");
+    expect(slipVerificationSource).toContain('"สลิปนี้ถูกใช้แล้ว"');
   });
 
   it("validates EasySlip payload fields before accepting a successful verification", () => {
@@ -28,6 +28,6 @@ describe("Task #2850: critical slip duplicate + validation audit fixes", () => {
   });
 
   it("adds an audit-history note when the amount passes only via tolerance", () => {
-    expect(slipRouteSource).toContain("within ±1 THB tolerance");
+    expect(slipVerificationSource).toContain("within ±1 THB tolerance");
   });
 });

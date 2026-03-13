@@ -8,6 +8,7 @@ const storageServiceSource = readFileSync(resolve(ROOT, "lib/storage/service.ts"
 const easyslipSource = readFileSync(resolve(ROOT, "lib/easyslip.ts"), "utf-8");
 const orderServiceSource = readFileSync(resolve(ROOT, "lib/orders/service.ts"), "utf-8");
 const slipRouteSource = readFileSync(resolve(ROOT, "app/api/orders/[id]/slip/route.ts"), "utf-8");
+const slipVerificationSource = readFileSync(resolve(ROOT, "lib/orders/slip-verification.ts"), "utf-8");
 const orderDetailPageSource = readFileSync(
   resolve(ROOT, "app/(dashboard)/dashboard/billing/orders/[id]/page.tsx"),
   "utf-8",
@@ -21,9 +22,9 @@ describe("Task #2811: slip timestamp + pending review fixes", () => {
 
   it("surfaces provider-side EasySlip expiry for manual review handling", () => {
     expect(easyslipSource).toContain('providerCode === "application_expired"');
-    expect(slipRouteSource).toContain("getPendingReviewMessage");
-    expect(slipRouteSource).toContain("adminNote: pendingReviewMessage");
-    expect(slipRouteSource).toContain("latest_status_note: result.statusNote");
+    expect(slipVerificationSource).toContain("getPendingReviewMessage");
+    expect(slipVerificationSource).toContain("adminNote: pendingReviewMessage");
+    expect(slipRouteSource).toContain("latest_status_note: SLIP_QUEUED_STATUS_NOTE");
   });
 
   it("uses the latest uploaded slip timestamp on order detail instead of order created_at", () => {

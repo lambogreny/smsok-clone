@@ -14,6 +14,7 @@ const SYSTEM_VERIFIER = "slip-worker";
 export const SLIP_QUEUED_STATUS_NOTE = "เราได้รับสลิปแล้ว กำลังตรวจสอบรายการชำระเงิน";
 export const SLIP_QUEUED_REVIEW_NOTE = "Slip queued for automatic verification";
 export const SLIP_RETRY_EXHAUSTED_NOTE = "ระบบตรวจสอบสลิปอัตโนมัติไม่สำเร็จ กรุณารอเจ้าหน้าที่ตรวจสลิป";
+const SLIP_VERIFY_TIMEOUT_MS = 30_000;
 
 type QueuedOrderRecord = {
   id: string;
@@ -111,6 +112,25 @@ function getDeterministicFailureMessage(verification: SlipVerifyResult) {
 
 function toNumber(value: { toNumber(): number } | number) {
   return typeof value === "number" ? value : value.toNumber();
+}
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string) {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new SlipVerificationRetryableError(message));
+        }, timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
 }
 
 async function getQueuedOrder(orderId: string, orderSlipId: string): Promise<QueuedOrderRecord | null> {
@@ -322,12 +342,15 @@ export async function processQueuedOrderSlipVerification(input: {
     throw new SlipVerificationRetryableError("Unable to read stored slip from R2");
   });
 
-  const verification = await verifySlip(
-    new Blob([storedSlip.body], {
+  const slipBlob = new Blob([storedSlip.body], {
       type: storedSlip.contentType || order.slip.fileType || "application/octet-stream",
-    }),
-  ).catch((error) => {
+    });
+
+  const verification = await withTimeout(verifySlip(slipBlob), SLIP_VERIFY_TIMEOUT_MS, "SlipOK verification timed out").catch((error) => {
     console.error("[Slip Worker] SlipOK request failed:", error);
+    if (error instanceof SlipVerificationRetryableError) {
+      throw error;
+    }
     throw new SlipVerificationRetryableError("SlipOK verification request failed");
   });
 
