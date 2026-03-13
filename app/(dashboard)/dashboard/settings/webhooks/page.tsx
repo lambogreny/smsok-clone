@@ -435,21 +435,33 @@ function WebhookDialog({
     }
   }
 
-  const [signingSecret, setSigningSecret] = useState<string>("");
+  const [signingSecretState, setSigningSecretState] = useState<{
+    webhookId: string | null;
+    value: string;
+  }>({
+    webhookId: initial?.id ?? null,
+    value: initial?.id ? "" : "จะสร้างให้อัตโนมัติเมื่อบันทึก",
+  });
 
   // Fetch signing secret from API when dialog opens
   useEffect(() => {
-    if (!open) return;
-    if (initial?.id) {
-      fetch(`/api/v1/webhooks/${initial.id}/secret`)
-        .then((r) => r.ok ? r.json() : Promise.reject())
-        .then((data) => setSigningSecret(data.data?.secret ?? data.secret ?? ""))
-        .catch(() => setSigningSecret(""));
-    } else {
-      // New webhook — secret will be generated on save
-      setSigningSecret("จะสร้างให้อัตโนมัติเมื่อบันทึก");
-    }
+    if (!open || !initial?.id) return;
+
+    fetch(`/api/v1/webhooks/${initial.id}/secret`)
+      .then((r) => r.ok ? r.json() : Promise.reject())
+      .then((data) => setSigningSecretState({
+        webhookId: initial.id,
+        value: data.data?.secret ?? data.secret ?? "",
+      }))
+      .catch(() => setSigningSecretState({
+        webhookId: initial.id,
+        value: "",
+      }));
   }, [open, initial?.id]);
+
+  const signingSecret = initial?.id
+    ? (signingSecretState.webhookId === initial.id ? signingSecretState.value : "")
+    : "จะสร้างให้อัตโนมัติเมื่อบันทึก";
 
   function toggleEvent(event: string) {
     setSelectedEvents((prev) => {

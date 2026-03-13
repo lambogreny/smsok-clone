@@ -85,10 +85,12 @@ export default function CookieBanner() {
   useEffect(() => {
     const stored = getStoredPreferences();
     if (stored) {
-      setAnalytics(stored.analytics);
-      setMarketing(stored.marketing);
-      setHydrated(true);
-      return;
+      const frame = window.requestAnimationFrame(() => {
+        setAnalytics(stored.analytics);
+        setMarketing(stored.marketing);
+        setHydrated(true);
+      });
+      return () => window.cancelAnimationFrame(frame);
     }
 
     const timer = window.setTimeout(() => {

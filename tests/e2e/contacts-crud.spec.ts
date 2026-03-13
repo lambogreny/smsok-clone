@@ -1,6 +1,7 @@
 import { test, expect } from "./fixtures";
 
 const BASE = "http://localhost:3000";
+type ContactListItem = { name: string };
 
 test.describe("Contacts CRUD — Facebook Level", () => {
   const uniquePhone = () => "08" + Math.floor(10000000 + Math.random() * 90000000);
@@ -60,9 +61,9 @@ test.describe("Contacts CRUD — Facebook Level", () => {
     });
     const res = await request.get(`${BASE}/api/v1/contacts?search=SearchTarget`);
     expect(res.status()).toBe(200);
-    const body = await res.json();
+    const body = await res.json() as { contacts: ContactListItem[] };
     expect(body.contacts.length).toBeGreaterThanOrEqual(1);
-    expect(body.contacts.some((c: any) => c.name === "SearchTarget")).toBe(true);
+    expect(body.contacts.some((contact) => contact.name === "SearchTarget")).toBe(true);
   });
 
   test("TC-C07: Update contact", async ({ request }) => {

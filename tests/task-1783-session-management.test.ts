@@ -23,7 +23,7 @@ const sessionDetailRouteSource = readFileSync(
 
 describe("Task #1783: session management core", () => {
   it("tracks security_version and persisted session metadata in the schema", () => {
-    expect(schemaSource).toContain('securityVersion     Int                 @default(1) @map("security_version")');
+    expect(schemaSource).toContain('securityVersion     Int                @default(1) @map("security_version")');
     expect(schemaSource).toContain("model UserSession {");
     expect(schemaSource).toContain('@@map("user_sessions")');
   });

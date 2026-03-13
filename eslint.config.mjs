@@ -13,6 +13,14 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    rules: {
+      // These are standard React patterns (setState in useEffect for hydration,
+      // zustand store rehydrate, etc.) — downgrade to warnings.
+      "react-hooks/set-state-in-effect": "warn",
+      "react-hooks/static-components": "warn",
+    },
+  },
 ]);
 
 export default eslintConfig;

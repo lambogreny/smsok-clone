@@ -68,10 +68,12 @@ export default function CustomSelect({
 
   // Sync focused index on open
   useEffect(() => {
-    if (open) {
+    if (!open) return;
+    const frame = window.requestAnimationFrame(() => {
       const idx = options.findIndex((o) => o.value === value);
       setFocused(idx >= 0 ? idx : 0);
-    }
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [open, value, options]);
 
   function handleKeyDown(e: React.KeyboardEvent) {

@@ -62,7 +62,7 @@ async function loginAs(page: Page, email: string, password: string): Promise<str
 // Authenticated test fixture — uses globalSetup storageState (no re-login)
 // The storageState is set in playwright.config.ts, so `page` is already authenticated
 export const test = base.extend<{ authedPage: Page }>({
-  authedPage: async ({ page }, use) => {
+  authedPage: async ({ page }, run) => {
     // storageState already applied — just verify we're auth'd by going to dashboard
     await page.goto("/dashboard", { waitUntil: "domcontentloaded", timeout: 30000 });
     await page.waitForLoadState("networkidle", { timeout: 15000 }).catch(() => {});
@@ -70,7 +70,7 @@ export const test = base.extend<{ authedPage: Page }>({
     if (page.url().includes("/login")) {
       throw new Error("Auth storageState expired. Re-run: npx playwright test --project=chromium");
     }
-    await use(page);
+    await run(page);
   },
 });
 

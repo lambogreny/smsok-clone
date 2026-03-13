@@ -73,7 +73,7 @@ function createContextualLogger(): pino.Logger {
               ...(ctx.method && { method: ctx.method }),
               ...(ctx.path && { path: ctx.path }),
             })
-            return (child[prop as keyof pino.Logger] as Function)(...args)
+            return (child[prop as keyof pino.Logger] as (...logArgs: unknown[]) => unknown)(...args)
           }
           return value.apply(target, args)
         }
@@ -105,7 +105,7 @@ export function createComponentLogger(component: string): pino.Logger {
               correlationId: ctx.correlationId,
               ...(ctx.userId && { userId: ctx.userId }),
             })
-            return (child[prop as keyof pino.Logger] as Function)(...args)
+            return (child[prop as keyof pino.Logger] as (...logArgs: unknown[]) => unknown)(...args)
           }
           return value.apply(target, args)
         }

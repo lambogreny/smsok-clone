@@ -31,6 +31,25 @@ createBullBoard({
 
 const handler = serverAdapter.getRouter();
 
+type AdapterRequest = {
+  method: string;
+  url: string;
+  headers: Record<string, string>;
+  query: Record<string, string>;
+};
+
+type AdapterResponse = {
+  statusCode: number;
+  headers: Record<string, string>;
+  body: string;
+  setHeader: (key: string, value: string) => void;
+  status: (code: number) => AdapterResponse;
+  send: (data: string) => void;
+  json: (data: unknown) => void;
+};
+
+type RouterHandler = (req: AdapterRequest, res: AdapterResponse, next: () => void) => void;
+
 export async function GET(req: NextRequest) {
   // Auth guard — only SUPER_ADMIN can access BullBoard
   try {
@@ -75,7 +94,7 @@ export async function GET(req: NextRequest) {
         this.send(JSON.stringify(data));
       },
     };
-    handler(adapterReq as any, adapterRes as any, () => {
+    (handler as unknown as RouterHandler)(adapterReq, adapterRes, () => {
       resolve(new Response("Not Found", { status: 404 }));
     });
   });

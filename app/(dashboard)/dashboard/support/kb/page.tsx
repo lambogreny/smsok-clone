@@ -208,7 +208,7 @@ function ArticleReaderSkeleton() {
           <Skeleton
             key={i}
             className="h-4 bg-[var(--bg-elevated)]"
-            style={{ width: `${Math.random() * 40 + 60}%` }}
+            style={{ width: `${60 + ((i * 17 + 7) % 40)}%` }}
           />
         ))}
       </div>

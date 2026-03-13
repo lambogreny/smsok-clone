@@ -11,9 +11,9 @@ const service = readFileSync(resolve(ROOT, "lib/orders/service.ts"), "utf-8");
 
 describe("Task #2052: pending orders + customer type flow", () => {
   it("stores company/WHT fields in the Order schema", () => {
-    expect(schema).toContain("customerType     OrderCustomerType");
-    expect(schema).toContain("hasWht           Boolean");
-    expect(schema).toContain("whtAmount        Decimal");
+    expect(schema).toContain("customerType       OrderCustomerType");
+    expect(schema).toContain("hasWht             Boolean");
+    expect(schema).toContain("whtAmount          Decimal");
     expect(schema).toContain("@@map(\"orders\")");
   });
 

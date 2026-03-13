@@ -8,14 +8,17 @@ export default async function SendPage() {
   const user = await getSession();
   if (!user) redirect("/login");
 
+  let senderNames: string[] | null = null;
   try {
     const approved = await getApprovedSenderNames();
-    const senderNames = approved.map(s => s.name);
+    senderNames = approved.map(s => s.name);
+  } catch {}
 
-    return (
-      <SendSmsForm senderNames={senderNames} />
-    );
-  } catch {
+  if (!senderNames) {
     return <ErrorState type="SERVER_ERROR" />;
   }
+
+  return (
+    <SendSmsForm senderNames={senderNames} />
+  );
 }

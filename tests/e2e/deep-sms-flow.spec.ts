@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type ConsoleMessage, type Page } from "@playwright/test";
 
 /**
  * Deep E2E Test: SMS Sending Full Flow
@@ -477,7 +477,7 @@ test.describe("Console Errors Audit — All Pages", () => {
 
     for (const route of ["/dashboard/send", "/dashboard/otp", "/dashboard/messages"]) {
       const pageErrors: string[] = [];
-      const errorHandler = (msg: any) => {
+      const errorHandler = (msg: ConsoleMessage) => {
         if (msg.type() === "error") pageErrors.push(msg.text());
       };
       const crashHandler = (err: Error) => {

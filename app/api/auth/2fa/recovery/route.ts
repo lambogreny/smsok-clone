@@ -7,7 +7,7 @@ import { ERROR_CODES, startApiLog, setApiLogUser } from "@/lib/api-log"
 import { applyRateLimit } from "@/lib/rate-limit"
 import { env } from "@/lib/env"
 import { getClientIp } from "@/lib/session-utils"
-import { useRecoveryCode } from "@/lib/actions/two-factor"
+import { useRecoveryCode as consumeRecoveryCode } from "@/lib/actions/two-factor"
 import { recovery2FASchema } from "@/lib/validations"
 import { hasValidCsrfOrigin } from "@/lib/csrf"
 
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Verify recovery code
-    const result = await useRecoveryCode(payload.userId, recoveryCode)
+    const result = await consumeRecoveryCode(payload.userId, recoveryCode)
 
     // Get user info
     const user = await prisma.user.findUnique({

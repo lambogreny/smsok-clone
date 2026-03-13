@@ -51,9 +51,7 @@ describe("Task #1888: admin order review endpoints", () => {
 
   it("adds type-based order document downloads used by the order detail page", () => {
     expect(orderDocumentTypeRoute).toContain('GET /api/v1/orders/:id/documents/:type');
-    expect(orderDocumentTypeRoute).toContain('"tax-invoice": "TAX_INVOICE"');
-    expect(orderDocumentTypeRoute).toContain('receipt: "RECEIPT"');
-    expect(orderDocumentTypeRoute).toContain("renderOrderAccountingDocumentPdf");
+    expect(orderDocumentTypeRoute).toContain("buildOrderDocumentDownloadResponse");
     expect(orderDetailPage).toContain("/api/v1/orders/${order.id}/documents/tax-invoice");
     expect(orderDetailPage).toContain("/api/v1/orders/${order.id}/documents/receipt");
   });

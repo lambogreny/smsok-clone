@@ -181,6 +181,7 @@ export async function POST(req: Request, ctx: RouteContext) {
     });
 
     try {
+      await slipVerifyQueue.waitUntilReady();
       await slipVerifyQueue.add(
         "verify-order-slip",
         {
@@ -190,11 +191,12 @@ export async function POST(req: Request, ctx: RouteContext) {
           queuedAt: new Date().toISOString(),
         },
         {
-          jobId: `order-slip:${orderSlipId}`,
+          jobId: `order-slip-${orderSlipId}`,
         },
       );
       queueQueued = true;
     } catch (error) {
+      console.error("[Slip Route] Failed to enqueue slip verification job:", error);
       await db.$transaction(async (tx) => {
         await tx.orderSlip.update({
           where: { id: orderSlipId },

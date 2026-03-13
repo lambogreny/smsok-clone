@@ -8,10 +8,14 @@ export default async function GroupsPage() {
   const user = await getSession();
   if (!user) redirect("/login");
 
+  let groups: Awaited<ReturnType<typeof getGroups>> | null = null;
   try {
-    const groups = await getGroups();
-    return <GroupsPageClient initialGroups={groups} />;
-  } catch {
+    groups = await getGroups();
+  } catch {}
+
+  if (!groups) {
     return <ErrorState type="SERVER_ERROR" />;
   }
+
+  return <GroupsPageClient initialGroups={groups} />;
 }

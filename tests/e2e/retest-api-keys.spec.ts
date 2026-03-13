@@ -421,7 +421,7 @@ test.describe("API Keys — Validation & Security", () => {
     // The text should be rendered as text, not executed
     // Check the page didn't have an actual alert
     const hasXssExecution = await page.evaluate(() => {
-      return (window as any).__xss_triggered === true;
+      return (window as Window & { __xss_triggered?: boolean }).__xss_triggered === true;
     });
     expect(hasXssExecution).toBe(false);
   });

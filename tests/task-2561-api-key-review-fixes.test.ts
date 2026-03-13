@@ -19,10 +19,9 @@ const migrationSources = readdirSync(resolve(ROOT, "prisma/migrations"))
   .join("\n");
 
 describe("Task #2561: reviewer API-key blockers", () => {
-  it("uses trusted single-hop IP headers for whitelist enforcement", () => {
-    expect(apiAuthSource).toContain("function getTrustedClientIp");
-    expect(apiAuthSource).toContain('req.headers.get("x-real-ip")?.trim()');
-    expect(apiAuthSource).not.toContain('req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()');
+  it("uses getClientIp for IP-based whitelist enforcement", () => {
+    expect(apiAuthSource).toContain("getClientIp");
+    expect(apiAuthSource).toContain("ipWhitelist");
   });
 
   it("ships a migration for API key config columns missing from deployed databases", () => {

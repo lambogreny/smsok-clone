@@ -15,46 +15,52 @@ export default async function GroupDetailPage({
 
   const { id } = await params;
 
+  let group: Awaited<ReturnType<typeof prisma.contactGroup.findFirst<{ where: { id: string; userId: string }; include: { _count: { select: { members: true } } } }>>> | null = null;
+  let members: Awaited<ReturnType<typeof getGroupContacts>> | null = null;
+  let availableContacts: Awaited<ReturnType<typeof getContactsNotInGroup>> | null = null;
+  let loadError = false;
   try {
-    const group = await prisma.contactGroup.findFirst({
+    group = await prisma.contactGroup.findFirst({
       where: { id, userId: user.id },
       include: { _count: { select: { members: true } } },
     });
 
     if (!group) notFound();
 
-    const [members, availableContacts] = await Promise.all([
+    [members, availableContacts] = await Promise.all([
       getGroupContacts(id),
       getContactsNotInGroup(id),
     ]);
-
-    const serializedMembers = (members as { id: string; groupId: string; contactId: string; contact: { id: string; name: string; phone: string; email: string | null } }[]).map((m) => ({
-      id: m.id,
-      contactId: m.contactId,
-      name: m.contact.name,
-      phone: m.contact.phone,
-      email: m.contact.email,
-    }));
-
-    const serializedAvailable = (availableContacts as { id: string; name: string; phone: string; email: string | null; tags: string | null }[]).map((c) => ({
-      id: c.id,
-      name: c.name,
-      phone: c.phone,
-      tags: c.tags,
-    }));
-
-    return (
-      <GroupDetailClient
-        groupId={id}
-        groupName={group.name}
-        memberCount={group._count.members}
-        createdAt={group.createdAt.toISOString()}
-        initialMembers={serializedMembers}
-        availableContacts={serializedAvailable}
-      />
-    );
   } catch (err) {
     if (err && typeof err === "object" && "digest" in err) throw err;
-    return <ErrorState type="SERVER_ERROR" />;
+    loadError = true;
   }
+
+  if (loadError || !group || !members || !availableContacts) return <ErrorState type="SERVER_ERROR" />;
+
+  const serializedMembers = members.map((m: Record<string, unknown> & { id: string; contactId: string; contact?: { name: string; phone: string; email: string | null } }) => ({
+    id: m.id,
+    contactId: m.contactId,
+    name: m.contact?.name ?? "",
+    phone: m.contact?.phone ?? "",
+    email: m.contact?.email ?? "",
+  }));
+
+  const serializedAvailable = availableContacts.map((c) => ({
+    id: c.id,
+    name: c.name,
+    phone: c.phone,
+    tags: c.tags,
+  }));
+
+  return (
+    <GroupDetailClient
+      groupId={id}
+      groupName={group.name}
+      memberCount={group._count.members}
+      createdAt={group.createdAt.toISOString()}
+      initialMembers={serializedMembers}
+      availableContacts={serializedAvailable}
+    />
+  );
 }

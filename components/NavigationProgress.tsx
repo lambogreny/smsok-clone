@@ -26,10 +26,13 @@ export default function NavigationProgress() {
 
   // Detect route change
   useEffect(() => {
-    if (prevPathRef.current !== pathname) {
-      prevPathRef.current = pathname;
-      complete();
-    }
+    const frame = window.requestAnimationFrame(() => {
+      if (prevPathRef.current !== pathname) {
+        prevPathRef.current = pathname;
+        complete();
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [pathname, complete]);
 
   // Listen for click on internal links to start progress

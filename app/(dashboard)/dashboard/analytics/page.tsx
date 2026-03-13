@@ -9,14 +9,18 @@ export default async function AnalyticsPage() {
   const user = await getSession();
   if (!user) redirect("/login");
 
+  let stats: Awaited<ReturnType<typeof getDashboardStats>> | null = null;
+  let quota: { totalRemaining: number } | null = null;
   try {
-    const [stats, quota] = await Promise.all([
+    [stats, quota] = await Promise.all([
       getDashboardStats(),
       getRemainingQuota(user.id).catch(() => ({ totalRemaining: 0 })),
     ]);
+  } catch {}
 
-    return <AnalyticsContent stats={{ ...stats, smsRemaining: quota.totalRemaining }} />;
-  } catch {
+  if (!stats || !quota) {
     return <ErrorState type="SERVER_ERROR" />;
   }
+
+  return <AnalyticsContent stats={{ ...stats, smsRemaining: quota.totalRemaining }} />;
 }

@@ -46,27 +46,27 @@ describe("sendSms logic", () => {
   );
 
   it("validates input with sendSmsSchema", () => {
-    expect(sendBlock).toContain("sendSmsSchema.parse");
+    expect(sendBlock).toContain("sendSmsSchema.safeParse");
   });
 
   it("calculates SMS count", () => {
-    expect(sendBlock).toContain("calculateSmsCount");
+    expect(sendBlock).toContain("calculateSmsSegments");
   });
 
-  it("checks credit balance", () => {
-    expect(sendBlock).toContain("user.credits < smsCount");
+  it("checks credit balance via quota system", () => {
+    expect(sendBlock).toContain("ensureSufficientQuota");
   });
 
   it("throws on insufficient credits", () => {
-    expect(sendBlock).toContain("เครดิตไม่เพียงพอ");
+    expect(sendBlock).toContain("InsufficientCreditsError");
   });
 
   it("verifies sender name is approved", () => {
     expect(sendBlock).toContain('status: "APPROVED"');
   });
 
-  it("allows default SMSOK sender", () => {
-    expect(sendBlock).toContain('"SMSOK"');
+  it("rejects unapproved sender name", () => {
+    expect(sendBlock).toContain("ชื่อผู้ส่งยังไม่ได้รับอนุมัติ");
   });
 
   it("uses transaction for atomicity", () => {
@@ -77,8 +77,8 @@ describe("sendSms logic", () => {
     expect(sendBlock).toContain("normalizePhone");
   });
 
-  it("deducts credits", () => {
-    expect(sendBlock).toContain("decrement: smsCount");
+  it("deducts quota", () => {
+    expect(sendBlock).toContain("deductQuota");
   });
 
   it("revalidates dashboard path", () => {
@@ -93,15 +93,15 @@ describe("sendBatchSms logic", () => {
   );
 
   it("validates with sendBatchSmsSchema", () => {
-    expect(batchBlock).toContain("sendBatchSmsSchema.parse");
+    expect(batchBlock).toContain("sendBatchSmsSchema.safeParse");
   });
 
   it("calculates total credits for all recipients", () => {
     expect(batchBlock).toContain("smsCount * input.recipients.length");
   });
 
-  it("checks total credits sufficient", () => {
-    expect(batchBlock).toContain("user.credits < totalCredits");
+  it("checks total credits sufficient via quota system", () => {
+    expect(batchBlock).toContain("ensureSufficientQuota");
   });
 
   it("uses createMany for efficiency", () => {
@@ -120,7 +120,7 @@ describe("getMessages (reports)", () => {
   );
 
   it("validates filters with reportFilterSchema", () => {
-    expect(reportBlock).toContain("reportFilterSchema.parse");
+    expect(reportBlock).toContain("reportFilterSchema.safeParse");
   });
 
   it("supports status filter", () => {
@@ -178,8 +178,8 @@ describe("Contact Actions: Structure", () => {
 
 describe("createContact logic", () => {
   const block = contactActions.slice(
-    contactActions.indexOf("async function createContact"),
-    contactActions.indexOf("async function updateContact")
+    contactActions.indexOf("// Create contact\n//"),
+    contactActions.indexOf("// Update contact\n//")
   );
 
   it("validates with createContactSchema", () => {
@@ -194,8 +194,8 @@ describe("createContact logic", () => {
 
 describe("updateContact logic", () => {
   const block = contactActions.slice(
-    contactActions.indexOf("async function updateContact"),
-    contactActions.indexOf("async function deleteContact")
+    contactActions.indexOf("// Update contact\n//"),
+    contactActions.indexOf("// Delete contact\n//")
   );
 
   it("validates id", () => {
@@ -221,8 +221,8 @@ describe("importContacts logic", () => {
     expect(block).toContain("ไม่มีรายชื่อที่จะนำเข้า");
   });
 
-  it("limits to 10000 contacts", () => {
-    expect(block).toContain("10,000");
+  it("limits to 200 contacts per import", () => {
+    expect(block).toContain("200");
   });
 
   it("tracks imported vs skipped counts", () => {
@@ -283,8 +283,8 @@ describe("getApprovedSenderNames logic", () => {
     expect(block).toContain('status: "APPROVED"');
   });
 
-  it("always includes default SMSOK sender", () => {
-    expect(block).toContain('"SMSOK"');
+  it("returns only DB-approved sender names", () => {
+    expect(block).toContain("select: { name: true }");
   });
 });
 
@@ -316,12 +316,8 @@ describe("adminApproveSenderName logic", () => {
 // ==========================================
 
 describe("Payment Actions: Structure", () => {
-  it("is a server action", () => {
-    expect(paymentActions).toContain('"use server"');
-  });
-
-  it("has purchasePackage", () => {
-    expect(paymentActions).toContain("async function purchasePackage");
+  it("has getPackageTiers function", () => {
+    expect(paymentActions).toContain("async function getPackageTiers");
   });
 
   it("has uploadSlip", () => {
@@ -332,33 +328,24 @@ describe("Payment Actions: Structure", () => {
     expect(paymentActions).toContain("async function adminVerifyTransaction");
   });
 
-  it("has PACKAGES constant with 8 packages", () => {
-    expect(paymentActions).toContain("SMSOK A");
-    expect(paymentActions).toContain("SMSOK H");
+  it("has getUserTransactions", () => {
+    expect(paymentActions).toContain("async function getUserTransactions");
   });
 });
 
-describe("purchasePackage logic", () => {
+describe("getPackageTiers logic", () => {
   const block = paymentActions.slice(
-    paymentActions.indexOf("async function purchasePackage"),
+    paymentActions.indexOf("async function getPackageTiers"),
     paymentActions.indexOf("async function uploadSlip")
   );
 
-  it("validates packageId", () => {
-    expect(block).toContain("idSchema.parse");
+  it("queries active non-trial package tiers", () => {
+    expect(block).toContain("isActive: true");
+    expect(block).toContain("isTrial: false");
   });
 
-  it("checks package exists and is active", () => {
-    expect(block).toContain("!pkg.isActive");
-    expect(block).toContain("ไม่พบแพ็กเกจ");
-  });
-
-  it("calculates expiry from duration", () => {
-    expect(block).toContain("pkg.durationDays");
-  });
-
-  it("creates pending transaction", () => {
-    expect(block).toContain('status: "PENDING"');
+  it("orders by sortOrder", () => {
+    expect(block).toContain("sortOrder");
   });
 });
 
@@ -368,13 +355,12 @@ describe("uploadSlip logic", () => {
     paymentActions.indexOf("async function adminVerifyTransaction")
   );
 
-  it("validates transactionId", () => {
-    expect(block).toContain("idSchema.parse");
+  it("is a legacy stub that throws", () => {
+    expect(block).toContain("Legacy slip upload was removed");
   });
 
-  it("only allows pending transactions", () => {
-    expect(block).toContain('status !== "PENDING"');
-    expect(block).toContain("รายการนี้ดำเนินการแล้ว");
+  it("directs to multipart R2 upload routes", () => {
+    expect(block).toContain("R2 upload routes");
   });
 });
 
@@ -386,15 +372,15 @@ describe("adminVerifyTransaction logic", () => {
 
   it("checks admin role", () => {
     expect(block).toContain('role: "admin"');
-    expect(block).toContain("admin only");
+    expect(block).toContain("ไม่มีสิทธิ์ผู้ดูแลระบบ");
   });
 
-  it("uses transaction for verify (atomic credit + status)", () => {
+  it("uses transaction for verify (atomic package activation)", () => {
     expect(block).toContain("$transaction");
   });
 
-  it("increments user credits on verify", () => {
-    expect(block).toContain("increment: transaction.credits");
+  it("activates package purchase on verify", () => {
+    expect(block).toContain("packagePurchase");
   });
 
   it("sets verified status and timestamp", () => {
@@ -403,7 +389,7 @@ describe("adminVerifyTransaction logic", () => {
   });
 
   it("sets rejected status on reject", () => {
-    expect(block).toContain('status: "REJECTED"');
+    expect(block).toContain('status: "rejected"');
   });
 });
 
@@ -435,8 +421,8 @@ describe("Actions index exports", () => {
   });
 
   it("exports payment actions", () => {
-    expect(indexFile).toContain("purchasePackage");
     expect(indexFile).toContain("uploadSlip");
-    expect(indexFile).toContain("PACKAGES");
+    expect(indexFile).toContain("adminVerifyTransaction");
+    expect(indexFile).toContain("getPackageTiers");
   });
 });

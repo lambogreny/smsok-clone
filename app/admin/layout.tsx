@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -66,78 +66,97 @@ const SYSTEM: NavItem[] = [
   { label: "Users", href: "/admin/users", icon: Users },
 ];
 
+/* ─── Extracted sub-components ─── */
+
+function NavLink({
+  item,
+  active,
+  compact,
+  onNavigate,
+}: {
+  item: NavItem;
+  active: boolean;
+  compact: boolean;
+  onNavigate?: () => void;
+}) {
+  const Icon = item.icon;
+
+  return (
+    <Link
+      href={item.href}
+      onClick={onNavigate}
+      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+        active
+          ? "bg-[rgba(var(--accent-rgb),0.08)] text-[var(--accent)] border-l-2 border-[var(--accent)] -ml-[2px]"
+          : "text-[var(--text-muted)] hover:text-white hover:bg-[rgba(255,255,255,0.03)]"
+      } ${compact ? "justify-center px-2" : ""}`}
+    >
+      <Icon className="w-4 h-4 flex-shrink-0" />
+      {!compact && (
+        <>
+          <span className="flex-1">{item.label}</span>
+          {item.badge !== undefined && (
+            <span
+              className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
+              style={{
+                color: item.badgeColor,
+                background: `${item.badgeColor}15`,
+              }}
+            >
+              {item.badge}
+            </span>
+          )}
+        </>
+      )}
+    </Link>
+  );
+}
+
+function renderSidebarContent({
+  pathname,
+  collapsed,
+  mobileOpen,
+  onNavigate,
+}: {
+  pathname: string;
+  collapsed: boolean;
+  mobileOpen: boolean;
+  onNavigate?: () => void;
+}) {
+  function isActive(href: string) {
+    if (href === "/admin") return pathname === "/admin";
+    return pathname.startsWith(href);
+  }
+
+  const compact = collapsed && !mobileOpen;
+
+  return (
+    <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-1">
+      <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider px-3 mb-2">
+        Dashboards
+      </p>
+      {DASHBOARDS.map((item) => (
+        <NavLink key={item.href} item={item} active={isActive(item.href)} compact={compact} onNavigate={onNavigate} />
+      ))}
+
+      <div className="h-px bg-[var(--border-default)] my-3" />
+
+      <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider px-3 mb-2">
+        System
+      </p>
+      {SYSTEM.map((item) => (
+        <NavLink key={item.href} item={item} active={isActive(item.href)} compact={compact} onNavigate={onNavigate} />
+      ))}
+    </nav>
+  );
+}
+
 /* ─── Admin Layout ─── */
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  // Close mobile menu on route change
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
-
-  function isActive(href: string) {
-    if (href === "/admin") return pathname === "/admin";
-    return pathname.startsWith(href);
-  }
-
-  function NavLink({ item }: { item: NavItem }) {
-    const active = isActive(item.href);
-    const Icon = item.icon;
-
-    return (
-      <Link
-        href={item.href}
-        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-          active
-            ? "bg-[rgba(var(--accent-rgb),0.08)] text-[var(--accent)] border-l-2 border-[var(--accent)] -ml-[2px]"
-            : "text-[var(--text-muted)] hover:text-white hover:bg-[rgba(255,255,255,0.03)]"
-        } ${collapsed && !mobileOpen ? "justify-center px-2" : ""}`}
-      >
-        <Icon className="w-4 h-4 flex-shrink-0" />
-        {(!collapsed || mobileOpen) && (
-          <>
-            <span className="flex-1">{item.label}</span>
-            {item.badge !== undefined && (
-              <span
-                className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
-                style={{
-                  color: item.badgeColor,
-                  background: `${item.badgeColor}15`,
-                }}
-              >
-                {item.badge}
-              </span>
-            )}
-          </>
-        )}
-      </Link>
-    );
-  }
-
-  function SidebarContent() {
-    return (
-      <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-1">
-        <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider px-3 mb-2">
-          Dashboards
-        </p>
-        {DASHBOARDS.map((item) => (
-          <NavLink key={item.href} item={item} />
-        ))}
-
-        <div className="h-px bg-[var(--border-default)] my-3" />
-
-        <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider px-3 mb-2">
-          System
-        </p>
-        {SYSTEM.map((item) => (
-          <NavLink key={item.href} item={item} />
-        ))}
-      </nav>
-    );
-  }
 
   return (
     <div className="flex h-screen bg-[var(--bg-base)]">
@@ -169,19 +188,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         </div>
 
         {/* Desktop nav */}
-        {collapsed ? (
-          <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-1">
-            {DASHBOARDS.map((item) => (
-              <NavLink key={item.href} item={item} />
-            ))}
-            <div className="h-px bg-[var(--border-default)] my-3" />
-            {SYSTEM.map((item) => (
-              <NavLink key={item.href} item={item} />
-            ))}
-          </nav>
-        ) : (
-          <SidebarContent />
-        )}
+        {renderSidebarContent({ pathname, collapsed, mobileOpen })}
       </aside>
 
       {/* Mobile Sidebar Overlay */}
@@ -209,7 +216,12 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <SidebarContent />
+            {renderSidebarContent({
+              pathname,
+              collapsed,
+              mobileOpen,
+              onNavigate: () => setMobileOpen(false),
+            })}
           </aside>
         </div>
       )}

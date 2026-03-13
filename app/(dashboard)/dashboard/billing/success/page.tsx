@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
   ArrowLeft,
@@ -44,13 +44,9 @@ export default function PaymentSuccessPage() {
   const smsQty = Number(searchParams.get("sms") || searchParams.get("credits")) || 1000
   const total = Number(searchParams.get("total")) || 0
 
-  // Defer date/random to client to avoid hydration mismatch
-  const [txn, setTxn] = useState(searchParams.get("txn") || "")
-  const [dateStr, setDateStr] = useState("")
-  useEffect(() => {
-    if (!txn) setTxn(generateInvoiceId())
-    setDateStr(formatDate())
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  // Defer date/random to client via lazy state initializers to avoid hydration mismatch
+  const [txn] = useState(() => searchParams.get("txn") || generateInvoiceId())
+  const [dateStr] = useState(() => formatDate())
 
   const subtotal = total > 0 ? Math.round((total / (1 + VAT_RATE)) * 100) / 100 : smsQty * 0.6
   const vat = total > 0 ? Math.round((total - subtotal) * 100) / 100 : Math.round(subtotal * VAT_RATE * 100) / 100

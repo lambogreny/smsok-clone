@@ -16,7 +16,8 @@ export const UiStoreProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // Manual rehydrate from localStorage after mount (skipHydration: true)
     store.persist.rehydrate()
-    setIsHydrated(true)
+    const timer = window.setTimeout(() => setIsHydrated(true), 0)
+    return () => window.clearTimeout(timer)
   }, [store])
 
   return (

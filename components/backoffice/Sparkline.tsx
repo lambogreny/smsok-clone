@@ -32,7 +32,7 @@ export function Sparkline({
     })
     .join(" ");
 
-  const gradientId = `sparkline-${Math.random().toString(36).slice(2, 8)}`;
+  const gradientId = `sparkline-${data.length}-${data[0] ?? 0}`;
 
   // Area fill path
   const firstX = padding;

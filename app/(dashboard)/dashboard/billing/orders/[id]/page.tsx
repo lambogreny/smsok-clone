@@ -962,6 +962,7 @@ function PaymentProofCard({
   onUpload: () => void;
 }) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [currentTime] = useState(() => Date.now());
   const isPending = order.status === "PENDING";
   const isVerifying =
     order.status === "SLIP_UPLOADED" || order.status === "PENDING_REVIEW";
@@ -990,7 +991,8 @@ function PaymentProofCard({
 
       {/* State A: No slip */}
       {!hasSlip && isPending && (() => {
-        const isExpired = order.expires_at && new Date(order.expires_at).getTime() < Date.now();
+        const expiresAt = order.expires_at ? new Date(order.expires_at).getTime() : 0;
+        const isExpired = order.expires_at && expiresAt < currentTime;
         return isExpired ? (
           <div className="text-center py-6">
             <AlertTriangle size={36} style={{ color: "var(--text-muted)" }} className="mx-auto" />

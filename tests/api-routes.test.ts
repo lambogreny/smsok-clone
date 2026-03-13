@@ -143,8 +143,8 @@ describe("API Route: POST /api/v1/otp/verify", () => {
 });
 
 describe("API Route: /api/v1/tags", () => {
-  it("authenticates with public API key auth", () => {
-    expect(tagsRoute).toContain("authenticatePublicApiKey");
+  it("authenticates with API key auth", () => {
+    expect(tagsRoute).toContain("authenticateRequest");
   });
 
   it("supports getTags", () => {
@@ -157,8 +157,8 @@ describe("API Route: /api/v1/tags", () => {
 });
 
 describe("API Route: /api/v1/campaigns", () => {
-  it("authenticates with public API key auth", () => {
-    expect(campaignsRoute).toContain("authenticatePublicApiKey");
+  it("authenticates with API key auth", () => {
+    expect(campaignsRoute).toContain("authenticateRequest");
   });
 
   it("supports getCampaigns", () => {

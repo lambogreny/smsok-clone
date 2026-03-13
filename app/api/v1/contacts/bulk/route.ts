@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
     }
 
     let imported = 0;
-    let skipped = 0;
+    const skipped = 0;
     let duplicates = 0;
     let invalid = 0;
     const createdIds: string[] = [];

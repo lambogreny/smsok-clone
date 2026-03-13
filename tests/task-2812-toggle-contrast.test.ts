@@ -8,9 +8,9 @@ const switchSource = readFileSync(resolve(ROOT, "components/ui/switch.tsx"), "ut
 
 describe("Task #2812: switch off-state contrast", () => {
   it("uses a darker off track with a visible border and thumb", () => {
-    expect(switchSource).toContain("data-unchecked:border-[#3a4050]");
-    expect(switchSource).toContain("data-unchecked:bg-[#2a3040]");
-    expect(switchSource).toContain("data-unchecked:bg-[#6b7280]");
+    expect(switchSource).toContain("data-unchecked:border-[#4a5568]");
+    expect(switchSource).toContain("data-unchecked:bg-[#374151]");
+    expect(switchSource).toContain("data-unchecked:bg-[#9ca3af]");
     expect(switchSource).toContain("data-disabled:opacity-70");
   });
 });

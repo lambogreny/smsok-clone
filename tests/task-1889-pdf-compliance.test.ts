@@ -27,8 +27,8 @@ describe("Task #1889: PDF numbering and compliance hooks", () => {
   it("adds verification URL + QR support to invoice PDFs", () => {
     expect(invoicePdfSource).toContain("verificationUrl?: string | null;");
     expect(invoicePdfSource).toContain("verificationQrDataUrl?: string | null;");
-    expect(invoicePdfSource).toContain("<Image src={data.verificationQrDataUrl}");
-    expect(invoicePdfSource).toContain("ตรวจสอบเอกสาร / Verification");
+    // QR verification rendering is disabled pending verify.smsok.co deployment (see BUG-06)
+    // The type definitions remain in the data interface for forward compatibility
   });
 
   it("supports VOID watermark rendering in the invoice template", () => {
