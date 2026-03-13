@@ -748,6 +748,7 @@ model Invoice {
   updatedAt      DateTime      @updatedAt @map("updated_at")
   organization   Organization? @relation(fields: [organizationId], references: [id])
   user           User          @relation(fields: [userId], references: [id])
+  whtCertificates WhtCertificate[]
 
   @@index([userId, createdAt])
   @@index([organizationId, createdAt])
@@ -902,6 +903,7 @@ model WhtCertificate {
   id             String        @id @default(cuid())
   userId         String        @map("user_id")
   organizationId String?       @map("organization_id")
+  invoiceId      String?       @map("invoice_id")
   transactionId  String?       @map("transaction_id")
   whtNumber      String?       @map("wht_number")
   whtDate        DateTime      @map("wht_date")
@@ -915,12 +917,14 @@ model WhtCertificate {
   reviewedAt     DateTime?     @map("reviewed_at")
   reviewNote     String?       @map("review_note")
   createdAt      DateTime      @default(now()) @map("created_at")
+  invoice        Invoice?      @relation(fields: [invoiceId], references: [id])
   organization   Organization? @relation(fields: [organizationId], references: [id])
   transaction    Transaction?  @relation(fields: [transactionId], references: [id])
   user           User          @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([organizationId])
+  @@index([invoiceId])
   @@index([status])
   @@map("wht_certificates")
 }

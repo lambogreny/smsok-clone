@@ -71,8 +71,8 @@ describe("Task #2733: WHT certificate uploads store R2 refs", () => {
       transactionId: "tx_1",
     });
     mocks.storeUploadedFile.mockResolvedValue({
-      key: "users/user_1/payments/tx_1/wht/fixture.pdf",
-      ref: "r2:users/user_1/payments/tx_1/wht/fixture.pdf",
+      key: "users/user_1/payments/inv_1/wht/fixture.pdf",
+      ref: "r2:users/user_1/payments/inv_1/wht/fixture.pdf",
       body: Buffer.from("fixture"),
       contentType: "application/pdf",
       storage: "r2",
@@ -80,13 +80,13 @@ describe("Task #2733: WHT certificate uploads store R2 refs", () => {
     mocks.whtCertificateCreate.mockResolvedValue({
       id: "cert_1",
       status: "PENDING",
-      fileUrl: "r2:users/user_1/payments/tx_1/wht/fixture.pdf",
+      fileUrl: "r2:users/user_1/payments/inv_1/wht/fixture.pdf",
     });
     mocks.whtCertificateFindMany.mockResolvedValue([
       {
         id: "cert_1",
         status: "PENDING",
-        fileUrl: "r2:users/user_1/payments/tx_1/wht/fixture.pdf",
+        fileUrl: "r2:users/user_1/payments/inv_1/wht/fixture.pdf",
       },
     ]);
     mocks.removeStoredFile.mockResolvedValue(undefined);
@@ -116,20 +116,21 @@ describe("Task #2733: WHT certificate uploads store R2 refs", () => {
       id: "cert_1",
       status: "PENDING",
       whtAmount: 30,
-      fileUrl: "/api/storage/users/user_1/payments/tx_1/wht/fixture.pdf",
+      fileUrl: "/api/storage/users/user_1/payments/inv_1/wht/fixture.pdf",
     });
     expect(mocks.storeUploadedFile).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: "user_1",
         scope: "payments",
-        resourceId: "tx_1",
+        resourceId: "inv_1",
         kind: "wht",
       }),
     );
     expect(mocks.whtCertificateCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          fileUrl: "r2:users/user_1/payments/tx_1/wht/fixture.pdf",
+          fileUrl: "r2:users/user_1/payments/inv_1/wht/fixture.pdf",
+          invoiceId: "inv_1",
           organizationId: "org_1",
           transactionId: "tx_1",
         }),
@@ -149,9 +150,48 @@ describe("Task #2733: WHT certificate uploads store R2 refs", () => {
         {
           id: "cert_1",
           status: "PENDING",
-          fileUrl: "/api/storage/users/user_1/payments/tx_1/wht/fixture.pdf",
+          fileUrl: "/api/storage/users/user_1/payments/inv_1/wht/fixture.pdf",
         },
       ],
     });
+    expect(mocks.whtCertificateFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          userId: "user_1",
+          OR: [
+            { invoiceId: "inv_1" },
+            { invoiceId: null, transactionId: "tx_1" },
+          ],
+        },
+      }),
+    );
+  });
+
+  it("does not fall back to nullable transaction ids when listing invoice certificates", async () => {
+    mocks.invoiceFindFirst.mockResolvedValueOnce({
+      id: "inv_1",
+      organizationId: "org_1",
+      subtotal: 1000,
+      whtRate: 3,
+      whtAmount: 30,
+      transactionId: null,
+    });
+    mocks.whtCertificateFindMany.mockResolvedValueOnce([]);
+
+    const response = await GET(
+      {} as never,
+      { params: Promise.resolve({ id: "inv_1" }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ certificates: [] });
+    expect(mocks.whtCertificateFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          userId: "user_1",
+          invoiceId: "inv_1",
+        },
+      }),
+    );
   });
 });

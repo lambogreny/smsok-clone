@@ -103,7 +103,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     const uploadedFile = await storeUploadedFile({
       userId: user.id,
       scope: "payments",
-      resourceId: invoice.transactionId ?? invoice.id,
+      resourceId: invoice.id,
       kind: "wht",
       file,
     });
@@ -114,6 +114,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
         data: {
           userId: user.id,
           organizationId: invoice.organizationId,
+          invoiceId: invoice.id,
           transactionId: invoice.transactionId,
           payerName: input.payerName,
           payerTaxId: input.payerTaxId,
@@ -157,15 +158,25 @@ export async function GET(req: NextRequest, ctx: Ctx) {
 
     const invoice = await db.invoice.findFirst({
       where: { id: invoiceId, userId: user.id },
-      select: { transactionId: true },
+      select: { id: true, transactionId: true },
     });
     if (!invoice) throw new ApiError(404, "ไม่พบใบแจ้งหนี้");
 
+    const where = invoice.transactionId
+      ? {
+          userId: user.id,
+          OR: [
+            { invoiceId },
+            { invoiceId: null, transactionId: invoice.transactionId },
+          ],
+        }
+      : {
+          userId: user.id,
+          invoiceId,
+        };
+
     const certs = await db.whtCertificate.findMany({
-      where: {
-        userId: user.id,
-        transactionId: invoice.transactionId,
-      },
+      where,
       orderBy: { createdAt: "desc" },
     });
 

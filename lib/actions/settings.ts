@@ -11,6 +11,7 @@ import {
 import { getSession, hashPassword, verifyPassword } from "../auth";
 import { revokeAllUserSessions } from "../auth";
 import { resolveActionUserId } from "../action-user";
+import { ApiError } from "../api-auth";
 
 // ==========================================
 // Update profile (name only; phone is immutable after signup)
@@ -110,11 +111,20 @@ export async function changePasswordForSession(data: unknown) {
 // Get profile
 // ==========================================
 
-export async function getProfile(): Promise<{ id: string; name: string; email: string; phone: string | null; role: string; createdAt: Date } | null>;
-export async function getProfile(userId: string): Promise<{ id: string; name: string; email: string; phone: string | null; role: string; createdAt: Date } | null>;
+type ProfileRecord = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  role: string;
+  createdAt: Date;
+};
+
+export async function getProfile(): Promise<ProfileRecord>;
+export async function getProfile(userId: string): Promise<ProfileRecord>;
 export async function getProfile(userId?: string) {
   userId = await resolveActionUserId(userId);
-  return db.user.findUnique({
+  const profile = await db.user.findUnique({
     where: { id: userId },
     select: {
       id: true,
@@ -125,6 +135,12 @@ export async function getProfile(userId?: string) {
       createdAt: true,
     },
   });
+
+  if (!profile) {
+    throw new ApiError(404, "ไม่พบบัญชีผู้ใช้");
+  }
+
+  return profile;
 }
 
 // ==========================================
