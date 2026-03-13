@@ -3,8 +3,10 @@ import { ApiError, apiError, apiResponse } from "@/lib/api-auth";
 import { getSession } from "@/lib/auth";
 import { prisma as db } from "@/lib/db";
 import {
+  activateOrderPurchase,
   buildSlipDataUrl,
   buildSlipFileKey,
+  ensureOrderDocument,
   orderSummarySelect,
 } from "@/lib/orders/api";
 import { createOrderHistory, serializeOrderSlip, serializeOrderV2 } from "@/lib/orders/service";
@@ -23,6 +25,11 @@ export async function POST(req: Request, ctx: RouteContext) {
       where: { id, userId: session.id },
       select: {
         id: true,
+        userId: true,
+        organizationId: true,
+        packageTierId: true,
+        smsCount: true,
+        customerType: true,
         status: true,
         expiresAt: true,
         payAmount: true,
@@ -76,6 +83,17 @@ export async function POST(req: Request, ctx: RouteContext) {
         ? Math.abs(verification.data.amount - Number(order.payAmount)) <= 1
         : false;
 
+    if (!verification.success) {
+      throw new ApiError(400, verification.error ?? "ตรวจสอบสลิปไม่สำเร็จ กรุณาลองใหม่");
+    }
+    const verificationData = verification.data;
+    if (!verificationData) {
+      throw new ApiError(400, "ตรวจสอบสลิปไม่สำเร็จ กรุณาลองใหม่");
+    }
+    if (!amountMatch) {
+      throw new ApiError(400, "จำนวนเงินในสลิปไม่ตรงกับยอดที่ต้องชำระ");
+    }
+
     const result = await db.$transaction(async (tx) => {
       const createdSlip = await tx.orderSlip.create({
         data: {
@@ -101,24 +119,36 @@ export async function POST(req: Request, ctx: RouteContext) {
       const updatedOrder = await tx.order.update({
         where: { id: order.id },
         data: {
-          status: "VERIFYING",
+          status: "PAID",
           slipUrl,
           slipFileName: slip.name,
           slipFileSize: slip.size,
           whtCertUrl,
           whtCertVerified: whtCertUrl ? null : false,
-          easyslipVerified: amountMatch,
-          easyslipResponse: verification.success ? verification.data : { error: verification.error ?? "verification_failed" },
+          easyslipVerified: true,
+          easyslipResponse: verificationData,
+          paidAt: new Date(),
+          completedAt: new Date(),
         },
         select: orderSummarySelect,
       });
 
-      await createOrderHistory(tx, order.id, "VERIFYING", {
+      await activateOrderPurchase(tx, {
+        id: order.id,
+        userId: order.userId,
+        organizationId: order.organizationId,
+        packageTierId: order.packageTierId,
+        smsCount: order.smsCount,
+      });
+      if (order.customerType === "COMPANY") {
+        await ensureOrderDocument(tx, order, "TAX_INVOICE");
+      }
+      await ensureOrderDocument(tx, order, "RECEIPT");
+
+      await createOrderHistory(tx, order.id, "PAID", {
         fromStatus: order.status,
         changedBy: session.id,
-        note: amountMatch
-          ? "Slip uploaded and matched amount, awaiting verification"
-          : "Slip uploaded and awaiting verification",
+        note: "EasySlip verified — order paid automatically",
       });
 
       return { createdSlip, updatedOrder };
