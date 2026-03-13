@@ -3,6 +3,16 @@ import { ApiError, authenticateApiKey } from "./api-auth";
 import { ApiKeyPermission, hasApiKeyPermission } from "./api-key-permissions";
 import { ERROR_CODES } from "./api-log";
 
+const PUBLIC_API_KEY_ROUTE_PATTERNS = [
+  /^\/api\/v1\/permissions$/,
+  /^\/api\/v1\/links$/,
+  /^\/api\/v1\/links\/[^/]+\/stats$/,
+  /^\/api\/v1\/pdpa\/consent$/,
+  /^\/api\/v1\/pdpa\/opt-out$/,
+  /^\/api\/v1\/pdpa\/data-requests$/,
+  /^\/api\/v1\/pdpa\/data-requests\/[^/]+$/,
+];
+
 export function extractPublicApiKey(req: NextRequest): string | null {
   const authHeader = req.headers.get("authorization");
   if (authHeader?.startsWith("Bearer ")) {
@@ -13,7 +23,19 @@ export function extractPublicApiKey(req: NextRequest): string | null {
   return headerApiKey || null;
 }
 
+function isAllowedPublicApiKeyRoute(pathname: string) {
+  return PUBLIC_API_KEY_ROUTE_PATTERNS.some((pattern) => pattern.test(pathname));
+}
+
 export async function authenticatePublicApiKey(req: NextRequest) {
+  if (!isAllowedPublicApiKeyRoute(req.nextUrl.pathname)) {
+    throw new ApiError(
+      403,
+      "Public API key auth is only allowed on explicitly supported routes",
+      ERROR_CODES.FORBIDDEN,
+    );
+  }
+
   return authenticateApiKey(req);
 }
 

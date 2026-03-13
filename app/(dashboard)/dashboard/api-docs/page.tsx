@@ -96,7 +96,7 @@ const endpoints: Endpoint[] = [
     ],
   },
   {
-    method: "GET", path: "/api/v1/sms/status?messageId=msg_abc", title: "Message Status", category: "SMS",
+    method: "GET", path: "/api/v1/sms/status?id=msg_abc", title: "Message Status", category: "SMS",
     description: "ตรวจสอบสถานะข้อความที่ส่งไป",
     headers: "Authorization: Bearer <API_KEY>",
     response: `{
@@ -123,9 +123,9 @@ const endpoints: Endpoint[] = [
     description: "ตั้งเวลาส่ง SMS ล่วงหน้า",
     headers: "Authorization: Bearer <API_KEY>",
     body: `{
-  "recipient": "0891234567",
+  "to": "0891234567",
   "message": "แจ้งเตือนนัดหมาย พรุ่งนี้ 10:00",
-  "senderName": "EasySlip",
+  "sender": "EasySlip",
   "scheduledAt": "2026-03-10T03:00:00Z"
 }`,
     response: `{
