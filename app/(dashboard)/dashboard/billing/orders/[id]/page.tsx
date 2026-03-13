@@ -58,6 +58,17 @@ interface BankAccount {
   logo: string;
 }
 
+type CanonicalOrderHistoryEntry = {
+  to_status?: string | null;
+  created_at?: string | null;
+};
+
+type CanonicalOrderPayload = Omit<Order, "status" | "timeline"> & {
+  status: string;
+  history?: CanonicalOrderHistoryEntry[];
+  timeline?: OrderStatusEvent[];
+};
+
 function openDocument(url?: string) {
   if (!url) return;
   window.open(url, "_blank", "noopener,noreferrer");
@@ -79,6 +90,40 @@ function getPendingReviewDescription(order: Order) {
   }
 
   return "เรากำลังตรวจสอบหลักฐานการชำระเงิน โดยปกติใช้เวลาไม่เกิน 30 นาที";
+}
+
+const CANONICAL_TO_LEGACY_STATUS: Record<string, OrderStatus> = {
+  draft: "PENDING",
+  pending_payment: "PENDING",
+  verifying: "PENDING_REVIEW",
+  paid: "COMPLETED",
+  expired: "EXPIRED",
+  cancelled: "CANCELLED",
+  pending: "PENDING",
+  slip_uploaded: "SLIP_UPLOADED",
+  verified: "VERIFIED",
+  pending_review: "PENDING_REVIEW",
+  approved: "APPROVED",
+  completed: "COMPLETED",
+  rejected: "REJECTED",
+};
+
+function toLegacyOrderStatus(status: string | null | undefined): OrderStatus {
+  const normalized = status?.trim().toLowerCase() ?? "";
+  return CANONICAL_TO_LEGACY_STATUS[normalized] ?? "PENDING";
+}
+
+function normalizeOrderPayload(payload: CanonicalOrderPayload): Order {
+  const timeline = payload.timeline ?? payload.history?.map((entry) => ({
+    status: toLegacyOrderStatus(entry.to_status),
+    timestamp: entry.created_at ?? null,
+  }));
+
+  return {
+    ...payload,
+    status: toLegacyOrderStatus(payload.status),
+    timeline,
+  };
 }
 
 // ── Status Banner Config ──
@@ -1385,7 +1430,7 @@ function SlipUploadDialog({
                 className="flex items-center gap-1 text-[11px] mt-1 italic"
                 style={{ color: "var(--text-muted)" }}
               >
-                ℹ️ ไม่มีตอนนี้? สามารถอัปโหลดทีหลังได้
+                ℹ️ หากเลือกหัก ณ ที่จ่าย ต้องแนบใบ 50 ทวิพร้อมสลิปในครั้งนี้
               </p>
             </div>
           )}
@@ -1607,16 +1652,16 @@ export default function OrderDetailPage() {
 
   // Fetch order
   const fetchOrder = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/v1/orders/${orderId}`, {
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Failed to fetch order");
-      const data = await res.json();
-      setOrder(data);
-    } catch {
-      toast.error("ไม่สามารถโหลดคำสั่งซื้อได้");
-    } finally {
+      try {
+        const res = await fetch(`/api/orders/${orderId}`, {
+          credentials: "include",
+        });
+        if (!res.ok) throw new Error("Failed to fetch order");
+        const data = normalizeOrderPayload(await res.json());
+        setOrder(data);
+      } catch {
+        toast.error("ไม่สามารถโหลดคำสั่งซื้อได้");
+      } finally {
       setLoading(false);
     }
   }, [orderId]);
@@ -1630,9 +1675,13 @@ export default function OrderDetailPage() {
     if (!order) return;
     const currentOrder = order;
     try {
-      const res = await fetch(`/api/v1/orders/${currentOrder.id}/cancel`, {
-        method: "POST",
+      const res = await fetch(`/api/orders/${currentOrder.id}/status`, {
+        method: "PATCH",
         credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: "cancelled" }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -1655,17 +1704,20 @@ export default function OrderDetailPage() {
     formData.append("slip", slip);
     if (whtCert) formData.append("wht_cert", whtCert);
 
-    const res = await fetch(`/api/v1/orders/${currentOrder.id}/verify-slip`, {
+    const res = await fetch(`/api/orders/${currentOrder.id}/slip`, {
       method: "POST",
       credentials: "include",
       body: formData,
     });
 
     if (res.ok) {
-      const data = await res.json();
-      setOrder((o) => (o ? { ...o, ...data } : o));
+      const data = normalizeOrderPayload(await res.json());
+      await fetchOrder();
       toast.success("ส่งสลิปเรียบร้อย", {
-        description: "ระบบกำลังตรวจสอบอัตโนมัติ",
+        description:
+          data.status === "COMPLETED"
+            ? "ระบบยืนยันการชำระเงินแล้ว"
+            : getPendingReviewDescription(data),
       });
     } else {
       const errData = await res.json().catch(() => ({}));
