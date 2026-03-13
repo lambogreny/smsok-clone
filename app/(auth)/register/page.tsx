@@ -192,7 +192,7 @@ export default function RegisterPage() {
         <span className="text-[13px]">กลับหน้าหลัก</span>
       </Link>
 
-      <div className="w-full max-w-[420px]">
+      <div className="w-full max-w-[460px]">
         {/* Step indicator */}
         <div className="flex items-center justify-center gap-3 mb-6">
           {[0, 1].map((i) => (
@@ -411,27 +411,28 @@ export default function RegisterPage() {
                                   className="mt-0.5 h-[18px] w-[18px] shrink-0 rounded-[5px] border-[1.5px] border-[#3a4049] data-[state=checked]:border-transparent data-[state=checked]:bg-[var(--accent)] data-[state=checked]:text-[var(--bg-base)]"
                                 />
                               </FormControl>
-                              <div className="space-y-0.5">
-                                <FormLabel className="text-[13px] text-[var(--text-secondary)] font-normal leading-relaxed">
-                                  ฉันยอมรับ
+                              <div className="min-w-0 space-y-1">
+                                <FormLabel className="block text-[13px] text-[var(--text-secondary)] font-normal leading-relaxed break-words">
+                                  ฉันยอมรับ{" "}
                                   <Link
                                     href="/terms"
-                                    className="text-[var(--accent-blue)] font-medium hover:underline mx-0.5"
+                                    className="font-medium text-[var(--accent-blue)] hover:underline"
                                     target="_blank"
                                   >
-                                    <span className="whitespace-nowrap">ข้อกำหนดการใช้งาน</span>
+                                    ข้อกำหนดการใช้งาน
                                   </Link>
-                                  และ
+                                  {" "}และ{" "}
                                   <Link
                                     href="/privacy"
-                                    className="text-[var(--accent-blue)] font-medium hover:underline mx-0.5"
+                                    className="font-medium text-[var(--accent-blue)] hover:underline"
                                     target="_blank"
                                   >
-                                    <span className="whitespace-nowrap">นโยบายความเป็นส่วนตัว</span>
+                                    นโยบายความเป็นส่วนตัว
                                   </Link>
                                 </FormLabel>
-                                <p className="text-[11px] font-medium text-[var(--error)]">จำเป็น</p>
-                                <FormMessage className="text-[12px]" />
+                                <span className="inline-flex w-fit rounded-full border border-[var(--border-subtle)] bg-[var(--bg-base)] px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.04em] text-[var(--text-muted)]">
+                                  บังคับ
+                                </span>
                               </div>
                             </FormItem>
                           )}
@@ -450,12 +451,20 @@ export default function RegisterPage() {
                                   className="mt-0.5 h-[18px] w-[18px] shrink-0 rounded-[5px] border-[1.5px] border-[#3a4049] data-[state=checked]:border-transparent data-[state=checked]:bg-[var(--accent)] data-[state=checked]:text-[var(--bg-base)]"
                                 />
                               </FormControl>
-                              <div className="space-y-0.5">
-                                <FormLabel className="text-[13px] text-[var(--text-secondary)] font-normal leading-relaxed">
-                                  ฉันยินยอมให้ส่งข้อมูลแก่ผู้ให้บริการ SMS ภายนอก เพื่อจัดส่ง SMS
+                              <div className="min-w-0 space-y-1">
+                                <FormLabel className="block text-[13px] text-[var(--text-secondary)] font-normal leading-relaxed break-words">
+                                  ฉันยินยอมให้ส่งข้อมูลแก่ผู้ให้บริการ SMS ภายนอกเพื่อจัดส่งข้อความ{" "}
+                                  <Link
+                                    href="/privacy#third-party"
+                                    className="font-medium text-[var(--accent-blue)] hover:underline"
+                                    target="_blank"
+                                  >
+                                    อ่านเพิ่มเติม
+                                  </Link>
                                 </FormLabel>
-                                <p className="text-[11px] font-medium text-[var(--error)]">จำเป็น</p>
-                                <FormMessage className="text-[12px]" />
+                                <span className="inline-flex w-fit rounded-full border border-[var(--border-subtle)] bg-[var(--bg-base)] px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.04em] text-[var(--text-muted)]">
+                                  บังคับ
+                                </span>
                               </div>
                             </FormItem>
                           )}
