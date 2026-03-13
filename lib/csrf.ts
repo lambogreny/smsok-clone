@@ -7,5 +7,18 @@ export function getAllowedOrigins(): string[] {
 
 export function hasValidCsrfOrigin(req: Request): boolean {
   const origin = req.headers.get("origin");
-  return Boolean(origin && getAllowedOrigins().includes(origin));
+  if (origin) {
+    return getAllowedOrigins().includes(origin);
+  }
+
+  const referer = req.headers.get("referer");
+  if (!referer) {
+    return false;
+  }
+
+  try {
+    return getAllowedOrigins().includes(new URL(referer).origin);
+  } catch {
+    return false;
+  }
 }

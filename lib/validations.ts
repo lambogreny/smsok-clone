@@ -207,16 +207,67 @@ export const recovery2FASchema = z.object({
   recoveryCode: z.string().min(1, "กรุณาส่ง Recovery Code"),
 });
 
-// Registration route schema (different from registerSchema — includes OTP + terms)
-export const registerRouteSchema = z.object({
-  name: sanitizedNameSchema(1, 100, "กรุณากรอกชื่อ", "ชื่อต้องไม่เกิน 100 ตัวอักษร"),
-  email: emailSchema,
-  phone: phoneSchema,
-  password: passwordSchema,
-  otpRef: z.string().min(1, "กรุณาส่ง otpRef"),
-  otpCode: z.string().regex(/^\d{6}$/, "รหัส OTP ไม่ถูกต้อง"),
-  acceptTerms: z.literal(true, { message: "กรุณายอมรับเงื่อนไขการใช้งาน" }),
-});
+// Registration route schema (supports legacy `name` plus current first/last-name + consent flow)
+export const registerRouteSchema = z
+  .object({
+    name: sanitizedNameSchema(1, 100, "กรุณากรอกชื่อ", "ชื่อต้องไม่เกิน 100 ตัวอักษร").optional(),
+    firstName: sanitizedNameSchema(1, 50, "กรุณากรอกชื่อ", "ชื่อต้องไม่เกิน 50 ตัวอักษร").optional(),
+    lastName: sanitizedNameSchema(1, 50, "กรุณากรอกนามสกุล", "นามสกุลต้องไม่เกิน 50 ตัวอักษร").optional(),
+    email: emailSchema,
+    phone: phoneSchema,
+    password: passwordSchema,
+    otpRef: z.string().min(1, "กรุณาส่ง otpRef"),
+    otpCode: z.string().regex(/^\d{6}$/, "รหัส OTP ไม่ถูกต้อง"),
+    acceptTerms: z.boolean().optional(),
+    consentService: z.boolean().optional(),
+    consentThirdParty: z.boolean().optional(),
+    consentMarketing: z.boolean().optional(),
+  })
+  .superRefine((data, ctx) => {
+    const hasSplitName = Boolean(data.firstName && data.lastName);
+    if (!data.name && !hasSplitName) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["firstName"],
+        message: "กรุณากรอกชื่อและนามสกุล",
+      });
+    }
+
+    const hasRequiredConsents =
+      data.acceptTerms === true ||
+      (data.consentService === true && data.consentThirdParty === true);
+
+    if (!hasRequiredConsents) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["acceptTerms"],
+        message: "กรุณายอมรับเงื่อนไขการใช้งาน",
+      });
+    }
+  })
+  .transform((data) => {
+    const combinedName = data.name ?? `${data.firstName ?? ""} ${data.lastName ?? ""}`.trim();
+    const nameParts = combinedName.split(/\s+/).filter(Boolean);
+    const firstName = data.firstName ?? nameParts[0] ?? combinedName;
+    const lastName = data.lastName ?? (nameParts.slice(1).join(" ") || firstName);
+    const acceptTerms =
+      data.acceptTerms === true ||
+      (data.consentService === true && data.consentThirdParty === true);
+
+    return {
+      firstName,
+      lastName,
+      email: data.email,
+      phone: data.phone,
+      password: data.password,
+      otpRef: data.otpRef,
+      otpCode: data.otpCode,
+      acceptTerms,
+      consentService: data.consentService ?? acceptTerms,
+      consentThirdParty: data.consentThirdParty ?? acceptTerms,
+      consentMarketing: data.consentMarketing ?? false,
+    };
+  });
 
 // ==========================================
 // SMS Validations
@@ -501,9 +552,26 @@ const apiKeyPermissionsSchema = z
   })
   .transform((permissions) => normalizeApiKeyPermissions(permissions));
 
-export const createApiKeySchema = z.object({
-  name: sanitizedNameSchema(1, 100, "กรุณาตั้งชื่อ API Key", "ชื่อ API Key ต้องไม่เกิน 100 ตัวอักษร"),
+const apiKeyIpWhitelistSchema = z
+  .array(z.string().trim().min(1, "IP Whitelist ต้องไม่ว่าง"))
+  .optional()
+  .transform((entries) => [...new Set((entries ?? []).map((entry) => entry.trim()).filter(Boolean))]);
+
+const apiKeyNameSchema = sanitizedNameSchema(
+  1,
+  100,
+  "กรุณาตั้งชื่อ API Key",
+  "ชื่อ API Key ต้องไม่เกิน 100 ตัวอักษร",
+);
+
+export const updateApiKeyNameSchema = z.object({
+  name: apiKeyNameSchema,
+});
+
+export const createApiKeySchema = updateApiKeyNameSchema.extend({
   permissions: apiKeyPermissionsSchema,
+  rateLimit: z.coerce.number().int().min(1, "Rate limit ต้องอย่างน้อย 1").max(1000, "Rate limit ต้องไม่เกิน 1,000").optional().default(60),
+  ipWhitelist: apiKeyIpWhitelistSchema,
 });
 
 export const createOrganizationSchema = z.object({
@@ -547,6 +615,23 @@ export const createCampaignSchema = z.object({
     .optional(),
   scheduledAt: z.coerce.date().optional(),
 });
+
+export const updateCampaignSchema = z.object({
+  name: sanitizedNameSchema(1, 100, "กรุณากรอกชื่อแคมเปญ", "ชื่อแคมเปญต้องไม่เกิน 100 ตัวอักษร").optional(),
+  contactGroupId: z.string().cuid().nullable().optional(),
+  templateId: z.string().cuid().nullable().optional(),
+  senderName: z
+    .string()
+    .min(3, "ชื่อผู้ส่งต้องมีอย่างน้อย 3 ตัวอักษร")
+    .max(11, "ชื่อผู้ส่งต้องไม่เกิน 11 ตัวอักษร")
+    .regex(SENDER_NAME_REGEX, "ชื่อผู้ส่งต้องเป็นตัวอักษรภาษาอังกฤษและตัวเลขเท่านั้น")
+    .nullable()
+    .optional(),
+  scheduledAt: z.union([z.coerce.date(), z.null()]).optional(),
+}).refine(
+  (value) => Object.values(value).some((entry) => entry !== undefined),
+  { message: "กรุณาระบุข้อมูลที่ต้องการอัปเดต" },
+);
 
 export const templateSchema = z.object({
   name: sanitizedNameSchema(1, 100, "กรุณาตั้งชื่อเทมเพลต", "ชื่อเทมเพลตต้องไม่เกิน 100 ตัวอักษร"),

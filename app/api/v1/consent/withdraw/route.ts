@@ -1,6 +1,12 @@
 import { NextRequest } from "next/server";
 import { authenticateRequest, apiResponse, apiError, ApiError } from "@/lib/api-auth";
 import { withdrawConsent } from "@/lib/actions/consent";
+import { getClientIp } from "@/lib/session-utils";
+import { z } from "zod";
+
+const withdrawConsentSchema = z.object({
+  consentType: z.enum(["SERVICE", "MARKETING", "THIRD_PARTY", "COOKIE"]),
+});
 
 // POST /api/v1/consent/withdraw — withdraw marketing/cookie consent
 export async function POST(req: NextRequest) {
@@ -14,15 +20,14 @@ export async function POST(req: NextRequest) {
       throw new ApiError(400, "กรุณาส่งข้อมูล JSON");
     }
 
-    const { consentType } = body as { consentType: string };
-    if (!consentType) throw new ApiError(400, "กรุณาระบุ consentType");
+    const input = withdrawConsentSchema.parse(body);
 
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+    const ip = getClientIp(req.headers);
     const ua = req.headers.get("user-agent") ?? undefined;
 
     const result = await withdrawConsent({
       userId: user.id,
-      consentType: consentType as any,
+      consentType: input.consentType,
       ipAddress: ip,
       userAgent: ua,
     });

@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { authenticateRequest, apiResponse, apiError } from "@/lib/api-auth";
 import { requireApiPermission } from "@/lib/rbac";
-import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { applyRateLimit } from "@/lib/rate-limit";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 import { normalizePhone } from "@/lib/validations";
@@ -31,8 +31,8 @@ export async function POST(req: NextRequest) {
     const denied = await requireApiPermission(user.id, "create", "contact");
     if (denied) return denied;
 
-    const limit = await checkRateLimit(user.id, "import");
-    if (!limit.allowed) return rateLimitResponse(limit.resetIn);
+    const rl = await applyRateLimit(user.id, "import");
+    if (rl.blocked) return rl.blocked;
 
     const body = await req.json();
     const input = bulkAddSchema.parse(body);

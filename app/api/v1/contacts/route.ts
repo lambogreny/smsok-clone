@@ -5,6 +5,16 @@ import { createContact } from "@/lib/actions/contacts";
 import { createContactSchema } from "@/lib/validations";
 import { prisma } from "@/lib/db";
 
+function readJsonBody(req: NextRequest) {
+  const contentType = req.headers.get("content-type")?.toLowerCase() ?? "";
+  if (!contentType.includes("application/json")) {
+    throw new ApiError(400, "Content-Type must be application/json");
+  }
+  return req.json().catch(() => {
+    throw new ApiError(400, "Invalid JSON");
+  });
+}
+
 // GET /api/v1/contacts?search=xxx&groupId=xxx&page=1&limit=20
 export async function GET(req: NextRequest) {
   try {
@@ -77,7 +87,7 @@ export async function POST(req: NextRequest) {
     const denied = await requireApiPermission(user.id, "create", "contact");
     if (denied) return denied;
 
-    const body = await req.json();
+    const body = await readJsonBody(req);
     const input = createContactSchema.parse(body);
     const contact = await createContact(user.id, input);
     return apiResponse(contact, 201);

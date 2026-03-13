@@ -3,7 +3,10 @@ import { NextRequest } from "next/server";
 import { startApiLog, setApiLogUser, setApiLogApiKey, finishApiLog, ERROR_CODES } from "./api-log";
 import { hashApiKey } from "./crypto-utils";
 import { InsufficientCreditsError } from "./quota-errors";
+import { checkCustomRateLimit } from "./rate-limit";
 import { trustActionUserId } from "./action-user";
+import { hasValidCsrfOrigin } from "./csrf";
+import { getClientIp } from "./session-utils";
 import {
   hasApiKeyPermission,
   normalizeApiKeyPermissions,
@@ -43,7 +46,10 @@ export async function authenticateApiKey(req: NextRequest) {
     select: {
       id: true,
       isActive: true,
+      revokedAt: true,
       permissions: true,
+      rateLimit: true,
+      ipWhitelist: true,
       userId: true,
       user: { select: { id: true, role: true } },
     },
@@ -57,8 +63,22 @@ export async function authenticateApiKey(req: NextRequest) {
     throw new ApiError(401, "API Key ถูกปิดใช้งาน", ERROR_CODES.AUTH_DISABLED);
   }
 
+  if (apiKey.revokedAt) {
+    throw new ApiError(401, "API Key ถูกเพิกถอนแล้ว", ERROR_CODES.AUTH_DISABLED);
+  }
+
   if (!apiKey.user) {
     throw new ApiError(401, "API Key ไม่ถูกต้อง", ERROR_CODES.AUTH_INVALID);
+  }
+
+  const clientIp = getClientIp(req.headers) || (req as NextRequest & { ip?: string }).ip || "unknown";
+
+  if (apiKey.ipWhitelist.length > 0 && !apiKey.ipWhitelist.includes(clientIp)) {
+    throw new ApiError(
+      403,
+      "IP นี้ไม่ได้รับอนุญาตสำหรับ API Key นี้",
+      ERROR_CODES.FORBIDDEN,
+    );
   }
 
   const grantedPermissions = normalizeApiKeyPermissions(apiKey.permissions);
@@ -91,11 +111,23 @@ export async function authenticateApiKey(req: NextRequest) {
     );
   }
 
+  const rateLimit = await checkCustomRateLimit(`api-key:${apiKey.id}`, {
+    windowMs: 60_000,
+    maxRequests: apiKey.rateLimit,
+  });
+  if (!rateLimit.allowed) {
+    throw new ApiError(
+      429,
+      `API Key ใช้งานเกิน rate limit กรุณารอ ${Math.ceil(rateLimit.resetIn / 1000)} วินาที`,
+      ERROR_CODES.RATE_LIMIT,
+    );
+  }
+
   db.apiKey.update({ where: { id: apiKey.id }, data: { lastUsed: new Date() } }).catch(() => {});
 
   setApiLogUser(apiKey.user.id);
   setApiLogApiKey(apiKey.id);
-  trustActionUserId(apiKey.user.id);
+  trustActionUserId(apiKey.user.id, req.headers.get("x-request-id"));
 
   return {
     ...apiKey.user,
@@ -112,7 +144,17 @@ export async function authenticateRequest(req: NextRequest) {
   const { getSession } = await import("./auth");
   const session = await getSession({ headers: req.headers });
   if (session?.id) {
-    trustActionUserId(session.id);
+    const isMutatingRequest = req.method !== "GET" && req.method !== "HEAD" && req.method !== "OPTIONS";
+    const isBrowserSessionApiRequest = req.nextUrl.pathname.startsWith("/api/v1/");
+    const hasExplicitApiKey = Boolean(
+      req.headers.get("authorization") || req.headers.get("x-api-key"),
+    );
+
+    if (isMutatingRequest && isBrowserSessionApiRequest && !hasExplicitApiKey && !hasValidCsrfOrigin(req)) {
+      throw new ApiError(403, "CSRF: invalid origin", ERROR_CODES.FORBIDDEN);
+    }
+
+    trustActionUserId(session.id, req.headers.get("x-request-id"));
     return { id: session.id, role: session.role };
   }
 
