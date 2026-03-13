@@ -58,15 +58,15 @@ describe("Task #1888 — SlipOK migration for order system", () => {
       expect(content).toContain("verifySlip(slip");
     });
 
-    it("should not have admin approval/VERIFYING flow", () => {
+    it("should support pending manual review when SlipOK cannot auto-verify", () => {
       const content = fs.readFileSync(
         path.resolve("app/api/orders/[id]/slip/route.ts"),
         "utf-8",
       );
-      // No manual review path — SlipOK either passes or fails
-      expect(content).not.toContain("pendingReview: true");
-      expect(content).not.toContain("getPendingReviewMessage");
-      expect(content).not.toContain("getManualReviewNote");
+      expect(content).toContain("getPendingReviewMessage");
+      expect(content).toContain("getManualReviewNote");
+      expect(content).toContain('status: "VERIFYING"');
+      expect(content).toContain("pending_review: true");
     });
 
     it("should auto-pay on successful verification", () => {

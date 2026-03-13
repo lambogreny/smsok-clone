@@ -21,6 +21,25 @@ type RouteContext = {
   params: Promise<{ id: string }>;
 };
 
+function getPendingReviewMessage(verification: SlipVerifyResult) {
+  if (verification.providerCode === "application_expired") {
+    return "ระบบตรวจสอบสลิปอัตโนมัติไม่พร้อม กรุณารอเจ้าหน้าที่ตรวจสลิป";
+  }
+
+  return "กำลังรอเจ้าหน้าที่ตรวจสลิป";
+}
+
+function shouldQueueForManualReview(verification: SlipVerifyResult) {
+  if (verification.success || verification.isDuplicate) return false;
+
+  const providerCode = verification.providerCode?.trim();
+  return providerCode !== "1013" && providerCode !== "1014";
+}
+
+function getManualReviewNote(verification: SlipVerifyResult) {
+  return `SlipOK: ${verification.error ?? verification.providerCode ?? "manual review required"}`;
+}
+
 export async function POST(req: Request, ctx: RouteContext) {
   try {
     const session = await getSession();
@@ -120,12 +139,76 @@ export async function POST(req: Request, ctx: RouteContext) {
     const slipBlob = new Blob([await slip.arrayBuffer()], {
       type: slip.type || "application/octet-stream",
     });
-    const verification = await verifySlip(slipBlob, { amount: expectedAmount });
+    const verification = await verifySlip(slipBlob);
 
     // SlipOK returned a known error — reject immediately
     if (verification.isDuplicate) {
       await cleanupUploads();
       throw new ApiError(400, "สลิปนี้ถูกใช้แล้ว");
+    }
+    if (shouldQueueForManualReview(verification)) {
+      const pendingReviewMessage = getPendingReviewMessage(verification);
+      const reviewNote = getManualReviewNote(verification);
+      const result = await db.$transaction(async (tx) => {
+        const createdSlip = await tx.orderSlip.create({
+          data: {
+            orderId: order.id,
+            fileUrl: slipUrl,
+            fileKey: slipKey,
+            fileSize: slip.size,
+            fileType: slip.type || "image/png",
+          },
+          select: {
+            id: true,
+            fileUrl: true,
+            fileKey: true,
+            transRef: true,
+            fileSize: true,
+            fileType: true,
+            uploadedAt: true,
+            verifiedAt: true,
+            verifiedBy: true,
+            deletedAt: true,
+          },
+        });
+
+        const updatedOrder = await tx.order.update({
+          where: { id: order.id },
+          data: {
+            status: "VERIFYING",
+            slipUrl,
+            slipFileName: slip.name,
+            slipFileSize: slip.size,
+            whtCertUrl,
+            whtCertVerified: whtCertUrl ? null : false,
+            easyslipVerified: false,
+            easyslipResponse: verification as unknown as Prisma.InputJsonValue,
+            adminNote: pendingReviewMessage,
+            rejectReason: null,
+            paidAt: null,
+            completedAt: null,
+          },
+          select: orderSummarySelect,
+        });
+
+        await createOrderHistory(tx, order.id, "VERIFYING", {
+          fromStatus: order.status,
+          changedBy: session.id,
+          note: reviewNote,
+        });
+
+        return { createdSlip, updatedOrder, reviewNote, statusNote: pendingReviewMessage };
+      });
+
+      return apiResponse({
+        ...serializeOrderV2(result.updatedOrder),
+        latest_slip: serializeOrderSlip(result.createdSlip),
+        latest_slip_uploaded_at: result.createdSlip.uploadedAt.toISOString(),
+        latest_status_note: result.statusNote,
+        review_note: result.reviewNote,
+        verified: false,
+        pending_review: true,
+      });
     }
     if (!verification.success) {
       await cleanupUploads();
@@ -134,6 +217,11 @@ export async function POST(req: Request, ctx: RouteContext) {
 
     // SlipOK verified successfully — check our own DB for duplicate transRef
     const verificationData = verification.data!;
+    const amountDifference = Math.abs(verificationData.amount - expectedAmount);
+    if (amountDifference > 1) {
+      await cleanupUploads();
+      throw new ApiError(400, "จำนวนเงินในสลิปไม่ตรงกับยอดที่ต้องชำระ");
+    }
     const duplicateSlip = await db.orderSlip.findFirst({
       where: { transRef: verificationData.transRef },
       select: { id: true },
@@ -144,7 +232,9 @@ export async function POST(req: Request, ctx: RouteContext) {
     }
 
     // All checks passed — mark order as PAID immediately
-    const approvalNote = "SlipOK verified — order paid automatically";
+    const approvalNote = amountDifference > 0
+      ? "SlipOK verified — order paid automatically within ±1 THB tolerance"
+      : "SlipOK verified — order paid automatically";
     let result;
     try {
       result = await db.$transaction(async (tx) => {
@@ -207,7 +297,7 @@ export async function POST(req: Request, ctx: RouteContext) {
           note: approvalNote,
         });
 
-        return { createdSlip, updatedOrder };
+        return { createdSlip, updatedOrder, statusNote: approvalNote };
       });
     } catch (error) {
       await cleanupUploads();
@@ -226,7 +316,7 @@ export async function POST(req: Request, ctx: RouteContext) {
       ...serializeOrderV2(result.updatedOrder),
       latest_slip: serializeOrderSlip(result.createdSlip),
       latest_slip_uploaded_at: result.createdSlip.uploadedAt.toISOString(),
-      latest_status_note: approvalNote,
+      latest_status_note: result.statusNote,
       verified: true,
       pending_review: false,
     });
