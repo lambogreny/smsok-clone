@@ -36,8 +36,8 @@ import { clearLogoutMarker } from "@/components/AuthGuard";
 
 const formSchema = registerSchema.extend({
   confirmPassword: z.string(),
-  consentService: z.literal(true, { error: "กรุณายอมรับข้อกำหนดการใช้งาน" }),
-  consentThirdParty: z.literal(true, { error: "กรุณายอมรับการส่งข้อมูลให้ผู้ให้บริการภายนอก" }),
+  consentService: z.boolean(),
+  consentThirdParty: z.boolean(),
   consentMarketing: z.boolean(),
 }).refine((d) => d.password === d.confirmPassword, {
   message: "รหัสผ่านไม่ตรงกัน",
@@ -76,8 +76,8 @@ export default function RegisterPage() {
       phone: "",
       password: "",
       confirmPassword: "",
-      consentService: false as unknown as true,
-      consentThirdParty: false as unknown as true,
+      consentService: false,
+      consentThirdParty: false,
       consentMarketing: false,
     },
     mode: "onChange",
@@ -108,6 +108,9 @@ export default function RegisterPage() {
 
   async function handleSendOtp(data: FormValues) {
     setFormError("");
+    if (!data.consentService || !data.consentThirdParty) {
+      return;
+    }
     try {
       const result: RegisterOtpSendResponse = await generateOtpForRegister(data.phone!);
       setOtpRef(result.ref);
