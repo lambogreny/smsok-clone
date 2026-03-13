@@ -179,7 +179,7 @@ export async function disable2FA(password: string) {
   const valid = await verifyPassword(password, fullUser.password)
   if (!valid) throw new Error("รหัสผ่านไม่ถูกต้อง")
 
-  await prisma.twoFactorAuth.delete({
+  await prisma.twoFactorAuth.deleteMany({
     where: { userId: user.id },
   })
 
@@ -484,7 +484,7 @@ export async function processRecoveryToken(token: string, userId: string): Promi
   }
 
   // Disable 2FA and clear all tokens
-  await prisma.twoFactorAuth.delete({
+  await prisma.twoFactorAuth.deleteMany({
     where: { userId },
   })
 
