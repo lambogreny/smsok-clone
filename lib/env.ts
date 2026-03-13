@@ -26,8 +26,6 @@ const envSchema = z.object({
   EASYTHUNDER_API_KEY: z.string().optional(),
   EASYTHUNDER_API_SECRET: z.string().optional(),
   EASYSLIP_API_KEY: z.string().optional(),
-  SLIPOK_BRANCH_ID: z.string().optional(),
-  SLIPOK_API_KEY: z.string().optional(),
   R2_ENDPOINT: z.string().url().optional(),
   R2_BUCKET: z.string().min(1).optional(),
   R2_ACCESS_KEY_ID: z.string().min(1).optional(),

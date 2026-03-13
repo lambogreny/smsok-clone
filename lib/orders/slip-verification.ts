@@ -6,8 +6,9 @@ import {
   orderSummarySelect,
 } from "@/lib/orders/api";
 import { createOrderHistory } from "@/lib/orders/service";
-import { type SlipVerifyResult, verifySlip } from "@/lib/slipok";
-import { readStoredFile } from "@/lib/storage/service";
+import { type SlipVerifyResult, verifySlipByUrl } from "@/lib/easyslip";
+import { getSignedDownloadUrlFromR2 } from "@/lib/storage/r2";
+import { extractStoredFileKey } from "@/lib/storage/files";
 
 const SYSTEM_VERIFIER = "slip-worker";
 
@@ -95,7 +96,7 @@ function shouldQueueForManualReview(verification: SlipVerifyResult) {
 }
 
 function getManualReviewNote(verification: SlipVerifyResult) {
-  return `SlipOK: ${verification.error ?? verification.providerCode ?? "manual review required"}`;
+  return `EasySlip: ${verification.error ?? verification.providerCode ?? "manual review required"}`;
 }
 
 function getDeterministicFailureMessage(verification: SlipVerifyResult) {
@@ -355,8 +356,8 @@ async function approveQueuedOrderSlip(
   }
 
   const approvalNote = amountDifference > 0
-    ? "SlipOK verified — order paid automatically within ±1 THB tolerance"
-    : "SlipOK verified — order paid automatically";
+    ? "EasySlip verified — order paid automatically within ±1 THB tolerance"
+    : "EasySlip verified — order paid automatically";
 
   return db.$transaction(async (tx) => {
     if (!order.slip) {
@@ -448,25 +449,26 @@ export async function processQueuedOrderSlipVerification(input: {
     };
   }
 
-  const storedSlip = await readStoredFile(order.slip.fileUrl).catch((error) => {
-    console.error("[Slip Worker] Failed to read stored slip:", error);
-    throw new SlipVerificationRetryableError("Unable to read stored slip from R2");
-  });
+  const fileKey = extractStoredFileKey(order.slip.fileUrl);
+  if (!fileKey) {
+    throw new SlipVerificationRetryableError("Unable to extract R2 key from stored slip URL");
+  }
 
-  const slipBlob = new Blob([storedSlip.body], {
-    type: storedSlip.contentType || order.slip.fileType || "application/octet-stream",
+  const signedUrl = await getSignedDownloadUrlFromR2(fileKey, { expiresIn: 300 }).catch((error) => {
+    console.error("[Slip Worker] Failed to get signed URL for slip:", error);
+    throw new SlipVerificationRetryableError("Unable to get signed URL from R2");
   });
 
   const verification = await withTimeout(
-    verifySlip(slipBlob),
+    verifySlipByUrl(signedUrl),
     SLIP_VERIFY_TIMEOUT_MS,
-    "SlipOK verification timed out",
+    "EasySlip verification timed out",
   ).catch((error) => {
-    console.error("[Slip Worker] SlipOK request failed:", error);
+    console.error("[Slip Worker] EasySlip request failed:", error);
     if (error instanceof SlipVerificationRetryableError) {
       throw error;
     }
-    throw new SlipVerificationRetryableError("SlipOK verification request failed");
+    throw new SlipVerificationRetryableError("EasySlip verification request failed");
   });
 
   if (verification.isDuplicate) {
@@ -490,7 +492,7 @@ export async function processQueuedOrderSlipVerification(input: {
   }
 
   if (!verification.data) {
-    throw new SlipVerificationRetryableError("SlipOK success response missing verification data");
+    throw new SlipVerificationRetryableError("EasySlip success response missing verification data");
   }
 
   const amountDifference = Math.abs(verification.data.amount - toNumber(order.payAmount));

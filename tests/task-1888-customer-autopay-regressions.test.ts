@@ -14,7 +14,7 @@ const canonicalSlipRoute = readFileSync(
 );
 
 describe("Task #1888: customer order slip upload queues worker verification", () => {
-  it("persists the upload and enqueues verification instead of calling SlipOK in the request", () => {
+  it("persists the upload and enqueues verification instead of verifying in the request", () => {
     expect(v1UploadRoute).toContain('export { POST } from "@/app/api/orders/[id]/slip/route";');
     expect(canonicalSlipRoute).toContain("slipVerifyQueue.add");
     expect(canonicalSlipRoute).toContain('status: "VERIFYING"');
