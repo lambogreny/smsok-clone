@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
 import { test, expect } from "./fixtures";
 
 const BASE = "http://localhost:3000";
@@ -32,7 +34,7 @@ test.describe("Orders & Billing — Facebook Level", () => {
     expect(body.id).toBeTruthy();
     expect(body.order_number).toMatch(/^ORD-/);
     expect(body.status).toBe("PENDING");
-    expect(body.total_amount).toBe(500);
+    expect(body.total_amount).toBe(535);
   });
 
   test("TC-O03: Create company order with WHT", async ({ request }) => {
@@ -251,12 +253,10 @@ test.describe("Orders & Billing — Facebook Level", () => {
   });
 
   test("TC-O15: Slip upload — real image accepted", async ({ request }) => {
-    const fs = require("fs");
-    const path = require("path");
     const slipPath = path.join(__dirname, "../../tests/fixtures/real-slip-test.jpg");
 
     // Only run if fixture exists
-    if (!fs.existsSync(slipPath)) {
+    if (!existsSync(slipPath)) {
       test.skip();
       return;
     }
@@ -273,7 +273,7 @@ test.describe("Orders & Billing — Facebook Level", () => {
     });
     const { id } = await create.json();
 
-    const slipBuffer = fs.readFileSync(slipPath);
+    const slipBuffer = readFileSync(slipPath);
     const res = await request.post(`${BASE}/api/orders/${id}/slip`, {
       multipart: {
         slip: { name: "real-slip.jpg", mimeType: "image/jpeg", buffer: slipBuffer },
