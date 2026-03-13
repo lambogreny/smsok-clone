@@ -75,6 +75,10 @@ export class SlipVerificationRetryableError extends Error {
   }
 }
 
+type CurrentQueuedSlipTarget =
+  | { isCurrent: true; fromStatus: OrderStatus }
+  | { isCurrent: false; note: string };
+
 function getPendingReviewMessage(verification: SlipVerifyResult) {
   if (verification.providerCode === "application_expired") {
     return "ระบบตรวจสอบสลิปอัตโนมัติไม่พร้อม กรุณารอเจ้าหน้าที่ตรวจสลิป";
@@ -133,6 +137,51 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: s
   }
 }
 
+async function getCurrentQueuedSlipTarget(
+  tx: Prisma.TransactionClient,
+  orderId: string,
+  orderSlipId: string,
+): Promise<CurrentQueuedSlipTarget> {
+  const currentOrder = await tx.order.findUnique({
+    where: { id: orderId },
+    select: {
+      status: true,
+      slips: {
+        where: { deletedAt: null },
+        orderBy: [{ uploadedAt: "desc" }, { id: "desc" }],
+        select: { id: true },
+        take: 1,
+      },
+    },
+  });
+
+  if (!currentOrder) {
+    return {
+      isCurrent: false,
+      note: "Order no longer available",
+    };
+  }
+
+  if (currentOrder.status !== "VERIFYING") {
+    return {
+      isCurrent: false,
+      note: `Order is already ${currentOrder.status}`,
+    };
+  }
+
+  if (currentOrder.slips[0]?.id !== orderSlipId) {
+    return {
+      isCurrent: false,
+      note: "Slip job is stale",
+    };
+  }
+
+  return {
+    isCurrent: true,
+    fromStatus: currentOrder.status,
+  };
+}
+
 async function getQueuedOrder(orderId: string, orderSlipId: string): Promise<QueuedOrderRecord | null> {
   const order = await db.order.findUnique({
     where: { id: orderId },
@@ -179,11 +228,26 @@ async function moveOrderToManualReview(
   verification: SlipVerifyResult,
   note: string,
 ) {
+  if (!order.slip) {
+    return {
+      status: "ignored" as const,
+      note: "Slip record no longer available",
+    };
+  }
+
   const pendingReviewMessage = getPendingReviewMessage(verification);
 
-  await db.$transaction(async (tx) => {
-    await tx.order.update({
-      where: { id: order.id },
+  return db.$transaction(async (tx) => {
+    const currentTarget = await getCurrentQueuedSlipTarget(tx, order.id, order.slip!.id);
+    if (!currentTarget.isCurrent) {
+      return {
+        status: "ignored" as const,
+        note: currentTarget.note,
+      };
+    }
+
+    const updatedOrder = await tx.order.updateMany({
+      where: { id: order.id, status: "VERIFYING" },
       data: {
         status: "VERIFYING",
         easyslipVerified: false,
@@ -195,17 +259,24 @@ async function moveOrderToManualReview(
       },
     });
 
+    if (updatedOrder.count !== 1) {
+      return {
+        status: "ignored" as const,
+        note: "Order is no longer VERIFYING",
+      };
+    }
+
     await createOrderHistory(tx, order.id, "VERIFYING", {
-      fromStatus: order.status,
+      fromStatus: currentTarget.fromStatus,
       changedBy: SYSTEM_VERIFIER,
       note,
     });
-  });
 
-  return {
-    status: "manual_review" as const,
-    note: pendingReviewMessage,
-  };
+    return {
+      status: "manual_review" as const,
+      note: pendingReviewMessage,
+    };
+  });
 }
 
 async function rejectQueuedOrderSlip(
@@ -213,9 +284,24 @@ async function rejectQueuedOrderSlip(
   verificationPayload: Prisma.JsonValue | null,
   message: string,
 ) {
-  await db.$transaction(async (tx) => {
-    await tx.order.update({
-      where: { id: order.id },
+  if (!order.slip) {
+    return {
+      status: "ignored" as const,
+      note: "Slip record no longer available",
+    };
+  }
+
+  return db.$transaction(async (tx) => {
+    const currentTarget = await getCurrentQueuedSlipTarget(tx, order.id, order.slip!.id);
+    if (!currentTarget.isCurrent) {
+      return {
+        status: "ignored" as const,
+        note: currentTarget.note,
+      };
+    }
+
+    const updatedOrder = await tx.order.updateMany({
+      where: { id: order.id, status: "VERIFYING" },
       data: {
         status: "PENDING_PAYMENT",
         easyslipVerified: false,
@@ -227,17 +313,24 @@ async function rejectQueuedOrderSlip(
       },
     });
 
+    if (updatedOrder.count !== 1) {
+      return {
+        status: "ignored" as const,
+        note: "Order is no longer VERIFYING",
+      };
+    }
+
     await createOrderHistory(tx, order.id, "PENDING_PAYMENT", {
-      fromStatus: order.status,
+      fromStatus: currentTarget.fromStatus,
       changedBy: SYSTEM_VERIFIER,
       note: message,
     });
-  });
 
-  return {
-    status: "rejected" as const,
-    note: message,
-  };
+    return {
+      status: "rejected" as const,
+      note: message,
+    };
+  });
 }
 
 async function approveQueuedOrderSlip(
@@ -265,22 +358,24 @@ async function approveQueuedOrderSlip(
     ? "SlipOK verified — order paid automatically within ±1 THB tolerance"
     : "SlipOK verified — order paid automatically";
 
-  await db.$transaction(async (tx) => {
+  return db.$transaction(async (tx) => {
     if (!order.slip) {
-      throw new Error("Order slip record missing");
+      return {
+        status: "ignored" as const,
+        note: "Slip record no longer available",
+      };
     }
 
-    await tx.orderSlip.update({
-      where: { id: order.slip.id },
-      data: {
-        transRef: verificationData.transRef,
-        verifiedAt: new Date(),
-        verifiedBy: SYSTEM_VERIFIER,
-      },
-    });
+    const currentTarget = await getCurrentQueuedSlipTarget(tx, order.id, order.slip.id);
+    if (!currentTarget.isCurrent) {
+      return {
+        status: "ignored" as const,
+        note: currentTarget.note,
+      };
+    }
 
-    await tx.order.update({
-      where: { id: order.id },
+    const updatedOrder = await tx.order.updateMany({
+      where: { id: order.id, status: "VERIFYING" },
       data: {
         status: "PAID",
         easyslipVerified: true,
@@ -289,6 +384,22 @@ async function approveQueuedOrderSlip(
         rejectReason: null,
         paidAt: new Date(),
         completedAt: new Date(),
+      },
+    });
+
+    if (updatedOrder.count !== 1) {
+      return {
+        status: "ignored" as const,
+        note: "Order is no longer VERIFYING",
+      };
+    }
+
+    await tx.orderSlip.update({
+      where: { id: order.slip.id },
+      data: {
+        transRef: verificationData.transRef,
+        verifiedAt: new Date(),
+        verifiedBy: SYSTEM_VERIFIER,
       },
     });
 
@@ -305,16 +416,16 @@ async function approveQueuedOrderSlip(
     await ensureOrderDocument(tx, order, "RECEIPT");
 
     await createOrderHistory(tx, order.id, "PAID", {
-      fromStatus: order.status,
+      fromStatus: currentTarget.fromStatus,
       changedBy: SYSTEM_VERIFIER,
       note: approvalNote,
     });
-  });
 
-  return {
-    status: "approved" as const,
-    note: approvalNote,
-  };
+    return {
+      status: "approved" as const,
+      note: approvalNote,
+    };
+  });
 }
 
 export async function processQueuedOrderSlipVerification(input: {
@@ -330,7 +441,7 @@ export async function processQueuedOrderSlipVerification(input: {
     };
   }
 
-  if (order.status === "PAID" || order.status === "CANCELLED" || order.status === "EXPIRED") {
+  if (order.status !== "VERIFYING") {
     return {
       status: "ignored" as const,
       note: `Order is already ${order.status}`,
@@ -343,10 +454,14 @@ export async function processQueuedOrderSlipVerification(input: {
   });
 
   const slipBlob = new Blob([storedSlip.body], {
-      type: storedSlip.contentType || order.slip.fileType || "application/octet-stream",
-    });
+    type: storedSlip.contentType || order.slip.fileType || "application/octet-stream",
+  });
 
-  const verification = await withTimeout(verifySlip(slipBlob), SLIP_VERIFY_TIMEOUT_MS, "SlipOK verification timed out").catch((error) => {
+  const verification = await withTimeout(
+    verifySlip(slipBlob),
+    SLIP_VERIFY_TIMEOUT_MS,
+    "SlipOK verification timed out",
+  ).catch((error) => {
     console.error("[Slip Worker] SlipOK request failed:", error);
     if (error instanceof SlipVerificationRetryableError) {
       throw error;
@@ -401,8 +516,13 @@ export async function markQueuedOrderForManualReview(input: {
   }
 
   await db.$transaction(async (tx) => {
-    await tx.order.update({
-      where: { id: order.id },
+    const currentTarget = await getCurrentQueuedSlipTarget(tx, order.id, order.slip!.id);
+    if (!currentTarget.isCurrent) {
+      return;
+    }
+
+    const updatedOrder = await tx.order.updateMany({
+      where: { id: order.id, status: "VERIFYING" },
       data: {
         status: "VERIFYING",
         adminNote: SLIP_RETRY_EXHAUSTED_NOTE,
@@ -412,8 +532,12 @@ export async function markQueuedOrderForManualReview(input: {
       },
     });
 
+    if (updatedOrder.count !== 1) {
+      return;
+    }
+
     await createOrderHistory(tx, order.id, "VERIFYING", {
-      fromStatus: order.status,
+      fromStatus: currentTarget.fromStatus,
       changedBy: SYSTEM_VERIFIER,
       note: input.errorMessage,
     });

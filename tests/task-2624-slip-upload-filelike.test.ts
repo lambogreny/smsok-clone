@@ -250,6 +250,23 @@ describe("Task #2624: slip upload accepts file-like multipart entries", () => {
     expect(mocks.applyRateLimit).toHaveBeenCalledWith("user_1", "slip");
   });
 
+  it("rejects duplicate uploads while the existing slip is still verifying", async () => {
+    mocks.orderFindFirst.mockResolvedValueOnce({
+      ...pendingOrder,
+      status: "VERIFYING",
+    });
+
+    const response = await uploadCanonicalOrderSlip(createRequestWithSlip(createFileLikeSlip()), {
+      params: Promise.resolve({ id: "order_1" }),
+    });
+
+    expect(response.status).toBe(409);
+    expect(JSON.stringify(await response.json())).toContain("กำลังตรวจสอบสลิปอยู่ กรุณารอ");
+    expect(mocks.storeUploadedFile).not.toHaveBeenCalled();
+    expect(mocks.queueAdd).not.toHaveBeenCalled();
+    expect(mocks.orderSlipCreate).not.toHaveBeenCalled();
+  });
+
   it("cleans up uploaded files when persisting the queued slip fails", async () => {
     mocks.transaction.mockRejectedValueOnce(new Error("db write failed"));
 

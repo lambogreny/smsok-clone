@@ -72,7 +72,10 @@ export async function POST(req: Request, ctx: RouteContext) {
     if (order.status === "EXPIRED" || order.expiresAt < new Date()) {
       throw new ApiError(400, "คำสั่งซื้อนี้หมดอายุแล้ว");
     }
-    if (!["PENDING_PAYMENT", "VERIFYING"].includes(order.status)) {
+    if (order.status === "VERIFYING") {
+      throw new ApiError(409, "กำลังตรวจสอบสลิปอยู่ กรุณารอ");
+    }
+    if (order.status !== "PENDING_PAYMENT") {
       throw new ApiError(400, "คำสั่งซื้อนี้ไม่สามารถแนบสลิปได้");
     }
 
@@ -223,15 +226,17 @@ export async function POST(req: Request, ctx: RouteContext) {
       throw new ApiError(503, "ระบบตรวจสอบสลิปยังไม่พร้อม กรุณาลองใหม่");
     }
 
-    db.$transaction(async (tx) => {
-      await createOrderHistory(tx, order.id, "VERIFYING", {
-        fromStatus: order.status,
-        changedBy: session.id,
-        note: SLIP_QUEUED_REVIEW_NOTE,
+    try {
+      await db.$transaction(async (tx) => {
+        await createOrderHistory(tx, order.id, "VERIFYING", {
+          fromStatus: order.status,
+          changedBy: session.id,
+          note: SLIP_QUEUED_REVIEW_NOTE,
+        });
       });
-    }).catch((historyError) => {
+    } catch (historyError) {
       console.error("[Slip Route] Failed to record slip queue history:", historyError);
-    });
+    }
 
     return apiResponse({
       ...serializeOrderV2(result.updatedOrder),
