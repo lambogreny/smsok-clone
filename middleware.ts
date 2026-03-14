@@ -19,7 +19,7 @@ const PUBLIC_SESSION_PAGES = new Set([
 
 function buildContentSecurityPolicy(pathname: string) {
   const scriptSrc = process.env.NODE_ENV === "production"
-    ? ["'self'"]
+    ? ["'self'", "'unsafe-inline'"]
     : ["'self'", "'unsafe-inline'", "'unsafe-eval'"];
   const styleSrc = ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"];
   const connectSrc = ["'self'", "https://*.ingest.sentry.io"];

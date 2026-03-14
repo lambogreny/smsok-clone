@@ -335,7 +335,7 @@ export default function RegisterPage() {
                         name="firstName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-secondary)]">ชื่อ</FormLabel>
+                            <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-primary)]">ชื่อ</FormLabel>
                             <FormControl>
                               <Input placeholder="สมชาย" className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)]" {...field} />
                             </FormControl>
@@ -348,7 +348,7 @@ export default function RegisterPage() {
                         name="lastName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-secondary)]">นามสกุล</FormLabel>
+                            <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-primary)]">นามสกุล</FormLabel>
                             <FormControl>
                               <Input placeholder="ใจดี" className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)]" {...field} />
                             </FormControl>
@@ -363,7 +363,7 @@ export default function RegisterPage() {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-secondary)]">อีเมล</FormLabel>
+                          <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-primary)]">อีเมล</FormLabel>
                           <FormControl>
                             <Input type="email" autoComplete="email" placeholder="you@example.com" onKeyDown={blockThai} className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)]" {...field} />
                           </FormControl>
@@ -389,7 +389,7 @@ export default function RegisterPage() {
                       name="phone"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-secondary)]">
+                          <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-primary)]">
                             หมายเลขโทรศัพท์
                           </FormLabel>
                           <FormControl>
@@ -418,7 +418,7 @@ export default function RegisterPage() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-secondary)]">รหัสผ่าน</FormLabel>
+                          <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-primary)]">รหัสผ่าน</FormLabel>
                           <FormControl>
                             <div className="relative">
                               <Input
@@ -479,7 +479,7 @@ export default function RegisterPage() {
                       name="confirmPassword"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-secondary)]">ยืนยันรหัสผ่าน</FormLabel>
+                          <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-primary)]">ยืนยันรหัสผ่าน</FormLabel>
                           <FormControl>
                             <div className="relative">
                               <Input
@@ -599,7 +599,7 @@ export default function RegisterPage() {
                             </FormControl>
                             <FormLabel className="text-xs text-[var(--text-muted)] font-normal leading-relaxed">
                               รับข่าวสาร โปรโมชั่น และข้อเสนอพิเศษทาง SMS/Email จาก SMSOK{" "}
-                              <span className="text-[11px] text-[#556677]">(ไม่บังคับ)</span>
+                              <span className="text-[11px] text-[var(--text-secondary)]">(ไม่บังคับ)</span>
                             </FormLabel>
                           </FormItem>
                         )}
