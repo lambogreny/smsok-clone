@@ -106,7 +106,8 @@ async function verifyAdminSessionToken(token: string) {
       payload.type === "admin" &&
       typeof payload.adminId === "string" &&
       typeof payload.role === "string" &&
-      typeof payload.sessionId === "string"
+      typeof payload.sessionId === "string" &&
+      typeof payload.jti === "string"
     );
   } catch {
     return false;

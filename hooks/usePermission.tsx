@@ -82,7 +82,7 @@ export function PermissionGate({
   // Fail-closed: if permission fetch failed, deny access (security)
   if (error) {
     return (
-      <div className="flex items-center gap-2 p-3 rounded-xl bg-[rgba(var(--error-rgb,242,54,69),0.06)] border border-[rgba(var(--error-rgb,242,54,69),0.15)] text-sm text-[var(--error,#F23645)]">
+      <div className="flex items-center gap-2 p-3 rounded-lg bg-[rgba(var(--error-rgb,242,54,69),0.06)] border border-[rgba(var(--error-rgb,242,54,69),0.15)] text-sm text-[var(--error,#F23645)]">
         <span>ไม่สามารถตรวจสอบสิทธิ์ได้ กรุณาลองใหม่</span>
       </div>
     );
