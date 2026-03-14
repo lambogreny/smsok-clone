@@ -324,13 +324,36 @@ function QuickTestPanel() {
       <CardContent className="p-5">
         <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-4">ทดสอบ OTP</h3>
 
-        {/* Credit warning */}
+        {/* No SMS Quota State */}
         {hasNoCredits && (
-          <div className="flex items-center gap-2 rounded-lg border border-[rgba(var(--warning-rgb),0.3)] bg-[rgba(var(--warning-rgb),0.1)] px-3 py-2 mb-3">
-            <AlertTriangle className="w-4 h-4 text-[var(--warning)] shrink-0" />
-            <span className="text-xs text-[var(--warning)]">SMS หมด — ไม่สามารถส่ง OTP ได้</span>
-            <Link href="/dashboard/credits" className="ml-auto text-xs font-semibold text-[var(--accent)] hover:underline whitespace-nowrap">
-              ซื้อแพ็กเกจ &rarr;
+          <div
+            className="rounded-lg p-5 text-center mb-3"
+            style={{
+              background: "rgba(var(--error-rgb), 0.04)",
+              border: "1px solid rgba(var(--error-rgb), 0.15)",
+            }}
+          >
+            <div
+              className="w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-3"
+              style={{
+                background: "rgba(var(--error-rgb), 0.1)",
+                border: "1px solid rgba(var(--error-rgb), 0.2)",
+              }}
+            >
+              <AlertTriangle size={18} style={{ color: "var(--error)" }} />
+            </div>
+            <p className="text-sm font-semibold mb-1" style={{ color: "var(--error)" }}>
+              โควต้าข้อความหมด
+            </p>
+            <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>
+              ไม่สามารถส่ง OTP ได้ กรุณาซื้อแพ็กเกจเพิ่ม
+            </p>
+            <Link
+              href="/dashboard/packages"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-opacity hover:opacity-90"
+              style={{ background: "var(--accent)", color: "var(--bg-base)" }}
+            >
+              ซื้อแพ็กเกจ →
             </Link>
           </div>
         )}

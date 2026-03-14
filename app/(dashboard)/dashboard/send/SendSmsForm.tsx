@@ -263,8 +263,49 @@ export default function SendSmsForm({ senderNames: rawNames = [] }: { senderName
         </div>
       )}
 
-      {/* Insufficient Credits Warning */}
-      {(hasNoCredits || hasInsufficientCredits) && (
+      {/* No SMS Quota — Full blocking state */}
+      {hasNoCredits && (
+        <div
+          className="rounded-lg p-8 text-center"
+          style={{
+            background: "rgba(var(--error-rgb), 0.04)",
+            border: "1px solid rgba(var(--error-rgb), 0.15)",
+          }}
+        >
+          <div
+            className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
+            style={{
+              background: "rgba(var(--error-rgb), 0.1)",
+              border: "1px solid rgba(var(--error-rgb), 0.2)",
+            }}
+          >
+            <AlertTriangle size={24} style={{ color: "var(--error)" }} />
+          </div>
+          <h3
+            className="text-lg font-bold mb-1"
+            style={{ color: "var(--error)" }}
+          >
+            โควต้าข้อความหมด
+          </h3>
+          <p
+            className="text-sm mb-5"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            ไม่สามารถส่ง SMS ได้ กรุณาซื้อแพ็กเกจเพื่อเติมโควต้าข้อความ
+          </p>
+          <button
+            type="button"
+            onClick={() => router.push("/dashboard/packages")}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-opacity hover:opacity-90"
+            style={{ background: "var(--accent)", color: "var(--bg-base)" }}
+          >
+            ซื้อแพ็กเกจ →
+          </button>
+        </div>
+      )}
+
+      {/* Insufficient Credits Warning (have some but not enough) */}
+      {!hasNoCredits && hasInsufficientCredits && (
         <div
           className="flex items-center justify-between gap-3 p-3.5 rounded-lg text-sm border flex-wrap"
           style={{
@@ -275,9 +316,7 @@ export default function SendSmsForm({ senderNames: rawNames = [] }: { senderName
           <div className="flex items-center gap-2">
             <AlertTriangle size={16} style={{ color: "var(--warning)" }} />
             <span style={{ color: "var(--warning)" }}>
-              {hasNoCredits
-                ? "SMS หมดแล้ว — ไม่สามารถส่งได้"
-                : `SMS ไม่พอ (เหลือ ${smsRemaining?.toLocaleString()} SMS, ต้องใช้ ${totalSmsCost.toLocaleString()})`}
+              SMS ไม่พอ (เหลือ {smsRemaining?.toLocaleString()} SMS, ต้องใช้ {totalSmsCost.toLocaleString()})
             </span>
           </div>
           <button

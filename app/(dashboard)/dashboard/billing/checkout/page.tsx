@@ -12,6 +12,8 @@ import {
   Save,
   Building2,
   User,
+  Info,
+  HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -586,6 +588,33 @@ export default function CheckoutPage() {
             </button>
           </div>
 
+          {/* Bank Transfer Info Banner */}
+          <div
+            className="rounded-lg p-4 flex items-start gap-3"
+            style={{
+              background: "rgba(var(--accent-rgb), 0.04)",
+              border: "1px solid rgba(var(--accent-rgb), 0.15)",
+            }}
+          >
+            <Info
+              size={18}
+              className="shrink-0 mt-0.5"
+              style={{ color: "var(--accent)" }}
+            />
+            <div>
+              <p
+                className="text-[13px] font-medium"
+                style={{ color: "var(--text-primary)" }}
+              >
+                ชำระเงินผ่านโอนเงินธนาคารเท่านั้น
+              </p>
+              <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+                หลังสร้างคำสั่งซื้อ ระบบจะแสดงเลขบัญชีสำหรับโอนเงิน
+                กรุณาโอนภายใน 24 ชม. แล้วแนบสลิปเพื่อยืนยันการชำระเงิน
+              </p>
+            </div>
+          </div>
+
           {/* Customer Type Selector */}
           <div>
             <p
@@ -840,13 +869,34 @@ export default function CheckoutPage() {
                 />
                 <div>
                   <span
-                    className="text-sm font-medium"
+                    className="text-sm font-medium flex items-center gap-1.5"
                     style={{ color: "var(--text-primary)" }}
                   >
                     หักภาษี ณ ที่จ่าย 3%
+                    <span className="relative group">
+                      <HelpCircle
+                        size={14}
+                        className="cursor-help"
+                        style={{ color: "var(--text-muted)" }}
+                      />
+                      <span
+                        className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 px-3 py-2 rounded-lg text-xs leading-relaxed opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 pointer-events-none"
+                        style={{
+                          background: "var(--bg-elevated)",
+                          color: "var(--text-secondary)",
+                          border: "1px solid var(--border-default)",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                        }}
+                      >
+                        นิติบุคคลสามารถหักภาษี ณ ที่จ่าย 3%
+                        จากค่าบริการ (ก่อน VAT) ได้ โดยต้องแนบ
+                        หนังสือรับรองหัก ณ ที่จ่าย (ใบ 50 ทวิ)
+                        พร้อมสลิปโอนเงินทุกครั้ง
+                      </span>
+                    </span>
                   </span>
                   <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                    เฉพาะนิติบุคคล
+                    เฉพาะนิติบุคคล — หักจากค่าบริการก่อน VAT ต้องแนบใบ 50 ทวิ
                   </p>
                 </div>
               </label>

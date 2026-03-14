@@ -1344,6 +1344,7 @@ function SlipUploadDialog({
   const [isDragging, setIsDragging] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const whtInputRef = useRef<HTMLInputElement>(null);
 
@@ -1642,21 +1643,108 @@ function SlipUploadDialog({
                 ? { background: "var(--accent)", color: "var(--bg-base)" }
                 : undefined
             }
-            onClick={handleSubmit}
+            onClick={() => setShowConfirm(true)}
           >
-            {submitting ? (
-              <>
-                <Loader2 size={16} className="animate-spin mr-2" />
-                กำลังอัปโหลด...
-              </>
-            ) : (
-              <>
-                <Send size={16} className="mr-2" />
-                ส่งสลิป
-              </>
-            )}
+            <Send size={16} className="mr-2" />
+            ส่งสลิป
           </Button>
         </div>
+
+        {/* Confirmation Dialog */}
+        <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>ยืนยันการส่งสลิป</AlertDialogTitle>
+              <AlertDialogDescription>
+                กรุณาตรวจสอบข้อมูลก่อนส่ง
+              </AlertDialogDescription>
+              {/* Confirmation Summary */}
+              <div className="space-y-3 mt-3">
+                <div
+                  className="rounded-lg p-4 space-y-2.5"
+                  style={{
+                    background: "var(--bg-base)",
+                    border: "1px solid var(--border-default)",
+                  }}
+                >
+                  <div className="flex justify-between text-sm">
+                    <span style={{ color: "var(--text-muted)" }}>ยอดที่ต้องโอน</span>
+                    <span
+                      className="font-bold font-mono tabular-nums"
+                      style={{ color: "var(--accent)" }}
+                    >
+                      ฿{formatBaht(order.pay_amount)}
+                    </span>
+                  </div>
+                  {bankAccount && (
+                    <div className="flex justify-between text-sm">
+                      <span style={{ color: "var(--text-muted)" }}>ธนาคาร</span>
+                      <span style={{ color: "var(--text-primary)" }}>
+                        {bankAccount.bank}
+                      </span>
+                    </div>
+                  )}
+                  {bankAccount && (
+                    <div className="flex justify-between text-sm">
+                      <span style={{ color: "var(--text-muted)" }}>เลขบัญชี</span>
+                      <span
+                        className="font-mono"
+                        style={{ color: "var(--text-primary)" }}
+                      >
+                        {bankAccount.accountNumber}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Slip Preview */}
+                {slipPreview && (
+                  <div className="rounded-lg overflow-hidden" style={{ border: "1px solid var(--border-default)" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={slipPreview}
+                      alt="สลิปที่จะส่ง"
+                      className="w-full max-h-[160px] object-contain"
+                      style={{ background: "var(--bg-base)" }}
+                    />
+                    {slipFile && (
+                      <p
+                        className="text-xs px-3 py-2"
+                        style={{
+                          color: "var(--text-muted)",
+                          borderTop: "1px solid var(--border-default)",
+                          background: "var(--bg-base)",
+                        }}
+                      >
+                        {slipFile.name} · {(slipFile.size / (1024 * 1024)).toFixed(1)} MB
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={submitting}>ย้อนกลับ</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={submitting}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleSubmit();
+                }}
+                style={{ background: "var(--accent)", color: "var(--bg-base)" }}
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin mr-2" />
+                    กำลังอัปโหลด...
+                  </>
+                ) : (
+                  "ยืนยันส่งสลิป"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>
   );
@@ -1833,6 +1921,7 @@ export default function OrderDetailPage() {
 
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [bankAccount, setBankAccount] = useState<BankAccount | null>(null);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
@@ -1857,6 +1946,7 @@ export default function OrderDetailPage() {
   // Fetch order
   const fetchOrder = useCallback(async () => {
       try {
+        setFetchError(null);
         const res = await fetch(`/api/orders/${orderId}`, {
           credentials: "include",
         });
@@ -1864,7 +1954,7 @@ export default function OrderDetailPage() {
         const data = normalizeOrderPayload(await res.json());
         setOrder(data);
       } catch {
-        toast.error("ไม่สามารถโหลดคำสั่งซื้อได้");
+        setFetchError("ไม่สามารถโหลดข้อมูลคำสั่งซื้อได้ กรุณาลองใหม่อีกครั้ง");
       } finally {
       setLoading(false);
     }
@@ -2020,6 +2110,53 @@ export default function OrderDetailPage() {
               />
             </div>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // API Error state
+  if (fetchError) {
+    return (
+      <div className="p-6 md:p-8 max-w-6xl mx-auto text-center py-16">
+        <div
+          className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+          style={{
+            background: "rgba(var(--error-rgb), 0.08)",
+            border: "1px solid rgba(var(--error-rgb), 0.2)",
+          }}
+        >
+          <XCircle size={28} style={{ color: "var(--error)" }} />
+        </div>
+        <p
+          className="text-lg font-bold mb-1"
+          style={{ color: "var(--text-primary)" }}
+        >
+          โหลดข้อมูลไม่สำเร็จ
+        </p>
+        <p
+          className="text-sm mb-5"
+          style={{ color: "var(--text-muted)" }}
+        >
+          {fetchError}
+        </p>
+        <div className="flex items-center justify-center gap-3">
+          <Button
+            variant="outline"
+            onClick={() => router.push("/dashboard/billing/orders")}
+          >
+            <ArrowLeft size={14} />
+            กลับรายการ
+          </Button>
+          <Button
+            onClick={() => {
+              setLoading(true);
+              fetchOrder();
+            }}
+            style={{ background: "var(--accent)", color: "var(--bg-base)" }}
+          >
+            ลองใหม่
+          </Button>
         </div>
       </div>
     );
