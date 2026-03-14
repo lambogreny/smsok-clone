@@ -136,7 +136,7 @@ const LEGACY_STATUS_TO_DB: Record<LegacyOrderStatus, OrderStatus[]> = {
   COMPLETED: ["PAID"],
   EXPIRED: ["EXPIRED"],
   CANCELLED: ["CANCELLED"],
-  REJECTED: ["CANCELLED"],
+  REJECTED: ["PENDING_PAYMENT"],
 };
 
 const API_STATUS_TO_DB: Record<OrderApiStatus, OrderStatus> = {

@@ -41,11 +41,21 @@ export async function GET() {
     });
 
     if (newProfile) {
+      // Check if this profile was saved by an INDIVIDUAL customer
+      const latestOrder = await db.order.findFirst({
+        where: { userId: session.id, taxProfileId: newProfile.id },
+        select: { customerType: true },
+        orderBy: { createdAt: "desc" },
+      });
+      const isIndividual = latestOrder?.customerType === "INDIVIDUAL";
+
       return apiResponse({
         taxProfile: {
           companyName: newProfile.companyName,
           taxId: newProfile.taxId,
-          branch: newProfile.branchType === "HEAD" ? "สำนักงานใหญ่" : "สาขา",
+          branch: isIndividual
+            ? "INDIVIDUAL"
+            : newProfile.branchType === "HEAD" ? "สำนักงานใหญ่" : "สาขา",
           branchCode: newProfile.branchNumber ?? "00000",
           address: newProfile.address,
           updatedAt: newProfile.updatedAt,

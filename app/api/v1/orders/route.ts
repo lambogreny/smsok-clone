@@ -93,6 +93,14 @@ export async function GET(req: NextRequest) {
       if (mappedStatuses?.length) {
         where.status = { in: mappedStatuses };
       }
+      // REJECTED maps to PENDING_PAYMENT — narrow to only rejected ones
+      if (input.status === "REJECTED") {
+        where.rejectReason = { not: null };
+      }
+      // PENDING should exclude rejected orders
+      if (input.status === "PENDING") {
+        where.rejectReason = null;
+      }
     }
 
     if (input.from || input.to) {
