@@ -13,6 +13,7 @@
     "db:push": "bunx prisma db push",
     "db:studio": "bunx prisma studio",
     "db:seed": "bunx prisma db seed",
+    "db:seed:qa": "bun scripts/seed-qa-user.ts",
     "workers:start": "bun workers/start.ts",
     "monitor": "bash scripts/monitor.sh",
     "monitor:loop": "bash scripts/monitor.sh --loop",

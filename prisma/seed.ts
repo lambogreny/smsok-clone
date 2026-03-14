@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
+import { seedQaUser } from "../scripts/seed-qa-user";
 
 const prisma = new PrismaClient();
 
@@ -8,6 +9,7 @@ const DEFAULT_SEED_EMAIL = "demo@smsok.local";
 const DEFAULT_SEED_PHONE = "+66900000000";
 const DEFAULT_SEED_PASSWORD = "Password123!";
 const DEFAULT_SEED_NAME = "Demo User";
+const QA_ONLY_SEED_SCOPE = "qa-user";
 
 async function resolveSeedUser() {
   const requestedEmail = process.env.SEED_EMAIL?.trim();
@@ -638,6 +640,22 @@ async function seedRBAC(orgId: string) {
 }
 
 async function main() {
+  const productionSafeMode =
+    process.env.NODE_ENV === "production" ||
+    process.env.SEED_SCOPE === QA_ONLY_SEED_SCOPE;
+
+  if (productionSafeMode) {
+    console.log("🌱 Seeding SMSOK Clone (production-safe QA user mode)...\n");
+    const result = await seedQaUser({}, prisma);
+    console.log(JSON.stringify({
+      ...result,
+      mode: QA_ONLY_SEED_SCOPE,
+      note: "Set SEED_SCOPE=qa-user (or NODE_ENV=production) to run this safe seed mode.",
+    }, null, 2));
+    console.log("\n🌱 Seed complete!");
+    return;
+  }
+
   console.log("🌱 Seeding SMSOK Clone (Phase 1 + Backoffice + Packages + RBAC)...\n");
 
   const user = await resolveSeedUser();
