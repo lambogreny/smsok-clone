@@ -1,12 +1,58 @@
 /**
  * EasySlip API — Payment Slip Verification
- * Verify endpoint: https://developer.easyslip.com/api/v1/verify
+ * Docs page: https://document.easyslip.com/documents/verify/bank/image
+ * Actual verify API: https://developer.easyslip.com/api/v1/verify
  * Auth: Bearer token in Authorization header
  */
 
-const DEFAULT_EASYSLIP_VERIFY_URL = "https://developer.easyslip.com/api/v1/verify";
-const EASYSLIP_VERIFY_URL = process.env.EASYSLIP_API_URL || DEFAULT_EASYSLIP_VERIFY_URL;
+const DEFAULT_EASYSLIP_CONFIG_URL = "https://developer.easyslip.com/api/v1/verify";
 const EASYSLIP_API_KEY = process.env.EASYSLIP_API_KEY || "";
+
+function resolveVerifyUrl(configUrl: string) {
+  try {
+    const parsed = new URL(configUrl);
+    const normalizedPath = parsed.pathname.replace(/\/+$/, "");
+
+    if (parsed.hostname === "document.easyslip.com") {
+      if (normalizedPath === "/documents/verify/bank/image") {
+        return "https://developer.easyslip.com/api/v1/verify";
+      }
+
+      if (normalizedPath === "/documents/verify/truemoney-wallet/image") {
+        return "https://developer.easyslip.com/api/v1/verify/truewallet";
+      }
+    }
+
+    if (normalizedPath.endsWith("/verify") || normalizedPath.endsWith("/verify/truewallet")) {
+      return parsed.toString();
+    }
+
+    if (normalizedPath.endsWith("/api/v1")) {
+      return `${parsed.origin}${normalizedPath}/verify`;
+    }
+
+    return parsed.toString();
+  } catch {
+    return configUrl;
+  }
+}
+
+function resolveQuotaUrl(verifyUrl: string) {
+  try {
+    const parsed = new URL(verifyUrl);
+    if (parsed.hostname === "developer.easyslip.com" && parsed.pathname.startsWith("/api/v1/")) {
+      return `${parsed.origin}/api/v1/me`;
+    }
+
+    return `${parsed.origin}/me`;
+  } catch {
+    return "https://developer.easyslip.com/api/v1/me";
+  }
+}
+
+const EASYSLIP_CONFIG_URL = process.env.EASYSLIP_API_URL || DEFAULT_EASYSLIP_CONFIG_URL;
+const EASYSLIP_VERIFY_URL = resolveVerifyUrl(EASYSLIP_CONFIG_URL);
+const EASYSLIP_QUOTA_URL = resolveQuotaUrl(EASYSLIP_VERIFY_URL);
 
 type EasySlipApiResponse = {
   status?: number | string;
@@ -185,7 +231,7 @@ function mapVerifySuccess(payload: EasySlipApiResponse, providerStatus?: number)
 }
 
 // ==========================================
-// Verify slip by image URL (download → multipart upload)
+// Verify slip by public image URL (JSON POST)
 // ==========================================
 
 export async function verifySlipByUrl(imageUrl: string): Promise<SlipVerifyResult> {
@@ -193,30 +239,15 @@ export async function verifySlipByUrl(imageUrl: string): Promise<SlipVerifyResul
     return { success: false, error: "EasySlip API key not configured" };
   }
 
-  let imageBlob: Blob;
-  try {
-    const dlRes = await fetch(imageUrl, { signal: AbortSignal.timeout(10_000) });
-    if (!dlRes.ok) {
-      console.error("[easyslip] failed to download slip image:", dlRes.status);
-      return { success: false, error: "Failed to download slip image" };
-    }
-    imageBlob = await dlRes.blob();
-  } catch (error) {
-    console.error("[easyslip] slip image download failed:", error);
-    return { success: false, error: "Slip image download failed" };
-  }
-
   let res: Response;
   try {
-    const form = new FormData();
-    form.append("file", imageBlob, "slip.jpg");
-
     res = await fetch(EASYSLIP_VERIFY_URL, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${EASYSLIP_API_KEY}`,
+        "Content-Type": "application/json",
       },
-      body: form,
+      body: JSON.stringify({ url: imageUrl, checkDuplicate: true }),
       signal: AbortSignal.timeout(10_000),
     });
   } catch (error) {
@@ -278,9 +309,7 @@ export async function verifySlipByUrl(imageUrl: string): Promise<SlipVerifyResul
 export async function getQuota(): Promise<{ used: number; total: number; remaining: number } | null> {
   if (!EASYSLIP_API_KEY) return null;
 
-  const verifyUrl = new URL(EASYSLIP_VERIFY_URL);
-  const quotaUrl = `${verifyUrl.origin}${verifyUrl.pathname.replace(/\/verify$/, "/me")}`;
-  const res = await fetch(quotaUrl, {
+  const res = await fetch(EASYSLIP_QUOTA_URL, {
     headers: { Authorization: `Bearer ${EASYSLIP_API_KEY}` },
   });
 

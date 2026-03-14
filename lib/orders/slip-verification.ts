@@ -7,8 +7,9 @@ import {
 } from "@/lib/orders/api";
 import { createOrderHistory } from "@/lib/orders/service";
 import { type SlipVerifyResult, verifySlipByUrl } from "@/lib/easyslip";
-import { getSignedDownloadUrlFromR2 } from "@/lib/storage/r2";
 import { extractStoredFileKey } from "@/lib/storage/files";
+
+const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL || "";
 
 const SYSTEM_VERIFIER = "slip-worker";
 
@@ -454,13 +455,14 @@ export async function processQueuedOrderSlipVerification(input: {
     throw new SlipVerificationRetryableError("Unable to extract R2 key from stored slip URL");
   }
 
-  const signedUrl = await getSignedDownloadUrlFromR2(fileKey, { expiresIn: 300 }).catch((error) => {
-    console.error("[Slip Worker] Failed to get signed URL for slip:", error);
-    throw new SlipVerificationRetryableError("Unable to get signed URL from R2");
-  });
+  if (!R2_PUBLIC_URL) {
+    throw new SlipVerificationRetryableError("R2_PUBLIC_URL not configured");
+  }
+
+  const publicUrl = `${R2_PUBLIC_URL}/${fileKey}`;
 
   const verification = await withTimeout(
-    verifySlipByUrl(signedUrl),
+    verifySlipByUrl(publicUrl),
     SLIP_VERIFY_TIMEOUT_MS,
     "EasySlip verification timed out",
   ).catch((error) => {

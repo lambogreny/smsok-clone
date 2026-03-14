@@ -29,7 +29,7 @@ describe("Task #2715: slip upload fail-soft", () => {
     process.env.R2_ACCESS_KEY_ID = "test-access-key";
     process.env.R2_SECRET_ACCESS_KEY = "test-secret-key";
     process.env.EASYSLIP_API_KEY = "test-easyslip-key";
-    process.env.EASYSLIP_API_URL = "https://developer.easyslip.com/api/v1";
+    process.env.EASYSLIP_API_URL = "https://document.easyslip.com/documents/verify/bank/image";
   });
 
   afterEach(() => {
@@ -68,7 +68,41 @@ describe("Task #2715: slip upload fail-soft", () => {
 
     expect(result).toEqual({
       success: false,
-      error: "EasySlip unavailable",
+      error: "Slip image download failed",
     });
+  });
+
+  it("normalizes the docs URL to the real EasySlip verify API endpoint", async () => {
+    vi.resetModules();
+
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        blob: async () => new Blob(["image-bytes"], { type: "image/jpeg" }),
+      })
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        status: 404,
+        message: "slip_not_found",
+      }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      }));
+
+    vi.stubGlobal("fetch", fetchMock);
+    process.env.EASYSLIP_API_URL = "https://document.easyslip.com/documents/verify/bank/image";
+
+    const { verifySlipByUrl } = await import("@/lib/easyslip");
+    await verifySlipByUrl("https://signed.example/slip.jpg");
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      "https://developer.easyslip.com/api/v1/verify",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          Authorization: "Bearer test-easyslip-key",
+        }),
+      }),
+    );
   });
 });
