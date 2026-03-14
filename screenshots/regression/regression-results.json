@@ -1,0 +1,38 @@
+{
+  "results": [
+    {
+      "name": "Login",
+      "status": "PASS",
+      "detail": "http://localhost:3000/dashboard"
+    },
+    {
+      "name": "Cookie banner: Login button clickable",
+      "status": "FAIL",
+      "detail": "Submit button blocked by overlay!"
+    },
+    {
+      "name": "Prisma errors",
+      "status": "PASS",
+      "detail": "No Prisma errors!"
+    },
+    {
+      "name": "500 Server errors",
+      "status": "PASS",
+      "detail": "No 500 errors!"
+    },
+    {
+      "name": "Hydration mismatch",
+      "status": "PASS",
+      "detail": "No hydration issues!"
+    },
+    {
+      "name": "Total console errors",
+      "status": "WARN",
+      "detail": "1 total errors"
+    }
+  ],
+  "prismaErrors": 0,
+  "serverErrors": 0,
+  "hydrationErrors": 0,
+  "totalErrors": 1
+}
