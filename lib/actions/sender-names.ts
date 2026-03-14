@@ -7,6 +7,18 @@ import { getRemainingQuota } from "../package/quota";
 import { requestSenderNameSchema, approveSenderNameSchema } from "../validations";
 import { validateSenderName } from "../sender-name-validation";
 import { resolveActionUserId } from "../action-user";
+import { verifyAdminToken } from "../admin-auth";
+import { cookies } from "next/headers";
+
+const SENDER_NAME_QUOTA_STATUSES = [
+  "PENDING",
+  "REVIEWING",
+  "SUBMITTED_TO_OPERATOR",
+  "APPROVED",
+  "ACTIVE",
+] as const;
+
+const SENDER_NAME_USABLE_STATUSES = ["APPROVED", "ACTIVE"] as const;
 
 // ==========================================
 // Request new sender name
@@ -43,7 +55,7 @@ export async function requestSenderName(userIdOrData: string | unknown, maybeDat
     db.senderName.count({
       where: {
         userId,
-        status: { in: ["APPROVED", "PENDING"] },
+        status: { in: [...SENDER_NAME_QUOTA_STATUSES] },
       },
     }),
   ]);
@@ -54,8 +66,27 @@ export async function requestSenderName(userIdOrData: string | unknown, maybeDat
 
   let senderName;
   try {
-    senderName = await db.senderName.create({
-      data: { userId, name: input.name },
+    senderName = await db.$transaction(async (tx) => {
+      const created = await tx.senderName.create({
+        data: {
+          userId,
+          name: input.name,
+          status: "PENDING",
+          submittedAt: new Date(),
+        },
+      });
+
+      await tx.senderNameHistory.create({
+        data: {
+          senderNameId: created.id,
+          action: "submitted",
+          fromStatus: "DRAFT",
+          toStatus: "PENDING",
+          performedBy: userId,
+        },
+      });
+
+      return created;
     });
   } catch (error) {
     if (error instanceof Error && "code" in error && (error as { code: string }).code === "P2002") {
@@ -91,7 +122,7 @@ export async function getApprovedSenderNames(userId: string): Promise<Array<{ na
 export async function getApprovedSenderNames(userId?: string) {
   userId = await resolveActionUserId(userId);
   return db.senderName.findMany({
-    where: { userId, status: "APPROVED" },
+    where: { userId, status: { in: [...SENDER_NAME_USABLE_STATUSES] } },
     select: { name: true },
     orderBy: { name: "asc" },
   });
@@ -102,6 +133,15 @@ export async function getApprovedSenderNames(userId?: string) {
 // ==========================================
 
 export async function adminApproveSenderName(adminUserId: string, data: unknown) {
+  // Validate admin session — prevent non-admin from calling this action
+  const cookieStore = await cookies();
+  const adminToken = cookieStore.get("admin_session")?.value;
+  if (!adminToken) throw new ApiError(401, "Admin authentication required");
+  const adminPayload = verifyAdminToken(adminToken);
+  if (!adminPayload || adminPayload.adminId !== adminUserId) {
+    throw new ApiError(403, "ไม่มีสิทธิ์ดำเนินการนี้");
+  }
+
   const input = approveSenderNameSchema.parse(data);
 
   // All reads + checks + writes inside $transaction to prevent TOCTOU
@@ -133,6 +173,12 @@ export async function adminApproveSenderName(adminUserId: string, data: unknown)
 // ==========================================
 
 export async function adminGetPendingSenderNames() {
+  const cookieStore = await cookies();
+  const adminToken = cookieStore.get("admin_session")?.value;
+  if (!adminToken) throw new ApiError(401, "Admin authentication required");
+  const adminPayload = verifyAdminToken(adminToken);
+  if (!adminPayload) throw new ApiError(403, "ไม่มีสิทธิ์ดำเนินการนี้");
+
   return db.senderName.findMany({
     where: { status: "PENDING" },
     include: {

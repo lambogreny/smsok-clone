@@ -18,7 +18,7 @@ const canonicalOrderSlipRoute = readFileSync(
 describe("Task #2513: sender quota, session cap, verify-slip content-type hardening", () => {
   it("enforces sender quota before creating new sender names", () => {
     expect(senderActions).toContain("getRemainingQuota(userId)");
-    expect(senderActions).toContain('status: { in: ["APPROVED", "PENDING"] }');
+    expect(senderActions).toContain("SENDER_NAME_QUOTA_STATUSES");
     expect(senderActions).toContain("quota.senderNameLimit !== null && used >= quota.senderNameLimit");
     expect(senderActions).toContain('throw new ApiError(400, "เกินจำนวน Sender Name ที่อนุญาต")');
   });

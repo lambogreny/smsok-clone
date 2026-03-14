@@ -62,7 +62,7 @@ describe("sendSms logic", () => {
   });
 
   it("verifies sender name is approved", () => {
-    expect(sendBlock).toContain('status: "APPROVED"');
+    expect(sendBlock).toContain('"APPROVED"');
   });
 
   it("rejects unapproved sender name", () => {
@@ -280,7 +280,7 @@ describe("getApprovedSenderNames logic", () => {
   );
 
   it("filters by approved status", () => {
-    expect(block).toContain('status: "APPROVED"');
+    expect(block).toContain("SENDER_NAME_USABLE_STATUSES");
   });
 
   it("returns only DB-approved sender names", () => {

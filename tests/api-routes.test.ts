@@ -112,8 +112,8 @@ describe("API Route: GET /api/v1/senders", () => {
     expect(sendersRoute).toContain("authenticateRequest");
   });
 
-  it("calls getSenderNames", () => {
-    expect(sendersRoute).toContain("getSenderNames");
+  it("queries sender names from DB", () => {
+    expect(sendersRoute).toContain("senderName.findMany");
   });
 
   it("returns sender names array", () => {

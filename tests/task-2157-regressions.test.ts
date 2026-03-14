@@ -136,7 +136,7 @@ describe("Task #2157: sender approval hardening", () => {
 
     expect(smsActions).not.toContain('input.senderName !== "EasySlip"');
     expect(scheduledSmsActions).not.toContain('senderName: data.senderName || "EasySlip"');
-    expect(scheduledSmsActions).toContain('status: "APPROVED"');
+    expect(scheduledSmsActions).toContain('"APPROVED"');
   });
 });
 

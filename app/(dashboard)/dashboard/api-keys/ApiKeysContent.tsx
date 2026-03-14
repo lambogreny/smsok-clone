@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import {
   Key,
   Plus,
@@ -131,6 +131,14 @@ export default function ApiKeysContent({
   // Copy any text
   const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
 
+  // Cleanup timers on unmount to prevent state updates after navigation
+  const timersRef = useRef<NodeJS.Timeout[]>([]);
+  useEffect(() => {
+    return () => {
+      timersRef.current.forEach(clearTimeout);
+    };
+  }, []);
+
   /* ── Create ── */
   async function handleCreate() {
     if (!keyName.trim()) return;
@@ -232,15 +240,19 @@ export default function ApiKeysContent({
   /* ── Copy ── */
   function copyText(text: string, type: "secret" | "id" | "prefix") {
     navigator.clipboard.writeText(text);
+    const schedule = (fn: () => void) => {
+      const t = setTimeout(fn, 2000);
+      timersRef.current.push(t);
+    };
     if (type === "secret") {
       setSecretCopied(true);
-      setTimeout(() => setSecretCopied(false), 2000);
+      schedule(() => setSecretCopied(false));
     } else if (type === "id") {
       setIdCopied(true);
-      setTimeout(() => setIdCopied(false), 2000);
+      schedule(() => setIdCopied(false));
     } else {
       setCopiedKeyId(text);
-      setTimeout(() => setCopiedKeyId(null), 2000);
+      schedule(() => setCopiedKeyId(null));
     }
   }
 

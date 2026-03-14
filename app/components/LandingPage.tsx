@@ -598,6 +598,242 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[rgba(0,255,167,0.15)] to-transparent" />
       </div>
 
+      {/* ─── HOW IT WORKS ─── */}
+      <motion.section
+        variants={sectionVariants}
+        initial="offscreen"
+        whileInView="onscreen"
+        viewport={{ once: false, amount: 0.15 }}
+        className="py-20 sm:py-28 px-4 sm:px-6 relative"
+      >
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: false, margin: "-100px" }}
+            className="text-center mb-12 sm:mb-16"
+          >
+            <div className="inline-block text-xs font-semibold text-[var(--accent)] uppercase tracking-[0.2em] mb-3">How it Works</div>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
+              เริ่มต้นใช้งานใน <span className="gradient-text-mixed">3 ขั้นตอน</span>
+            </h2>
+            <p className="text-slate-300 max-w-xl mx-auto text-sm sm:text-base">สมัคร → ตั้งค่า → เริ่มส่ง</p>
+          </motion.div>
+
+          <motion.div
+            variants={stagger}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: false, margin: "-100px" }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 relative"
+          >
+            {/* Dashed connector line (desktop only) */}
+            <div className="hidden md:block absolute top-[72px] left-[16.67%] right-[16.67%] h-px border-t-2 border-dashed border-[rgba(var(--accent-rgb),0.2)] pointer-events-none" />
+
+            {[
+              {
+                step: 1,
+                title: "สมัครสมาชิก",
+                desc: "สมัครฟรี ได้ 15 SMS ทดลองใช้ทันที",
+                icon: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="8.5" cy="7" r="4" /><line x1="20" y1="8" x2="20" y2="14" /><line x1="23" y1="11" x2="17" y2="11" /></svg>,
+              },
+              {
+                step: 2,
+                title: "ตั้งค่า Sender Name",
+                desc: "ขอชื่อผู้ส่ง อนุมัติภายใน 1-2 วัน",
+                icon: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" /></svg>,
+              },
+              {
+                step: 3,
+                title: "ส่ง SMS",
+                desc: "ส่งผ่านเว็บหรือ API ได้ทันที",
+                icon: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>,
+              },
+            ].map((item) => (
+              <motion.div
+                key={item.step}
+                variants={fadeUp}
+                whileHover={{ y: -4, boxShadow: "0 20px 40px rgba(0,255,167,0.15)" }}
+                className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg card-lift p-6 sm:p-8 text-center group relative"
+              >
+                {/* Step number badge */}
+                <div className="w-10 h-10 mx-auto mb-5 rounded-full bg-[rgba(var(--accent-rgb),0.12)] border border-[rgba(var(--accent-rgb),0.2)] flex items-center justify-center text-[var(--accent)] font-bold text-lg relative z-10">
+                  {item.step}
+                </div>
+                <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-[rgba(var(--accent-rgb),0.08)] border border-[rgba(var(--accent-rgb),0.1)] flex items-center justify-center text-[var(--accent)] group-hover:text-[var(--accent-blue)] group-hover:bg-[rgba(var(--accent-rgb),0.12)] group-hover:border-[rgba(var(--accent-rgb),0.2)] group-hover:shadow-[0_0_20px_rgba(var(--accent-rgb),0.15)] transition-all duration-500">
+                  {item.icon}
+                </div>
+                <h3 className="font-semibold text-white text-base sm:text-lg mb-2">{item.title}</h3>
+                <p className="text-slate-300 leading-relaxed text-sm">{item.desc}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </motion.section>
+
+      {/* ─── Divider ─── */}
+      <div className="relative h-px pointer-events-none mx-8 sm:mx-24">
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[rgba(50,152,218,0.12)] to-transparent" />
+      </div>
+
+      {/* ─── USE CASES ─── */}
+      <motion.section
+        variants={sectionVariants}
+        initial="offscreen"
+        whileInView="onscreen"
+        viewport={{ once: false, amount: 0.15 }}
+        className="py-20 sm:py-28 px-4 sm:px-6 relative"
+      >
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: false, margin: "-100px" }}
+            className="text-center mb-12 sm:mb-16"
+          >
+            <div className="inline-block text-xs font-semibold text-[var(--accent)] uppercase tracking-[0.2em] mb-3">Use Cases</div>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
+              ใช้ได้กับ<span className="gradient-text-mixed">ทุกธุรกิจ</span>
+            </h2>
+            <p className="text-slate-300 max-w-xl mx-auto text-sm sm:text-base">ไม่ว่าจะ OTP, การตลาด หรือแจ้งเตือน</p>
+          </motion.div>
+
+          <motion.div
+            variants={stagger}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: false, margin: "-100px" }}
+            className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5"
+          >
+            {[
+              {
+                title: "OTP / ยืนยันตัวตน",
+                desc: "ส่ง OTP ยืนยันตัวตนได้ภายใน 3 วินาที API พร้อมใช้",
+                icon: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><polyline points="9 12 11 14 15 10" /></svg>,
+              },
+              {
+                title: "แคมเปญการตลาด",
+                desc: "ส่ง SMS โปรโมชั่นถึงลูกค้าหลักหมื่นในคลิกเดียว",
+                icon: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /><path d="M3 11l2-2 2 2" /><path d="M17 11l2-2 2 2" /></svg>,
+              },
+              {
+                title: "แจ้งเตือนอัตโนมัติ",
+                desc: "แจ้งสถานะคำสั่งซื้อ นัดหมาย การชำระเงิน",
+                icon: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 01-3.46 0" /></svg>,
+              },
+              {
+                title: "Transactional SMS",
+                desc: "ส่งข้อมูลธุรกรรม ใบเสร็จ ยืนยันการจอง",
+                icon: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>,
+              },
+            ].map((item) => (
+              <motion.div
+                key={item.title}
+                variants={fadeUp}
+                whileHover={{ y: -4, boxShadow: "0 20px 40px rgba(0,255,167,0.15)" }}
+                className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg card-lift p-6 sm:p-8 flex gap-5 group"
+              >
+                <div className="w-14 h-14 flex-shrink-0 rounded-xl bg-[rgba(var(--accent-rgb),0.08)] border border-[rgba(var(--accent-rgb),0.1)] flex items-center justify-center text-[var(--accent)] group-hover:text-[var(--accent-blue)] group-hover:bg-[rgba(var(--accent-rgb),0.12)] group-hover:border-[rgba(var(--accent-rgb),0.2)] group-hover:shadow-[0_0_20px_rgba(var(--accent-rgb),0.15)] transition-all duration-500">
+                  {item.icon}
+                </div>
+                <div>
+                  <h3 className="font-semibold text-white text-base sm:text-lg mb-2">{item.title}</h3>
+                  <p className="text-slate-300 leading-relaxed text-sm">{item.desc}</p>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </motion.section>
+
+      {/* ─── Divider ─── */}
+      <div className="relative h-px pointer-events-none mx-8 sm:mx-24">
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[rgba(0,255,167,0.2)] to-transparent" />
+      </div>
+
+      {/* ─── SOCIAL PROOF ─── */}
+      <motion.section
+        variants={sectionVariants}
+        initial="offscreen"
+        whileInView="onscreen"
+        viewport={{ once: false, amount: 0.15 }}
+        className="py-20 sm:py-28 px-4 sm:px-6 relative"
+      >
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: false, margin: "-100px" }}
+            className="text-center mb-12 sm:mb-16"
+          >
+            <div className="inline-block text-xs font-semibold text-[var(--accent)] uppercase tracking-[0.2em] mb-3">Testimonials</div>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
+              ลูกค้า<span className="gradient-text-mixed">พูดถึงเรา</span>
+            </h2>
+            <p className="text-slate-300 max-w-xl mx-auto text-sm sm:text-base">ธุรกิจกว่า 500+ รายไว้วางใจ SMSOK</p>
+          </motion.div>
+
+          <motion.div
+            variants={stagger}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: false, margin: "-100px" }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5"
+          >
+            {[
+              {
+                name: "สมชาย ว.",
+                company: "ABC Clinic",
+                initials: "ส",
+                quote: "ใช้ SMSOK ส่งนัดหมายผู้ป่วย ลดอัตราขาดนัดลง 40% ราคาถูกกว่าที่อื่นมาก",
+              },
+              {
+                name: "ปวีณา ก.",
+                company: "ShopThai Online",
+                initials: "ป",
+                quote: "API เชื่อมต่อง่ายมาก ทีม dev ใช้เวลาแค่ 2 ชั่วโมงก็ integrate เสร็จ",
+              },
+              {
+                name: "วิชัย ส.",
+                company: "FastPay Fintech",
+                initials: "ว",
+                quote: "OTP ส่งถึงภายใน 2-3 วินาที Uptime 99.9% ไม่เคยมีปัญหา",
+              },
+            ].map((t) => (
+              <motion.div
+                key={t.name}
+                variants={fadeUp}
+                whileHover={{ y: -4, boxShadow: "0 20px 40px rgba(0,255,167,0.15)" }}
+                className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg card-lift p-6 sm:p-8 group backdrop-blur-sm"
+              >
+                {/* Quote icon */}
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className="text-[rgba(var(--accent-rgb),0.2)] mb-4">
+                  <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10H14.017zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10H0z" />
+                </svg>
+                <p className="text-slate-300 leading-relaxed text-sm sm:text-base mb-6">{t.quote}</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-[rgba(var(--accent-rgb),0.12)] border border-[rgba(var(--accent-rgb),0.2)] flex items-center justify-center text-[var(--accent)] font-bold text-sm">
+                    {t.initials}
+                  </div>
+                  <div>
+                    <div className="text-white font-semibold text-sm">{t.name}</div>
+                    <div className="text-slate-400 text-xs">{t.company}</div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </motion.section>
+
+      {/* ─── Divider ─── */}
+      <div className="relative h-px pointer-events-none mx-8 sm:mx-24">
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[rgba(50,152,218,0.15)] to-transparent" />
+      </div>
+
       {/* ─── FAQ ─── */}
       <motion.section
         id="faq"
