@@ -1,0 +1,26 @@
+{
+  "name": "SMSOK — แพลตฟอร์มส่ง SMS สำหรับธุรกิจ",
+  "short_name": "SMSOK",
+  "description": "ส่ง SMS ผ่านเว็บและ API ได้ทันที ราคาถูก ส่งเร็ว",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#0b1118",
+  "theme_color": "#061019",
+  "orientation": "portrait-primary",
+  "categories": ["business", "productivity"],
+  "lang": "th",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
