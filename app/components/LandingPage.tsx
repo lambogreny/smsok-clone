@@ -12,6 +12,7 @@ import {
   useScroll,
   type Variants,
 } from "framer-motion";
+import LanguageSwitcher from "@/components/language-switcher";
 
 /* ─── Shared variants ─── */
 const fadeUp: Variants = {
@@ -153,6 +154,7 @@ export default function LandingPage() {
           </div>
 
           <div className="hidden md:flex items-center gap-3">
+            <LanguageSwitcher />
             <Link href="/login" className="bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] rounded-xl hover:border-[rgba(var(--accent-rgb),0.3)] hover:bg-[rgba(var(--accent-rgb),0.04)] cursor-pointer px-5 py-2 text-sm inline-block">เข้าสู่ระบบ</Link>
             <Link href="/register" className="btn-primary px-5 py-2 text-sm inline-block">สมัครฟรี</Link>
           </div>

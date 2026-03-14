@@ -1,1 +1,63 @@
-{}
+{
+  "common": {
+    "brand": "SMSOK",
+    "login": "เข้าสู่ระบบ",
+    "register": "สมัครฟรี",
+    "back": "กลับหน้าหลัก",
+    "contactSales": "ติดต่อทีมขาย",
+    "startFree": "เริ่มใช้งานฟรี",
+    "perSms": "ต่อข้อความ",
+    "sms": "SMS"
+  },
+  "landing": {
+    "hero": {
+      "title": "ส่ง SMS ถึงมือถือ",
+      "titleHighlight": "ใน 3 วินาที",
+      "subtitle": "แพลตฟอร์มส่ง SMS สำหรับธุรกิจ ราคาถูก ส่งเร็ว รองรับ API, OTP และ Sender Name",
+      "cta": "ส่ง SMS ฟรี 50 ข้อความ",
+      "ctaSecondary": "ดูราคาแพ็กเกจ"
+    },
+    "nav": {
+      "why": "ทำไมต้องเรา",
+      "features": "ฟีเจอร์",
+      "pricing": "ราคา",
+      "faq": "FAQ"
+    },
+    "cta": {
+      "title": "พร้อมเริ่มส่ง SMS แล้วหรือยัง?",
+      "subtitle": "สมัครฟรีวันนี้ รับ 500 SMS ทดลองใช้งาน ไม่ต้องผูกบัตร"
+    }
+  },
+  "pricing": {
+    "title": "แพ็กเกจและราคา",
+    "subtitle": "เลือกแพ็กเกจที่เหมาะกับธุรกิจของคุณ ยิ่งซื้อเยอะ ยิ่งถูก",
+    "subtitleLine2": "ไม่มีค่าแรกเข้า ไม่มีค่ารายเดือน",
+    "bestValue": "Best Value",
+    "viewAllPackages": "ดูแพ็กเกจทั้งหมด",
+    "viewAllDesc": "ต้องการดูแพ็กเกจทั้งหมด 8 แพ็กเกจ?",
+    "average": "เฉลี่ย",
+    "tiers": {
+      "starter": { "name": "Starter", "tagline": "สำหรับธุรกิจเริ่มต้น" },
+      "business": { "name": "Business", "tagline": "สำหรับธุรกิจที่เติบโต" },
+      "enterprise": { "name": "Enterprise", "tagline": "สำหรับองค์กรขนาดใหญ่" }
+    },
+    "faqTitle": "คำถามที่พบบ่อย",
+    "cta": {
+      "title": "พร้อมเริ่มส่ง SMS แล้วหรือยัง?",
+      "subtitle": "สมัครฟรีวันนี้ รับ 500 SMS ทดลองใช้งาน ไม่ต้องผูกบัตร"
+    },
+    "trust": {
+      "fast": "ส่งเร็ว 1-3 วินาที",
+      "secure": "ข้อมูลปลอดภัย",
+      "thai": "Support ภาษาไทย",
+      "free": "ทดลองฟรี 500 SMS"
+    },
+    "footer": {
+      "vat": "ราคายังไม่รวม VAT 7%",
+      "refund": "Delivery-Failure Refund สำหรับ Package Business ขึ้นไป",
+      "terms": "ข้อกำหนดการใช้งาน",
+      "privacy": "นโยบายความเป็นส่วนตัว",
+      "seeTerms": "ดู"
+    }
+  }
+}
