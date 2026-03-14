@@ -27,6 +27,7 @@ const envSchema = z.object({
   EASYTHUNDER_API_SECRET: z.string().optional(),
   EASYSLIP_API_KEY: z.string().optional(),
   EASYSLIP_API_URL: z.string().url().optional(),
+  R2_PUBLIC_URL: z.string().url("R2_PUBLIC_URL must be a valid URL (required for slip verification)"),
   R2_ENDPOINT: z.string().url().optional(),
   R2_BUCKET: z.string().min(1).optional(),
   R2_ACCESS_KEY_ID: z.string().min(1).optional(),

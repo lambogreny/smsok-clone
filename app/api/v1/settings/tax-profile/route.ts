@@ -34,6 +34,26 @@ export async function GET() {
     const rl = await applyRateLimit(session.id, "tax_profile");
     if (rl.blocked) return rl.blocked;
 
+    // Read from new taxProfile table first (written by order creation)
+    const newProfile = await db.taxProfile.findFirst({
+      where: { userId: session.id, isDefault: true },
+      orderBy: { updatedAt: "desc" },
+    });
+
+    if (newProfile) {
+      return apiResponse({
+        taxProfile: {
+          companyName: newProfile.companyName,
+          taxId: newProfile.taxId,
+          branch: newProfile.branchType === "HEAD" ? "สำนักงานใหญ่" : "สาขา",
+          branchCode: newProfile.branchNumber ?? "00000",
+          address: newProfile.address,
+          updatedAt: newProfile.updatedAt,
+        },
+      });
+    }
+
+    // Fallback to legacy customerTaxInfo table
     const taxInfo = await db.customerTaxInfo.findUnique({
       where: { userId: session.id },
     });
