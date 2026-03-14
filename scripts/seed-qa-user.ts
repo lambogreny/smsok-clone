@@ -205,7 +205,9 @@ async function main() {
   console.log(JSON.stringify(result, null, 2));
 }
 
-if ((import.meta as unknown as Record<string, unknown>).main) {
+const isMainModule = process.argv[1]?.endsWith("seed-qa-user.ts");
+
+if (isMainModule) {
   main()
     .catch((error) => {
       console.error(error);

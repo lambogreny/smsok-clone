@@ -301,7 +301,7 @@ export default function RegisterPage() {
           ))}
         </div>
 
-        <Card className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-lg shadow-none">
+        <Card className="bg-[var(--bg-surface)] border-[#20252c] rounded-lg shadow-none">
           {step === "form" ? (
             <>
               <CardHeader className="text-center pb-0 pt-8 px-8">
@@ -311,8 +311,8 @@ export default function RegisterPage() {
                   </div>
                   <span className="text-xl font-bold text-white">SMSOK</span>
                 </Link>
-                <h1 className="text-2xl font-bold text-white">สร้างบัญชีใหม่</h1>
-                <p className="text-sm text-[var(--text-muted)] mt-1">เริ่มต้นส่ง SMS ได้ทันที</p>
+                <h1 className="text-2xl font-bold text-[#e2e8f0]">สร้างบัญชีใหม่</h1>
+                <p className="text-sm text-[#b2bacd] mt-1">เริ่มต้นส่ง SMS ได้ทันที</p>
               </CardHeader>
 
               <CardContent className="px-8 pt-6 pb-2">
@@ -335,9 +335,9 @@ export default function RegisterPage() {
                         name="firstName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-primary)]">ชื่อ</FormLabel>
+                            <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[#b2bacd]">ชื่อ</FormLabel>
                             <FormControl>
-                              <Input placeholder="สมชาย" className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)]" {...field} />
+                              <Input placeholder="สมชาย" className="h-11 bg-[var(--bg-base)] border-[#20252c] text-white placeholder:text-[#8a95a0] rounded-lg focus:border-[#00E2B5] focus:ring-[rgba(0,226,181,0.12)]" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -348,9 +348,9 @@ export default function RegisterPage() {
                         name="lastName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-primary)]">นามสกุล</FormLabel>
+                            <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[#b2bacd]">นามสกุล</FormLabel>
                             <FormControl>
-                              <Input placeholder="ใจดี" className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)]" {...field} />
+                              <Input placeholder="ใจดี" className="h-11 bg-[var(--bg-base)] border-[#20252c] text-white placeholder:text-[#8a95a0] rounded-lg focus:border-[#00E2B5] focus:ring-[rgba(0,226,181,0.12)]" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -363,9 +363,9 @@ export default function RegisterPage() {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-primary)]">อีเมล</FormLabel>
+                          <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[#b2bacd]">อีเมล</FormLabel>
                           <FormControl>
-                            <Input type="email" autoComplete="email" placeholder="you@example.com" onKeyDown={blockThai} className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)]" {...field} />
+                            <Input type="email" autoComplete="email" placeholder="you@example.com" onKeyDown={blockThai} className="h-11 bg-[var(--bg-base)] border-[#20252c] text-white placeholder:text-[#8a95a0] rounded-lg focus:border-[#00E2B5] focus:ring-[rgba(0,226,181,0.12)]" {...field} />
                           </FormControl>
                           <FormMessage />
                           {emailAvailability.status !== "idle" && (
@@ -389,11 +389,11 @@ export default function RegisterPage() {
                       name="phone"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-primary)]">
+                          <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[#b2bacd]">
                             หมายเลขโทรศัพท์
                           </FormLabel>
                           <FormControl>
-                            <Input type="tel" autoComplete="tel" inputMode="numeric" maxLength={10} placeholder="0891234567" onKeyDown={blockNonNumeric} className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)]" {...field} />
+                            <Input type="tel" autoComplete="tel" inputMode="numeric" maxLength={10} placeholder="0891234567" onKeyDown={blockNonNumeric} className="h-11 bg-[var(--bg-base)] border-[#20252c] text-white placeholder:text-[#8a95a0] rounded-lg focus:border-[#00E2B5] focus:ring-[rgba(0,226,181,0.12)]" {...field} />
                           </FormControl>
                           <p className="text-[11px] text-[var(--text-muted)]">ใช้สำหรับรับ OTP ยืนยันตัวตน</p>
                           <FormMessage />
@@ -418,7 +418,7 @@ export default function RegisterPage() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-primary)]">รหัสผ่าน</FormLabel>
+                          <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[#b2bacd]">รหัสผ่าน</FormLabel>
                           <FormControl>
                             <div className="relative">
                               <Input
@@ -426,7 +426,7 @@ export default function RegisterPage() {
                                 type={showPassword ? "text" : "password"}
                                 autoComplete="new-password"
                                 placeholder="••••••••"
-                                className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg pr-11 focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)]"
+                                className="h-11 bg-[var(--bg-base)] border-[#20252c] text-white placeholder:text-[#8a95a0] rounded-lg pr-11 focus:border-[#00E2B5] focus:ring-[rgba(0,226,181,0.12)]"
                                 onKeyDown={(e) => setCapsLockOn(e.getModifierState("CapsLock"))}
                                 onKeyUp={(e) => setCapsLockOn(e.getModifierState("CapsLock"))}
                                 onBlur={(e) => { setCapsLockOn(false); field.onBlur(); }}
@@ -479,7 +479,7 @@ export default function RegisterPage() {
                       name="confirmPassword"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-primary)]">ยืนยันรหัสผ่าน</FormLabel>
+                          <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[#b2bacd]">ยืนยันรหัสผ่าน</FormLabel>
                           <FormControl>
                             <div className="relative">
                               <Input
@@ -487,7 +487,7 @@ export default function RegisterPage() {
                                 type={showConfirm ? "text" : "password"}
                                 autoComplete="new-password"
                                 placeholder="••••••••"
-                                className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg pr-11 focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)]"
+                                className="h-11 bg-[var(--bg-base)] border-[#20252c] text-white placeholder:text-[#8a95a0] rounded-lg pr-11 focus:border-[#00E2B5] focus:ring-[rgba(0,226,181,0.12)]"
                                 onKeyDown={(e) => setCapsLockOn(e.getModifierState("CapsLock"))}
                                 onKeyUp={(e) => setCapsLockOn(e.getModifierState("CapsLock"))}
                                 onBlur={(e) => { setCapsLockOn(false); field.onBlur(); }}
@@ -640,7 +640,7 @@ export default function RegisterPage() {
                 <div className="w-12 h-12 rounded-full bg-[rgba(var(--accent-rgb),0.08)] border border-[rgba(var(--accent-rgb),0.15)] flex items-center justify-center mx-auto mb-4">
                   <Smartphone className="w-6 h-6 text-[var(--accent)]" />
                 </div>
-                <h1 className="text-2xl font-bold text-white">ยืนยันเบอร์โทรศัพท์</h1>
+                <h1 className="text-2xl font-bold text-[#e2e8f0]">ยืนยันเบอร์โทรศัพท์</h1>
                 <p className="text-sm text-[var(--text-muted)] mt-1">ส่ง OTP ไปที่ {form.getValues("phone")}</p>
                 {otpRef && <p className="text-[var(--text-muted)] text-[11px] mt-1 font-mono">REF: {otpRef.slice(0, 8).toUpperCase()}</p>}
               </CardHeader>
@@ -675,7 +675,7 @@ export default function RegisterPage() {
                           <InputOTPSlot
                             key={i}
                             index={i}
-                            className="w-12 h-14 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white text-2xl font-bold font-mono rounded-lg data-[active=true]:border-[var(--accent)] data-[active=true]:ring-[rgba(var(--accent-rgb),0.12)]"
+                            className="w-12 h-14 bg-[var(--bg-base)] border-[#20252c] text-white text-2xl font-bold font-mono rounded-lg data-[active=true]:border-[#00E2B5] data-[active=true]:ring-[rgba(0,226,181,0.12)]"
                           />
                         ))}
                       </InputOTPGroup>
