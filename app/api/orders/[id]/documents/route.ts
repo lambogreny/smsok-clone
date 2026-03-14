@@ -72,7 +72,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
       }
     });
 
-    return apiResponse(serializeOrderDocument(document));
+    return apiResponse(serializeOrderDocument(document as Parameters<typeof serializeOrderDocument>[0]));
   } catch (error) {
     return apiError(error);
   }

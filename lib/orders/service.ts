@@ -5,7 +5,7 @@ import {
 } from "@prisma/client";
 import { calculateVat, calculateWithWht } from "@/lib/accounting/vat";
 import { prisma as db } from "@/lib/db";
-import { resolveStoredFileUrl } from "@/lib/storage/files";
+import { resolveStoredFilePublicUrl, resolveStoredFileUrl } from "@/lib/storage/files";
 
 type TxClient = Parameters<Parameters<typeof db.$transaction>[0]>[0];
 type DbClient = PrismaClient | TxClient;
@@ -309,17 +309,21 @@ function attachOrderDocuments(
   const invoice = activeDocuments.find((document) => document.type === "INVOICE");
   const taxInvoice = activeDocuments.find((document) => document.type === "TAX_INVOICE");
   const receipt = activeDocuments.find((document) => document.type === "RECEIPT");
+  const invoiceUrl = resolveStoredFilePublicUrl(invoice?.pdfUrl) ?? invoice?.pdfUrl;
+  const taxInvoiceUrl = resolveStoredFilePublicUrl(taxInvoice?.pdfUrl) ?? taxInvoice?.pdfUrl;
+  const receiptUrl = resolveStoredFilePublicUrl(receipt?.pdfUrl) ?? receipt?.pdfUrl;
+  const shouldReplaceInvoiceUrl =
+    typeof payload.invoice_url !== "string" || payload.invoice_url.startsWith("/api/");
 
   return {
     ...payload,
-    // Populate invoice fields from INVOICE document if not already set on order
-    ...(invoice && !payload.invoice_number
-      ? { invoice_number: invoice.documentNumber, invoice_url: invoice.pdfUrl }
+    ...(invoice && (!payload.invoice_number || shouldReplaceInvoiceUrl)
+      ? { invoice_number: invoice.documentNumber, invoice_url: invoiceUrl }
       : {}),
     tax_invoice_number: taxInvoice?.documentNumber ?? undefined,
-    tax_invoice_url: taxInvoice?.pdfUrl ?? undefined,
+    tax_invoice_url: taxInvoiceUrl ?? undefined,
     receipt_number: receipt?.documentNumber ?? undefined,
-    receipt_url: receipt?.pdfUrl ?? undefined,
+    receipt_url: receiptUrl ?? undefined,
     documents: activeDocuments.map(serializeOrderDocument),
   };
 }
@@ -404,12 +408,14 @@ export function serializeOrder(order: OrderSerializeInput) {
     wht_applicable: order.hasWht,
     wht_amount: toNumber(order.whtAmount),
     pay_amount: toNumber(order.payAmount),
-    status: serializeLegacyOrderStatus(order.status),
+    status: order.status === "PENDING_PAYMENT" && order.rejectReason
+      ? "REJECTED" as LegacyOrderStatus
+      : serializeLegacyOrderStatus(order.status),
     expires_at: order.expiresAt.toISOString(),
     quotation_number: order.quotationNumber ?? undefined,
     quotation_url: order.quotationUrl ?? undefined,
     invoice_number: order.invoiceNumber ?? undefined,
-    invoice_url: order.invoiceUrl ?? undefined,
+    invoice_url: resolveStoredFilePublicUrl(order.invoiceUrl) ?? order.invoiceUrl ?? undefined,
     slip_url: resolveStoredFileUrl(order.slipUrl) ?? undefined,
     wht_cert_url: resolveStoredFileUrl(order.whtCertUrl) ?? undefined,
     easyslip_verified: order.easyslipVerified ?? undefined,
@@ -460,7 +466,7 @@ export function serializeOrderV2(order: OrderSerializeInput) {
     quotation_number: order.quotationNumber ?? undefined,
     quotation_url: order.quotationUrl ?? undefined,
     invoice_number: order.invoiceNumber ?? undefined,
-    invoice_url: order.invoiceUrl ?? undefined,
+    invoice_url: resolveStoredFilePublicUrl(order.invoiceUrl) ?? order.invoiceUrl ?? undefined,
     slip_url: resolveStoredFileUrl(order.slipUrl) ?? undefined,
     wht_cert_url: resolveStoredFileUrl(order.whtCertUrl) ?? undefined,
     easyslip_verified: order.easyslipVerified ?? undefined,
@@ -487,8 +493,8 @@ export function serializeOrderDocument(document: OrderDocumentRecord) {
     voided_at: document.voidedAt?.toISOString(),
     void_reason: document.voidReason ?? undefined,
     replaces_document_id: document.replacesDocumentId ?? undefined,
-    url: document.pdfUrl ?? undefined,
-    pdf_url: document.pdfUrl ?? undefined,
+    url: resolveStoredFilePublicUrl(document.pdfUrl) ?? document.pdfUrl ?? undefined,
+    pdf_url: resolveStoredFilePublicUrl(document.pdfUrl) ?? document.pdfUrl ?? undefined,
     deleted_at: document.deletedAt?.toISOString(),
   };
 }

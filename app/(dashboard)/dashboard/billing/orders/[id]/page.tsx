@@ -142,7 +142,9 @@ const STATUS_BANNER_CONFIG: Record<
   PENDING: {
     title: "รอชำระเงิน",
     description: (o) =>
-      `กรุณาโอนเงินและแนบสลิปภายใน ${formatThaiDate(o.expires_at)}`,
+      o.reject_reason
+        ? `สลิปถูกปฏิเสธ: ${o.reject_reason} — กรุณาแนบสลิปใหม่`
+        : `กรุณาโอนเงินและแนบสลิปภายใน ${formatThaiDate(o.expires_at)}`,
     accent: "var(--warning)",
     bg: "rgba(var(--warning-rgb),0.04)",
     border: "1px solid rgba(var(--warning-rgb),0.2)",
@@ -202,10 +204,10 @@ const STATUS_BANNER_CONFIG: Record<
     description: (o) =>
       o.reject_reason
         ? `เหตุผล: ${o.reject_reason}`
-        : "สลิปไม่ผ่านการตรวจสอบ กรุณาแนบสลิปใหม่",
+        : "สลิปไม่ผ่านการตรวจสอบ กรุณาแนบสลิปใหม่อีกครั้ง",
     accent: "var(--error)",
-    bg: "rgba(var(--error-rgb),0.04)",
-    border: "1px solid rgba(var(--error-rgb),0.2)",
+    bg: "rgba(var(--error-rgb),0.06)",
+    border: "1px solid rgba(var(--error-rgb),0.25)",
   },
 };
 
@@ -270,6 +272,7 @@ const STATUS_TO_STEP: Record<string, number> = {
 function OrderTimeline({ order }: { order: Order }) {
   const currentStep = STATUS_TO_STEP[order.status] ?? -1;
   const isTerminal = currentStep === -1;
+  const isRejected = order.status === "REJECTED";
   const accent =
     STATUS_BANNER_CONFIG[order.status]?.accent ?? "var(--accent)";
 
@@ -310,18 +313,26 @@ function OrderTimeline({ order }: { order: Order }) {
                 style={{
                   width: 28,
                   height: 28,
-                  background: isDone ? accent : "transparent",
-                  border: isDone
+                  background: isDone
+                    ? accent
+                    : isRejected && i === 2
+                      ? "var(--error)"
+                      : "transparent",
+                  border: isDone || (isRejected && i === 2)
                     ? "none"
                     : isCurrent
                       ? `2px solid ${accent}`
                       : "2px solid var(--border-default)",
                   boxShadow: isCurrent
                     ? `0 0 0 4px ${accent}26`
-                    : "none",
+                    : isRejected && i === 2
+                      ? "0 0 8px rgba(var(--error-rgb),0.3)"
+                      : "none",
                 }}
               >
-                {isDone ? (
+                {isRejected && i === 2 ? (
+                  <X size={14} strokeWidth={3} color="white" />
+                ) : isDone ? (
                   <Check size={14} strokeWidth={3} color="var(--text-primary)" />
                 ) : isCurrent ? (
                   <div
@@ -389,49 +400,95 @@ function StatusBanner({ order }: { order: Order }) {
     order.status === "COMPLETED" ||
     order.status === "VERIFIED" ||
     order.status === "APPROVED";
+  const isRejected = order.status === "REJECTED";
+  const isTerminalNeg =
+    order.status === "EXPIRED" ||
+    order.status === "CANCELLED" ||
+    isRejected;
 
   return (
     <div
-      className="rounded-xl p-6 mb-6 relative overflow-hidden"
+      className="rounded-lg p-6 mb-6 relative overflow-hidden"
       style={{ background: config.bg, border: config.border }}
     >
-      {/* Top-left glow */}
+      {/* Top accent line */}
+      <div
+        className="absolute top-0 left-0 right-0 h-[2px]"
+        style={{
+          background: `linear-gradient(90deg, transparent, ${config.accent}, transparent)`,
+          opacity: isTerminalNeg ? 0.8 : 0.5,
+        }}
+      />
+
+      {/* Corner glow */}
       <div
         className="absolute pointer-events-none"
         style={{
           top: -40,
           left: -40,
-          width: 120,
-          height: 120,
+          width: 140,
+          height: 140,
           background: `radial-gradient(${config.accent} 0%, transparent 70%)`,
-          opacity: 0.06,
+          opacity: isRejected ? 0.1 : 0.06,
         }}
       />
 
-      {/* Status title */}
-      <div className="flex items-center gap-2.5 relative">
-        <div
-          className="w-2.5 h-2.5 rounded-full"
-          style={{
-            background: config.accent,
-            animation: isPaid ? "pulse 2s infinite" : undefined,
-          }}
-        />
-        <h2
-          className="text-lg font-bold"
-          style={{ color: "var(--text-primary)" }}
-        >
-          {config.title}
-        </h2>
+      {/* Status icon + title */}
+      <div className="flex items-center gap-3 relative">
+        {isRejected ? (
+          <div className="w-10 h-10 rounded-lg bg-[rgba(var(--error-rgb),0.12)] border border-[rgba(var(--error-rgb),0.2)] flex items-center justify-center flex-shrink-0">
+            <XCircle className="w-5 h-5 text-[var(--error)]" />
+          </div>
+        ) : (
+          <div
+            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+            style={{
+              background: config.accent,
+              animation: isPaid ? "pulse 2s infinite" : undefined,
+              boxShadow: isPaid
+                ? `0 0 8px ${config.accent}`
+                : undefined,
+            }}
+          />
+        )}
+        <div>
+          <h2
+            className="text-lg font-bold"
+            style={{ color: isRejected ? "var(--error)" : "var(--text-primary)" }}
+          >
+            {config.title}
+          </h2>
+          <p
+            className="text-[13px] mt-0.5"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            {config.description(order)}
+          </p>
+        </div>
       </div>
 
-      {/* Description */}
-      <p
-        className="text-[13px] mt-1 relative"
-        style={{ color: "var(--text-secondary)" }}
-      >
-        {config.description(order)}
-      </p>
+      {/* Rejected: show reject reason prominently */}
+      {isRejected && order.reject_reason && (
+        <div className="mt-4 flex items-start gap-2.5 p-3 rounded-md bg-[rgba(var(--error-rgb),0.06)] border border-[rgba(var(--error-rgb),0.15)]">
+          <AlertTriangle className="w-4 h-4 text-[var(--error)] flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-[12px] font-semibold text-[var(--error)] mb-0.5">สาเหตุที่ถูกปฏิเสธ</p>
+            <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed">
+              {order.reject_reason}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Rejected: CTA to re-upload */}
+      {isRejected && (
+        <div className="mt-4 flex items-center gap-3 p-3 rounded-md bg-[rgba(var(--accent-rgb),0.04)] border border-[rgba(var(--accent-rgb),0.12)]">
+          <Upload className="w-4 h-4 text-[var(--accent)] flex-shrink-0" />
+          <p className="text-[13px] text-[var(--text-secondary)]">
+            กรุณาตรวจสอบข้อมูลและ<span className="text-[var(--accent)] font-medium">แนบสลิปใหม่</span>อีกครั้ง
+          </p>
+        </div>
+      )}
 
       {/* Countdown for pending */}
       {order.status === "PENDING" && (
