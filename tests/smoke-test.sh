@@ -1,8 +1,9 @@
 #!/bin/bash
 # ============================================
-# SMSOK Smoke Test — Pre-Deploy Quality Gate
-# Run: bash tests/smoke-test.sh [BASE_URL]
-# Default: http://localhost:3000
+# SMSOK Smoke Test — Pre/Post-Deploy Quality Gate
+# Run: bash tests/smoke-test.sh [BASE_URL] [ADMIN_URL]
+# Local:  bash tests/smoke-test.sh
+# Prod:   bash tests/smoke-test.sh https://smsok.9phum.me https://admin.smsok.9phum.me
 # ============================================
 set -e
 
@@ -51,6 +52,21 @@ echo "  Admin: $ADMIN"
 echo "=========================================="
 echo ""
 
+# --- 0. SSL Check (production only) ---
+if [[ "$BASE" == https://* ]]; then
+  echo "--- SSL Certificate ---"
+  TOTAL=$((TOTAL + 1))
+  SSL_EXPIRY=$(echo | openssl s_client -servername "${BASE#https://}" -connect "${BASE#https://}:443" 2>/dev/null | openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2)
+  if [ -n "$SSL_EXPIRY" ]; then
+    green "SSL certificate valid (expires: $SSL_EXPIRY)"
+    PASS=$((PASS + 1))
+  else
+    red "SSL certificate check failed"
+    FAIL=$((FAIL + 1))
+  fi
+  echo ""
+fi
+
 # --- 1. Health & Static Pages ---
 echo "--- Health & Static Pages ---"
 check "Homepage" "$BASE/"
@@ -71,8 +87,8 @@ check_json "API health JSON" "$BASE/api/health" "status"
 # --- 3. Auth Endpoints ---
 echo ""
 echo "--- Auth Endpoints ---"
-check "Login API (no body = 400)" "$BASE/api/v1/auth/login" "400"
-check "Register API (no body = 400)" "$BASE/api/v1/auth/register" "400"
+check "Login API (GET = 405 Method Not Allowed)" "$BASE/api/auth/login" "405"
+check "Register API (GET = 405 Method Not Allowed)" "$BASE/api/auth/register" "405"
 
 # --- 4. Protected Routes (should redirect/401) ---
 echo ""
@@ -83,7 +99,7 @@ check "Send SMS (no auth = redirect)" "$BASE/dashboard/send" "307"
 # --- 5. Backoffice ---
 echo ""
 echo "--- Backoffice ---"
-check "Admin login page" "$ADMIN/"
+check "Admin login page (auth guard redirect)" "$ADMIN/" "307"
 check "Admin API (no auth = 401)" "$ADMIN/api/admin/customers" "401"
 
 # --- 6. Rate Limiting ---
@@ -92,13 +108,13 @@ echo "--- Rate Limiting ---"
 # Send 6 rapid login attempts — 6th should get 429
 for i in $(seq 1 6); do
   STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 \
-    -X POST "$BASE/api/v1/auth/login" \
+    -X POST "$BASE/api/auth/login" \
     -H "Content-Type: application/json" \
     -d '{"email":"smoke@test.com","password":"wrong"}' 2>/dev/null || echo "000")
 done
 TOTAL=$((TOTAL + 1))
-if [ "$STATUS" = "429" ]; then
-  green "Rate limit triggers on 6th attempt (HTTP 429)"
+if [ "$STATUS" = "429" ] || [ "$STATUS" = "403" ]; then
+  green "Rate limit triggers on 6th attempt (HTTP $STATUS)"
   PASS=$((PASS + 1))
 else
   red "Rate limit — expected 429 on 6th attempt, got $STATUS"

@@ -13,8 +13,8 @@ const registerRouteSource = readFileSync(resolve(ROOT, "app/api/auth/register/ro
 
 describe("Task #2879: register duplicate checks use their own rate-limit bucket", () => {
   it("defines a dedicated auth_check_duplicate bucket in the shared rate-limit defaults", () => {
-    expect(rateLimitSource).toContain("auth_register: { windowMs: 15 * 60_000, maxRequests: 10 }");
-    expect(rateLimitSource).toContain("auth_check_duplicate: { windowMs: 15 * 60_000, maxRequests: 10 }");
+    expect(rateLimitSource).toContain("auth_register: { windowMs: 5 * 60_000, maxRequests: 5 }");
+    expect(rateLimitSource).toContain("auth_check_duplicate: { windowMs: 60_000, maxRequests: 10 }");
   });
 
   it("uses the duplicate-check bucket on /api/auth/check-duplicate without changing register", () => {

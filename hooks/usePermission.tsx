@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuthStore } from "@/providers/auth-store-provider";
 
 type PermissionCheck = `${string}:${string}`; // "action:resource" format
+type MeResponse = { organizationId?: string | null };
+type PermissionResponse = { organizationId?: string | null; permissions?: string[] };
 
 /**
  * Hook to check user permissions.
@@ -27,18 +29,46 @@ export function usePermission(check?: PermissionCheck) {
     let cancelled = false;
     async function fetchPermissions() {
       try {
-        const orgSlug = organizationId || "default";
-        const res = await fetch(`/api/v1/organizations/${encodeURIComponent(orgSlug)}/me/permissions`);
-        if (res.ok) {
-          const data = await res.json();
-          if (!cancelled) {
-            setPermissions(new Set(data.permissions ?? []));
-            if (data.organizationId && !organizationId) {
-              updateUser({ organizationId: data.organizationId });
-            }
+        let resolvedOrganizationId = organizationId;
+
+        if (!resolvedOrganizationId) {
+          const meRes = await fetch("/api/auth/me", { cache: "no-store" });
+          if (!meRes.ok) {
+            if (!cancelled) setError(true);
+            return;
           }
-        } else {
+
+          const me = await meRes.json() as MeResponse;
+          resolvedOrganizationId = me.organizationId ?? null;
+          if (resolvedOrganizationId && !cancelled) {
+            updateUser({ organizationId: resolvedOrganizationId });
+          }
+        }
+
+        if (!resolvedOrganizationId) {
+          if (!cancelled) {
+            setPermissions(new Set());
+            setError(false);
+          }
+          return;
+        }
+
+        const res = await fetch(
+          `/api/v1/organizations/${encodeURIComponent(resolvedOrganizationId)}/me/permissions`,
+          { cache: "no-store" },
+        );
+        if (!res.ok) {
           if (!cancelled) setError(true);
+          return;
+        }
+
+        const data = await res.json() as PermissionResponse;
+        if (!cancelled) {
+          setPermissions(new Set(data.permissions ?? []));
+          setError(false);
+          if (data.organizationId && data.organizationId !== organizationId) {
+            updateUser({ organizationId: data.organizationId });
+          }
         }
       } catch {
         if (!cancelled) setError(true);
