@@ -1,6 +1,5 @@
 import bcrypt from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
-import { seedQaUser } from "../scripts/seed-qa-user";
 
 const prisma = new PrismaClient();
 
@@ -9,7 +8,7 @@ const DEFAULT_SEED_EMAIL = "demo@smsok.local";
 const DEFAULT_SEED_PHONE = "+66900000000";
 const DEFAULT_SEED_PASSWORD = "Password123!";
 const DEFAULT_SEED_NAME = "Demo User";
-const QA_ONLY_SEED_SCOPE = "qa-user";
+const DEFAULT_ADMIN_SEED_PASSWORD = "admin1234";
 
 async function resolveSeedUser() {
   const requestedEmail = process.env.SEED_EMAIL?.trim();
@@ -368,10 +367,25 @@ async function seedPDPA(userId: string, orgId: string) {
   console.log(`  ✅ PDPA consents: ${contacts.length * 2} records`);
 }
 
-async function seedBackoffice() {
-  const adminPassword = await bcrypt.hash("admin1234", 12);
+async function resolveAdminSeedPassword(allowDefaultPassword: boolean) {
+  const configuredPassword = process.env.ADMIN_SEED_PASSWORD?.trim();
+  if (configuredPassword) {
+    return configuredPassword;
+  }
 
-  // Admin users
+  if (allowDefaultPassword) {
+    return DEFAULT_ADMIN_SEED_PASSWORD;
+  }
+
+  throw new Error("ADMIN_SEED_PASSWORD is required when NODE_ENV=production");
+}
+
+async function seedAdminUsers(options: { allowDefaultPassword: boolean }) {
+  const adminPassword = await bcrypt.hash(
+    await resolveAdminSeedPassword(options.allowDefaultPassword),
+    12,
+  );
+
   const admins = [
     { email: "admin@smsok.com", name: "Super Admin", role: "SUPER_ADMIN" as const },
     { email: "finance@smsok.com", name: "Finance Admin", role: "FINANCE" as const },
@@ -387,8 +401,10 @@ async function seedBackoffice() {
     });
   }
   console.log(`  ✅ Admin users: ${admins.length} created`);
+  return admins.length;
+}
 
-  // SMS Provider
+async function seedSmsProviders() {
   await prisma.smsProvider.upsert({
     where: { name: "easythunder" },
     update: {},
@@ -418,6 +434,11 @@ async function seedBackoffice() {
     },
   });
   console.log(`  ✅ SMS Providers: 2 created`);
+}
+
+async function seedBackoffice() {
+  await seedAdminUsers({ allowDefaultPassword: true });
+  await seedSmsProviders();
 
   // Note: CreditPackage and PricingTier models removed.
   // Package tiers are now seeded via seedPackageTiers().
@@ -640,17 +661,18 @@ async function seedRBAC(orgId: string) {
 }
 
 async function main() {
-  const productionSafeMode =
-    process.env.NODE_ENV === "production" ||
-    process.env.SEED_SCOPE === QA_ONLY_SEED_SCOPE;
+  if (process.env.SEED_SCOPE === "qa-user") {
+    throw new Error("QA seed moved to `bun run db:seed:qa` and is disabled in prisma/seed.ts");
+  }
 
-  if (productionSafeMode) {
-    console.log("🌱 Seeding SMSOK Clone (production-safe QA user mode)...\n");
-    const result = await seedQaUser({}, prisma);
+  if (process.env.NODE_ENV === "production") {
+    console.log("🌱 Seeding SMSOK Clone (production admin-only mode)...\n");
+    const adminCount = await seedAdminUsers({ allowDefaultPassword: false });
     console.log(JSON.stringify({
-      ...result,
-      mode: QA_ONLY_SEED_SCOPE,
-      note: "Set SEED_SCOPE=qa-user (or NODE_ENV=production) to run this safe seed mode.",
+      seeded: true,
+      mode: "production-admin-only",
+      admins: adminCount,
+      note: "Set ADMIN_SEED_PASSWORD to seed production admin users safely.",
     }, null, 2));
     console.log("\n🌱 Seed complete!");
     return;

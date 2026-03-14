@@ -319,7 +319,7 @@ export default function LandingPage() {
             className="text-center mb-12 sm:mb-16"
           >
             <div className="inline-block text-xs font-semibold text-[var(--accent)] uppercase tracking-[0.2em] mb-3">Why Choose Us</div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 text-[var(--text-primary)]">
               ทำไมต้อง <span className="gradient-text-mixed">SMSOK</span>?
             </h2>
             <p className="text-[var(--text-secondary)] max-w-xl mx-auto text-sm sm:text-base">บริการส่ง SMS ที่ครบทุกฟีเจอร์ ในราคาที่ถูกที่สุด</p>
@@ -373,7 +373,7 @@ export default function LandingPage() {
             className="text-center mb-12 sm:mb-16"
           >
             <div className="inline-block text-xs font-semibold text-[var(--accent)] uppercase tracking-[0.2em] mb-3">Features</div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 text-[var(--text-primary)]">
               ฟีเจอร์<span className="neon-cyan">ครบ</span>ทุกความต้องการ
             </h2>
             <p className="text-[var(--text-secondary)] max-w-xl mx-auto text-sm sm:text-base">ไม่ว่าจะส่งผ่านเว็บหรือ API เรามีทุกอย่างที่คุณต้องการ</p>
@@ -436,23 +436,23 @@ export default function LandingPage() {
               <span className="text-xs text-[var(--text-secondary)] ml-2 font-mono">send-sms.js</span>
             </div>
             <div className="p-5 sm:p-6 font-mono text-xs sm:text-sm leading-relaxed overflow-x-auto">
-              <div><span className="text-[var(--accent)]">const</span> <span className="text-[var(--accent)]">response</span> <span className="text-white/50">=</span> <span className="text-[var(--accent)]">await</span> <span className="text-emerald-400">fetch</span><span className="text-white/40">(</span></div>
-              <div className="pl-4"><span className="text-amber-300">{`"https://api.smsok.com/v1/send"`}</span><span className="text-white/40">,</span></div>
-              <div className="pl-4"><span className="text-white/40">{"{"}</span></div>
-              <div className="pl-8"><span className="text-[var(--accent)]">method</span><span className="text-white/40">:</span> <span className="text-amber-300">{`"POST"`}</span><span className="text-white/40">,</span></div>
-              <div className="pl-8"><span className="text-[var(--accent)]">headers</span><span className="text-white/40">:</span> <span className="text-white/40">{"{"}</span></div>
-              <div className="pl-12"><span className="text-amber-300">{`"Authorization"`}</span><span className="text-white/40">:</span> <span className="text-amber-300">{`"Bearer \${API_KEY}"`}</span></div>
-              <div className="pl-8"><span className="text-white/40">{"}"}</span><span className="text-white/40">,</span></div>
-              <div className="pl-8"><span className="text-[var(--accent)]">body</span><span className="text-white/40">:</span> <span className="text-emerald-400">JSON</span><span className="text-white/40">.</span><span className="text-emerald-400">stringify</span><span className="text-white/40">({"{"}</span></div>
-              <div className="pl-12"><span className="text-[var(--accent)]">to</span><span className="text-white/40">:</span> <span className="text-amber-300">{`"0891234567"`}</span><span className="text-white/40">,</span></div>
-              <div className="pl-12"><span className="text-[var(--accent)]">message</span><span className="text-white/40">:</span> <span className="text-amber-300">{`"Your OTP is 1234"`}</span></div>
-              <div className="pl-8"><span className="text-white/40">{"})"}</span></div>
-              <div className="pl-4"><span className="text-white/40">{"}"}</span></div>
-              <div><span className="text-white/40">)</span><span className="text-white/40">;</span></div>
-              <div className="mt-2 text-slate-400">{"// "}Response: {"{ status: 'sent', id: 'msg_abc123' }"}</div>
+              <div><span className="text-[var(--accent)]">const</span> <span className="text-[var(--accent)]">response</span> <span className="text-white/70">=</span> <span className="text-[var(--accent)]">await</span> <span className="text-emerald-400">fetch</span><span className="text-white/60">(</span></div>
+              <div className="pl-4"><span className="text-amber-300">{`"https://api.smsok.com/v1/send"`}</span><span className="text-white/60">,</span></div>
+              <div className="pl-4"><span className="text-white/60">{"{"}</span></div>
+              <div className="pl-8"><span className="text-[var(--accent)]">method</span><span className="text-white/60">:</span> <span className="text-amber-300">{`"POST"`}</span><span className="text-white/60">,</span></div>
+              <div className="pl-8"><span className="text-[var(--accent)]">headers</span><span className="text-white/60">:</span> <span className="text-white/60">{"{"}</span></div>
+              <div className="pl-12"><span className="text-amber-300">{`"Authorization"`}</span><span className="text-white/60">:</span> <span className="text-amber-300">{`"Bearer \${API_KEY}"`}</span></div>
+              <div className="pl-8"><span className="text-white/60">{"}"}</span><span className="text-white/60">,</span></div>
+              <div className="pl-8"><span className="text-[var(--accent)]">body</span><span className="text-white/60">:</span> <span className="text-emerald-400">JSON</span><span className="text-white/60">.</span><span className="text-emerald-400">stringify</span><span className="text-white/60">({"{"}</span></div>
+              <div className="pl-12"><span className="text-[var(--accent)]">to</span><span className="text-white/60">:</span> <span className="text-amber-300">{`"0891234567"`}</span><span className="text-white/60">,</span></div>
+              <div className="pl-12"><span className="text-[var(--accent)]">message</span><span className="text-white/60">:</span> <span className="text-amber-300">{`"Your OTP is 1234"`}</span></div>
+              <div className="pl-8"><span className="text-white/60">{"})"}</span></div>
+              <div className="pl-4"><span className="text-white/60">{"}"}</span></div>
+              <div><span className="text-white/60">)</span><span className="text-white/60">;</span></div>
+              <div className="mt-2 text-[var(--text-secondary)]">{"// "}Response: {"{ status: 'sent', id: 'msg_abc123' }"}</div>
             </div>
           </motion.div>
-          <p className="text-center text-slate-400 text-xs mt-4">ส่ง SMS ด้วยโค้ดแค่ไม่กี่บรรทัด</p>
+          <p className="text-center text-[var(--text-secondary)] text-xs mt-4">ส่ง SMS ด้วยโค้ดแค่ไม่กี่บรรทัด</p>
         </div>
       </motion.section>
 
@@ -479,7 +479,7 @@ export default function LandingPage() {
             className="text-center mb-12 sm:mb-16"
           >
             <div className="inline-block text-xs font-semibold text-[var(--accent)] uppercase tracking-[0.2em] mb-3">Pricing</div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 text-[var(--text-primary)]">
               เลือก<span className="gradient-text-mixed">แพ็กเกจ</span>ที่เหมาะกับคุณ
             </h2>
             <p className="text-[var(--text-secondary)] max-w-xl mx-auto text-sm sm:text-base">ยิ่งซื้อมาก ยิ่งถูก — โบนัสสูงสุด 50%</p>
@@ -535,10 +535,10 @@ export default function LandingPage() {
                   ) : <div className="mb-4" />}
 
                   <div className="space-y-2.5 text-sm text-[var(--text-secondary)] flex-1">
-                    <div className="flex justify-between"><span>SMS</span><span className="text-white/80 font-medium">{fmt(pkg.sms)}</span></div>
-                    <div className="flex justify-between"><span>ราคา/SMS</span><span className="text-white/80 font-medium">฿{pkg.cost}</span></div>
-                    <div className="flex justify-between"><span>Sender Names</span><span className="text-white/80 font-medium">{pkg.senders === -1 ? "ไม่จำกัด" : pkg.senders}</span></div>
-                    <div className="flex justify-between"><span>ระยะเวลา</span><span className="text-white/80 font-medium">{pkg.duration}</span></div>
+                    <div className="flex justify-between"><span>SMS</span><span className="text-[var(--text-primary)] font-medium">{fmt(pkg.sms)}</span></div>
+                    <div className="flex justify-between"><span>ราคา/SMS</span><span className="text-[var(--text-primary)] font-medium">฿{pkg.cost}</span></div>
+                    <div className="flex justify-between"><span>Sender Names</span><span className="text-[var(--text-primary)] font-medium">{pkg.senders === -1 ? "ไม่จำกัด" : pkg.senders}</span></div>
+                    <div className="flex justify-between"><span>ระยะเวลา</span><span className="text-[var(--text-primary)] font-medium">{pkg.duration}</span></div>
                   </div>
 
                   <Link
@@ -579,7 +579,7 @@ export default function LandingPage() {
         >
           <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-[rgba(var(--accent-rgb),0.05)] to-[rgba(50,152,218,0.03)] pointer-events-none" />
           <div className="relative">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">ต้องการแพ็กเกจพิเศษ?</h2>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 text-[var(--text-primary)]">ต้องการแพ็กเกจพิเศษ?</h2>
             <p className="text-[var(--text-secondary)] mb-8 text-sm sm:text-base max-w-lg mx-auto">
               สำหรับธุรกิจที่ส่ง SMS มากกว่า 1 ล้านข้อความ/เดือน ติดต่อเราเพื่อรับราคาพิเศษ
             </p>
@@ -617,7 +617,7 @@ export default function LandingPage() {
             className="text-center mb-12 sm:mb-16"
           >
             <div className="inline-block text-xs font-semibold text-[var(--accent)] uppercase tracking-[0.2em] mb-3">How it Works</div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 text-[var(--text-primary)]">
               เริ่มต้นใช้งานใน <span className="gradient-text-mixed">3 ขั้นตอน</span>
             </h2>
             <p className="text-[var(--text-secondary)] max-w-xl mx-auto text-sm sm:text-base">สมัคร → ตั้งค่า → เริ่มส่ง</p>
@@ -696,7 +696,7 @@ export default function LandingPage() {
             className="text-center mb-12 sm:mb-16"
           >
             <div className="inline-block text-xs font-semibold text-[var(--accent)] uppercase tracking-[0.2em] mb-3">Use Cases</div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 text-[var(--text-primary)]">
               ใช้ได้กับ<span className="gradient-text-mixed">ทุกธุรกิจ</span>
             </h2>
             <p className="text-[var(--text-secondary)] max-w-xl mx-auto text-sm sm:text-base">ไม่ว่าจะ OTP, การตลาด หรือแจ้งเตือน</p>
@@ -772,7 +772,7 @@ export default function LandingPage() {
             className="text-center mb-12 sm:mb-16"
           >
             <div className="inline-block text-xs font-semibold text-[var(--accent)] uppercase tracking-[0.2em] mb-3">Testimonials</div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 text-[var(--text-primary)]">
               ลูกค้า<span className="gradient-text-mixed">พูดถึงเรา</span>
             </h2>
             <p className="text-[var(--text-secondary)] max-w-xl mx-auto text-sm sm:text-base">ธุรกิจกว่า 500+ รายไว้วางใจ SMSOK</p>
@@ -822,7 +822,7 @@ export default function LandingPage() {
                   </div>
                   <div>
                     <div className="text-white font-semibold text-sm">{t.name}</div>
-                    <div className="text-slate-400 text-xs">{t.company}</div>
+                    <div className="text-[var(--text-secondary)] text-xs">{t.company}</div>
                   </div>
                 </div>
               </motion.div>
@@ -940,14 +940,14 @@ export default function LandingPage() {
           </div>
 
           <div className="border-t border-white/[0.04] pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="text-xs sm:text-sm text-slate-400">&copy; 2026 SMSOK — SMS Sending Platform</div>
+            <div className="text-xs sm:text-sm text-[var(--text-secondary)]">&copy; 2026 SMSOK — SMS Sending Platform</div>
             <div className="flex items-center gap-4">
               {[
                 { label: "LINE", href: "https://line.me/ti/p/@smsok", path: "M12 2C6.48 2 2 5.81 2 10.41c0 4.15 3.68 7.63 8.65 8.28.34.07.8.22.91.51.1.26.07.67.03.93l-.15.87c-.04.25-.2.98.87.53s5.8-3.41 7.9-5.84C22.15 13.59 22 12.03 22 10.41 22 5.81 17.52 2 12 2z" },
                 { label: "Facebook", href: "https://facebook.com/smsok", path: "M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" },
                 { label: "X", href: "https://x.com/smsok", path: "M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" },
               ].map((s) => (
-                <motion.a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" whileHover={{ scale: 1.2, color: "var(--accent)" }} className="text-slate-400 transition-colors p-1" aria-label={s.label}>
+                <motion.a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" whileHover={{ scale: 1.2, color: "var(--accent)" }} className="text-[var(--text-secondary)] transition-colors p-1" aria-label={s.label}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d={s.path} /></svg>
                 </motion.a>
               ))}
