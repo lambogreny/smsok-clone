@@ -20,7 +20,7 @@ import {
 } from "@/components/sms/VariableInsert";
 
 import { toast } from "sonner";
-import { ArrowRight, Loader2, AlertTriangle, Send, FlaskConical } from "lucide-react";
+import { ArrowRight, Loader2, AlertTriangle, Send, FlaskConical, Upload, Calendar, X } from "lucide-react";
 import SendingHoursWarning, { checkSendingHours } from "@/components/blocks/SendingHoursWarning";
 
 type MsgType = "english" | "thai" | "unicode";
@@ -38,6 +38,11 @@ export default function SendSmsForm({ senderNames: rawNames = [] }: { senderName
   const [testPhone, setTestPhone] = useState("");
   const [showTestSend, setShowTestSend] = useState(false);
   const [isTestSending, setIsTestSending] = useState(false);
+  const [scheduleMode, setScheduleMode] = useState<"now" | "later">("now");
+  const [scheduleDate, setScheduleDate] = useState("");
+  const [scheduleTime, setScheduleTime] = useState("");
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const messageTextareaRef = useRef<HTMLTextAreaElement>(null);
   const lastCursorPos = useRef<{ start: number; end: number } | null>(null);
@@ -114,6 +119,31 @@ export default function SendSmsForm({ senderNames: rawNames = [] }: { senderName
       }, 0);
     }
   }, [message]);
+
+  function handleCsvUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      if (!text) return;
+      const phones = text
+        .split(/[\r\n,;]+/)
+        .map((line) => line.replace(/[^0-9]/g, "").trim())
+        .filter((p) => /^0[0-9]\d{8}$/.test(p));
+      if (phones.length > 0) {
+        setRecipients((prev) => {
+          const existing = prev.trim();
+          return existing ? `${existing}\n${phones.join("\n")}` : phones.join("\n");
+        });
+        toast.success(`นำเข้า ${phones.length} เบอร์จาก CSV`);
+      } else {
+        toast.error("ไม่พบเบอร์โทรที่ถูกต้องในไฟล์");
+      }
+    };
+    reader.readAsText(file);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
 
   const autocomplete = useVariableAutocomplete(
     messageTextareaRef,
@@ -279,7 +309,24 @@ export default function SendSmsForm({ senderNames: rawNames = [] }: { senderName
 
               {/* Recipients */}
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-muted)] mb-1.5">ผู้รับ</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-muted)]">ผู้รับ</label>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center gap-1.5 text-[11px] font-medium text-[var(--accent)] hover:underline cursor-pointer"
+                  >
+                    <Upload className="w-3 h-3" />
+                    นำเข้า CSV
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".csv,.txt"
+                    onChange={handleCsvUpload}
+                    className="hidden"
+                  />
+                </div>
                 <Textarea
                   value={recipients}
                   onChange={(e) => setRecipients(e.target.value)}
@@ -440,13 +487,62 @@ export default function SendSmsForm({ senderNames: rawNames = [] }: { senderName
                 )}
               </div>
 
+              {/* Schedule */}
+              <div className="mt-4 space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-muted)]">กำหนดเวลาส่ง</label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setScheduleMode("now")}
+                    className={`flex-1 h-9 rounded-lg text-xs font-medium border transition-colors ${
+                      scheduleMode === "now"
+                        ? "bg-[rgba(var(--accent-rgb),0.08)] border-[rgba(var(--accent-rgb),0.3)] text-[var(--accent)]"
+                        : "border-[var(--border-default)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                    }`}
+                  >
+                    ส่งทันที
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setScheduleMode("later")}
+                    className={`flex-1 h-9 rounded-lg text-xs font-medium border transition-colors flex items-center justify-center gap-1.5 ${
+                      scheduleMode === "later"
+                        ? "bg-[rgba(var(--accent-rgb),0.08)] border-[rgba(var(--accent-rgb),0.3)] text-[var(--accent)]"
+                        : "border-[var(--border-default)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                    }`}
+                  >
+                    <Calendar className="w-3.5 h-3.5" />
+                    ตั้งเวลา
+                  </button>
+                </div>
+                {scheduleMode === "later" && (
+                  <div className="flex gap-2">
+                    <input
+                      type="date"
+                      value={scheduleDate}
+                      onChange={(e) => setScheduleDate(e.target.value)}
+                      min={new Date().toISOString().slice(0, 10)}
+                      className="flex-1 h-9 px-3 rounded-lg text-sm bg-[var(--bg-base)] border border-[var(--border-default)] text-[var(--text-primary)] focus:outline-none focus:border-[rgba(var(--accent-rgb),0.6)]"
+                    />
+                    <input
+                      type="time"
+                      value={scheduleTime}
+                      onChange={(e) => setScheduleTime(e.target.value)}
+                      className="w-[120px] h-9 px-3 rounded-lg text-sm bg-[var(--bg-base)] border border-[var(--border-default)] text-[var(--text-primary)] focus:outline-none focus:border-[rgba(var(--accent-rgb),0.6)]"
+                    />
+                  </div>
+                )}
+              </div>
+
               <Button
-                onClick={handleSend}
-                disabled={isPending || !recipients.trim() || !message.trim() || !!phoneError || hasNoCredits || hasInsufficientCredits || isOutsideSendingHours || hasNoSenders}
+                onClick={() => setShowConfirmModal(true)}
+                disabled={isPending || !recipients.trim() || !message.trim() || !!phoneError || hasNoCredits || hasInsufficientCredits || isOutsideSendingHours || hasNoSenders || (scheduleMode === "later" && (!scheduleDate || !scheduleTime))}
                 className="w-full mt-4 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] rounded-lg font-semibold disabled:opacity-50" size="lg"
               >
                 {isPending ? (
                   <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />กำลังส่ง...</span>
+                ) : scheduleMode === "later" ? (
+                  <span className="flex items-center gap-2"><Calendar className="w-4 h-4" />ตั้งเวลาส่ง</span>
                 ) : (
                   <span className="flex items-center gap-2">ส่ง SMS <ArrowRight className="w-4 h-4" /></span>
                 )}
@@ -476,6 +572,73 @@ export default function SendSmsForm({ senderNames: rawNames = [] }: { senderName
           </Button>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-xl border border-[var(--border-default)] bg-[var(--bg-surface)] p-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-[var(--text-primary)]">ยืนยันการส่ง SMS</h3>
+              <button
+                type="button"
+                onClick={() => setShowConfirmModal(false)}
+                className="p-1 rounded-md text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-base)] transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 mb-6">
+              <div className="flex justify-between text-sm border-b border-[var(--border-default)] pb-2">
+                <span className="text-[var(--text-muted)]">ผู้รับ</span>
+                <span className="text-[var(--text-primary)] font-medium">{validPhones.length} เบอร์</span>
+              </div>
+              <div className="flex justify-between text-sm border-b border-[var(--border-default)] pb-2">
+                <span className="text-[var(--text-muted)]">ผู้ส่ง</span>
+                <span className="text-[var(--text-primary)]">{senderName || "—"}</span>
+              </div>
+              <div className="flex justify-between text-sm border-b border-[var(--border-default)] pb-2">
+                <span className="text-[var(--text-muted)]">ข้อความ</span>
+                <span className="text-[var(--text-primary)] text-right max-w-[200px] truncate">{message.slice(0, 50)}{message.length > 50 ? "..." : ""}</span>
+              </div>
+              <div className="flex justify-between text-sm border-b border-[var(--border-default)] pb-2">
+                <span className="text-[var(--text-muted)]">เวลาส่ง</span>
+                <span className="text-[var(--text-primary)]">
+                  {scheduleMode === "now" ? "ทันที" : `${scheduleDate} ${scheduleTime}`}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm pt-1">
+                <span className="text-base font-bold text-[var(--text-primary)]">ใช้ SMS</span>
+                <span className="text-base font-bold text-[var(--accent)]">{totalSmsCost} SMS</span>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1 border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-base)]"
+                onClick={() => setShowConfirmModal(false)}
+              >
+                ยกเลิก
+              </Button>
+              <Button
+                className="flex-1 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] font-semibold"
+                onClick={() => {
+                  setShowConfirmModal(false);
+                  handleSend();
+                }}
+                disabled={isPending}
+              >
+                {isPending ? (
+                  <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />ส่ง...</span>
+                ) : (
+                  <span className="flex items-center gap-2"><Send className="w-4 h-4" />ยืนยันส่ง</span>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

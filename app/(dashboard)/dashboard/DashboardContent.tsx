@@ -99,11 +99,14 @@ type ActivityItem = {
   time: string;
 };
 
+type AccountStatus = "trial" | "active" | "suspended";
+
 type Props = {
   stats?: DashboardStats;
   quota?: QuotaData;
   onboardingSteps?: string[];
   showOnboarding?: boolean;
+  accountStatus?: AccountStatus;
 };
 
 /* ── Alert Bar ── */
@@ -833,6 +836,32 @@ function RecentMessagesTable({ messages }: { messages: DashboardStats["recentMes
   );
 }
 
+/* ── Account Status Badge ── */
+const accountStatusConfig: Record<AccountStatus, { label: string; cls: string }> = {
+  trial: {
+    label: "ทดลองใช้งาน",
+    cls: "bg-[rgba(var(--accent-purple-rgb),0.1)] text-[var(--accent-purple)] border-[rgba(var(--accent-purple-rgb),0.2)]",
+  },
+  active: {
+    label: "ใช้งานอยู่",
+    cls: "bg-[var(--success-bg)] text-[var(--success)] border-[rgba(8,153,129,0.2)]",
+  },
+  suspended: {
+    label: "ถูกระงับ",
+    cls: "bg-[var(--danger-bg)] text-[var(--error)] border-[rgba(242,54,69,0.2)]",
+  },
+};
+
+function AccountStatusBadge({ status }: { status?: AccountStatus }) {
+  if (!status) return null;
+  const cfg = accountStatusConfig[status];
+  return (
+    <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${cfg.cls}`}>
+      {cfg.label}
+    </span>
+  );
+}
+
 /* ── Helpers ── */
 function calcDelta(today: number, yesterday: number): { text: string; positive: boolean } {
   if (yesterday === 0 && today === 0) return { text: "—", positive: true };
@@ -847,6 +876,7 @@ export default function DashboardContent({
   quota,
   onboardingSteps = [],
   showOnboarding = false,
+  accountStatus,
 }: Props) {
   const sparklineData = stats?.last7Days?.map((d) => d.sms) ?? [];
 
@@ -854,7 +884,10 @@ export default function DashboardContent({
     <div className="p-4 md:p-6 space-y-5">
       {/* ── Page Header ── */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[var(--text-primary)]">ภาพรวม</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">ภาพรวม</h1>
+          <AccountStatusBadge status={accountStatus} />
+        </div>
         <Link href="/dashboard/send">
           <Button
             className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] font-semibold rounded-lg"
