@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import LegalPageLayout from "@/components/blocks/LegalPageLayout";
 
 const P = ({ children }: { children: React.ReactNode }) => (
