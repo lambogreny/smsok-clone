@@ -31,9 +31,14 @@ export default async function SettingsPage({
 
   if (!fullUser) redirect("/login");
 
+  const serializedUser = {
+    ...fullUser,
+    createdAt: fullUser.createdAt.toISOString(),
+  };
+
   return (
     <SettingsContent
-      user={fullUser}
+      user={serializedUser}
       smsRemaining={quota.totalRemaining}
       forceChange={forceChange === "true"}
     />

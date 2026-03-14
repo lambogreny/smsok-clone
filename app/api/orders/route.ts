@@ -3,7 +3,6 @@ import { z } from "zod";
 import { ApiError, apiError, apiResponse } from "@/lib/api-auth";
 import { getSession } from "@/lib/auth";
 import { prisma as db } from "@/lib/db";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { orderSummarySelect } from "@/lib/orders/api";
 import { parseOrderStatus, serializeOrderV2 } from "@/lib/orders/service";
 
@@ -29,10 +28,6 @@ export async function GET(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session?.id) throw new ApiError(401, "กรุณาเข้าสู่ระบบ");
-
-    const rl = await applyRateLimit(session.id, "purchase");
-    if (rl.blocked) return rl.blocked;
-
     await db.order.updateMany({
       where: {
         userId: session.id,

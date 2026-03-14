@@ -26,7 +26,7 @@ type Stats = {
   user: { name: string; email: string };
   today: { total: number; delivered: number; failed: number; sent: number; pending: number };
   thisMonth: { total: number; delivered: number; failed: number; sent: number; pending: number };
-  recentMessages: { id: string; recipient: string; status: string; senderName: string; creditCost: number; createdAt: Date }[];
+  recentMessages: { id: string; recipient: string; status: string; senderName: string; creditCost: number; createdAt: string }[];
   smsRemaining?: number;
 };
 

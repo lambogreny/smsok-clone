@@ -17,5 +17,10 @@ export default async function GroupsPage() {
     return <ErrorState type="SERVER_ERROR" />;
   }
 
-  return <GroupsPageClient initialGroups={groups} />;
+  const serializedGroups = groups.map((group) => ({
+    ...group,
+    createdAt: group.createdAt.toISOString(),
+  }));
+
+  return <GroupsPageClient initialGroups={serializedGroups} />;
 }

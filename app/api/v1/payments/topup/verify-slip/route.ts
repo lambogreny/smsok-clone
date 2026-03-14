@@ -225,10 +225,6 @@ export async function POST(req: NextRequest) {
     const session = await getSession();
     if (!session?.id) throw new ApiError(401, "กรุณาเข้าสู่ระบบ");
 
-    const { applyRateLimit } = await import("@/lib/rate-limit");
-    const rl = await applyRateLimit(session.id, "topup_verify");
-    if (rl.blocked) return rl.blocked;
-
     const upload = await readUpload(req);
     const tier = await resolveTier(upload.input);
     if (!tier) {

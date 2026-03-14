@@ -3,7 +3,6 @@ import { z } from "zod";
 import { ApiError, apiError, apiResponse } from "@/lib/api-auth";
 import { authenticateAdmin } from "@/lib/admin-auth";
 import { prisma as db } from "@/lib/db";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { ensureOrderDocument, orderSummarySelect } from "@/lib/orders/api";
 import { createOrderHistory, serializeOrder } from "@/lib/orders/service";
 
@@ -19,10 +18,6 @@ const rejectSchema = z.object({
 export async function POST(req: NextRequest, ctx: RouteContext) {
   try {
     const admin = await authenticateAdmin(req, ["SUPER_ADMIN", "FINANCE"]);
-
-    const rl = await applyRateLimit(admin.id, "admin");
-    if (rl.blocked) return rl.blocked;
-
     const { id } = await ctx.params;
     const body = await req.json();
     const { reason } = rejectSchema.parse(body);

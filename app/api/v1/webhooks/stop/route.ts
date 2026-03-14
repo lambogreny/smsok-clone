@@ -1,8 +1,6 @@
 import { NextRequest } from "next/server";
 import { timingSafeEqual, createHash } from "crypto";
 import { prisma } from "@/lib/db";
-import { checkCustomRateLimit } from "@/lib/rate-limit";
-import { getClientIp } from "@/lib/session-utils";
 import { stopWebhookBodySchema } from "@/lib/validations";
 
 function hashForCompare(value: string): Buffer {
@@ -18,29 +16,8 @@ function hashForCompare(value: string): Buffer {
  * Body: { phone: string, keyword?: string }
  * Auth: Shared secret via X-Webhook-Secret header
  */
-// Redis-backed rate limiter for /stop endpoint (10 req/min per IP)
-const STOP_RATE_LIMIT = 10;
-const STOP_RATE_WINDOW = 60_000;
 
 export async function POST(req: NextRequest) {
-  // Rate limit: 10 req/min per IP
-  const ip = getClientIp(req.headers) || "unknown";
-  const limit = await checkCustomRateLimit(`webhook-stop:${ip}`, {
-    windowMs: STOP_RATE_WINDOW,
-    maxRequests: STOP_RATE_LIMIT,
-  });
-  if (!limit.allowed) {
-    return Response.json(
-      { error: "Rate limited" },
-      {
-        status: 429,
-        headers: {
-          "Retry-After": String(Math.ceil(limit.resetIn / 1000)),
-        },
-      },
-    );
-  }
-
   // Verify webhook secret (hash both sides to fixed 32-byte length, preventing length oracle)
   const secret = req.headers.get("x-webhook-secret");
   const expectedSecret = process.env.STOP_WEBHOOK_SECRET;
@@ -78,3 +55,4 @@ export async function POST(req: NextRequest) {
 
   return Response.json({ success: true });
 }
+

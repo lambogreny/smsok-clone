@@ -1,7 +1,5 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
-import { RATE_LIMIT_DEFAULTS } from "@/lib/rate-limit";
-
 /**
  * OpenAPI 3.0.3 Spec Generator for SMSOK API
  *
@@ -15,14 +13,6 @@ const HTTP_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"] as const;
 type HttpMethod = Lowercase<(typeof HTTP_METHODS)[number]>;
 type OpenApiOperation = Record<string, unknown>;
 type OpenApiPathItem = Partial<Record<HttpMethod, OpenApiOperation>>;
-type RateLimitDoc = {
-  maxRequests?: number;
-  windowMs: number;
-  scope: string;
-  source: string;
-  note?: string;
-};
-
 let cachedAutoDiscoveredPaths: Record<string, OpenApiPathItem> | null = null;
 
 const AUTH_API_SERVERS = [
@@ -174,135 +164,6 @@ function buildPathParameters(pathKey: string) {
     required: true,
     schema: { type: "string" },
   }));
-}
-
-function formatWindowMs(windowMs: number) {
-  if (windowMs % 3_600_000 === 0) {
-    const hours = windowMs / 3_600_000;
-    return `${hours} hour${hours === 1 ? "" : "s"}`;
-  }
-
-  if (windowMs % 60_000 === 0) {
-    const minutes = windowMs / 60_000;
-    return `${minutes} minute${minutes === 1 ? "" : "s"}`;
-  }
-
-  const seconds = Math.ceil(windowMs / 1000);
-  return `${seconds} second${seconds === 1 ? "" : "s"}`;
-}
-
-function parseNumericExpression(raw: string, constants: Record<string, number>) {
-  const normalized = raw.trim();
-  if (constants[normalized] !== undefined) {
-    return constants[normalized];
-  }
-
-  const replaced = normalized
-    .replace(/\b[A-Z][A-Z0-9_]*\b/g, (token) => String(constants[token] ?? token))
-    .replace(/_/g, "");
-
-  if (/^\d+$/.test(replaced)) {
-    return Number(replaced);
-  }
-
-  const parts = replaced.split("*").map((part) => part.trim());
-  if (parts.every((part) => /^\d+$/.test(part))) {
-    return parts.reduce((product, part) => product * Number(part), 1);
-  }
-
-  return undefined;
-}
-
-function extractNumericConstants(source: string) {
-  const constants: Record<string, number> = {};
-
-  for (const match of source.matchAll(/const\s+([A-Z][A-Z0-9_]*)\s*=\s*([^;\n]+)/g)) {
-    const [, name, expression] = match;
-    const value = parseNumericExpression(expression, constants);
-    if (value !== undefined) {
-      constants[name] = value;
-    }
-  }
-
-  return constants;
-}
-
-function inferRateLimitScope(source: string) {
-  if (source.includes("getClientIp(") || source.includes("x-real-ip")) {
-    return "per client IP";
-  }
-
-  if (source.includes("authenticateApiKey(")) {
-    return "per API key";
-  }
-
-  if (source.includes("authenticateRequest(") || source.includes("getSession(")) {
-    return "per authenticated actor";
-  }
-
-  return "per caller";
-}
-
-function inferRateLimit(source: string): RateLimitDoc | null {
-  const constants = extractNumericConstants(source);
-  const customMatch = source.match(
-    /checkCustomRateLimit\([\s\S]*?\{\s*windowMs:\s*([^,]+),\s*maxRequests:\s*([^\}\n]+)\s*\}/
-  );
-  if (customMatch) {
-    const windowMs = parseNumericExpression(customMatch[1], constants);
-    const maxRequests = parseNumericExpression(customMatch[2], constants);
-
-    if (windowMs !== undefined && maxRequests !== undefined) {
-      return {
-        maxRequests,
-        windowMs,
-        scope: inferRateLimitScope(source),
-        source: "checkCustomRateLimit(...)",
-      };
-    }
-  }
-
-  const bucketMatch = source.match(/applyRateLimit\([^,]+,\s*"([^"]+)"\s*\)/);
-  if (bucketMatch) {
-    const bucket = bucketMatch[1] as keyof typeof RATE_LIMIT_DEFAULTS;
-    const config = RATE_LIMIT_DEFAULTS[bucket];
-
-    if (config) {
-      return {
-        maxRequests: config.maxRequests,
-        windowMs: config.windowMs,
-        scope: inferRateLimitScope(source),
-        source: `applyRateLimit("${bucket}")`,
-        note:
-          source.includes("authenticateApiKey(") || source.includes("authenticateRequest(")
-            ? "API key requests also enforce the per-key limit configured on the credential."
-            : undefined,
-      };
-    }
-  }
-
-  if (source.includes("authenticateApiKey(")) {
-    return {
-      windowMs: 60_000,
-      scope: "per API key",
-      source: "authenticateApiKey()",
-      note: "Exact maxRequests depends on the API key's configured rateLimit value.",
-    };
-  }
-
-  return null;
-}
-
-function buildRateLimitDescription(rateLimit: RateLimitDoc | null) {
-  if (!rateLimit) {
-    return "Rate limiting may apply depending on authentication mode and deployment policy.";
-  }
-
-  const summary = rateLimit.maxRequests
-    ? `${rateLimit.maxRequests} requests per ${formatWindowMs(rateLimit.windowMs)} ${rateLimit.scope}`
-    : `Per-${rateLimit.scope} limit over ${formatWindowMs(rateLimit.windowMs)}`;
-
-  return rateLimit.note ? `${summary}. ${rateLimit.note}` : summary;
 }
 
 function buildRequestExample(pathKey: string) {
@@ -578,8 +439,7 @@ function buildRequestBody(method: HttpMethod, pathKey: string) {
   };
 }
 
-function buildResponses(method: HttpMethod, pathKey: string, source: string) {
-  const rateLimit = inferRateLimit(source);
+function buildResponses(method: HttpMethod, pathKey: string, _source: string) {
   const successStatus = method === "post" ? "201" : "200";
   const successDescription =
     method === "delete"
@@ -588,18 +448,9 @@ function buildResponses(method: HttpMethod, pathKey: string, source: string) {
         ? "Request completed successfully"
         : "Request completed successfully";
 
-  const successHeaders = rateLimit
-    ? {
-        "X-RateLimit-Limit": { $ref: "#/components/headers/XRateLimitLimit" },
-        "X-RateLimit-Remaining": { $ref: "#/components/headers/XRateLimitRemaining" },
-        "X-RateLimit-Reset": { $ref: "#/components/headers/XRateLimitReset" },
-      }
-    : undefined;
-
   return {
     [successStatus]: {
-      description: `${successDescription}. ${buildRateLimitDescription(rateLimit)}`,
-      ...(successHeaders ? { headers: successHeaders } : {}),
+      description: successDescription,
       content: {
         "application/json": {
           schema: {
@@ -678,12 +529,11 @@ function buildAutoDiscoveredPaths(): Record<string, OpenApiPathItem> {
         {
           tags: [inferTag(pathKey)],
           summary: inferSummary(method, pathKey),
-          description: `Auto-generated baseline documentation for ${pathKey}. Authentication and rate-limit notes are inferred from the route implementation.`,
+          description: `Auto-generated baseline documentation for ${pathKey}. Authentication notes are inferred from the route implementation. Rate limiting is handled by Cloudflare.`,
           security: buildSecurity(pathKey, source),
           ...(parameters.length > 0 ? { parameters } : {}),
           ...(buildRequestBody(method, pathKey) ? { requestBody: buildRequestBody(method, pathKey) } : {}),
           responses: buildResponses(method, pathKey, source),
-          "x-rateLimit": inferRateLimit(source),
         },
       ]),
     ) as OpenApiPathItem;

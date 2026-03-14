@@ -1,6 +1,5 @@
 import { ApiError, apiError, apiResponse } from "@/lib/api-auth";
 import { ERROR_CODES } from "@/lib/api-log";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { revokeUserSession, verifyOrRefreshSession } from "@/lib/auth";
 import { hasValidCsrfOrigin } from "@/lib/csrf";
 
@@ -19,10 +18,6 @@ export async function DELETE(req: Request, ctx: RouteContext) {
     if (!result) {
       throw new ApiError(401, "กรุณาเข้าสู่ระบบ");
     }
-
-    const rl = await applyRateLimit(result.user.id, "api");
-    if (rl.blocked) return rl.blocked;
-
     const { sid } = await ctx.params;
     if (sid === result.user.sessionId) {
       throw new ApiError(400, "ไม่สามารถเพิกถอน session ปัจจุบัน ใช้ logout แทน");

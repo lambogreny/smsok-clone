@@ -1,7 +1,6 @@
 import { NextRequest } from "next/server";
 import { authenticateRequest, apiResponse, apiError, ApiError } from "@/lib/api-auth";
 import { requireApiPermission } from "@/lib/rbac";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { prisma } from "@/lib/db";
 import { normalizePhone } from "@/lib/validations";
 import { importContactsFromExcel, parseExcelFile } from "@/lib/actions/excel-import";
@@ -44,10 +43,6 @@ export async function POST(req: NextRequest) {
 
     const denied = await requireApiPermission(user.id, "create", "contact");
     if (denied) return denied;
-
-    const rl = await applyRateLimit(user.id, "import");
-    if (rl.blocked) return rl.blocked;
-
     const contentType = req.headers.get("content-type") || "";
 
     if (contentType.includes("multipart/form-data")) {

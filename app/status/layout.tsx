@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://smsok.9phum.me";
+
 export const metadata: Metadata = {
   title: "สถานะระบบ — System Status",
   description:
@@ -8,6 +10,9 @@ export const metadata: Metadata = {
     title: "สถานะระบบ | SMSOK",
     description: "ตรวจสอบสถานะระบบ SMSOK แบบเรียลไทม์",
     type: "website",
+  },
+  alternates: {
+    canonical: `${BASE_URL}/status`,
   },
 };
 

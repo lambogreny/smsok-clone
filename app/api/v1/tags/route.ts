@@ -1,7 +1,6 @@
 import { NextRequest } from "next/server";
 import { apiError, apiResponse, authenticateRequest } from "@/lib/api-auth";
 import { createTag, getTags } from "@/lib/actions/tags";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { createTagSchema } from "@/lib/validations";
 
 export async function GET(req: NextRequest) {
@@ -17,9 +16,6 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const user = await authenticateRequest(req);
-    const rl = await applyRateLimit(user.id, "api");
-    if (rl.blocked) return rl.blocked;
-
     const body = await req.json();
     const input = createTagSchema.parse(body);
     const tag = await createTag(user.id, input);

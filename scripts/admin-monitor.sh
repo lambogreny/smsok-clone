@@ -48,9 +48,9 @@ check_admin() {
   local redis_status
   redis_status=$(echo "$health_json" | grep -o '"redis":{"status":"[^"]*"' | cut -d'"' -f6 2>/dev/null || echo "unknown")
   if [ "$redis_status" = "ok" ]; then
-    echo -e "  ${GREEN}✅ Redis: OK${NC} (rate limiting active)"
+    echo -e "  ${GREEN}✅ Redis: OK${NC} (queue/cache active)"
   else
-    echo -e "  ${YELLOW}⚠️  Redis: $redis_status${NC} (rate limiting may be bypassed!)"
+    echo -e "  ${YELLOW}⚠️  Redis: $redis_status${NC} (queue/cache unavailable!)"
   fi
 
   # 4. Security headers check

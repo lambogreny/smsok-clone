@@ -14,7 +14,6 @@ const mocks = vi.hoisted(() => ({
   createOrderHistory: vi.fn(),
   storeUploadedFile: vi.fn(),
   removeStoredFile: vi.fn(),
-  applyRateLimit: vi.fn(),
   queueWaitUntilReady: vi.fn(),
   queueAdd: vi.fn(),
 }));
@@ -43,10 +42,6 @@ vi.mock("@/lib/storage/service", () => ({
   storeUploadedFile: mocks.storeUploadedFile,
   removeStoredFile: mocks.removeStoredFile,
   StorageUploadError: class StorageUploadError extends Error {},
-}));
-
-vi.mock("@/lib/rate-limit", () => ({
-  applyRateLimit: mocks.applyRateLimit,
 }));
 
 vi.mock("@/lib/queue/queues", () => ({
@@ -166,7 +161,6 @@ describe("Task #2624: slip upload accepts file-like multipart entries", () => {
     mocks.orderSlipUpdate.mockResolvedValue(createdSlip);
     mocks.orderUpdate.mockResolvedValue(verifyingOrder);
     mocks.orderHistoryCreate.mockResolvedValue(undefined);
-    mocks.applyRateLimit.mockResolvedValue({ blocked: null, headers: {} });
     mocks.queueWaitUntilReady.mockResolvedValue(undefined);
     mocks.queueAdd.mockResolvedValue({ id: "order-slip:slip_1" });
     mocks.storeUploadedFile.mockResolvedValue({
@@ -250,7 +244,6 @@ describe("Task #2624: slip upload accepts file-like multipart entries", () => {
     });
     expect(mocks.queueAdd).toHaveBeenCalledTimes(1);
     expect(mocks.storeUploadedFile).toHaveBeenCalledTimes(1);
-    expect(mocks.applyRateLimit).toHaveBeenCalledWith("user_1", "slip");
   });
 
   it("rejects duplicate uploads while the existing slip is still verifying", async () => {

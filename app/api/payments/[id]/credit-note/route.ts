@@ -7,8 +7,6 @@ import {
   renderPaymentDocumentPdf,
   type PaymentDocumentRecord,
 } from "@/lib/payments/documents";
-import { applyRateLimit } from "@/lib/rate-limit";
-
 type Ctx = { params: Promise<{ id: string }> };
 
 // GET /api/payments/:id/credit-note — download refund credit note PDF
@@ -16,10 +14,6 @@ export async function GET(req: NextRequest, ctx: Ctx) {
   try {
     const session = await getSession();
     if (!session?.id) throw new ApiError(401, "กรุณาเข้าสู่ระบบ");
-
-    const rl = await applyRateLimit(session.id, "invoice_pdf");
-    if (rl.blocked) return rl.blocked;
-
     const { id } = await ctx.params;
     const { searchParams } = new URL(req.url);
     const wantsPdf =

@@ -29,17 +29,21 @@ export default function ReconsentModal() {
   const handleAccept = useCallback(async () => {
     setAccepting(true);
     try {
-      await fetch("/api/v1/consent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          consents: [
-            { consentType: "SERVICE", action: "OPT_IN", policyVersion: CURRENT_POLICY_VERSION },
-            { consentType: "THIRD_PARTY", action: "OPT_IN", policyVersion: CURRENT_POLICY_VERSION },
-          ],
-        }),
-      });
+      // Only call API if user is authenticated
+      const authToken = document.cookie.includes("auth-token");
+      if (authToken) {
+        await fetch("/api/v1/consent", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            consents: [
+              { consentType: "SERVICE", action: "OPT_IN", policyVersion: CURRENT_POLICY_VERSION },
+              { consentType: "THIRD_PARTY", action: "OPT_IN", policyVersion: CURRENT_POLICY_VERSION },
+            ],
+          }),
+        });
+      }
     } catch {
       // Still close — consent logged client-side
     }

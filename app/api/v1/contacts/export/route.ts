@@ -2,15 +2,11 @@ import { NextRequest } from "next/server";
 import { authenticateRequest, apiResponse, apiError } from "@/lib/api-auth";
 import { requireApiPermission } from "@/lib/rbac";
 import { exportContacts } from "@/lib/actions/contacts";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { toCsvCell } from "@/lib/csv";
 
 export async function GET(req: NextRequest) {
   try {
     const user = await authenticateRequest(req);
-    const rl = await applyRateLimit(user.id, "api");
-    if (rl.blocked) return rl.blocked;
-
     const denied = await requireApiPermission(user.id, "read", "contact");
     if (denied) return denied;
 

@@ -7,7 +7,6 @@ import {
 } from "@/lib/actions/pdpa";
 import { getSession } from "@/lib/auth";
 import { hasValidCsrfOrigin } from "@/lib/csrf";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/session-utils";
 
 async function requireSession(req: NextRequest) {
@@ -25,9 +24,6 @@ async function requireSession(req: NextRequest) {
 
 async function createDeleteRequest(req: NextRequest) {
   const user = await requireSession(req);
-  const rl = await applyRateLimit(user.id, "api");
-  if (rl.blocked) return rl.blocked;
-
   const result = await submitSelfServiceDataRequest(user.id, user.organizationId, "DELETE");
 
   await createAuditLog({

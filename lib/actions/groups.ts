@@ -6,7 +6,6 @@ import { revalidatePath } from "next/cache";
 import { prisma as db } from "../db";
 import { z } from "zod";
 import { normalizePhone } from "../validations";
-import { checkRateLimitAsync } from "../rate-limit";
 import { resolveActionUserId } from "../action-user";
 
 const createGroupSchema = z.object({
@@ -176,9 +175,6 @@ export async function importContactsToGroup(
   csvData: { name: string; phone: string }[]
 ) {
   userId = await resolveActionUserId(userId);
-  // Rate limit
-  const limit = await checkRateLimitAsync(userId, "import");
-  if (!limit.allowed) throw new Error("นำเข้าบ่อยเกินไป กรุณารอสักครู่");
 
   // Verify group ownership
   const group = await db.contactGroup.findFirst({ where: { id: groupId, userId } });

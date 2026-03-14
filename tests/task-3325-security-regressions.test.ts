@@ -13,9 +13,6 @@ const mocks = vi.hoisted(() => ({
   authenticateRequest: vi.fn(),
   requireApiPermission: vi.fn(),
   exportContacts: vi.fn(),
-  applyRateLimit: vi.fn(),
-  checkRateLimit: vi.fn(),
-  rateLimitResponse: vi.fn(),
 }));
 
 vi.mock("@/lib/api-auth", () => ({
@@ -34,12 +31,6 @@ vi.mock("@/lib/actions/contacts", () => ({
   exportContacts: mocks.exportContacts,
 }));
 
-vi.mock("@/lib/rate-limit", () => ({
-  applyRateLimit: mocks.applyRateLimit,
-  checkRateLimit: mocks.checkRateLimit,
-  rateLimitResponse: mocks.rateLimitResponse,
-}));
-
 describe("Task #3325: CSV + auth + PDPA regressions", () => {
   const originalJwtSecret = process.env.JWT_SECRET;
 
@@ -49,15 +40,6 @@ describe("Task #3325: CSV + auth + PDPA regressions", () => {
 
     mocks.authenticateRequest.mockResolvedValue({ id: "user_3325", role: "USER" });
     mocks.requireApiPermission.mockResolvedValue(null);
-    mocks.applyRateLimit.mockResolvedValue({ blocked: null });
-    mocks.checkRateLimit.mockResolvedValue({ allowed: true, remaining: 59, resetIn: 0 });
-    mocks.rateLimitResponse.mockImplementation(
-      (resetIn: number) =>
-        new Response("Too Many Requests", {
-          status: 429,
-          headers: { "Retry-After": String(resetIn) },
-        }),
-    );
   });
 
   afterEach(() => {
@@ -71,7 +53,7 @@ describe("Task #3325: CSV + auth + PDPA regressions", () => {
     expect(toCsvCell("normal")).toBe("\"normal\"");
   });
 
-  it("rate limits contacts CSV export and neutralizes formula payloads", async () => {
+  it("contacts CSV export neutralizes formula payloads", async () => {
     mocks.exportContacts.mockResolvedValue([
       {
         name: "=cmd|' /C calc'!A0",
@@ -87,7 +69,6 @@ describe("Task #3325: CSV + auth + PDPA regressions", () => {
       new NextRequest("http://localhost/api/v1/contacts/export?format=csv"),
     );
 
-    expect(mocks.applyRateLimit).toHaveBeenCalledWith("user_3325", "api");
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("text/csv");
 
@@ -96,18 +77,6 @@ describe("Task #3325: CSV + auth + PDPA regressions", () => {
     const csv = new TextDecoder().decode(bytes);
     expect(csv).toContain("\"'=cmd|' /C calc'!A0\"");
     expect(csv).toContain("\"'@finance\"");
-  });
-
-  it("returns the rate-limit response before exporting contacts", async () => {
-    const blocked = new Response("Too Many Requests", { status: 429 });
-    mocks.applyRateLimit.mockResolvedValueOnce({ blocked });
-
-    const response = await exportContactsRoute(
-      new NextRequest("http://localhost/api/v1/contacts/export?format=csv"),
-    );
-
-    expect(response.status).toBe(429);
-    expect(mocks.exportContacts).not.toHaveBeenCalled();
   });
 
   it("signs and verifies admin JWTs with jti in the auth layer", async () => {

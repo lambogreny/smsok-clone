@@ -195,8 +195,6 @@ export async function verify2FAChallenge(userId: string, code: string) {
   if (!code || !/^\d{6}$/.test(code)) {
     throw new Error("รหัส 2FA ต้องเป็นตัวเลข 6 หลัก")
   }
-
-  // Rate limit check: 5 attempts / 15 min
   const rateCheck = await check2FARateLimit(userId)
   if (!rateCheck.allowed) {
     const minutes = Math.ceil(rateCheck.retryAfterMs / 60000)
@@ -237,8 +235,6 @@ export async function verify2FAChallenge(userId: string, code: string) {
 
 export async function useRecoveryCode(userId: string, code: string) {
   if (!code) throw new Error("กรุณากรอก Recovery Code")
-
-  // Rate limit check: shares same limit as TOTP verify
   const rateCheck = await check2FARateLimit(userId)
   if (!rateCheck.allowed) {
     const minutes = Math.ceil(rateCheck.retryAfterMs / 60000)

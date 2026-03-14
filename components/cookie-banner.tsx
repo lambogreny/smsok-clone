@@ -33,6 +33,10 @@ function savePreferences(prefs: CookiePreferences) {
 
 async function syncConsentLogging(prefs: CookiePreferences) {
   try {
+    // Skip API call for anonymous users — consent is stored locally only
+    const authToken = document.cookie.includes("auth-token");
+    if (!authToken) return;
+
     const response = await fetch("/api/v1/consent", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

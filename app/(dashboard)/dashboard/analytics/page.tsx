@@ -22,5 +22,16 @@ export default async function AnalyticsPage() {
     return <ErrorState type="SERVER_ERROR" />;
   }
 
-  return <AnalyticsContent stats={{ ...stats, smsRemaining: quota.totalRemaining }} />;
+  return (
+    <AnalyticsContent
+      stats={{
+        ...stats,
+        recentMessages: stats.recentMessages.map((message) => ({
+          ...message,
+          createdAt: message.createdAt.toISOString(),
+        })),
+        smsRemaining: quota.totalRemaining,
+      }}
+    />
+  );
 }

@@ -42,10 +42,6 @@ export async function POST(req: NextRequest) {
   try {
     const user = await authenticateRequest(req);
 
-    const { applyRateLimit } = await import("@/lib/rate-limit");
-    const rl = await applyRateLimit(user.id, "sender_name");
-    if (rl.blocked) return rl.blocked;
-
     let body: unknown;
     try {
       body = await req.json();

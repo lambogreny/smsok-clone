@@ -142,7 +142,7 @@
     },
     "cta": {
       "title": "Ready to Start Sending SMS?",
-      "subtitle": "Sign up free today, get 500 trial SMS — no credit card required"
+      "subtitle": "Sign up free today, get 15 trial SMS — no credit card required"
     }
   },
   "pricing": {
@@ -161,13 +161,13 @@
     "faqTitle": "Frequently Asked Questions",
     "cta": {
       "title": "Ready to Start Sending SMS?",
-      "subtitle": "Sign up free today, get 500 trial SMS — no credit card required"
+      "subtitle": "Sign up free today, get 15 trial SMS — no credit card required"
     },
     "trust": {
       "fast": "Delivery in 1-3 seconds",
       "secure": "Data Security",
       "thai": "Thai Language Support",
-      "free": "500 Free Trial SMS"
+      "free": "15 Free Trial SMS"
     },
     "footer": {
       "vat": "Prices exclude 7% VAT",

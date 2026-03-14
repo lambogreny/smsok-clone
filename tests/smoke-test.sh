@@ -102,25 +102,6 @@ echo "--- Backoffice ---"
 check "Admin login page (auth guard redirect)" "$ADMIN/" "307"
 check "Admin API (no auth = 401)" "$ADMIN/api/admin/customers" "401"
 
-# --- 6. Rate Limiting ---
-echo ""
-echo "--- Rate Limiting ---"
-# Send 6 rapid login attempts — 6th should get 429
-for i in $(seq 1 6); do
-  STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 \
-    -X POST "$BASE/api/auth/login" \
-    -H "Content-Type: application/json" \
-    -d '{"email":"smoke@test.com","password":"wrong"}' 2>/dev/null || echo "000")
-done
-TOTAL=$((TOTAL + 1))
-if [ "$STATUS" = "429" ] || [ "$STATUS" = "403" ]; then
-  green "Rate limit triggers on 6th attempt (HTTP $STATUS)"
-  PASS=$((PASS + 1))
-else
-  red "Rate limit — expected 429 on 6th attempt, got $STATUS"
-  FAIL=$((FAIL + 1))
-fi
-
 # --- Summary ---
 echo ""
 echo "=========================================="

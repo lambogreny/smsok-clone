@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import { apiResponse, apiError } from "@/lib/api-auth";
 import { getSession } from "@/lib/auth";
 import { prisma as db } from "@/lib/db";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 
 const listSchema = z.object({
@@ -17,10 +16,6 @@ export async function GET(req: NextRequest) {
   try {
     const session = await getSession();
     const userId = session?.id ?? "anon";
-
-    const rl = await applyRateLimit(userId, "kb_read");
-    if (rl.blocked) return rl.blocked;
-
     const params = Object.fromEntries(new URL(req.url).searchParams);
     const input = listSchema.parse(params);
 

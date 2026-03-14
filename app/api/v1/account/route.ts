@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import { authenticateRequest, apiResponse, apiError } from "@/lib/api-auth";
 import { getProfile, updateProfile, changePassword } from "@/lib/actions/settings";
 import { clearSession } from "@/lib/auth";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { changePasswordSchema, updateProfileSchema } from "@/lib/validations";
 
 export async function GET(req: NextRequest) {
@@ -21,10 +20,6 @@ export async function PUT(req: NextRequest) {
     const body = await req.json();
 
     if (body.currentPassword) {
-      // Stricter rate limit for password changes
-      const rl = await applyRateLimit(user.id, "password");
-      if (rl.blocked) return rl.blocked;
-
       const input = changePasswordSchema.parse(body);
       const result = await changePassword(user.id, input);
       await clearSession();

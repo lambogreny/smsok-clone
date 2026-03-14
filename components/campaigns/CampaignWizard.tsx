@@ -25,6 +25,7 @@ import {
 import { createCampaign } from "@/lib/actions/campaigns";
 import { useToast } from "@/app/components/ui/Toast";
 import { safeErrorMessage } from "@/lib/error-messages";
+import { getSmsMetrics, UnicodeWarning } from "@/components/sms/SmsCharCounter";
 
 type ContactGroup = { id: string; name: string; count: number };
 type Template = { id: string; name: string; body: string };
@@ -45,13 +46,7 @@ const STEPS: { key: CampaignWizardStep; label: string; icon: React.ReactNode }[]
   { key: "review", label: "ตรวจสอบ", icon: <CheckCircle2 size={16} /> },
 ];
 
-// SMS segment calculation
-function calcSegments(text: string): { chars: number; segments: number; limit: number } {
-  const chars = text.length;
-  if (chars <= 160) return { chars, segments: 1, limit: 160 };
-  if (chars <= 306) return { chars, segments: 2, limit: 306 };
-  return { chars, segments: Math.ceil(chars / 153), limit: Math.ceil(chars / 153) * 153 };
-}
+// SMS segment calculation — uses getSmsMetrics() which detects Thai/UCS-2 encoding correctly
 
 // Template variable tokens
 const VARIABLES = [
@@ -141,7 +136,7 @@ export default function CampaignWizard({
 
   const selectedGroup = groups.find((g) => g.id === draft.targetGroupId);
   const selectedTemplate = templates.find((t) => t.id === draft.templateId);
-  const seg = calcSegments(draft.message);
+  const seg = getSmsMetrics(draft.message);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
@@ -371,14 +366,17 @@ export default function CampaignWizard({
                   className={`${inputCls} resize-none`}
                 />
                 <div className="flex items-center justify-between mt-1.5">
-                  <p className="text-[11px]" style={{ color: seg.chars > 160 ? "var(--warning)" : "var(--text-muted)" }}>
-                    {seg.chars} ตัวอักษร · {seg.segments} segment{seg.segments > 1 ? "s" : ""}
+                  <p className="text-[11px]" style={{ color: seg.hasUnicodeWarning ? "var(--warning)" : "var(--text-muted)" }}>
+                    {seg.charCount} ตัวอักษร · {seg.segments} segment{seg.segments > 1 ? "s" : ""} · {seg.encoding}
                   </p>
                   <p className="text-[11px]" style={{ color: "var(--text-muted)" }}>
-                    limit: {seg.limit}
+                    limit: {seg.isMultipart ? seg.multiLimit : seg.singleLimit}/segment
                   </p>
                 </div>
               </div>
+
+              {/* Unicode encoding warning */}
+              <UnicodeWarning message={draft.message} />
 
               {/* SMS Preview */}
               <div>
@@ -501,12 +499,18 @@ export default function CampaignWizard({
                     : `${manualPhones.split(/[,\n]/).filter((p) => p.trim()).length} เบอร์`,
                 },
                 { label: "เทมเพลต", value: selectedTemplate?.name ?? "ไม่ใช้เทมเพลต" },
-                { label: "ข้อความ", value: `${seg.chars} ตัวอักษร · ${seg.segments} segment(s)` },
+                { label: "ข้อความ", value: `${seg.charCount} ตัวอักษร · ${seg.segments} segment(s) · ${seg.encoding}` },
                 { label: "การส่ง", value: draft.scheduled ? `ตั้งเวลา: ${draft.scheduleDate}` : "ส่งทันที" },
-                {
-                  label: "ค่าใช้จ่ายโดยประมาณ",
-                  value: `${seg.segments * (audienceMode === "group" ? (selectedGroup?.count ?? 0) : manualPhones.split(/[,\n]/).filter((p) => p.trim()).length)} SMS`,
-                },
+                (() => {
+                  const recipients = audienceMode === "group"
+                    ? (selectedGroup?.count ?? 0)
+                    : manualPhones.split(/[,\n]/).filter((p) => p.trim()).length;
+                  const totalSms = seg.segments * recipients;
+                  return {
+                    label: "ค่าใช้จ่ายโดยประมาณ",
+                    value: `${recipients} ผู้รับ × ${seg.segments} segment${seg.segments > 1 ? "s" : ""} = ${totalSms} เครดิต`,
+                  };
+                })(),
               ].map((item) => (
                 <div
                   key={item.label}

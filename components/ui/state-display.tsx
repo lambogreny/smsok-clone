@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface StateDisplayProps {
@@ -128,15 +128,15 @@ export function StateDisplay({
 
       {primaryAction && (
         primaryAction.href ? (
-          <Link href={primaryAction.href}>
-            <Button
-              variant={primaryAction.variant ?? "default"}
-              size={s.button}
-              className="max-md:w-full"
-            >
-              {primaryAction.icon && <primaryAction.icon size={16} data-icon="inline-start" />}
-              {primaryAction.label}
-            </Button>
+          <Link
+            href={primaryAction.href}
+            className={cn(
+              buttonVariants({ variant: primaryAction.variant ?? "default", size: s.button }),
+              "max-md:w-full",
+            )}
+          >
+            {primaryAction.icon && <primaryAction.icon size={16} data-icon="inline-start" />}
+            {primaryAction.label}
           </Link>
         ) : (
           <Button

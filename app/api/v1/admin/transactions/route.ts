@@ -1,7 +1,6 @@
 import { NextRequest } from "next/server";
 import { authenticateRequest, ApiError, apiResponse, apiError } from "@/lib/api-auth";
 import { adminVerifyTransaction, adminGetPendingTransactions } from "@/lib/actions/payments";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { verifyTransactionSchema } from "@/lib/validations";
 
 async function requireAdmin(req: NextRequest) {
@@ -25,10 +24,6 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const admin = await requireAdmin(req);
-
-    const rl = await applyRateLimit(admin.id, "admin");
-    if (rl.blocked) return rl.blocked;
-
     const body = await req.json();
     const input = verifyTransactionSchema.parse(body);
     await adminVerifyTransaction(

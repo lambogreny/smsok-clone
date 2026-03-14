@@ -150,7 +150,7 @@ export default function CeoDashboardPage() {
             key={pill.value}
             type="button"
             onClick={() => setDateRange(pill.value)}
-            className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer border ${
+            className={`px-4 py-1.5 max-md:py-2.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer border ${
               dateRange === pill.value
                 ? "bg-[rgba(var(--accent-rgb),0.08)] border-[rgba(var(--accent-rgb),0.3)] text-[var(--accent)]"
                 : "border-[var(--border-default)] text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
@@ -162,7 +162,7 @@ export default function CeoDashboardPage() {
       </div>
 
       {/* 5 Stat Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 mb-4">
         {/* MRR */}
         <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg p-4">
           <div
@@ -436,34 +436,34 @@ export default function CeoDashboardPage() {
       {/* Top 10 Customers Table */}
       <PageHeader title="Top 10 Customers" />
       <TableWrapper>
-        <div className="grid grid-cols-[48px_1fr_120px_120px_100px_80px] gap-x-4 px-5 py-3 bg-[var(--table-header)] text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">
+        <div className="grid grid-cols-[48px_1fr_120px_120px_100px_80px] max-md:grid-cols-[32px_1fr_90px_70px] gap-x-4 max-md:gap-x-2 px-5 max-md:px-3 py-3 bg-[var(--table-header)] text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">
           <span>#</span>
           <span>บริษัท</span>
           <span className="text-right">MRR</span>
-          <span className="text-right">SMS/เดือน</span>
-          <span>เริ่มใช้</span>
+          <span className="text-right max-md:hidden">SMS/เดือน</span>
+          <span className="max-md:hidden">เริ่มใช้</span>
           <span className="text-right">Growth</span>
         </div>
         {TOP_CUSTOMERS.map((cust, i) => (
           <div
             key={cust.rank}
-            className={`grid grid-cols-[48px_1fr_120px_120px_100px_80px] gap-x-4 items-center px-5 py-3.5 border-b border-[var(--table-border)] hover:bg-[rgba(255,255,255,0.015)] transition-colors ${
+            className={`grid grid-cols-[48px_1fr_120px_120px_100px_80px] max-md:grid-cols-[32px_1fr_90px_70px] gap-x-4 max-md:gap-x-2 items-center px-5 max-md:px-3 py-3.5 border-b border-[var(--table-border)] hover:bg-[rgba(255,255,255,0.015)] transition-colors ${
               i % 2 === 1 ? "bg-[var(--table-alt-row)]" : ""
             }`}
           >
             <span className="text-sm font-semibold text-[var(--text-muted)] tabular-nums">
               {cust.rank}
             </span>
-            <span className="text-sm text-white font-medium">
+            <span className="text-sm text-white font-medium truncate">
               {cust.company}
             </span>
             <span className="text-sm text-white text-right tabular-nums font-mono">
               ฿{cust.mrr.toLocaleString()}
             </span>
-            <span className="text-sm text-[var(--text-secondary)] text-right tabular-nums">
+            <span className="text-sm text-[var(--text-secondary)] text-right tabular-nums max-md:hidden">
               {cust.sms.toLocaleString()}
             </span>
-            <span className="text-xs text-[var(--text-secondary)]">
+            <span className="text-xs text-[var(--text-secondary)] max-md:hidden">
               {cust.since}
             </span>
             <span

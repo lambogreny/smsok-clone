@@ -3,8 +3,6 @@ import { authenticateRequest, ApiError, apiError, apiResponse } from "./api-auth
 import { ERROR_CODES } from "./api-log";
 import { generateOtp_, verifyOtp_ } from "./actions/otp";
 import { InsufficientCreditsError, type InsufficientCreditsResult } from "./quota-errors";
-import { applyRateLimit } from "./rate-limit";
-import { checkOtpRateLimit } from "./otp-rate-limit";
 import { getClientIp } from "./session-utils";
 import { sendOtpSchema, verifyOtpSchema } from "./validations";
 
@@ -71,25 +69,6 @@ export async function handleSendOtp(req: NextRequest, body?: unknown) {
 
     const input = pickSendInput(await resolveRequestBody(req, body));
 
-    // Redis-backed OTP rate limiting: exponential backoff + daily quota + IP limit
-    const limit = await checkOtpRateLimit(input.phone, ip);
-    if (!limit.allowed) {
-      return Response.json(
-        {
-          error: limit.reason,
-          retryAfter: limit.retryAfter,
-          otpExpiresIn: limit.otpExpiresIn,
-          cooldownState: limit.cooldownState,
-        },
-        {
-          status: 429,
-          headers: {
-            "Retry-After": String(limit.retryAfter),
-          },
-        }
-      );
-    }
-
     const result = await generateOtp_(user.id, input.phone, input.purpose, {
       debug: shouldExposeDebugOtp(req),
     }, "API", ip);
@@ -105,7 +84,7 @@ export async function handleSendOtp(req: NextRequest, body?: unknown) {
     return apiResponse({
       ...result,
       retryAfter: 0,
-      otpExpiresIn: limit.otpExpiresIn,
+      otpExpiresIn: 300,
       cooldownState: "cooldown", // just sent — frontend starts countdown
     }, 201);
   } catch (error) {
@@ -116,15 +95,8 @@ export async function handleSendOtp(req: NextRequest, body?: unknown) {
 export async function handleVerifyOtp(req: NextRequest, body?: unknown) {
   try {
     const user = await authenticateRequest(req);
-    const ip = getClientIp(req.headers);
 
     const input = pickVerifyInput(await resolveRequestBody(req, body));
-
-    const ipLimit = await applyRateLimit(`otp-verify:${ip}`, "otp_verify");
-    if (ipLimit.blocked) return ipLimit.blocked;
-
-    const refLimit = await applyRateLimit(`ref:${input.ref}`, "otp_verify");
-    if (refLimit.blocked) return refLimit.blocked;
 
     const result = await verifyOtp_(user.id, input.ref, input.code);
     return apiResponse(result);

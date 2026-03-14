@@ -1,7 +1,6 @@
 import { NextRequest } from "next/server";
 import { ApiError, apiResponse, apiError, authenticateRequest } from "@/lib/api-auth";
 import { prisma as db } from "@/lib/db";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 
 const previewSchema = z.object({
@@ -21,10 +20,6 @@ type Ctx = { params: Promise<{ id: string }> };
 export async function POST(req: NextRequest, ctx: Ctx) {
   try {
     const user = await authenticateRequest(req);
-
-    const rl = await applyRateLimit(user.id, "template");
-    if (rl.blocked) return rl.blocked;
-
     const { id } = await ctx.params;
     const input = previewSchema.parse(await req.json());
 

@@ -54,10 +54,6 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   try {
     const user = await authenticateRequest(req);
 
-    const { applyRateLimit } = await import("@/lib/rate-limit");
-    const rl = await applyRateLimit(user.id, "wht_upload");
-    if (rl.blocked) return rl.blocked;
-
     const { id: invoiceId } = await ctx.params;
 
     const invoice = await db.invoice.findFirst({

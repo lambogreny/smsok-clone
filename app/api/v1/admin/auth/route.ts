@@ -12,10 +12,6 @@ export async function POST(req: NextRequest) {
   try {
     const ip = getClientIp(req.headers);
 
-    const { applyRateLimit } = await import("@/lib/rate-limit");
-    const rl = await applyRateLimit(ip, "admin_login");
-    if (rl.blocked) return rl.blocked;
-
     const body = await req.json();
     const { email, password } = loginSchema.parse(body);
     const result = await loginAdmin(email, password);

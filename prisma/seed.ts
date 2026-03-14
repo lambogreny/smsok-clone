@@ -477,7 +477,7 @@ async function seedPlans() {
 
 async function seedPackageTiers() {
   const tiers = [
-    { tierCode: "TRIAL", name: "Trial", price: 0, smsQuota: 500, bonusPercent: 0, totalSms: 500, senderNameLimit: 1, expiryMonths: 1, isTrial: true, sortOrder: -1 },
+    { tierCode: "TRIAL", name: "Trial", price: 0, smsQuota: 15, bonusPercent: 0, totalSms: 15, senderNameLimit: 1, expiryMonths: 1, isTrial: true, sortOrder: -1 },
     { tierCode: "A", name: "Starter", price: 500, smsQuota: 500, bonusPercent: 0, totalSms: 500, senderNameLimit: 5, expiryMonths: 6, sortOrder: 1 },
     { tierCode: "B", name: "Basic", price: 1000, smsQuota: 1000, bonusPercent: 10, totalSms: 1100, senderNameLimit: 10, expiryMonths: 12, sortOrder: 2 },
     { tierCode: "C", name: "Growth", price: 10000, smsQuota: 10000, bonusPercent: 15, totalSms: 11500, senderNameLimit: 15, expiryMonths: 24, sortOrder: 3 },

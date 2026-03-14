@@ -3,8 +3,9 @@
  * Task #3457 — Tests 5 critical user flows via code inspection + API contract
  *
  * These tests verify that all flow endpoints exist, are properly authenticated,
- * rate-limited, and wired correctly. They use code inspection (readFileSync)
+ * and wired correctly. They use code inspection (readFileSync)
  * since we cannot hit a live DB in CI.
+ * Note: Rate limiting is handled by Cloudflare, not in-app.
  */
 
 import { describe, expect, it } from "vitest";
@@ -22,7 +23,6 @@ describe("Flow 1: Auth lifecycle", () => {
   it("register endpoint validates input with Zod and hashes password", () => {
     const src = read("app/api/auth/register/route.ts");
     expect(src).toContain("POST");
-    expect(src).toContain("applyRateLimit");
     // Delegates to registerWithOtp which handles bcrypt + OTP
     const hasRegister = src.includes("registerWithOtp") || src.includes("bcrypt");
     expect(hasRegister).toBe(true);
@@ -31,7 +31,6 @@ describe("Flow 1: Auth lifecycle", () => {
   it("login endpoint authenticates and sets session cookie", () => {
     const src = read("app/api/auth/login/route.ts");
     expect(src).toContain("POST");
-    expect(src).toContain("applyRateLimit");
     // Must verify password and create session
     const hasAuth = src.includes("bcrypt") || src.includes("verifyPassword") || src.includes("comparePassword") || src.includes("loginUser");
     expect(hasAuth).toBe(true);
@@ -59,10 +58,10 @@ describe("Flow 1: Auth lifecycle", () => {
     expect(hasAuth).toBe(true);
   });
 
-  it("auth routes have rate limiting", () => {
+  it("auth routes require CSRF origin check", () => {
     for (const route of ["register", "login"]) {
       const src = read(`app/api/auth/${route}/route.ts`);
-      expect(src).toContain("applyRateLimit");
+      expect(src).toContain("hasValidCsrfOrigin");
     }
   });
 });
@@ -73,24 +72,15 @@ describe("Flow 2: SMS send lifecycle", () => {
     const src = read("app/api/v1/sms/send/route.ts");
     expect(src).toContain("POST");
     expect(src).toContain("authenticateRequest");
-    expect(src).toContain("applyRateLimit");
     // Must validate phone number
     const hasValidation = src.includes("phone") || src.includes("recipient") || src.includes("normalizePhone");
     expect(hasValidation).toBe(true);
   });
 
-  it("SMS send is rate limited at 10/min", () => {
-    const rl = read("lib/rate-limit.ts");
-    expect(rl).toContain("sms: { windowMs: 60_000, maxRequests: 10 }");
-  });
-
-  it("SMS batch endpoint exists with stricter rate limit", () => {
+  it("SMS batch endpoint exists and requires auth", () => {
     const src = read("app/api/v1/sms/batch/route.ts");
     expect(src).toContain("POST");
     expect(src).toContain("authenticateRequest");
-    expect(src).toContain("applyRateLimit");
-    const rl = read("lib/rate-limit.ts");
-    expect(rl).toContain("batch: { windowMs: 60_000, maxRequests: 5 }");
   });
 
   it("SMS actions check quota before sending", () => {
@@ -121,7 +111,6 @@ describe("Flow 3: Contact CRUD + CSV export", () => {
     const src = read("app/api/v1/contacts/export/route.ts");
     expect(src).toContain('import { toCsvCell } from "@/lib/csv"');
     expect(src).toContain("toCsvCell");
-    expect(src).toContain("applyRateLimit");
     // UTF-8 BOM for Thai
     expect(src).toContain("\\uFEFF");
   });
@@ -219,13 +208,6 @@ describe("Cross-cutting: Health & Security", () => {
     expect(src).toContain("GET");
     const hasChecks = src.includes("redis") || src.includes("database") || src.includes("prisma") || src.includes("db");
     expect(hasChecks).toBe(true);
-  });
-
-  it("all rate limit buckets use Redis (not in-memory)", () => {
-    const src = read("lib/rate-limit.ts");
-    expect(src).toContain("redis");
-    // No in-memory Map for rate limiting
-    expect(src).not.toMatch(/const\s+\w+\s*=\s*new\s+Map\(\)/);
   });
 
   it("middleware protects dashboard routes", () => {

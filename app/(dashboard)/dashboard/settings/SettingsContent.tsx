@@ -40,7 +40,7 @@ type SettingsUser = {
   email: string;
   phone: string | null;
   role: string;
-  createdAt: Date;
+  createdAt: string;
 };
 
 const TABS: { id: Tab; label: string; icon: typeof User }[] = [
@@ -432,7 +432,7 @@ export default function SettingsContent({
     [activeTab],
   );
 
-  const memberSince = formatThaiDateOnly(user.createdAt.toISOString());
+  const memberSince = formatThaiDateOnly(user.createdAt);
 
   async function toggleNotif(id: string, channel: "email" | "sms") {
     // Security email alerts cannot be disabled

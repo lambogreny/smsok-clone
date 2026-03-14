@@ -9,6 +9,12 @@ import { QuotationPdf, type QuotationPdfData } from "./quotation-pdf";
 import { prisma as db } from "@/lib/db";
 import { z } from "zod";
 
+type PdfRenderable = Parameters<typeof renderToBuffer>[0];
+
+async function renderPdfElement(element: ReturnType<typeof createElement>) {
+  return renderToBuffer(element as unknown as PdfRenderable);
+}
+
 const quotationItemSchema = z.object({
   description: z.string(),
   quantity: z.number(),
@@ -55,7 +61,6 @@ export async function generateQuotationPdf(quotationId: string): Promise<Buffer>
   };
 
   const element = createElement(QuotationPdf, { data: pdfData });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const buffer = await renderToBuffer(element as any);
+  const buffer = await renderPdfElement(element);
   return Buffer.from(buffer);
 }

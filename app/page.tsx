@@ -24,7 +24,7 @@ const jsonLd = {
     "@type": "Offer",
     price: "0",
     priceCurrency: "THB",
-    description: "ทดลองฟรี 500 SMS",
+    description: "ทดลองฟรี 15 SMS",
   },
   aggregateRating: {
     "@type": "AggregateRating",

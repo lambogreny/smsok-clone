@@ -1,14 +1,10 @@
 import { NextRequest } from "next/server";
 import { authenticateRequest, apiResponse, apiError, ApiError } from "@/lib/api-auth";
 import { getProfile, updateProfile } from "@/lib/actions/settings";
-import { applyRateLimit } from "@/lib/rate-limit";
-
 // GET /api/v1/settings/profile — get user profile
 export async function GET(req: NextRequest) {
   try {
     const user = await authenticateRequest(req);
-    const rl = await applyRateLimit(user.id, "api");
-    if (rl.blocked) return rl.blocked;
     const profile = await getProfile(user.id);
     return apiResponse(profile);
   } catch (error) {
@@ -20,8 +16,6 @@ export async function GET(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const user = await authenticateRequest(req);
-    const rl = await applyRateLimit(user.id, "api");
-    if (rl.blocked) return rl.blocked;
     let body: unknown;
     try {
       body = await req.json();

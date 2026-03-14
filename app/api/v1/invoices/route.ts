@@ -13,10 +13,6 @@ export async function POST(req: NextRequest) {
   try {
     const user = await authenticateRequest(req);
 
-    const { applyRateLimit } = await import("@/lib/rate-limit");
-    const rl = await applyRateLimit(user.id, "invoice_create");
-    if (rl.blocked) return rl.blocked;
-
     const body = await req.json();
     const input = createInvoiceSchema.parse(body);
 
@@ -71,10 +67,6 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   try {
     const user = await authenticateRequest(req);
-
-    const { applyRateLimit } = await import("@/lib/rate-limit");
-    const rl = await applyRateLimit(user.id, "api");
-    if (rl.blocked) return rl.blocked;
 
     const { searchParams } = req.nextUrl;
     const page = Math.max(1, Number.parseInt(searchParams.get("page") || "1", 10));

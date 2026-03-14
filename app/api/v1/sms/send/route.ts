@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import { authenticateRequest, ApiError, apiResponse, apiError } from "@/lib/api-auth";
 import { requireApiPermission } from "@/lib/rbac";
 import { sendSms } from "@/lib/actions/sms";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { sendSmsApiSchema } from "@/lib/validations";
 import { getRemainingQuota } from "@/lib/package/quota";
 
@@ -12,10 +11,6 @@ export async function POST(req: NextRequest) {
 
     const denied = await requireApiPermission(user.id, "create", "sms");
     if (denied) return denied;
-
-    const rl = await applyRateLimit(user.id, "sms");
-    if (rl.blocked) return rl.blocked;
-
     let body: unknown;
     try {
       body = await req.json();

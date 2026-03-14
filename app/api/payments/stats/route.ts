@@ -1,17 +1,11 @@
 import { ApiError, apiResponse, apiError } from "@/lib/api-auth";
 import { getSession } from "@/lib/auth";
 import { prisma as db } from "@/lib/db";
-import { applyRateLimit } from "@/lib/rate-limit";
-
 // GET /api/payments/stats — user's payment stats for billing page
 export async function GET() {
   try {
     const session = await getSession();
     if (!session?.id) throw new ApiError(401, "กรุณาเข้าสู่ระบบ");
-
-    const rl = await applyRateLimit(session.id, "api");
-    if (rl.blocked) return rl.blocked;
-
     const [totalPaid, invoiceCount, pendingCount, totalPayments] = await Promise.all([
       db.payment.aggregate({
         where: { userId: session.id, status: "COMPLETED" },

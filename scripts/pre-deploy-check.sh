@@ -89,7 +89,6 @@ echo ""
 echo "🔒 Security"
 check "No hardcoded secrets in auth.ts" "! grep -q 'smsok-dev-secret' lib/auth.ts"
 check "Middleware exists" "test -f middleware.ts"
-check "Rate limiter exists" "test -f lib/rate-limit.ts"
 check "Health endpoints exist" "test -f app/api/health/route.ts"
 echo ""
 

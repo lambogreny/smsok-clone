@@ -4,7 +4,6 @@ import { getSession } from "@/lib/auth";
 import { prisma as db } from "@/lib/db";
 import { renderOrderQuotationPdf } from "@/lib/orders/pdf";
 import { renderOrderAccountingDocumentPdf } from "@/lib/orders/pdf";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { orderPdfSelect } from "@/lib/orders/api";
 import { readStoredFile } from "@/lib/storage/service";
 
@@ -33,9 +32,6 @@ export async function buildOrderDocumentDownloadResponse(
     const session = await getSession();
     if (!session?.id) throw new ApiError(401, "กรุณาเข้าสู่ระบบ");
 
-    const rl = await applyRateLimit(session.id, "invoice_pdf");
-    if (rl.blocked) return rl.blocked;
-
     const documentType = TYPE_MAP[params.type as keyof typeof TYPE_MAP];
     if (!documentType) {
       throw new ApiError(404, "ไม่พบประเภทเอกสาร");
@@ -52,7 +48,7 @@ export async function buildOrderDocumentDownloadResponse(
     if (!order) throw new ApiError(404, "ไม่พบคำสั่งซื้อ");
 
     const download = req.nextUrl.searchParams.get("download") === "1";
-    const headers = new Headers(rl.headers);
+    const headers = new Headers();
     headers.set("Content-Type", "application/pdf");
 
     if (documentType === "QUOTATION") {

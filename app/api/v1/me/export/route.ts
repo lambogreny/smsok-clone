@@ -7,7 +7,6 @@ import {
 } from "@/lib/actions/pdpa";
 import { getSession } from "@/lib/auth";
 import { hasValidCsrfOrigin } from "@/lib/csrf";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/session-utils";
 
 async function requireSession(req: NextRequest) {
@@ -36,9 +35,6 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const user = await requireSession(req);
-    const rl = await applyRateLimit(user.id, "api");
-    if (rl.blocked) return rl.blocked;
-
     const result = await submitSelfServiceDataRequest(user.id, user.organizationId, "PORTABILITY");
 
     await createAuditLog({

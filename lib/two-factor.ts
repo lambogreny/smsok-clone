@@ -3,40 +3,21 @@ import * as OTPAuth from "otpauth"
 import QRCode from "qrcode"
 import bcrypt from "bcryptjs"
 import { env } from "./env"
-import { checkCustomRateLimit } from "./rate-limit"
 
 const APP_NAME = "SMSOK"
 const RECOVERY_CODE_COUNT = 10
 const RECOVERY_CODE_LENGTH = 8 // 8 hex chars = 4 bytes
 
-// ── Rate Limiting (Redis-backed) ────────────────────────
-// 5 attempts per 15 minutes per userId
-
-const RATE_LIMIT_MAX = 5
-const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000 // 15 min
+// ── Rate Limiting — removed (handled by Cloudflare) ────────────────────────
 
 export async function check2FARateLimit(
-  userId: string,
+  _userId: string,
 ): Promise<{ allowed: boolean; remaining: number; retryAfterMs: number }> {
-  const result = await checkCustomRateLimit(`2fa:${userId}`, {
-    windowMs: RATE_LIMIT_WINDOW_MS,
-    maxRequests: RATE_LIMIT_MAX,
-  })
-
-  return {
-    allowed: result.allowed,
-    remaining: result.remaining,
-    retryAfterMs: result.allowed ? 0 : result.resetIn,
-  }
+  return { allowed: true, remaining: Number.MAX_SAFE_INTEGER, retryAfterMs: 0 }
 }
 
-export async function reset2FARateLimit(userId: string): Promise<void> {
-  try {
-    const { redis } = await import("./redis")
-    await redis.del(`rl:2fa:${userId}`)
-  } catch {
-    // Best effort — failure to clear the window should not break auth flows.
-  }
+export async function reset2FARateLimit(_userId: string): Promise<void> {
+  // No-op — rate limiting handled by Cloudflare
 }
 
 // ── Encryption (AES-256-GCM) ────────────────────────────

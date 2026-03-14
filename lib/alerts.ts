@@ -50,13 +50,13 @@ export function triggerAlert(type: AlertType, details?: Record<string, unknown>)
         logger.warn(`ALERT: ${rule.message}`, { alert: type, ...details });
         break;
       case "slack":
-        // TODO: Slack webhook integration
+        logger.debug("alert channel not configured", { channel, alert: type });
         break;
       case "line_notify":
-        // TODO: LINE Notify integration
+        logger.debug("alert channel not configured", { channel, alert: type });
         break;
       case "email":
-        // TODO: Email alert via Resend
+        logger.debug("alert channel not configured", { channel, alert: type });
         break;
     }
   }

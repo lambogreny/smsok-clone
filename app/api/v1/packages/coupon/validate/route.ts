@@ -17,10 +17,6 @@ export async function POST(req: NextRequest) {
     const session = await getSession();
     if (!session?.id) throw new ApiError(401, "กรุณาเข้าสู่ระบบ");
 
-    const { applyRateLimit } = await import("@/lib/rate-limit");
-    const rl = await applyRateLimit(session.id, "coupon_validate");
-    if (rl.blocked) return rl.blocked;
-
     const body = await req.json();
     const { code, tierId } = validateCouponSchema.parse(body);
 

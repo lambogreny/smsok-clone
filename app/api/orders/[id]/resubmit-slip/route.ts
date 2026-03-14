@@ -4,7 +4,6 @@ import { getSession } from "@/lib/auth";
 import { prisma as db } from "@/lib/db";
 import { orderSummarySelect } from "@/lib/orders/api";
 import { MAX_SLIP_ATTEMPTS } from "@/lib/orders/rejected-slip";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { createOrderHistory, serializeOrderV2 } from "@/lib/orders/service";
 
 type RouteContext = {
@@ -15,10 +14,6 @@ export async function POST(_req: Request, ctx: RouteContext) {
   try {
     const session = await getSession();
     if (!session?.id) throw new ApiError(401, "กรุณาเข้าสู่ระบบ");
-
-    const rl = await applyRateLimit(session.id, "slip");
-    if (rl.blocked) return rl.blocked;
-
     const { id } = await ctx.params;
     const order = await db.order.findFirst({
       where: { id, userId: session.id },

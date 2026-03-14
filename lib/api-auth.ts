@@ -3,7 +3,6 @@ import { NextRequest } from "next/server";
 import { startApiLog, setApiLogUser, setApiLogApiKey, finishApiLog, ERROR_CODES } from "./api-log";
 import { hashApiKey } from "./crypto-utils";
 import { InsufficientCreditsError } from "./quota-errors";
-import { checkCustomRateLimit } from "./rate-limit";
 import { trustActionUserId } from "./action-user";
 import { hasValidCsrfOrigin } from "./csrf";
 import { getClientIp } from "./session-utils";
@@ -108,18 +107,6 @@ export async function authenticateApiKey(req: NextRequest) {
       403,
       "API Key ไม่มีสิทธิ์เข้าถึง",
       ERROR_CODES.FORBIDDEN,
-    );
-  }
-
-  const rateLimit = await checkCustomRateLimit(`api-key:${apiKey.id}`, {
-    windowMs: 60_000,
-    maxRequests: apiKey.rateLimit,
-  });
-  if (!rateLimit.allowed) {
-    throw new ApiError(
-      429,
-      `API Key ใช้งานเกิน rate limit กรุณารอ ${Math.ceil(rateLimit.resetIn / 1000)} วินาที`,
-      ERROR_CODES.RATE_LIMIT,
     );
   }
 

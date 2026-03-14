@@ -7,16 +7,17 @@ export async function GET(req: NextRequest) {
   try {
     const user = await authenticateRequestUser(req);
 
-    const [userData, recentMessages, recentPackagePurchases] = await Promise.all([
+    const recentMessages = await prisma.message.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      select: { id: true, recipient: true, status: true, createdAt: true, content: true },
+    });
+
+    const [userDataResult, recentPackagePurchasesResult] = await Promise.allSettled([
       prisma.user.findUnique({
         where: { id: user.id },
         select: { notificationsReadAt: true },
-      }),
-      prisma.message.findMany({
-        where: { userId: user.id },
-        orderBy: { createdAt: "desc" },
-        take: 5,
-        select: { id: true, recipient: true, status: true, createdAt: true, content: true },
       }),
       prisma.payment.findMany({
         where: { userId: user.id, status: "COMPLETED" },
@@ -35,7 +36,14 @@ export async function GET(req: NextRequest) {
       }),
     ]);
 
-    const readAt = userData?.notificationsReadAt ?? null;
+    const readAt =
+      userDataResult.status === "fulfilled"
+        ? userDataResult.value?.notificationsReadAt ?? null
+        : null;
+    const recentPackagePurchases =
+      recentPackagePurchasesResult.status === "fulfilled"
+        ? recentPackagePurchasesResult.value
+        : [];
 
     const items = [
       ...recentMessages.map((m) => ({

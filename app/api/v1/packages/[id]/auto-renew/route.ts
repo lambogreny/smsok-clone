@@ -19,10 +19,6 @@ export async function POST(
 
     const { id } = await params;
 
-    const { applyRateLimit } = await import("@/lib/rate-limit");
-    const rl = await applyRateLimit(session.id, "purchase");
-    if (rl.blocked) return rl.blocked;
-
     let body: unknown;
     try {
       body = await req.json();

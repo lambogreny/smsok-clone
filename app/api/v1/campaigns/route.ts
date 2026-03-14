@@ -3,7 +3,6 @@ import { apiError, apiResponse } from "@/lib/api-auth";
 import { authenticateRequest } from "@/lib/api-auth";
 import { requireApiPermission } from "@/lib/rbac";
 import { createCampaign, getCampaigns } from "@/lib/actions/campaigns";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { createCampaignSchema } from "@/lib/validations";
 
 function normalizeCampaignPayload(body: unknown) {
@@ -46,10 +45,6 @@ export async function POST(req: NextRequest) {
 
     const denied = await requireApiPermission(user.id, "create", "campaign");
     if (denied) return denied;
-
-    const rl = await applyRateLimit(user.id, "batch");
-    if (rl.blocked) return rl.blocked;
-
     const body = normalizeCampaignPayload(await req.json());
     const input = createCampaignSchema.parse(body);
     const campaign = await createCampaign(user.id, input);

@@ -17,10 +17,25 @@ const consentRequestSchema = z.object({
     .min(1, "กรุณาระบุ consents array"),
 });
 
+async function getOptionalUser(req: NextRequest) {
+  try {
+    return await authenticateRequest(req);
+  } catch (error) {
+    if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+      return null;
+    }
+    throw error;
+  }
+}
+
 // GET /api/v1/consent — get current user's consent status
 export async function GET(req: NextRequest) {
   try {
-    const user = await authenticateRequest(req);
+    const user = await getOptionalUser(req);
+    if (!user) {
+      return apiResponse({ consents: [] });
+    }
+
     const status = await getUserConsentStatus(user.id);
     return apiResponse({ consents: status });
   } catch (error) {
@@ -31,7 +46,7 @@ export async function GET(req: NextRequest) {
 // POST /api/v1/consent — log consent (registration or update)
 export async function POST(req: NextRequest) {
   try {
-    const user = await authenticateRequest(req);
+    const user = await getOptionalUser(req);
 
     let body: unknown;
     try {
@@ -41,6 +56,10 @@ export async function POST(req: NextRequest) {
     }
 
     const input = consentRequestSchema.parse(body);
+
+    if (!user) {
+      return apiResponse({ accepted: true, persisted: false }, 202);
+    }
 
     const ip = getClientIp(req.headers);
     const ua = req.headers.get("user-agent") ?? undefined;

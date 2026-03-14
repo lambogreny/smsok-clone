@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import { ApiError, apiResponse, apiError } from "@/lib/api-auth";
 import { getSession } from "@/lib/auth";
 import { prisma as db } from "@/lib/db";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 
 const replySchema = z.object({
@@ -16,10 +15,6 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   try {
     const session = await getSession();
     if (!session?.id) throw new ApiError(401, "กรุณาเข้าสู่ระบบ");
-
-    const rl = await applyRateLimit(session.id, "ticket_reply");
-    if (rl.blocked) return rl.blocked;
-
     const { id } = await ctx.params;
     const input = replySchema.parse(await req.json());
 

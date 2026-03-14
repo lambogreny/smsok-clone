@@ -30,10 +30,6 @@ export async function GET() {
     const session = await getSession();
     if (!session?.id) throw new ApiError(401, "กรุณาเข้าสู่ระบบ");
 
-    const { applyRateLimit } = await import("@/lib/rate-limit");
-    const rl = await applyRateLimit(session.id, "tax_profile");
-    if (rl.blocked) return rl.blocked;
-
     // Read from new taxProfile table first (written by order creation)
     const newProfile = await db.taxProfile.findFirst({
       where: { userId: session.id, isDefault: true },
@@ -95,10 +91,6 @@ export async function PUT(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session?.id) throw new ApiError(401, "กรุณาเข้าสู่ระบบ");
-
-    const { applyRateLimit } = await import("@/lib/rate-limit");
-    const rl = await applyRateLimit(session.id, "tax_profile");
-    if (rl.blocked) return rl.blocked;
 
     const body = await req.json();
     const input = taxProfileSchema.parse(body);

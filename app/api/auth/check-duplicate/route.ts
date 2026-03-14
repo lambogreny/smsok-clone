@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { apiError, apiResponse, ApiError } from "@/lib/api-auth";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/session-utils";
 import { normalizePhone } from "@/lib/validations";
 
@@ -21,8 +20,6 @@ async function waitForMinimumResponseTime(startedAt: number) {
 
 export async function GET(req: NextRequest) {
   const ip = getClientIp(req.headers);
-  const rl = await applyRateLimit(ip, "auth_check_duplicate");
-  if (rl.blocked) return rl.blocked;
   const startedAt = Date.now();
 
   try {

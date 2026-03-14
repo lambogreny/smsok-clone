@@ -2,16 +2,12 @@ import { NextRequest } from "next/server";
 import { apiResponse, apiError, ApiError, authenticateRequest } from "@/lib/api-auth";
 import { assignRole, unassignRole, getUserEffectivePermissions } from "@/lib/actions/rbac";
 import { resolveOrganizationIdForUser } from "@/lib/organizations/resolve";
-import { applyRateLimit } from "@/lib/rate-limit";
-
 type Params = { params: Promise<{ id: string; memberId: string }> };
 
 // GET /api/v1/organizations/:id/members/:memberId/roles — get effective permissions
 export async function GET(req: NextRequest, { params }: Params) {
   try {
     const user = await authenticateRequest(req);
-    const rl = await applyRateLimit(user.id, "api");
-    if (rl.blocked) return rl.blocked;
     const { id, memberId } = await params;
     const organizationId = await resolveOrganizationIdForUser(user.id, id);
     const result = await getUserEffectivePermissions(user.id, organizationId, memberId);
@@ -25,8 +21,6 @@ export async function GET(req: NextRequest, { params }: Params) {
 export async function POST(req: NextRequest, { params }: Params) {
   try {
     const user = await authenticateRequest(req);
-    const rl = await applyRateLimit(user.id, "api");
-    if (rl.blocked) return rl.blocked;
     const { id, memberId } = await params;
     const organizationId = await resolveOrganizationIdForUser(user.id, id);
     let body: unknown;
@@ -46,8 +40,6 @@ export async function POST(req: NextRequest, { params }: Params) {
 export async function DELETE(req: NextRequest, { params }: Params) {
   try {
     const user = await authenticateRequest(req);
-    const rl = await applyRateLimit(user.id, "api");
-    if (rl.blocked) return rl.blocked;
     const { id, memberId } = await params;
     const organizationId = await resolveOrganizationIdForUser(user.id, id);
     const { searchParams } = new URL(req.url);

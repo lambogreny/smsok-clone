@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import { ApiError, apiError, apiResponse } from "@/lib/api-auth";
 import { getSession } from "@/lib/auth";
 import { prisma as db } from "@/lib/db";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 
 const taxProfileSchema = z
@@ -40,10 +39,6 @@ export async function GET() {
   try {
     const session = await getSession();
     if (!session?.id) throw new ApiError(401, "กรุณาเข้าสู่ระบบ");
-
-    const rl = await applyRateLimit(session.id, "tax_profile");
-    if (rl.blocked) return rl.blocked;
-
     const organizationIds = await getAccessibleOrgIds(session.id);
 
     let profiles = await db.taxProfile.findMany({
@@ -127,10 +122,6 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session?.id) throw new ApiError(401, "กรุณาเข้าสู่ระบบ");
-
-    const rl = await applyRateLimit(session.id, "tax_profile");
-    if (rl.blocked) return rl.blocked;
-
     const input = taxProfileSchema.parse(await req.json());
     const organizationIds = await getAccessibleOrgIds(session.id);
     const resolvedOrganizationId =

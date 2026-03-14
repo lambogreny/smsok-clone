@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import { authenticateRequest, apiError, ApiError } from "@/lib/api-auth";
 import { startApiLog, finishApiLog } from "@/lib/api-log";
 import { prisma } from "@/lib/db";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { toCsvCell } from "@/lib/csv";
 
 const MAX_EXPORT_ROWS = 10000;
@@ -11,8 +10,6 @@ const MAX_EXPORT_ROWS = 10000;
 export async function GET(req: NextRequest) {
   try {
     const user = await authenticateRequest(req);
-    const rl = await applyRateLimit(user.id, "api");
-    if (rl.blocked) return rl.blocked;
     const { searchParams } = new URL(req.url);
 
     const format = searchParams.get("format") || "csv";

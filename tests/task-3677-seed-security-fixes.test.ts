@@ -24,7 +24,7 @@ describe("Task #3677: seed security fixes", () => {
     expect(qaSeedSource).toContain('const QA_PACKAGE_TIER_CODE = "QA_TRIAL_DEV";');
     expect(qaSeedSource).toContain("await tx.organization.create({");
     expect(qaSeedSource).toContain("createQaOrganizationSlug(");
-    expect(qaSeedSource).toContain("await tx.packageTier.findUnique({");
+    expect(qaSeedSource).toContain("tx.packageTier.upsert({");
     expect(qaSeedSource).not.toContain('where: { tierCode: "TRIAL" }');
     expect(qaSeedSource).not.toContain("await tx.organization.upsert({");
   });

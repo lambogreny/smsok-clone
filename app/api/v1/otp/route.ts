@@ -9,7 +9,6 @@ import { sendOtpSchema, verifyOtpSchema } from "@/lib/validations";
 export async function POST(req: NextRequest) {
   try {
     const ip = getClientIp(req.headers);
-    const { applyRateLimit } = await import("@/lib/rate-limit");
 
     let body: Record<string, unknown>;
     try {
@@ -19,16 +18,12 @@ export async function POST(req: NextRequest) {
     }
 
     if (isVerifyOtpRequest(body)) {
-      const rlVerify = await applyRateLimit(ip, "otp_verify");
-      if (rlVerify.blocked) return rlVerify.blocked;
       verifyOtpSchema.parse({
         ref: body.ref ?? body.refCode,
         code: body.code ?? body.otpCode,
       });
       return handleVerifyOtp(req, body);
     }
-    const rlSend = await applyRateLimit(ip, "otp_send");
-    if (rlSend.blocked) return rlSend.blocked;
     sendOtpSchema.parse({
       phone: body.phone ?? body.phoneNumber ?? body.to,
       purpose: body.purpose ?? "verify",

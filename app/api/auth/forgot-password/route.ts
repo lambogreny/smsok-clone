@@ -3,7 +3,6 @@ import { ApiError, apiError, apiResponse } from "@/lib/api-auth";
 import { ERROR_CODES } from "@/lib/api-log";
 import { forgotPassword } from "@/lib/actions/auth";
 import { forgotPasswordSchema } from "@/lib/validations";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/session-utils";
 import { hasValidCsrfOrigin } from "@/lib/csrf";
 
@@ -15,9 +14,6 @@ export async function POST(req: NextRequest) {
   }
 
   const ip = getClientIp(req.headers);
-  const rl = await applyRateLimit(ip, "password");
-  if (rl.blocked) return rl.blocked;
-
   try {
     const body = await req.json().catch(() => ({}));
     const parsed = forgotPasswordSchema.safeParse(body);

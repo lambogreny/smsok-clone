@@ -4,7 +4,6 @@ import { requireApiPermission } from "@/lib/rbac";
 import { createTemplate } from "@/lib/actions/templates";
 import { prisma as db } from "@/lib/db";
 import { templateSchema } from "@/lib/validations";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 
 const listSchema = z.object({
@@ -20,10 +19,6 @@ export async function GET(req: NextRequest) {
 
     const denied = await requireApiPermission(user.id, "read", "template");
     if (denied) return denied;
-
-    const rl = await applyRateLimit(user.id, "template");
-    if (rl.blocked) return rl.blocked;
-
     const params = Object.fromEntries(new URL(req.url).searchParams);
     const input = listSchema.parse(params);
 
@@ -76,10 +71,6 @@ export async function POST(req: NextRequest) {
 
     const denied = await requireApiPermission(user.id, "create", "template");
     if (denied) return denied;
-
-    const rl = await applyRateLimit(user.id, "template");
-    if (rl.blocked) return rl.blocked;
-
     const body = await req.json();
     const input = templateSchema.parse(body);
     const template = await createTemplate(user.id, input);

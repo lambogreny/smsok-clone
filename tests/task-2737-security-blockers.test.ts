@@ -34,8 +34,7 @@ const twoFactorRecoveryRouteSource = readFileSync(
 );
 
 describe("Task #2737: security blockers", () => {
-  it("rate limits slip uploads and validates WHT uploads", () => {
-    expect(slipRouteSource).toContain('applyRateLimit(session.id, "slip")');
+  it("validates WHT uploads (file type and size checks)", () => {
     expect(slipRouteSource).toContain('รองรับเฉพาะไฟล์ใบหัก ณ ที่จ่ายแบบ JPEG หรือ PNG');
     expect(slipRouteSource).toContain('ไฟล์ใบหัก ณ ที่จ่ายต้องไม่เกิน 5MB');
   });
@@ -62,7 +61,7 @@ describe("Task #2737: security blockers", () => {
     expect(withdrawConsentRouteSource).not.toContain("consentType as any");
   });
 
-  it("moves auth throttles to Redis-backed applyRateLimit", () => {
+  it("auth routes guard mutations with CSRF origin check", () => {
     for (const source of [
       loginRouteSource,
       registerRouteSource,
@@ -71,8 +70,7 @@ describe("Task #2737: security blockers", () => {
       twoFactorVerifyRouteSource,
       twoFactorRecoveryRouteSource,
     ]) {
-      expect(source).toContain("applyRateLimit(");
-      expect(source).not.toContain("checkRateLimit(");
+      expect(source).toContain("hasValidCsrfOrigin");
     }
   });
 });

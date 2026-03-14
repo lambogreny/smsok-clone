@@ -91,7 +91,7 @@ export default function LoginPage() {
 
       <div className="w-full max-w-[420px]">
         <Card className="bg-[var(--bg-surface)] border-[var(--border-subtle)] rounded-lg shadow-none">
-          <CardHeader className="text-center pb-0 pt-8 px-8">
+          <CardHeader className="text-center pb-0 pt-8 px-5 sm:px-8">
             {/* Logo */}
             <Link href="/" className="inline-flex items-center gap-2 justify-center mb-4">
               <div className="w-7 h-7 rounded-lg bg-[var(--accent)] flex items-center justify-center">
@@ -103,7 +103,7 @@ export default function LoginPage() {
             <p className="text-sm text-[var(--text-muted)] mt-1">ลงชื่อเข้าใช้งานบัญชีของคุณ</p>
           </CardHeader>
 
-          <CardContent className="px-8 pt-6 pb-2">
+          <CardContent className="px-5 sm:px-8 pt-6 pb-2">
             {rateLimitSeconds && rateLimitSeconds > 0 && (
               <div className="mb-4">
                 <RateLimitCountdown seconds={rateLimitSeconds} onExpire={() => setRateLimitSeconds(null)} />

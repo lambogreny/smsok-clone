@@ -3,7 +3,6 @@ import { ApiError, apiError } from "@/lib/api-auth";
 import { getSession } from "@/lib/auth";
 import { prisma as db } from "@/lib/db";
 import { renderOrderAccountingDocumentPdf } from "@/lib/orders/pdf";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { orderPdfSelect } from "@/lib/orders/api";
 import { readStoredFile } from "@/lib/storage/service";
 
@@ -22,10 +21,6 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
   try {
     const session = await getSession();
     if (!session?.id) throw new ApiError(401, "กรุณาเข้าสู่ระบบ");
-
-    const rl = await applyRateLimit(session.id, "invoice_pdf");
-    if (rl.blocked) return rl.blocked;
-
     const { id, docId } = await ctx.params;
     const document = await db.orderDocument.findFirst({
       where: {
@@ -53,7 +48,6 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
 
       return new Response(new Uint8Array(file.body), {
         headers: {
-          ...rl.headers,
           "Content-Type": "application/pdf",
           "Content-Disposition": `${download ? "attachment" : "inline"}; filename="${document.documentNumber}.pdf"`,
           "Content-Length": String(file.contentLength),
@@ -70,7 +64,6 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
 
     return new Response(new Uint8Array(pdfBuffer), {
       headers: {
-        ...rl.headers,
         "Content-Type": "application/pdf",
         "Content-Disposition": `${download ? "attachment" : "inline"}; filename="${document.documentNumber}.pdf"`,
         "Content-Length": String(pdfBuffer.length),

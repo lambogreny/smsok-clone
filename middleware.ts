@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
-import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { ACCESS_COOKIE_NAME, REFRESH_COOKIE_NAME, verifySessionJwt } from "@/lib/session-jwt";
 import { getAllowedOrigins, hasValidCsrfOrigin } from "@/lib/csrf";
 const PUBLIC_API_ANON_PATHS = new Set([
@@ -39,7 +38,7 @@ function applyApiHeaders(response: NextResponse, origin: string | null) {
   response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-API-Key");
   response.headers.set("Access-Control-Max-Age", "86400");
   response.headers.set("Vary", "Origin, Authorization, X-API-Key");
-  response.headers.set("Access-Control-Expose-Headers", "X-Request-Id, X-RateLimit-Limit, X-RateLimit-Remaining, Retry-After");
+  response.headers.set("Access-Control-Expose-Headers", "X-Request-Id");
 }
 
 function shouldVerifySession(pathname: string, hasApiKeyAuth: boolean) {
@@ -202,28 +201,6 @@ export async function middleware(req: NextRequest) {
       }
     }
 
-    // Rate limit write operations only (GET/HEAD pass freely)
-    if (req.method !== "GET" && req.method !== "HEAD") {
-      const forwardedFor = req.headers.get("x-forwarded-for");
-      const ip = forwardedFor
-        ?.split(",")
-        .map((value) => value.trim())
-        .filter(Boolean)
-        .at(-1)
-        || req.headers.get("x-real-ip")
-        || req.headers.get("cf-connecting-ip")
-        || req.headers.get("fly-client-ip")
-        || req.headers.get("true-client-ip")
-        || "unknown";
-
-      const result = await checkRateLimit(ip, "api");
-      if (!result.allowed) {
-        return rateLimitResponse(result.resetIn);
-      }
-
-      response.headers.set("X-RateLimit-Limit", "60");
-      response.headers.set("X-RateLimit-Remaining", String(result.remaining));
-    }
   }
 
   // --- CSRF protection for browser-facing auth API routes ---
@@ -238,28 +215,6 @@ export async function middleware(req: NextRequest) {
         { error: "CSRF: invalid origin" },
         { status: 403, headers: response.headers }
       );
-    }
-  }
-
-  // --- Auth rate limiting for login/register pages ---
-  if (pathname === "/login" || pathname === "/register") {
-    if (req.method === "POST") {
-      const forwardedFor = req.headers.get("x-forwarded-for");
-      const ip = forwardedFor
-        ?.split(",")
-        .map((value) => value.trim())
-        .filter(Boolean)
-        .at(-1)
-        || req.headers.get("x-real-ip")
-        || req.headers.get("cf-connecting-ip")
-        || req.headers.get("fly-client-ip")
-        || req.headers.get("true-client-ip")
-        || "unknown";
-
-      const result = await checkRateLimit(ip, "auth");
-      if (!result.allowed) {
-        return rateLimitResponse(result.resetIn);
-      }
     }
   }
 

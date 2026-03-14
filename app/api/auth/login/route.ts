@@ -4,7 +4,6 @@ import { verifyPassword, setSession } from "@/lib/auth";
 import { ApiError, apiError, apiResponse } from "@/lib/api-auth";
 import { loginSchema } from "@/lib/validations";
 import { ERROR_CODES, startApiLog, setApiLogUser } from "@/lib/api-log";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/session-utils";
 import jwt from "jsonwebtoken";
 import { env } from "@/lib/env";
@@ -20,12 +19,7 @@ export async function POST(req: NextRequest) {
   if (!hasValidCsrfOrigin(req)) {
     return apiError(new ApiError(403, "คำขอไม่ถูกต้อง กรุณาลองใหม่", ERROR_CODES.FORBIDDEN));
   }
-
-  // Rate limit BEFORE any auth logic — prevents brute-force
   const ip = getClientIp(req.headers);
-  const rl = await applyRateLimit(ip, "auth_login");
-  if (rl.blocked) return rl.blocked;
-
   try {
     let body: unknown;
     try {

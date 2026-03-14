@@ -3,8 +3,6 @@ import { ApiError, apiResponse, apiError } from "@/lib/api-auth";
 import { authenticateAdmin } from "@/lib/admin-auth";
 import { prisma as db } from "@/lib/db";
 import { approveSenderNameSchema } from "@/lib/validations";
-import { applyRateLimit } from "@/lib/rate-limit";
-
 // GET /api/v1/admin/senders — list pending sender names
 export async function GET(req: NextRequest) {
   try {
@@ -28,10 +26,6 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const admin = await authenticateAdmin(req, ["SUPER_ADMIN", "OPERATIONS"]);
-
-    const rl = await applyRateLimit(admin.id, "admin");
-    if (rl.blocked) return rl.blocked;
-
     const body = await req.json();
     const input = approveSenderNameSchema.parse(body);
 

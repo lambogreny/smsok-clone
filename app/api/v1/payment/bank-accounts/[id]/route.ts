@@ -21,10 +21,6 @@ export async function PUT(
     const session = await getSession();
     if (!session?.id) throw new ApiError(401, "กรุณาเข้าสู่ระบบ");
 
-    const { applyRateLimit } = await import("@/lib/rate-limit");
-    const rl = await applyRateLimit(session.id, "purchase");
-    if (rl.blocked) return rl.blocked;
-
     const { id } = await params;
 
     let body: unknown;
@@ -80,10 +76,6 @@ export async function DELETE(
   try {
     const session = await getSession();
     if (!session?.id) throw new ApiError(401, "กรุณาเข้าสู่ระบบ");
-
-    const { applyRateLimit } = await import("@/lib/rate-limit");
-    const rl = await applyRateLimit(session.id, "purchase");
-    if (rl.blocked) return rl.blocked;
 
     const { id } = await params;
 

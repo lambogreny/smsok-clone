@@ -94,11 +94,11 @@ function getPendingReviewDescription(order: Order) {
     note.includes("API key not configured") ||
     note.includes("EasySlip unavailable")
   ) {
-    return "ระบบตรวจสอบอัตโนมัติไม่พร้อม กรุณารอเจ้าหน้าที่ตรวจสลิป";
+    return "ระบบตรวจสอบอัตโนมัติไม่พร้อม กรุณารอเจ้าหน้าที่ตรวจสลิป (โดยปกติใช้เวลาไม่เกิน 30 นาที)";
   }
 
   if (note.includes("amount mismatch")) {
-    return "ยอดในสลิปไม่ตรง ระบบส่งให้เจ้าหน้าที่ตรวจต่อ";
+    return "ยอดในสลิปไม่ตรง ระบบส่งให้เจ้าหน้าที่ตรวจต่อ (โดยปกติใช้เวลาไม่เกิน 30 นาที)";
   }
 
   return "เรากำลังตรวจสอบหลักฐานการชำระเงิน โดยปกติใช้เวลาไม่เกิน 30 นาที";
@@ -453,7 +453,7 @@ function RejectReasonCard({ order }: { order: Order }) {
           )}
           <p className="text-[13px] text-[var(--text-secondary)]">
             {maxedOut
-              ? "ครบจำนวนครั้งแล้ว กรุณาติดต่อ Support"
+              ? "ครบจำนวนครั้งแล้ว กรุณาติดต่อ Support ทาง LINE @smsok หรืออีเมล support@smsok.com"
               : config?.action ?? "กรุณาตรวจสอบข้อมูลและแนบสลิปใหม่"}
           </p>
         </div>
@@ -673,6 +673,7 @@ function ItemizedTable({ order }: { order: Order }) {
           รายการ
         </h3>
       </div>
+      <div className="overflow-x-auto">
       <table className="w-full text-[13px]">
         <thead>
           <tr style={{ background: "var(--bg-base)" }}>
@@ -753,6 +754,7 @@ function ItemizedTable({ order }: { order: Order }) {
           )}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }
@@ -1915,13 +1917,13 @@ export default function OrderDetailPage() {
     if (!order) return;
     const currentOrder = order;
     try {
-      const res = await fetch(`/api/orders/${currentOrder.id}/status`, {
-        method: "PATCH",
+      const res = await fetch(`/api/v1/orders/${currentOrder.id}/cancel`, {
+        method: "POST",
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ status: "cancelled" }),
+        body: JSON.stringify({ reason: "Customer cancelled order" }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));

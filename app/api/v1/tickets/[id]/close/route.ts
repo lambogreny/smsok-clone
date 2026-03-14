@@ -2,8 +2,6 @@ import { NextRequest } from "next/server";
 import { ApiError, apiResponse, apiError } from "@/lib/api-auth";
 import { getSession } from "@/lib/auth";
 import { prisma as db } from "@/lib/db";
-import { applyRateLimit } from "@/lib/rate-limit";
-
 type Ctx = { params: Promise<{ id: string }> };
 
 // PUT /api/v1/tickets/:id/close — customer closes ticket
@@ -11,10 +9,6 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
   try {
     const session = await getSession();
     if (!session?.id) throw new ApiError(401, "กรุณาเข้าสู่ระบบ");
-
-    const rl = await applyRateLimit(session.id, "ticket_reply");
-    if (rl.blocked) return rl.blocked;
-
     const { id } = await ctx.params;
 
     const ticket = await db.supportTicket.findUnique({

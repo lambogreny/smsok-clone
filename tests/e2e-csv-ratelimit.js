@@ -102,95 +102,7 @@ function testCsvSanitization() {
   } catch { fail('CSV: Audit logs export', 'File not found'); }
 }
 
-// ─── PART 2: Rate Limit Verification ─────────────────────────────────────
-function testRateLimits() {
-  console.log('\n=== PART 2: Rate Limit Configuration ===\n');
-
-  const rlSrc = readFileSync(path.join(ROOT, 'lib/rate-limit.ts'), 'utf8');
-
-  // 2FA dedicated bucket
-  if (rlSrc.includes('auth_2fa: { windowMs: 5 * 60_000, maxRequests: 5 }')) {
-    pass('RateLimit: auth_2fa bucket (5/5min)', 'Dedicated 2FA bucket');
-  } else {
-    fail('RateLimit: auth_2fa bucket', 'NOT FOUND');
-  }
-
-  // 2FA routes use correct bucket
-  const verify2fa = readFileSync(path.join(ROOT, 'app/api/auth/2fa/verify/route.ts'), 'utf8');
-  const recovery2fa = readFileSync(path.join(ROOT, 'app/api/auth/2fa/recovery/route.ts'), 'utf8');
-
-  if (verify2fa.includes('"auth_2fa"') && recovery2fa.includes('"auth_2fa"')) {
-    pass('RateLimit: 2FA verify+recovery use auth_2fa', 'Both endpoints correct');
-  } else {
-    fail('RateLimit: 2FA endpoints wrong bucket', 'Check routes');
-  }
-
-  // NOT using old auth bucket for 2FA
-  if (verify2fa.indexOf('applyRateLimit(ip, "auth")') === -1 && recovery2fa.indexOf('applyRateLimit(ip, "auth")') === -1) {
-    pass('RateLimit: 2FA NOT using old auth bucket', 'No regression');
-  } else {
-    fail('RateLimit: 2FA regression', 'Still on old auth bucket');
-  }
-
-  // Admin login
-  if (rlSrc.includes('admin_login: { windowMs: 60_000, maxRequests: 5 }')) {
-    pass('RateLimit: admin_login (5/1min)', 'OK');
-  } else {
-    fail('RateLimit: admin_login', 'NOT FOUND');
-  }
-
-  // OTP limits
-  if (rlSrc.includes('otp_send: { windowMs: 60_000, maxRequests: 3 }')) {
-    pass('RateLimit: otp_send (3/min)', 'OK');
-  } else {
-    fail('RateLimit: otp_send', 'NOT FOUND');
-  }
-
-  // Redis-based
-  if (rlSrc.includes('redis') || rlSrc.includes('Redis')) {
-    pass('RateLimit: Redis-based (distributed)', 'Not in-memory');
-  } else {
-    fail('RateLimit: Redis check', 'May be in-memory');
-  }
-
-  // API log masks currentPassword
-  const apiLogSrc = readFileSync(path.join(ROOT, 'lib/api-log.ts'), 'utf8');
-  if (apiLogSrc.includes('"currentPassword"')) {
-    pass('Security: API log masks currentPassword', 'PDPA OK');
-  } else {
-    fail('Security: currentPassword masking', 'NOT masked');
-  }
-
-  // Admin cookie sameSite strict
-  const adminAuth = readFileSync(path.join(ROOT, 'lib/admin-auth.ts'), 'utf8');
-  if (adminAuth.includes('sameSite: "strict"')) {
-    pass('Security: Admin cookie sameSite=strict', 'CSRF protected');
-  } else {
-    fail('Security: Admin cookie sameSite', 'Not strict');
-  }
-
-  // Phone masking in workers
-  try {
-    const logMasking = readFileSync(path.join(ROOT, 'lib/log-masking.ts'), 'utf8');
-    const otpWorker = readFileSync(path.join(ROOT, 'lib/queue/workers/otp-worker.ts'), 'utf8');
-    const singleWorker = readFileSync(path.join(ROOT, 'lib/queue/workers/single-worker.ts'), 'utf8');
-    if (logMasking.includes('maskPhoneForLog') && otpWorker.includes('maskPhoneForLog') && singleWorker.includes('maskPhoneForLog')) {
-      pass('Security: Phone masking in workers (PDPA)', 'Both workers protected');
-    } else {
-      fail('Security: Phone masking', 'Incomplete');
-    }
-  } catch { fail('Security: Phone masking', 'Files missing'); }
-
-  // Contacts export has rate limit
-  const contactsExport = readFileSync(path.join(ROOT, 'app/api/v1/contacts/export/route.ts'), 'utf8');
-  if (contactsExport.includes('applyRateLimit')) {
-    pass('RateLimit: Contacts export rate limited', 'OK');
-  } else {
-    fail('RateLimit: Contacts export', 'NO rate limit');
-  }
-}
-
-// ─── PART 3: Playwright Browser Test ─────────────────────────────────────
+// ─── PART 2: Playwright Browser Test ─────────────────────────────────────
 async function testBrowser() {
   console.log('\n=== PART 3: Playwright Browser Tests ===\n');
 
@@ -295,11 +207,10 @@ async function testBrowser() {
 // ─── MAIN ────────────────────────────────────────────────────────────────
 (async () => {
   testCsvSanitization();
-  testRateLimits();
   await testBrowser();
 
   console.log('\n' + '='.repeat(70));
-  console.log('E2E RESULTS: CSV Formula Injection + Rate Limit (#3416)');
+  console.log('E2E RESULTS: CSV Formula Injection (#3416)');
   console.log('='.repeat(70) + '\n');
 
   let passed = 0, failed = 0;

@@ -1,23 +1,27 @@
 import { test as base, expect, type Page } from "@playwright/test";
 
-// Test data
+// Test data — must match DB users
 export const TEST_USER = {
-  email: "demo@smsok.local",
-  password: "Password123!",
+  email: "qa-judge2@smsok.test",
+  password: "QAJudge2026!",
 };
 
 export const TEST_ADMIN = {
   email: "admin@smsok.com",
-  password: "admin1234",
+  password: "Admin12345678",
 };
 
-// Dismiss cookie consent banner if present
+// Dismiss cookie consent banner — handles both overlay and bottom sheet variants
 async function dismissCookieConsent(page: Page) {
   const acceptBtn = page.getByText("ยอมรับทั้งหมด");
   if (await acceptBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
     await acceptBtn.click();
     await acceptBtn.waitFor({ state: "hidden", timeout: 3000 }).catch(() => {});
   }
+  // Force remove any remaining cookie/consent overlays from DOM
+  await page.evaluate(() => {
+    document.querySelectorAll('[aria-label*="คุกกี้"], [class*="consent"], [class*="cookie"]').forEach(el => el.remove());
+  }).catch(() => {});
 }
 
 // Login helper (for tests that need explicit login, e.g. auth tests)

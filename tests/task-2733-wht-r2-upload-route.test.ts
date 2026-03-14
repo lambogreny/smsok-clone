@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   authenticateRequest: vi.fn(),
-  applyRateLimit: vi.fn(),
   invoiceFindFirst: vi.fn(),
   whtCertificateCreate: vi.fn(),
   whtCertificateFindMany: vi.fn(),
@@ -28,10 +27,6 @@ vi.mock("@/lib/db", () => ({
       findMany: mocks.whtCertificateFindMany,
     },
   },
-}));
-
-vi.mock("@/lib/rate-limit", () => ({
-  applyRateLimit: mocks.applyRateLimit,
 }));
 
 vi.mock("@/lib/storage/service", () => ({
@@ -61,7 +56,6 @@ describe("Task #2733: WHT certificate uploads store R2 refs", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.authenticateRequest.mockResolvedValue({ id: "user_1", role: "user" });
-    mocks.applyRateLimit.mockResolvedValue({ blocked: null, headers: {} });
     mocks.invoiceFindFirst.mockResolvedValue({
       id: "inv_1",
       organizationId: "org_1",

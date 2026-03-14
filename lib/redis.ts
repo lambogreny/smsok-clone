@@ -30,47 +30,6 @@ export const redis = globalForRedis.redis ?? createRedisClient();
 if (process.env.NODE_ENV !== "production") globalForRedis.redis = redis;
 
 /**
- * Redis sliding window rate limiter
- * Uses sorted sets for precise sliding window counts
- */
-export async function redisRateLimit(
-  key: string,
-  limit: number,
-  windowMs: number,
-): Promise<{ allowed: boolean; remaining: number; resetIn: number }> {
-  const now = Date.now();
-  const windowStart = now - windowMs;
-  const redisKey = `rl:${key}`;
-
-  try {
-    const pipeline = redis.pipeline();
-    // Remove expired entries
-    pipeline.zremrangebyscore(redisKey, 0, windowStart);
-    // Count current window
-    pipeline.zcard(redisKey);
-    // Add current request
-    pipeline.zadd(redisKey, now, `${now}:${Math.random()}`);
-    // Set expiry
-    pipeline.pexpire(redisKey, windowMs);
-
-    const results = await pipeline.exec();
-    const count = (results?.[1]?.[1] as number) || 0;
-
-    if (count >= limit) {
-      // Get oldest entry to calculate reset time
-      const oldest = await redis.zrange(redisKey, 0, 0, "WITHSCORES");
-      const resetAt = oldest.length >= 2 ? Number(oldest[1]) + windowMs : now + windowMs;
-      return { allowed: false, remaining: 0, resetIn: resetAt - now };
-    }
-
-    return { allowed: true, remaining: limit - count - 1, resetIn: windowMs };
-  } catch {
-    // Redis down — fall through to allow request (fail-open)
-    return { allowed: true, remaining: limit, resetIn: windowMs };
-  }
-}
-
-/**
  * Check Redis health for /api/health endpoint
  */
 export async function redisHealthCheck(): Promise<{ status: string; latency?: number }> {

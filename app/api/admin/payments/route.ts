@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import { ApiError, apiResponse, apiError } from "@/lib/api-auth";
 import { authenticateAdmin } from "@/lib/admin-auth";
 import { prisma as db } from "@/lib/db";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 
 const querySchema = z.object({
@@ -20,10 +19,6 @@ const querySchema = z.object({
 export async function GET(req: NextRequest) {
   try {
     const admin = await authenticateAdmin(req, ["SUPER_ADMIN", "FINANCE"]);
-
-    const rl = await applyRateLimit(admin.id, "admin");
-    if (rl.blocked) return rl.blocked;
-
     const params = Object.fromEntries(req.nextUrl.searchParams);
     const { page, limit, status, method, search, from, to, sort } = querySchema.parse(params);
 

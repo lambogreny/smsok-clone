@@ -7,6 +7,11 @@ import { InvoicePdf, type InvoicePdfData } from "@/lib/accounting/pdf/invoice-pd
 
 type TxClient = Parameters<Parameters<typeof db.$transaction>[0]>[0];
 type DbClient = PrismaClient | TxClient;
+type PdfRenderable = Parameters<typeof renderToBuffer>[0];
+
+async function renderPdfElement(element: ReturnType<typeof createElement>) {
+  return renderToBuffer(element as unknown as PdfRenderable);
+}
 
 export type PaymentDocumentKind = "pre-invoice" | "invoice" | "credit-note";
 
@@ -293,7 +298,6 @@ export async function renderPaymentDocumentPdf(
     data: buildPaymentPdfData(payment, kind, documentNumber),
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const buffer = await renderToBuffer(element as any);
+  const buffer = await renderPdfElement(element);
   return Buffer.from(buffer);
 }

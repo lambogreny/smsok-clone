@@ -333,7 +333,7 @@ export default function PackagesPage() {
           {/* Trial Badge */}
           <div className="mx-auto mt-5 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium bg-[rgba(var(--accent-purple-rgb),0.12)] border border-[rgba(var(--accent-purple-rgb),0.25)] text-[var(--accent-purple)]">
             <Gift className="size-4 text-[var(--accent-purple)]" />
-            สมัครฟรี! ทดลองส่ง 500 SMS ไม่เสียค่าใช้จ่าย
+            สมัครฟรี! ทดลองส่ง 15 SMS ไม่เสียค่าใช้จ่าย
           </div>
         </div>
 

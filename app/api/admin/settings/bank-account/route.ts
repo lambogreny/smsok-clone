@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import { ApiError, apiResponse, apiError } from "@/lib/api-auth";
 import { authenticateAdmin } from "@/lib/admin-auth";
 import { prisma as db } from "@/lib/db";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 
 const bankAccountSchema = z.object({
@@ -17,10 +16,6 @@ const bankAccountSchema = z.object({
 export async function GET(req: NextRequest) {
   try {
     const admin = await authenticateAdmin(req, ["SUPER_ADMIN", "FINANCE"]);
-
-    const rl = await applyRateLimit(admin.id, "admin");
-    if (rl.blocked) return rl.blocked;
-
     const settings = await db.systemSetting.findMany({
       where: { key: { startsWith: "bank_account" } },
       select: { key: true, value: true, updatedAt: true },
@@ -48,10 +43,6 @@ export async function GET(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const admin = await authenticateAdmin(req, ["SUPER_ADMIN"]);
-
-    const rl = await applyRateLimit(admin.id, "admin");
-    if (rl.blocked) return rl.blocked;
-
     const body = await req.json();
     const data = bankAccountSchema.parse(body);
 

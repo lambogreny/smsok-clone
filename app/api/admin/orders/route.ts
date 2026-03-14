@@ -3,7 +3,6 @@ import { z } from "zod";
 import { ApiError, apiError, apiResponse } from "@/lib/api-auth";
 import { authenticateAdmin } from "@/lib/admin-auth";
 import { prisma as db } from "@/lib/db";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { orderSummarySelect } from "@/lib/orders/api";
 import { parseLegacyOrderStatus, serializeOrder } from "@/lib/orders/service";
 
@@ -30,10 +29,6 @@ const listSchema = z.object({
 export async function GET(req: NextRequest) {
   try {
     const admin = await authenticateAdmin(req);
-
-    const rl = await applyRateLimit(admin.id, "admin");
-    if (rl.blocked) return rl.blocked;
-
     await db.order.updateMany({
       where: {
         status: { in: ["DRAFT", "PENDING_PAYMENT"] },

@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import { ApiError, apiResponse, apiError } from "@/lib/api-auth";
 import { authenticateAdmin } from "@/lib/admin-auth";
 import { prisma as db } from "@/lib/db";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -16,10 +15,6 @@ const rejectSchema = z.object({
 export async function POST(req: NextRequest, ctx: Ctx) {
   try {
     const admin = await authenticateAdmin(req, ["SUPER_ADMIN", "FINANCE"]);
-
-    const rl = await applyRateLimit(admin.id, "admin");
-    if (rl.blocked) return rl.blocked;
-
     const { id } = await ctx.params;
     const body = await req.json();
     const { reason, note } = rejectSchema.parse(body);

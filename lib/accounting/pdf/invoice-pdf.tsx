@@ -19,6 +19,7 @@ import {
   View,
   StyleSheet,
   Font,
+  Image,
 } from "@react-pdf/renderer";
 
 // ── Register Thai Font (IBM Plex Sans Thai) ─────────────
@@ -485,8 +486,18 @@ export function InvoicePdf({ data }: { data: InvoicePdfData }) {
           </Text>
         </View>
 
-        {/* QR verification disabled — verify.smsok.co page not yet implemented.
-           Re-enable when verification page is deployed. See BUG-06. */}
+        {data.verificationQrDataUrl && data.verificationUrl && (
+          <View style={s.verificationBox}>
+            <Image src={data.verificationQrDataUrl} style={s.verificationQr} />
+            <View style={s.verificationText}>
+              <Text style={s.sectionTitle}>ตรวจสอบเอกสาร</Text>
+              <Text style={s.infoValue}>
+                สแกน QR หรือเปิดลิงก์ด้านล่างเพื่อตรวจสอบความถูกต้องของเอกสารฉบับนี้
+              </Text>
+              <Text style={s.verificationUrl}>{data.verificationUrl}</Text>
+            </View>
+          </View>
+        )}
 
         {/* ── Notes ── */}
         {data.notes && (

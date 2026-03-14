@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { ApiError, apiError, apiResponse, authenticateRequest } from "@/lib/api-auth";
 import { prisma as db } from "@/lib/db";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { ensureOrderDocument, orderSummarySelect } from "@/lib/orders/api";
 import {
   calculateOrderAmounts,
@@ -72,10 +71,6 @@ const listSchema = z.object({
 export async function GET(req: NextRequest) {
   try {
     const user = await authenticateRequest(req);
-
-    const rl = await applyRateLimit(user.id, "purchase");
-    if (rl.blocked) return rl.blocked;
-
     await db.order.updateMany({
       where: {
         userId: user.id,
@@ -164,10 +159,6 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const user = await authenticateRequest(req);
-
-    const rl = await applyRateLimit(user.id, "purchase");
-    if (rl.blocked) return rl.blocked;
-
     const input = createSchema.parse(await req.json());
     const companyName = input.customer_type === "COMPANY" ? input.company_name?.trim() || input.tax_name : input.tax_name;
     const companyAddress =

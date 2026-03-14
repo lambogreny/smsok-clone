@@ -294,7 +294,7 @@ export type TagItem = {
 export type GroupItem = {
   id: string
   name: string
-  createdAt: Date
+  createdAt: string | Date
   _count: { members: number }
 }
 
@@ -423,7 +423,7 @@ export type MessageItem = {
   senderName: string
   status: string
   creditCost: number
-  createdAt: Date
+  createdAt: string | Date
 }
 
 // ── Dashboard ──────────────────────────────────────────
@@ -456,7 +456,7 @@ export type DashboardStats = {
     status: string
     senderName: string
     creditCost: number
-    createdAt: Date
+    createdAt: string | Date
   }>
   last7Days: DayStats[]
 }

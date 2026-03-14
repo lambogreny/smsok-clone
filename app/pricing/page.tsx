@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
@@ -18,6 +19,16 @@ import {
   Zap,
   Shield,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 
 /* ─── Types ─── */
@@ -257,7 +268,7 @@ function FaqAccordion({ items }: { items: FaqItem[] }) {
 
 /* ─── Pricing Card ─── */
 
-function PricingCard({ tier }: { tier: PricingTier }) {
+function PricingCard({ tier, onSelect }: { tier: PricingTier; onSelect: (tier: PricingTier) => void }) {
   const Icon = tier.icon;
 
   return (
@@ -344,10 +355,11 @@ function PricingCard({ tier }: { tier: PricingTier }) {
           <ArrowRight className="size-4" />
         </a>
       ) : (
-        <Link
-          href={tier.ctaHref}
+        <button
+          type="button"
+          onClick={() => onSelect(tier)}
           className={cn(
-            "flex w-full items-center justify-center gap-1.5 rounded-md px-6 font-semibold transition-all duration-200",
+            "flex w-full items-center justify-center gap-1.5 rounded-md px-6 font-semibold transition-all duration-200 cursor-pointer",
             tier.popular
               ? "h-12 bg-[var(--accent)] text-[var(--text-on-accent)] shadow-[0_0_20px_rgba(var(--accent-rgb),0.25)] hover:shadow-[0_0_28px_rgba(var(--accent-rgb),0.35)] hover:brightness-110"
               : "h-12 border border-[rgba(var(--accent-rgb),0.25)] bg-transparent text-[var(--accent)] hover:bg-[rgba(var(--accent-rgb),0.08)]"
@@ -355,7 +367,7 @@ function PricingCard({ tier }: { tier: PricingTier }) {
         >
           {tier.cta}
           <ArrowRight className="size-4" />
-        </Link>
+        </button>
       )}
     </div>
   );
@@ -368,7 +380,7 @@ function TrustBadges() {
     { icon: Zap, label: "ส่งเร็ว 1-3 วินาที" },
     { icon: Shield, label: "ข้อมูลปลอดภัย" },
     { icon: Headphones, label: "Support ภาษาไทย" },
-    { icon: MessageSquare, label: "ทดลองฟรี 500 SMS" },
+    { icon: MessageSquare, label: "ทดลองฟรี 15 SMS" },
   ];
 
   return (
@@ -386,8 +398,10 @@ function TrustBadges() {
 /* ─── Main Page ─── */
 
 export default function PricingPage() {
+  const router = useRouter();
   const [tiers, setTiers] = useState<PricingTier[]>(FALLBACK_TIERS);
   const [loading, setLoading] = useState(true);
+  const [selectedTier, setSelectedTier] = useState<PricingTier | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -441,17 +455,73 @@ export default function PricingPage() {
         </div>
 
         {/* ═══ Pricing Cards ═══ */}
-        {loading ? (
-          <div className="mb-20 flex items-center justify-center py-20">
-            <Loader2 className="size-8 animate-spin text-[var(--accent)]" />
-          </div>
-        ) : (
-          <div className="mb-20 grid grid-cols-1 items-start gap-6 md:grid-cols-3 lg:gap-4">
-            {tiers.map((tier) => (
-              <PricingCard key={tier.id} tier={tier} />
-            ))}
-          </div>
-        )}
+        <div className="mb-20 grid grid-cols-1 items-start gap-6 md:grid-cols-3 lg:gap-4">
+          {tiers.map((tier) => (
+            <PricingCard key={tier.id} tier={tier} onSelect={setSelectedTier} />
+          ))}
+        </div>
+
+        {/* ═══ Confirm Purchase Dialog ═══ */}
+        <AlertDialog open={!!selectedTier} onOpenChange={(open) => { if (!open) setSelectedTier(null); }}>
+          <AlertDialogContent
+            style={{
+              background: "var(--bg-surface)",
+              border: "1px solid var(--border-default)",
+            }}
+          >
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-[var(--text-primary)]">
+                ยืนยันเลือกแพ็กเกจ {selectedTier?.name}
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-sm text-[var(--text-secondary)]">
+                <span className="block space-y-3">
+                  <div className="rounded-lg p-4 space-y-2" style={{ background: "var(--bg-base)", border: "1px solid var(--border-default)" }}>
+                    <div className="flex justify-between">
+                      <span>แพ็กเกจ</span>
+                      <span className="font-semibold text-[var(--text-primary)]">{selectedTier?.name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>จำนวน SMS</span>
+                      <span className="font-semibold text-[var(--accent)]">{selectedTier ? formatNumber(selectedTier.sms) : ""} SMS</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>ราคา (ก่อน VAT)</span>
+                      <span className="font-semibold text-[var(--text-primary)]">{selectedTier ? formatCurrency(selectedTier.price) : ""}</span>
+                    </div>
+                    <div className="h-px w-full" style={{ background: "var(--border-default)" }} />
+                    <div className="flex justify-between">
+                      <span>VAT 7%</span>
+                      <span className="text-[var(--text-primary)]">{selectedTier ? formatCurrency(Math.round(selectedTier.price * 0.07)) : ""}</span>
+                    </div>
+                    <div className="flex justify-between font-semibold">
+                      <span className="text-[var(--text-primary)]">ยอดรวมทั้งหมด</span>
+                      <span className="text-lg text-[var(--text-primary)]">{selectedTier ? formatCurrency(Math.round(selectedTier.price * 1.07)) : ""}</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-[var(--text-muted)]">
+                    คุณจะถูกนำไปหน้ากรอกข้อมูลสำหรับออกใบกำกับภาษี
+                  </p>
+                </span>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-muted)]">
+                ยกเลิก
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-[var(--accent)] text-[var(--text-on-accent)] hover:brightness-110"
+                onClick={() => {
+                  if (selectedTier) {
+                    router.push(`/dashboard/billing/checkout?packageId=${selectedTier.id}`);
+                  }
+                }}
+              >
+                ดำเนินการสั่งซื้อ
+                <ArrowRight className="size-4 ml-1" />
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* ═══ All Packages Link ═══ */}
         <div className="mb-20 text-center">
@@ -481,7 +551,7 @@ export default function PricingPage() {
             พร้อมเริ่มส่ง SMS แล้วหรือยัง?
           </h2>
           <p className="mx-auto mt-3 max-w-lg text-sm text-[var(--text-secondary)]">
-            สมัครฟรีวันนี้ รับ 500 SMS ทดลองใช้งาน ไม่ต้องผูกบัตร
+            สมัครฟรีวันนี้ รับ 15 SMS ทดลองใช้งาน ไม่ต้องผูกบัตร
           </p>
           <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link

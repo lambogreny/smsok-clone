@@ -6,18 +6,12 @@ import {
   renderPaymentDocumentPdf,
   type PaymentDocumentRecord,
 } from "@/lib/payments/documents";
-import { applyRateLimit } from "@/lib/rate-limit";
-
 type Ctx = { params: Promise<{ id: string }> };
 
 // GET /api/v1/invoices/:id/pdf — generate and download PDF
 export async function GET(req: NextRequest, ctx: Ctx) {
   try {
     const user = await authenticateRequest(req);
-
-    const rl = await applyRateLimit(user.id, "invoice_pdf");
-    if (rl.blocked) return rl.blocked;
-
     const { id } = await ctx.params;
     const payment = await db.payment.findUnique({
       where: { id },
@@ -80,7 +74,6 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     return new Response(new Uint8Array(pdfBuffer), {
       status: 200,
       headers: {
-        ...rl.headers,
         "Content-Type": "application/pdf",
         "Content-Disposition": `${download ? "attachment" : "inline"}; filename="${invoiceNumber}.pdf"`,
         "Content-Length": String(pdfBuffer.length),

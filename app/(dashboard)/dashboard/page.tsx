@@ -63,7 +63,14 @@ export default async function DashboardPage() {
 
   const showOnboarding = completedSteps.length < 4;
 
-  const statsWithQuota = { ...stats, smsRemaining: quota.totalRemaining };
+  const statsWithQuota = {
+    ...stats,
+    recentMessages: stats.recentMessages.map((message) => ({
+      ...message,
+      createdAt: message.createdAt.toISOString(),
+    })),
+    smsRemaining: quota.totalRemaining,
+  };
 
   // Serialize quota packages for client (Date → string)
   const quotaForClient = {
@@ -71,7 +78,7 @@ export default async function DashboardPage() {
       id: pkg.id,
       smsTotal: pkg.smsTotal,
       smsUsed: pkg.smsUsed,
-      expiresAt: pkg.expiresAt,
+      expiresAt: pkg.expiresAt.toISOString(),
       tier: { name: pkg.tier.name, tierCode: pkg.tier.tierCode },
     })),
     totalSms: quota.totalSms,

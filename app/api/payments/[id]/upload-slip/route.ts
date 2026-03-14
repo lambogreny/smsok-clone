@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import { ApiError, apiResponse, apiError } from "@/lib/api-auth";
 import { getSession } from "@/lib/auth";
 import { prisma as db } from "@/lib/db";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { resolveStoredFileUrl } from "@/lib/storage/files";
 import { removeStoredFile, StorageUploadError, storeUploadedFile } from "@/lib/storage/service";
 import { coerceUploadedFile } from "@/lib/uploaded-file";
@@ -15,10 +14,6 @@ async function handleUpload(req: NextRequest, ctx: Ctx) {
   try {
     const session = await getSession();
     if (!session?.id) throw new ApiError(401, "กรุณาเข้าสู่ระบบ");
-
-    const rl = await applyRateLimit(session.id, "slip");
-    if (rl.blocked) return rl.blocked;
-
     const { id } = await ctx.params;
 
     const payment = await db.payment.findUnique({

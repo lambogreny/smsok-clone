@@ -73,12 +73,12 @@ describe("Task #2659: QA audit bug fixes", () => {
     expect(campaignScheduleDetailRoute).not.toContain("getSession()");
   });
 
-  it("validates campaign schedule payloads and rate limits logs export", () => {
+  it("validates campaign schedule payloads and logs export route requires auth", () => {
     expect(schedulingActions).toContain("export const scheduleCampaignInputSchema");
     expect(schedulingActions).toContain("export const rescheduleCampaignInputSchema");
     expect(campaignScheduleRoute).toContain("scheduleCampaignInputSchema.safeParse(body)");
     expect(campaignScheduleDetailRoute).toContain("rescheduleCampaignInputSchema.safeParse(body)");
-    expect(logsExportRoute).toContain('applyRateLimit(user.id, "api")');
+    expect(logsExportRoute).toContain("authenticateRequest");
   });
 
   it("returns ApiError for group/contact not-found paths instead of plain Error", () => {

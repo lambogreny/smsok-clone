@@ -1,6 +1,7 @@
 import QRCode from "qrcode";
 
-const DEFAULT_VERIFY_BASE_URL = "https://verify.smsok.co";
+const DEFAULT_VERIFY_BASE_URL =
+  process.env.NEXT_PUBLIC_APP_URL || "https://smsok.9phum.me";
 
 function getVerifyBaseUrl() {
   const baseUrl =
@@ -12,7 +13,14 @@ function getVerifyBaseUrl() {
 }
 
 export function buildDocumentVerificationUrl(documentNumber: string) {
-  return `${getVerifyBaseUrl()}/${encodeURIComponent(documentNumber)}`;
+  const baseUrl = getVerifyBaseUrl();
+  const encodedDocumentNumber = encodeURIComponent(documentNumber);
+
+  if (baseUrl.endsWith("/verify")) {
+    return `${baseUrl}/${encodedDocumentNumber}`;
+  }
+
+  return `${baseUrl}/verify/${encodedDocumentNumber}`;
 }
 
 export async function buildDocumentVerificationAssets(documentNumber: string) {

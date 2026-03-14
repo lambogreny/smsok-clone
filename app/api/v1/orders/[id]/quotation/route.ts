@@ -2,8 +2,6 @@ import { NextRequest } from "next/server";
 import { ApiError, apiError, authenticateRequest } from "@/lib/api-auth";
 import { prisma as db } from "@/lib/db";
 import { renderOrderQuotationPdf } from "@/lib/orders/pdf";
-import { applyRateLimit } from "@/lib/rate-limit";
-
 type RouteContext = {
   params: Promise<{ id: string }>;
 };
@@ -39,10 +37,6 @@ const orderSelect = {
 export async function GET(req: NextRequest, ctx: RouteContext) {
   try {
     const user = await authenticateRequest(req);
-
-    const rl = await applyRateLimit(user.id, "invoice_pdf");
-    if (rl.blocked) return rl.blocked;
-
     const { id } = await ctx.params;
     const order = await db.order.findFirst({
       where: { id, userId: user.id },
@@ -57,7 +51,6 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
 
     return new Response(new Uint8Array(pdfBuffer), {
       headers: {
-        ...rl.headers,
         "Content-Type": "application/pdf",
         "Content-Disposition": `${download ? "attachment" : "inline"}; filename="${order.quotationNumber}.pdf"`,
         "Content-Length": String(pdfBuffer.length),

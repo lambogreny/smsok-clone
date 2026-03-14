@@ -4,7 +4,6 @@ import {
   createApiKeyForUser,
   listApiKeysForUser,
 } from "@/lib/api-keys/service";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { createApiKeySchema } from "@/lib/validations";
 
 export async function GET(req: NextRequest) {
@@ -20,10 +19,6 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const user = await authenticateRequest(req);
-
-    const rl = await applyRateLimit(user.id, "apikey");
-    if (rl.blocked) return rl.blocked;
-
     const body = await req.json();
     const input = createApiKeySchema.parse(body);
     const apiKey = await createApiKeyForUser(user.id, input);

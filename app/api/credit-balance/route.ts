@@ -2,17 +2,11 @@ import { NextRequest } from "next/server";
 import { ApiError, apiResponse, apiError } from "@/lib/api-auth";
 import { getSession } from "@/lib/auth";
 import { prisma as db } from "@/lib/db";
-import { applyRateLimit } from "@/lib/rate-limit";
-
 // GET /api/credit-balance — SMS quota summary + thresholds
 export async function GET(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session?.id) throw new ApiError(401, "กรุณาเข้าสู่ระบบ");
-
-    const rl = await applyRateLimit(session.id, "api");
-    if (rl.blocked) return rl.blocked;
-
     const now = new Date();
     const activePackages = await db.packagePurchase.findMany({
       where: { userId: session.id, isActive: true, expiresAt: { gt: now } },

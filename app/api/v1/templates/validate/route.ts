@@ -1,7 +1,6 @@
 import { NextRequest } from "next/server";
 import { apiResponse, apiError, authenticateRequest } from "@/lib/api-auth";
 import { prisma as db } from "@/lib/db";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 
 const validateSchema = z.object({
@@ -15,10 +14,6 @@ const BLOCKED_SHORTENERS = ["bit.ly", "tinyurl.com", "goo.gl", "t.co", "ow.ly", 
 export async function POST(req: NextRequest) {
   try {
     const user = await authenticateRequest(req);
-
-    const rl = await applyRateLimit(user.id, "template");
-    if (rl.blocked) return rl.blocked;
-
     const input = validateSchema.parse(await req.json());
     const warnings: Array<{ type: string; message: string; word?: string }> = [];
 

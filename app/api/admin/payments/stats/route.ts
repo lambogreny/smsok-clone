@@ -2,16 +2,10 @@ import { NextRequest } from "next/server";
 import { apiResponse, apiError } from "@/lib/api-auth";
 import { authenticateAdmin } from "@/lib/admin-auth";
 import { prisma as db } from "@/lib/db";
-import { applyRateLimit } from "@/lib/rate-limit";
-
 // GET /api/admin/payments/stats — payment statistics
 export async function GET(req: NextRequest) {
   try {
     const admin = await authenticateAdmin(req, ["SUPER_ADMIN", "FINANCE"]);
-
-    const rl = await applyRateLimit(admin.id, "admin");
-    if (rl.blocked) return rl.blocked;
-
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());

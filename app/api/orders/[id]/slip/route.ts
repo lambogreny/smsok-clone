@@ -11,7 +11,6 @@ import {
 import { MAX_SLIP_ATTEMPTS } from "@/lib/orders/rejected-slip";
 import { createOrderHistory, serializeOrderSlip, serializeOrderV2 } from "@/lib/orders/service";
 import { slipVerifyQueue } from "@/lib/queue/queues";
-import { applyRateLimit } from "@/lib/rate-limit";
 import {
   removeStoredFile,
   StorageUploadError,
@@ -39,9 +38,6 @@ export async function POST(req: Request, ctx: RouteContext) {
   try {
     const session = await getSession();
     if (!session?.id) throw new ApiError(401, "กรุณาเข้าสู่ระบบ");
-    const rl = await applyRateLimit(session.id, "slip");
-    if (rl.blocked) return rl.blocked;
-
     const { id } = await ctx.params;
     const order = await db.order.findFirst({
       where: { id, userId: session.id },

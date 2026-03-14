@@ -18,9 +18,13 @@ export default async function MessagesPage({
     const page = Number(params.page ?? "1") || 1;
 
     const { messages, pagination } = await getMessages({ page, limit: 20, search });
+    const serializedMessages = messages.map((message) => ({
+      ...message,
+      createdAt: message.createdAt.toISOString(),
+    }));
 
     return (
-      <MessagesClient messages={messages} pagination={pagination} initialSearch={search} />
+      <MessagesClient messages={serializedMessages} pagination={pagination} initialSearch={search} />
     );
   } catch {
     return <ErrorState type="SERVER_ERROR" />;

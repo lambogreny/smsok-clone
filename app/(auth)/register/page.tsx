@@ -304,7 +304,7 @@ export default function RegisterPage() {
         <Card className="bg-[var(--bg-surface)] border-[#20252c] rounded-lg shadow-none">
           {step === "form" ? (
             <>
-              <CardHeader className="text-center pb-0 pt-8 px-8">
+              <CardHeader className="text-center pb-0 pt-8 px-5 sm:px-8">
                 <Link href="/" className="inline-flex items-center gap-2 justify-center mb-4">
                   <div className="w-7 h-7 rounded-lg bg-[var(--accent)] flex items-center justify-center">
                     <Send className="w-3.5 h-3.5 text-[var(--bg-base)]" />
@@ -315,7 +315,7 @@ export default function RegisterPage() {
                 <p className="text-sm text-[#b2bacd] mt-1">เริ่มต้นส่ง SMS ได้ทันที</p>
               </CardHeader>
 
-              <CardContent className="px-8 pt-6 pb-2">
+              <CardContent className="px-5 sm:px-8 pt-6 pb-2">
                 {rateLimitSeconds && rateLimitSeconds > 0 && (
                   <div className="mb-4">
                     <RateLimitCountdown seconds={rateLimitSeconds} onExpire={() => setRateLimitSeconds(null)} />
@@ -329,7 +329,7 @@ export default function RegisterPage() {
 
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(handleSendOtp)} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <FormField
                         control={form.control}
                         name="firstName"
@@ -630,7 +630,7 @@ export default function RegisterPage() {
             </>
           ) : (
             <>
-              <CardHeader className="text-center pb-0 pt-8 px-8">
+              <CardHeader className="text-center pb-0 pt-8 px-5 sm:px-8">
                 <button
                   onClick={() => { setStep("form"); setOtpCode(""); setOtpError(""); }}
                   className="inline-flex items-center gap-1 text-[13px] text-[var(--text-muted)] hover:text-white transition-colors duration-200 mb-4 mx-auto"
@@ -645,7 +645,7 @@ export default function RegisterPage() {
                 {otpRef && <p className="text-[var(--text-muted)] text-[11px] mt-1 font-mono">REF: {otpRef.slice(0, 8).toUpperCase()}</p>}
               </CardHeader>
 
-              <CardContent className="px-8 pt-6 pb-2">
+              <CardContent className="px-5 sm:px-8 pt-6 pb-2">
                 {debugCode && (
                   <div className="mb-4 p-3 rounded-lg bg-[rgba(245,158,11,0.08)] border border-[rgba(245,158,11,0.2)] text-amber-300 text-sm text-center">
                     <span className="opacity-60 text-xs">DEV — OTP: </span>

@@ -1,7 +1,5 @@
 import { ApiError, apiError, apiResponse } from "@/lib/api-auth";
 import { revokeUserSession, verifyOrRefreshSession } from "@/lib/auth";
-import { applyRateLimit } from "@/lib/rate-limit";
-
 type Ctx = { params: Promise<{ id: string }> };
 
 // DELETE /api/v1/settings/sessions/:id — revoke specific session
@@ -9,10 +7,6 @@ export async function DELETE(req: Request, ctx: Ctx) {
   try {
     const result = await verifyOrRefreshSession({ headers: req.headers });
     if (!result) throw new ApiError(401, "กรุณาเข้าสู่ระบบ");
-
-    const rl = await applyRateLimit(result.user.id, "api");
-    if (rl.blocked) return rl.blocked;
-
     const { id } = await ctx.params;
     if (id === result.user.sessionId) {
       throw new ApiError(400, "ไม่สามารถเพิกถอน session ปัจจุบัน ใช้ logout แทน");

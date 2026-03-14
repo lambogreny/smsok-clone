@@ -9,7 +9,6 @@ const registerPageSource = readFileSync(resolve(ROOT, "app/(auth)/register/page.
 
 describe("Task #2806: register duplicate checks and password confirmation", () => {
   it("adds a dedicated duplicate-check endpoint for email and phone", () => {
-    expect(routeSource).toContain('applyRateLimit(ip, "auth_check_duplicate")');
     expect(routeSource).toContain('field: "email"');
     expect(routeSource).toContain('field: "phone"');
     expect(routeSource).toContain("normalizePhone");

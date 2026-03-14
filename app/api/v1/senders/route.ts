@@ -5,8 +5,6 @@ import { authenticateRequest, apiResponse, apiError, ApiError } from "@/lib/api-
 import { prisma as db } from "@/lib/db";
 import { getRemainingQuota } from "@/lib/package/quota";
 import { validateSenderName } from "@/lib/sender-name-validation";
-import { applyRateLimit } from "@/lib/rate-limit";
-
 const listQuerySchema = z.object({
   search: z.string().trim().optional(),
   status: z.string().trim().optional(),
@@ -137,9 +135,6 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const user = await authenticateRequest(req);
-    const rl = await applyRateLimit(user.id, "sender_name");
-    if (rl.blocked) return rl.blocked;
-
     const input = createSenderSchema.parse(await readJsonBody(req));
     const normalizedName = input.name.toUpperCase();
 

@@ -5,7 +5,6 @@ import { getSession } from "@/lib/auth";
 import { prisma as db } from "@/lib/db";
 import { verifySlipByUrl } from "@/lib/easyslip";
 import { ensurePaymentDocumentNumber } from "@/lib/payments/documents";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { resolveStoredFileVerificationUrl } from "@/lib/storage/service";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -114,10 +113,6 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   try {
     const session = await getSession();
     if (!session?.id) throw new ApiError(401, "กรุณาเข้าสู่ระบบ");
-
-    const rl = await applyRateLimit(session.id, "purchase");
-    if (rl.blocked) return rl.blocked;
-
     const { id } = await ctx.params;
 
     const payment = await db.payment.findUnique({

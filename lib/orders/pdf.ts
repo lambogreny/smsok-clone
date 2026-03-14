@@ -19,6 +19,7 @@ import { buildDocumentVerificationAssets } from "@/lib/accounting/pdf/document-v
 import { numberToThaiText } from "@/lib/accounting/thai-number";
 
 type NumericLike = { toNumber(): number } | number;
+type PdfRenderable = Parameters<typeof renderToBuffer>[0];
 
 type OrderPdfRecord = {
   id: string;
@@ -105,6 +106,10 @@ function toNumber(value: NumericLike) {
   return typeof value === "number" ? value : value.toNumber();
 }
 
+async function renderPdfElement(element: ReturnType<typeof createElement>) {
+  return renderToBuffer(element as unknown as PdfRenderable);
+}
+
 function buildOrderItem(order: OrderPdfRecord) {
   const unitPrice = toNumber(order.netAmount);
   return [
@@ -172,8 +177,7 @@ async function renderOrderPdfWithFallback(
   } catch (error) {
     console.error(`[orders/pdf] primary ${title} render failed for ${documentNumber}:`, error);
     const fallbackElement = buildFallbackPdfElement(title, documentNumber, rows);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const fallbackBuffer = await renderToBuffer(fallbackElement as any);
+    const fallbackBuffer = await renderPdfElement(fallbackElement);
     return Buffer.from(fallbackBuffer);
   }
 }
@@ -266,8 +270,7 @@ export async function renderOrderQuotationPdf(order: OrderPdfRecord) {
       };
 
       const element = createElement(QuotationPdf, { data });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const buffer = await renderToBuffer(element as any);
+      const buffer = await renderPdfElement(element);
       return Buffer.from(buffer);
     },
   );
@@ -296,8 +299,7 @@ export async function renderOrderInvoicePdf(order: OrderPdfRecord) {
       });
 
       const element = createElement(InvoicePdf, { data });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const buffer = await renderToBuffer(element as any);
+      const buffer = await renderPdfElement(element);
       return Buffer.from(buffer);
     },
   );
@@ -325,8 +327,7 @@ export async function renderOrderAccountingDocumentPdf(
     async () => {
       const data = await buildOrderInvoicePdfData(order, options);
       const element = createElement(InvoicePdf, { data });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const buffer = await renderToBuffer(element as any);
+      const buffer = await renderPdfElement(element);
       return Buffer.from(buffer);
     },
   );

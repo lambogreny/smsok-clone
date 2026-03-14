@@ -68,7 +68,7 @@ type DashboardStats = {
     status: string;
     senderName: string;
     creditCost: number;
-    createdAt: Date;
+    createdAt: string;
   }[];
   last7Days: DayStats[];
   smsRemaining?: number;
@@ -78,7 +78,7 @@ type QuotaPackage = {
   id: string;
   smsTotal: number;
   smsUsed: number;
-  expiresAt: Date;
+  expiresAt: string;
   tier: { name: string; tierCode: string };
 };
 

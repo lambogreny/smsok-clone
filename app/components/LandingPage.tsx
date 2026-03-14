@@ -55,7 +55,7 @@ const packages = [
 const benefits = [
   { title: "ราคาถูกที่สุด", desc: "เริ่มต้นเพียง ฿0.147/SMS", icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><text x="12" y="16" textAnchor="middle" fill="currentColor" stroke="none" fontSize="12" fontWeight="bold">฿</text></svg> },
   { title: "ส่งเร็วทันใจ", desc: "ส่งถึงปลายทางภายใน 3 วินาที", icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg> },
-  { title: "ทดลองฟรี", desc: "สมัครวันนี้รับฟรี 15 SMS ฟรี", icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 12 20 22 4 22 4 12" /><rect x="2" y="7" width="20" height="5" /><line x1="12" y1="22" x2="12" y2="7" /><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z" /><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z" /></svg> },
+  { title: "ทดลองฟรี", desc: "สมัครวันนี้รับ 15 SMS ฟรี", icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 12 20 22 4 22 4 12" /><rect x="2" y="7" width="20" height="5" /><line x1="12" y1="22" x2="12" y2="7" /><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z" /><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z" /></svg> },
   { title: "ซัพพอร์ต 24/7", desc: "ทีมงานพร้อมช่วยเหลือตลอด", icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg> },
   { title: "SMS API", desc: "เชื่อมต่อง่ายด้วย RESTful API", icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></svg> },
 ];
@@ -86,15 +86,18 @@ function fmt(n: number) { return n.toLocaleString("th-TH"); }
 
 /* ─── Animated counter ─── */
 function StatCounter({ num, prefix = "", suffix = "", decimals = 0 }: { num: number; prefix?: string; suffix?: string; decimals?: number }) {
-  const count = useMotionValue(0);
+  const count = useMotionValue(num);
   const rounded = useTransform(count, (v) =>
     decimals > 0 ? v.toFixed(decimals) : Math.round(v).toString()
   );
   const ref = useRef(null);
   const inView = useInView(ref, { once: true });
+  const hasAnimated = useRef(false);
 
   useEffect(() => {
-    if (inView) {
+    if (inView && !hasAnimated.current) {
+      hasAnimated.current = true;
+      count.set(0);
       animate(count, num, { duration: 2, ease: "easeOut" });
     }
   }, [inView, count, num]);
@@ -282,7 +285,7 @@ export default function LandingPage() {
               variants={stagger}
               initial="hidden"
               whileInView="show"
-              viewport={{ once: false }}
+              viewport={{ once: true }}
               className="grid grid-cols-2 md:grid-cols-4 divide-x divide-white/[0.04]"
             >
               {numericStats.map((s) => (
@@ -307,7 +310,7 @@ export default function LandingPage() {
         variants={sectionVariants}
         initial="offscreen"
         whileInView="onscreen"
-        viewport={{ once: false, amount: 0.15 }}
+        viewport={{ once: true, amount: 0.15 }}
         className="py-20 sm:py-28 px-4 sm:px-6 scroll-mt-20 relative"
       >
         <div className="max-w-6xl mx-auto">
@@ -315,7 +318,7 @@ export default function LandingPage() {
             variants={fadeUp}
             initial="hidden"
             whileInView="show"
-            viewport={{ once: false, margin: "-100px" }}
+            viewport={{ once: true, margin: "-100px" }}
             className="text-center mb-12 sm:mb-16"
           >
             <div className="inline-block text-xs font-semibold text-[var(--accent)] uppercase tracking-[0.2em] mb-3">Why Choose Us</div>
@@ -329,7 +332,7 @@ export default function LandingPage() {
             variants={stagger}
             initial="hidden"
             whileInView="show"
-            viewport={{ once: false, margin: "-100px" }}
+            viewport={{ once: true, margin: "-100px" }}
             className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4 md:gap-5"
           >
             {benefits.map((b) => (
@@ -361,7 +364,7 @@ export default function LandingPage() {
         variants={sectionVariants}
         initial="offscreen"
         whileInView="onscreen"
-        viewport={{ once: false, amount: 0.15 }}
+        viewport={{ once: true, amount: 0.15 }}
         className="py-20 sm:py-28 px-4 sm:px-6 scroll-mt-20 relative"
       >
         <div className="max-w-6xl mx-auto">
@@ -369,7 +372,7 @@ export default function LandingPage() {
             variants={fadeUp}
             initial="hidden"
             whileInView="show"
-            viewport={{ once: false, margin: "-100px" }}
+            viewport={{ once: true, margin: "-100px" }}
             className="text-center mb-12 sm:mb-16"
           >
             <div className="inline-block text-xs font-semibold text-[var(--accent)] uppercase tracking-[0.2em] mb-3">Features</div>
@@ -383,7 +386,7 @@ export default function LandingPage() {
             variants={stagger}
             initial="hidden"
             whileInView="show"
-            viewport={{ once: false, margin: "-100px" }}
+            viewport={{ once: true, margin: "-100px" }}
             className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5"
           >
             {features.map((f) => (
@@ -416,7 +419,7 @@ export default function LandingPage() {
         variants={sectionVariants}
         initial="offscreen"
         whileInView="onscreen"
-        viewport={{ once: false, amount: 0.15 }}
+        viewport={{ once: true, amount: 0.15 }}
         className="py-12 sm:py-16 px-4 sm:px-6"
       >
         <div className="max-w-3xl mx-auto">
@@ -475,7 +478,7 @@ export default function LandingPage() {
             variants={fadeUp}
             initial="hidden"
             whileInView="show"
-            viewport={{ once: false, margin: "-100px" }}
+            viewport={{ once: true, margin: "-100px" }}
             className="text-center mb-12 sm:mb-16"
           >
             <div className="inline-block text-xs font-semibold text-[var(--accent)] uppercase tracking-[0.2em] mb-3">Pricing</div>
@@ -489,7 +492,7 @@ export default function LandingPage() {
             variants={stagger}
             initial="hidden"
             whileInView="show"
-            viewport={{ once: false, margin: "-100px" }}
+            viewport={{ once: true, margin: "-100px" }}
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5"
           >
             {packages.map((pkg) => (
@@ -605,7 +608,7 @@ export default function LandingPage() {
         variants={sectionVariants}
         initial="offscreen"
         whileInView="onscreen"
-        viewport={{ once: false, amount: 0.15 }}
+        viewport={{ once: true, amount: 0.15 }}
         className="py-20 sm:py-28 px-4 sm:px-6 relative"
       >
         <div className="max-w-6xl mx-auto">
@@ -613,7 +616,7 @@ export default function LandingPage() {
             variants={fadeUp}
             initial="hidden"
             whileInView="show"
-            viewport={{ once: false, margin: "-100px" }}
+            viewport={{ once: true, margin: "-100px" }}
             className="text-center mb-12 sm:mb-16"
           >
             <div className="inline-block text-xs font-semibold text-[var(--accent)] uppercase tracking-[0.2em] mb-3">How it Works</div>
@@ -627,7 +630,7 @@ export default function LandingPage() {
             variants={stagger}
             initial="hidden"
             whileInView="show"
-            viewport={{ once: false, margin: "-100px" }}
+            viewport={{ once: true, margin: "-100px" }}
             className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 relative"
           >
             {/* Dashed connector line (desktop only) */}
@@ -684,7 +687,7 @@ export default function LandingPage() {
         variants={sectionVariants}
         initial="offscreen"
         whileInView="onscreen"
-        viewport={{ once: false, amount: 0.15 }}
+        viewport={{ once: true, amount: 0.15 }}
         className="py-20 sm:py-28 px-4 sm:px-6 relative"
       >
         <div className="max-w-6xl mx-auto">
@@ -692,7 +695,7 @@ export default function LandingPage() {
             variants={fadeUp}
             initial="hidden"
             whileInView="show"
-            viewport={{ once: false, margin: "-100px" }}
+            viewport={{ once: true, margin: "-100px" }}
             className="text-center mb-12 sm:mb-16"
           >
             <div className="inline-block text-xs font-semibold text-[var(--accent)] uppercase tracking-[0.2em] mb-3">Use Cases</div>
@@ -706,7 +709,7 @@ export default function LandingPage() {
             variants={stagger}
             initial="hidden"
             whileInView="show"
-            viewport={{ once: false, margin: "-100px" }}
+            viewport={{ once: true, margin: "-100px" }}
             className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5"
           >
             {[
@@ -760,7 +763,7 @@ export default function LandingPage() {
         variants={sectionVariants}
         initial="offscreen"
         whileInView="onscreen"
-        viewport={{ once: false, amount: 0.15 }}
+        viewport={{ once: true, amount: 0.15 }}
         className="py-20 sm:py-28 px-4 sm:px-6 relative"
       >
         <div className="max-w-6xl mx-auto">
@@ -768,7 +771,7 @@ export default function LandingPage() {
             variants={fadeUp}
             initial="hidden"
             whileInView="show"
-            viewport={{ once: false, margin: "-100px" }}
+            viewport={{ once: true, margin: "-100px" }}
             className="text-center mb-12 sm:mb-16"
           >
             <div className="inline-block text-xs font-semibold text-[var(--accent)] uppercase tracking-[0.2em] mb-3">Testimonials</div>
@@ -782,7 +785,7 @@ export default function LandingPage() {
             variants={stagger}
             initial="hidden"
             whileInView="show"
-            viewport={{ once: false, margin: "-100px" }}
+            viewport={{ once: true, margin: "-100px" }}
             className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5"
           >
             {[
@@ -842,7 +845,7 @@ export default function LandingPage() {
         variants={sectionVariants}
         initial="offscreen"
         whileInView="onscreen"
-        viewport={{ once: false, amount: 0.15 }}
+        viewport={{ once: true, amount: 0.15 }}
         className="py-20 sm:py-28 px-4 sm:px-6 scroll-mt-20"
       >
         <div className="max-w-3xl mx-auto">
@@ -850,7 +853,7 @@ export default function LandingPage() {
             variants={fadeUp}
             initial="hidden"
             whileInView="show"
-            viewport={{ once: false, margin: "-100px" }}
+            viewport={{ once: true, margin: "-100px" }}
             className="text-center mb-12 sm:mb-16"
           >
             <div className="inline-block text-xs font-semibold text-[var(--accent)] uppercase tracking-[0.2em] mb-3">FAQ</div>

@@ -1,17 +1,11 @@
 import { ApiError, apiError, apiResponse } from "@/lib/api-auth";
 import { getSession } from "@/lib/auth";
 import { prisma as db } from "@/lib/db";
-import { applyRateLimit } from "@/lib/rate-limit";
-
 // GET /api/credits — package quota summary, usage, expiry, and purchase history
 export async function GET() {
   try {
     const session = await getSession();
     if (!session?.id) throw new ApiError(401, "กรุณาเข้าสู่ระบบ");
-
-    const rl = await applyRateLimit(session.id, "api");
-    if (rl.blocked) return rl.blocked;
-
     const now = new Date();
     const [activePackages, packageHistory] = await Promise.all([
       db.packagePurchase.findMany({

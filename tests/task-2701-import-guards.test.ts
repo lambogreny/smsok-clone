@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   authenticateRequest: vi.fn(),
   requireApiPermission: vi.fn(),
-  applyRateLimit: vi.fn(),
   contactGroupFindFirst: vi.fn(),
 }));
 
@@ -17,10 +16,6 @@ vi.mock("@/lib/api-auth", async () => {
 
 vi.mock("@/lib/rbac", () => ({
   requireApiPermission: mocks.requireApiPermission,
-}));
-
-vi.mock("@/lib/rate-limit", () => ({
-  applyRateLimit: mocks.applyRateLimit,
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -69,7 +64,6 @@ describe("Task #2701: import guards", () => {
     vi.clearAllMocks();
     mocks.authenticateRequest.mockResolvedValue({ id: "user_1" });
     mocks.requireApiPermission.mockResolvedValue(null);
-    mocks.applyRateLimit.mockResolvedValue({ blocked: null, headers: {} });
     mocks.contactGroupFindFirst.mockResolvedValue({ id: "group_1" });
   });
 

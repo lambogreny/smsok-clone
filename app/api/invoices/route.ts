@@ -4,17 +4,11 @@ import { ApiError, apiError, apiResponse } from "@/lib/api-auth";
 import { getSession } from "@/lib/auth";
 import { prisma as db } from "@/lib/db";
 import { ensurePaymentDocumentNumber } from "@/lib/payments/documents";
-import { applyRateLimit } from "@/lib/rate-limit";
-
 // GET /api/invoices — invoice list backed by payments table
 export async function GET(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session?.id) throw new ApiError(401, "กรุณาเข้าสู่ระบบ");
-
-    const rl = await applyRateLimit(session.id, "api");
-    if (rl.blocked) return rl.blocked;
-
     const { searchParams } = new URL(req.url);
     const page = Math.max(1, Number.parseInt(searchParams.get("page") || "1", 10));
     const limit = Math.min(100, Math.max(1, Number.parseInt(searchParams.get("limit") || "20", 10)));

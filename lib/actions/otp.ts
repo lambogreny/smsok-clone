@@ -4,7 +4,6 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { sendSingleSms } from "@/lib/sms-gateway";
 import { normalizePhone, sendOtpSchema, verifyOtpSchema } from "@/lib/validations";
-import { checkOtpRateLimit, recordOtpSend } from "@/lib/otp-rate-limit";
 import crypto from "crypto";
 import { Prisma } from "@prisma/client";
 import { deductQuota, refundQuota, getRemainingQuota, ensureSufficientQuota } from "../package/quota";
@@ -78,12 +77,6 @@ export async function generateOtp_(
   const input = parsed.data;
   const normalizedPhone = normalizePhone(input.phone);
   const debugMode = options.debug === true && process.env.NODE_ENV !== "production";
-
-  // Redis rate limit: exponential backoff + daily quota + IP limit
-  const rateLimit = await checkOtpRateLimit(normalizedPhone, ip);
-  if (!rateLimit.allowed) {
-    throw new Error(rateLimit.reason || "ส่ง OTP มากเกินไป กรุณารอสักครู่");
-  }
 
   // DB-level fallback: max 3 OTPs per phone per 10 min
   const windowStart = new Date(Date.now() - OTP_RATE_WINDOW_MS);
@@ -172,9 +165,6 @@ export async function generateOtp_(
       throw new Error("ส่ง OTP ไม่สำเร็จ กรุณาลองใหม่");
     }
   }
-
-  // Record successful send for Redis backoff tracking
-  await recordOtpSend(normalizedPhone, ip);
 
   // Log SMS history after confirmed send
   const sentAt = new Date();
@@ -326,13 +316,6 @@ export async function generateOtpForRegister(phone: string, ip: string = "unknow
   }
   const normalizedPhone = normalizePhone(parsedOtp.data.phone);
 
-  // Anti-enumeration: check rate limit BEFORE phone existence check
-  // This way attackers can't distinguish "phone exists" vs "rate limited"
-  const rateLimit = await checkOtpRateLimit(normalizedPhone, ip);
-  if (!rateLimit.allowed) {
-    throw new Error(rateLimit.reason || "ส่ง OTP มากเกินไป กรุณารอสักครู่");
-  }
-
   const existing = await prisma.user.findUnique({ where: { phone: normalizedPhone }, select: { id: true } });
   if (existing) throw new Error("เบอร์โทรนี้ถูกใช้งานแล้ว");
 
@@ -370,9 +353,6 @@ export async function generateOtpForRegister(phone: string, ip: string = "unknow
     const result = await sendSingleSms(normalizedPhone, message, "EasySlip");
     if (!result.success) throw new Error("ส่ง OTP ไม่สำเร็จ กรุณาลองใหม่");
   }
-
-  // Record successful send for Redis backoff tracking
-  await recordOtpSend(normalizedPhone, ip);
 
   return {
     ref: refCode,

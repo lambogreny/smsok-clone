@@ -5,7 +5,6 @@ import { authenticateAdmin } from "@/lib/admin-auth";
 import { createAuditLog } from "@/lib/actions/audit";
 import { prisma as db } from "@/lib/db";
 import { revokeAllUserSessions } from "@/lib/auth";
-import { applyRateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/session-utils";
 
 const bodySchema = z.object({
@@ -18,9 +17,6 @@ export async function POST(
 ) {
   try {
     const admin = await authenticateAdmin(req, ["SUPPORT", "OPERATIONS"]);
-    const rl = await applyRateLimit(admin.id, "admin");
-    if (rl.blocked) return rl.blocked;
-
     const { id } = await params;
     const rawBody = await req.json().catch(() => ({}));
     const body = bodySchema.parse(rawBody);

@@ -2,17 +2,12 @@ import { NextRequest } from "next/server";
 import { authenticateRequest, apiResponse, apiError } from "@/lib/api-auth";
 import { getUserPermissions } from "@/lib/rbac";
 import { resolveOrganizationIdForUser } from "@/lib/organizations/resolve";
-import { applyRateLimit } from "@/lib/rate-limit";
-
 type Params = { params: Promise<{ id: string }> };
 
 // GET /api/v1/organizations/:id/me/permissions
 export async function GET(req: NextRequest, { params }: Params) {
   try {
     const user = await authenticateRequest(req);
-    const rl = await applyRateLimit(user.id, "api");
-    if (rl.blocked) return rl.blocked;
-
     const { id } = await params;
     const organizationId = await resolveOrganizationIdForUser(user.id, id);
     const permissions = await getUserPermissions(user.id, organizationId);
