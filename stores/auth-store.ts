@@ -6,6 +6,7 @@ export type User = {
   email: string
   phone?: string
   role: string
+  organizationId?: string | null
 }
 
 export type AuthState = {

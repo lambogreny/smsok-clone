@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useAuthStore } from "@/providers/auth-store-provider";
 
 type PermissionCheck = `${string}:${string}`; // "action:resource" format
 
@@ -19,17 +20,22 @@ export function usePermission(check?: PermissionCheck) {
   const [permissions, setPermissions] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const organizationId = useAuthStore((s) => s.user?.organizationId);
+  const updateUser = useAuthStore((s) => s.updateUser);
 
   useEffect(() => {
     let cancelled = false;
     async function fetchPermissions() {
       try {
-        // TODO: replace "default" with real organizationId from context
-        const res = await fetch("/api/v1/organizations/default/me/permissions");
+        const orgSlug = organizationId || "default";
+        const res = await fetch(`/api/v1/organizations/${encodeURIComponent(orgSlug)}/me/permissions`);
         if (res.ok) {
           const data = await res.json();
           if (!cancelled) {
             setPermissions(new Set(data.permissions ?? []));
+            if (data.organizationId && !organizationId) {
+              updateUser({ organizationId: data.organizationId });
+            }
           }
         } else {
           if (!cancelled) setError(true);
@@ -42,7 +48,7 @@ export function usePermission(check?: PermissionCheck) {
     }
     fetchPermissions();
     return () => { cancelled = true; };
-  }, []);
+  }, [organizationId, updateUser]);
 
   const can = useCallback((permission: PermissionCheck) => {
     return permissions.has(permission);

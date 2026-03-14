@@ -99,13 +99,15 @@ const COST_PER_SMS = 0.32;
 const PROVIDER_OK = "3/3";
 const QUEUE_BACKLOG = 23;
 
-// Provider delivery chart
-const PROVIDER_CHART_DATA = Array.from({ length: 24 }, (_, i) => ({
-  hour: `${String(i).padStart(2, "0")}:00`,
-  Twilio: 97 + Math.random() * 3,
-  ThaiBulk: 96 + Math.random() * 3,
-  Backup: 94 + Math.random() * 4,
-}));
+// Provider delivery chart — generated client-side to avoid hydration mismatch
+function generateProviderChartData() {
+  return Array.from({ length: 24 }, (_, i) => ({
+    hour: `${String(i).padStart(2, "0")}:00`,
+    Twilio: 97 + Math.random() * 3,
+    ThaiBulk: 96 + Math.random() * 3,
+    Backup: 94 + Math.random() * 4,
+  }));
+}
 
 // Carrier bar chart
 const CARRIER_CHART_DATA = [
@@ -116,11 +118,13 @@ const CARRIER_CHART_DATA = [
 ];
 const CARRIER_COLORS = ["var(--accent)", "var(--info)", "var(--warning)", "var(--text-muted)"];
 
-// Cost trend
-const COST_TREND_DATA = Array.from({ length: 30 }, (_, i) => ({
-  day: `${i + 1}`,
-  cost: 0.28 + Math.random() * 0.08,
-}));
+// Cost trend — generated client-side to avoid hydration mismatch
+function generateCostTrendData() {
+  return Array.from({ length: 30 }, (_, i) => ({
+    day: `${i + 1}`,
+    cost: 0.28 + Math.random() * 0.08,
+  }));
+}
 
 // Failure pie
 const FAILURE_PIE_DATA = [
@@ -263,6 +267,13 @@ export default function OperationsPage() {
   const [providerFilter, setProviderFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
+  const [providerChartData, setProviderChartData] = useState<Array<{ hour: string; Twilio: number; ThaiBulk: number; Backup: number }>>([]);
+  const [costTrendData, setCostTrendData] = useState<Array<{ day: string; cost: number }>>([]);
+
+  useEffect(() => {
+    setProviderChartData(generateProviderChartData());
+    setCostTrendData(generateCostTrendData());
+  }, []);
 
   function handleRefresh() {
     setIsRefreshing(true);
@@ -436,7 +447,7 @@ export default function OperationsPage() {
             Delivery by Provider
           </h3>
           <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={PROVIDER_CHART_DATA}>
+            <LineChart data={providerChartData}>
               <CartesianGrid
                 strokeDasharray="3 3"
                 stroke="rgba(255,255,255,0.04)"
@@ -541,7 +552,7 @@ export default function OperationsPage() {
             Cost Trend (30d)
           </h3>
           <ResponsiveContainer width="100%" height={220}>
-            <AreaChart data={COST_TREND_DATA}>
+            <AreaChart data={costTrendData}>
               <defs>
                 <linearGradient id="costGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="var(--warning)" stopOpacity={0.1} />

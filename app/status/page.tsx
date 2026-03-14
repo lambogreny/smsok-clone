@@ -36,6 +36,8 @@ const INCIDENTS = [
 ];
 
 export default function StatusPage() {
+  const [lastChecked, setLastChecked] = useState("");
+
   const [services, setServices] = useState<ServiceItem[]>([
     { name: "เว็บไซต์ SMSOK", icon: Globe, status: "loading", uptime: 99.99 },
     { name: "SMS Gateway", icon: MessageSquare, status: "loading", uptime: 99.95 },
@@ -66,6 +68,7 @@ export default function StatusPage() {
     };
 
     checkHealth();
+    setLastChecked(new Date().toLocaleString("th-TH"));
   }, []);
 
   const allOperational = services.every((s) => s.status === "operational");
@@ -100,7 +103,7 @@ export default function StatusPage() {
                 {allOperational ? "ทุกระบบทำงานปกติ" : "บางระบบทำงานช้ากว่าปกติ"}
               </p>
               <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                อัปเดตล่าสุด: {new Date().toLocaleString("th-TH")}
+                อัปเดตล่าสุด: {lastChecked || "กำลังตรวจสอบ..."}
               </p>
             </div>
           </div>
