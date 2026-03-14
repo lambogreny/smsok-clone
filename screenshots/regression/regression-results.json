@@ -2,8 +2,8 @@
   "results": [
     {
       "name": "Login",
-      "status": "PASS",
-      "detail": "http://localhost:3000/dashboard"
+      "status": "FAIL",
+      "detail": "https://smsok.9phum.me/login"
     },
     {
       "name": "Cookie banner: Login button clickable",
@@ -17,8 +17,8 @@
     },
     {
       "name": "500 Server errors",
-      "status": "PASS",
-      "detail": "No 500 errors!"
+      "status": "FAIL",
+      "detail": "36 server errors found"
     },
     {
       "name": "Hydration mismatch",
@@ -27,12 +27,12 @@
     },
     {
       "name": "Total console errors",
-      "status": "WARN",
-      "detail": "1 total errors"
+      "status": "FAIL",
+      "detail": "108 total errors"
     }
   ],
   "prismaErrors": 0,
-  "serverErrors": 0,
+  "serverErrors": 36,
   "hydrationErrors": 0,
-  "totalErrors": 1
+  "totalErrors": 108
 }
