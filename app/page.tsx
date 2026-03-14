@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import LandingPageWrapper from "./components/LandingPageWrapper";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://smsok.9phum.me";
@@ -39,7 +40,9 @@ export default function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <LandingPageWrapper />
+      <Suspense fallback={<div className="min-h-screen bg-[var(--bg-base)]" />}>
+        <LandingPageWrapper />
+      </Suspense>
     </>
   );
 }
