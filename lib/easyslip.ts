@@ -1,10 +1,11 @@
 /**
  * EasySlip API — Payment Slip Verification
- * Base URL: https://developer.easyslip.com/api/v1
+ * Verify endpoint: https://developer.easyslip.com/api/v1/verify
  * Auth: Bearer token in Authorization header
  */
 
-const EASYSLIP_API_URL = process.env.EASYSLIP_API_URL || "https://developer.easyslip.com/api/v1";
+const DEFAULT_EASYSLIP_VERIFY_URL = "https://developer.easyslip.com/api/v1/verify";
+const EASYSLIP_VERIFY_URL = process.env.EASYSLIP_API_URL || DEFAULT_EASYSLIP_VERIFY_URL;
 const EASYSLIP_API_KEY = process.env.EASYSLIP_API_KEY || "";
 
 type EasySlipApiResponse = {
@@ -210,7 +211,7 @@ export async function verifySlipByUrl(imageUrl: string): Promise<SlipVerifyResul
     const form = new FormData();
     form.append("file", imageBlob, "slip.jpg");
 
-    res = await fetch(`${EASYSLIP_API_URL}/verify`, {
+    res = await fetch(EASYSLIP_VERIFY_URL, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${EASYSLIP_API_KEY}`,
@@ -277,7 +278,9 @@ export async function verifySlipByUrl(imageUrl: string): Promise<SlipVerifyResul
 export async function getQuota(): Promise<{ used: number; total: number; remaining: number } | null> {
   if (!EASYSLIP_API_KEY) return null;
 
-  const res = await fetch(`${EASYSLIP_API_URL}/me`, {
+  const verifyUrl = new URL(EASYSLIP_VERIFY_URL);
+  const quotaUrl = `${verifyUrl.origin}${verifyUrl.pathname.replace(/\/verify$/, "/me")}`;
+  const res = await fetch(quotaUrl, {
     headers: { Authorization: `Bearer ${EASYSLIP_API_KEY}` },
   });
 
