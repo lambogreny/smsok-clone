@@ -49,16 +49,10 @@ function createQaOrganizationSlug(base: string) {
 }
 
 async function ensureQaTier(tx: Prisma.TransactionClient) {
-  const existingTier = await tx.packageTier.findUnique({
+  return tx.packageTier.upsert({
     where: { tierCode: QA_PACKAGE_TIER_CODE },
-  });
-
-  if (existingTier) {
-    return existingTier;
-  }
-
-  return tx.packageTier.create({
-    data: {
+    update: {},
+    create: {
       name: "QA Trial",
       tierCode: QA_PACKAGE_TIER_CODE,
       price: 0,
