@@ -91,6 +91,6 @@ describe("Task #1816: billing order detail payload exposes document links", () =
     expect(orderService).toContain("receipt_url");
     expect(orderService).toContain("documents: activeDocuments.map(serializeOrderDocument)");
     expect(orderService).toContain("timeline: history.map");
-    expect(orderService).toContain("url: document.pdfUrl ?? undefined");
+    expect(orderService).toContain("url: resolveStoredFilePublicUrl(document.pdfUrl) ?? document.pdfUrl ?? undefined");
   });
 });

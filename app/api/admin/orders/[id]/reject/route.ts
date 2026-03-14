@@ -26,6 +26,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
     const { id } = await ctx.params;
     const body = await req.json();
     const { reason } = rejectSchema.parse(body);
+    const reviewRejectReason = reason.length <= 30 ? reason : "ADMIN_REJECTED";
 
     const order = await db.order.findUnique({
       where: { id },
@@ -48,7 +49,10 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
           status: "CANCELLED",
           cancelledAt: new Date(),
           cancellationReason: reason,
-          rejectReason: reason,
+          // legacy admin review semantics: rejectReason: reason
+          rejectReason: reviewRejectReason,
+          rejectMessage: reason,
+          rejectedAt: new Date(),
           reviewedBy: admin.id,
           reviewedAt: new Date(),
         },

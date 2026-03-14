@@ -4,6 +4,8 @@ import {
 } from "@prisma/client";
 import { prisma as db } from "@/lib/db";
 import { generateOrderDocumentNumber } from "@/lib/orders/numbering";
+import { renderOrderAccountingDocumentPdf } from "@/lib/orders/pdf";
+import { storeBufferInR2 } from "@/lib/storage/service";
 
 type TxClient = Parameters<Parameters<typeof db.$transaction>[0]>[0];
 type DbClient = PrismaClient | TxClient;
@@ -36,6 +38,9 @@ export const orderSummarySelect = {
   whtCertUrl: true,
   easyslipVerified: true,
   rejectReason: true,
+  rejectMessage: true,
+  rejectedAt: true,
+  slipAttemptCount: true,
   adminNote: true,
   paidAt: true,
   cancelledAt: true,
@@ -90,6 +95,7 @@ export const orderDetailSelect = {
 
 export const orderPdfSelect = {
   id: true,
+  userId: true,
   orderNumber: true,
   customerType: true,
   packageName: true,
@@ -139,6 +145,91 @@ export function documentTypeToApiPath(type: OrderDocumentType) {
     case "CREDIT_NOTE":
       return "credit-note";
   }
+}
+
+async function syncOrderDocumentPdfToR2(
+  client: DbClient,
+  orderId: string,
+  document: {
+    id: string;
+    type: OrderDocumentType;
+    documentNumber: string;
+    issuedAt: Date;
+    pdfUrl: string | null;
+  },
+) {
+  if (document.pdfUrl && !document.pdfUrl.startsWith("/api/")) {
+    if (document.type === "INVOICE") {
+      await client.order.update({
+        where: { id: orderId },
+        data: {
+          invoiceUrl: document.pdfUrl,
+        },
+      });
+    }
+
+    if (document.type === "CREDIT_NOTE") {
+      await client.order.update({
+        where: { id: orderId },
+        data: {
+          creditNoteUrl: document.pdfUrl,
+        },
+      });
+    }
+
+    return document;
+  }
+
+  const orderForPdf = await client.order.findUnique({
+    where: { id: orderId },
+    select: orderPdfSelect,
+  });
+  if (!orderForPdf) {
+    throw new Error("Order PDF source missing");
+  }
+
+  const pdfBuffer = await renderOrderAccountingDocumentPdf(orderForPdf, {
+    documentNumber: document.documentNumber,
+    type: document.type,
+    issuedAt: document.issuedAt,
+  });
+
+  const stored = await storeBufferInR2({
+    userId: orderForPdf.userId,
+    scope: "orders",
+    resourceId: orderId,
+    kind: "documents",
+    body: pdfBuffer,
+    contentType: "application/pdf",
+    fileName: `${document.documentNumber}.pdf`,
+  });
+
+  const updated = await client.orderDocument.update({
+    where: { id: document.id },
+    data: {
+      pdfUrl: stored.ref,
+    },
+  });
+
+  if (document.type === "INVOICE") {
+    await client.order.update({
+      where: { id: orderId },
+      data: {
+        invoiceUrl: stored.ref,
+      },
+    });
+  }
+
+  if (document.type === "CREDIT_NOTE") {
+    await client.order.update({
+      where: { id: orderId },
+      data: {
+        creditNoteUrl: stored.ref,
+      },
+    });
+  }
+
+  return updated;
 }
 
 export async function activateOrderPurchase(
@@ -197,7 +288,9 @@ export async function ensureOrderDocument(
     orderBy: { issuedAt: "desc" },
   });
 
-  if (existing) return existing;
+  if (existing) {
+    return syncOrderDocumentPdfToR2(client, order.id, existing);
+  }
 
   const documentNumber = await generateOrderDocumentNumber(ORDER_DOCUMENT_KIND[type], client);
   const created = await client.orderDocument.create({
@@ -246,5 +339,5 @@ export async function ensureOrderDocument(
     });
   }
 
-  return updated;
+  return syncOrderDocumentPdfToR2(client, order.id, updated);
 }

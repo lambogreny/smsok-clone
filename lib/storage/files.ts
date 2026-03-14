@@ -10,7 +10,7 @@ const MIME_EXTENSION_MAP: Record<string, string> = {
 };
 
 type StoredFileScope = "orders" | "payments";
-type StoredFileKind = "slips" | "wht";
+type StoredFileKind = "slips" | "wht" | "documents";
 
 function inferExtension(fileName?: string | null, contentType?: string | null) {
   const extFromName = fileName?.split(".").pop()?.trim().toLowerCase();
@@ -79,6 +79,22 @@ export function buildStoredFileProxyUrl(keyOrRef: string) {
   return `${STORAGE_PROXY_PREFIX}/${encodedKey}`;
 }
 
+export function buildStoredFilePublicUrl(keyOrRef: string) {
+  const publicBase = process.env.R2_PUBLIC_URL?.trim().replace(/\/+$/, "");
+  if (!publicBase) {
+    return null;
+  }
+
+  const key = extractStoredFileKey(keyOrRef) ?? keyOrRef;
+  const encodedKey = key
+    .split("/")
+    .filter(Boolean)
+    .map((segment) => encodeURIComponent(segment))
+    .join("/");
+
+  return `${publicBase}/${encodedKey}`;
+}
+
 export function resolveStoredFileUrl(value: string | null | undefined) {
   if (!value) {
     return null;
@@ -90,6 +106,19 @@ export function resolveStoredFileUrl(value: string | null | undefined) {
   }
 
   return buildStoredFileProxyUrl(storedKey);
+}
+
+export function resolveStoredFilePublicUrl(value: string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  const storedKey = extractStoredFileKey(value);
+  if (!storedKey) {
+    return value;
+  }
+
+  return buildStoredFilePublicUrl(storedKey) ?? buildStoredFileProxyUrl(storedKey);
 }
 
 export function getStoredFileOwnerId(keyOrRef: string | null | undefined) {

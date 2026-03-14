@@ -1,4 +1,7 @@
 import { spawn, type ChildProcess } from "node:child_process"
+import { getEnv } from "../lib/env"
+
+getEnv()
 
 const RUNTIME = process.execPath
 const WEB_ARGS = ["run", "dev:web"]

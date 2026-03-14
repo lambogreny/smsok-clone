@@ -5,6 +5,7 @@ import { prisma as db } from "@/lib/db";
 import { renderOrderAccountingDocumentPdf } from "@/lib/orders/pdf";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { orderPdfSelect } from "@/lib/orders/api";
+import { readStoredFile } from "@/lib/storage/service";
 
 type RouteContext = {
   params: Promise<{ id: string; docId: string }>;
@@ -38,12 +39,27 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
         type: true,
         documentNumber: true,
         issuedAt: true,
+        pdfUrl: true,
         order: {
           select: orderPdfSelect,
         },
       },
     });
     if (!document) throw new ApiError(404, "ไม่พบเอกสาร");
+
+    if (document.pdfUrl?.startsWith("r2:")) {
+      const file = await readStoredFile(document.pdfUrl);
+      const download = req.nextUrl.searchParams.get("download") === "1";
+
+      return new Response(new Uint8Array(file.body), {
+        headers: {
+          ...rl.headers,
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `${download ? "attachment" : "inline"}; filename="${document.documentNumber}.pdf"`,
+          "Content-Length": String(file.contentLength),
+        },
+      });
+    }
 
     const pdfBuffer = await renderOrderAccountingDocumentPdf(document.order, {
       documentNumber: document.documentNumber,

@@ -8,6 +8,7 @@ import {
   SLIP_QUEUED_REVIEW_NOTE,
   SLIP_QUEUED_STATUS_NOTE,
 } from "@/lib/orders/slip-verification";
+import { MAX_SLIP_ATTEMPTS } from "@/lib/orders/rejected-slip";
 import { createOrderHistory, serializeOrderSlip, serializeOrderV2 } from "@/lib/orders/service";
 import { slipVerifyQueue } from "@/lib/queue/queues";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -64,6 +65,9 @@ export async function POST(req: Request, ctx: RouteContext) {
         easyslipResponse: true,
         adminNote: true,
         rejectReason: true,
+        rejectMessage: true,
+        rejectedAt: true,
+        slipAttemptCount: true,
         paidAt: true,
         completedAt: true,
       },
@@ -74,6 +78,9 @@ export async function POST(req: Request, ctx: RouteContext) {
     }
     if (order.status === "VERIFYING") {
       throw new ApiError(409, "กำลังตรวจสอบสลิปอยู่ กรุณารอ");
+    }
+    if (order.slipAttemptCount >= MAX_SLIP_ATTEMPTS) {
+      throw new ApiError(429, "คุณส่งสลิปผิดเกินจำนวนครั้งที่กำหนดแล้ว กรุณาติดต่อเจ้าหน้าที่");
     }
     if (order.status !== "PENDING_PAYMENT") {
       throw new ApiError(400, "คำสั่งซื้อนี้ไม่สามารถแนบสลิปได้");
@@ -171,6 +178,8 @@ export async function POST(req: Request, ctx: RouteContext) {
           easyslipResponse: Prisma.JsonNull,
           adminNote: SLIP_QUEUED_STATUS_NOTE,
           rejectReason: null,
+          rejectMessage: null,
+          rejectedAt: null,
           paidAt: null,
           completedAt: null,
         },
@@ -216,6 +225,8 @@ export async function POST(req: Request, ctx: RouteContext) {
             easyslipResponse: order.easyslipResponse ? (order.easyslipResponse as Prisma.InputJsonValue) : Prisma.JsonNull,
             adminNote: order.adminNote,
             rejectReason: order.rejectReason,
+            rejectMessage: order.rejectMessage,
+            rejectedAt: order.rejectedAt,
             paidAt: order.paidAt,
             completedAt: order.completedAt,
           },

@@ -12,7 +12,7 @@ import {
 } from "@/lib/storage/r2";
 
 type StoredFileScope = "orders" | "payments";
-type StoredFileKind = "slips" | "wht";
+type StoredFileKind = "slips" | "wht" | "documents";
 
 type StoreFileInput = {
   userId: string;

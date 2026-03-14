@@ -59,7 +59,7 @@ describe("Task #2715: slip upload fail-soft", () => {
     ).rejects.toThrow("R2 upload failed");
   });
 
-  it("returns a fail-soft result when EasySlip URL requests throw", async () => {
+  it("returns a fail-soft result when EasySlip requests throw", async () => {
     vi.resetModules();
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network down")));
     const { verifySlipByUrl } = await import("@/lib/easyslip");
@@ -68,19 +68,14 @@ describe("Task #2715: slip upload fail-soft", () => {
 
     expect(result).toEqual({
       success: false,
-      error: "Slip image download failed",
+      error: "EasySlip unavailable",
     });
   });
 
   it("normalizes the docs URL to the real EasySlip verify API endpoint", async () => {
     vi.resetModules();
 
-    const fetchMock = vi.fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        blob: async () => new Blob(["image-bytes"], { type: "image/jpeg" }),
-      })
-      .mockResolvedValueOnce(new Response(JSON.stringify({
+    const fetchMock = vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({
         status: 404,
         message: "slip_not_found",
       }), {
@@ -95,13 +90,15 @@ describe("Task #2715: slip upload fail-soft", () => {
     await verifySlipByUrl("https://signed.example/slip.jpg");
 
     expect(fetchMock).toHaveBeenNthCalledWith(
-      2,
+      1,
       "https://developer.easyslip.com/api/v1/verify",
       expect.objectContaining({
         method: "POST",
         headers: expect.objectContaining({
           Authorization: "Bearer test-easyslip-key",
+          "Content-Type": "application/json",
         }),
+        body: JSON.stringify({ url: "https://signed.example/slip.jpg", checkDuplicate: true }),
       }),
     );
   });

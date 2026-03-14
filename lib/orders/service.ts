@@ -5,6 +5,7 @@ import {
 } from "@prisma/client";
 import { calculateVat, calculateWithWht } from "@/lib/accounting/vat";
 import { prisma as db } from "@/lib/db";
+import { isSlipRejectCode } from "@/lib/orders/rejected-slip";
 import { resolveStoredFilePublicUrl, resolveStoredFileUrl } from "@/lib/storage/files";
 
 type TxClient = Parameters<Parameters<typeof db.$transaction>[0]>[0];
@@ -38,6 +39,9 @@ type OrderRecord = {
   whtCertUrl: string | null;
   easyslipVerified: boolean | null;
   rejectReason: string | null;
+  rejectMessage: string | null;
+  rejectedAt: Date | null;
+  slipAttemptCount: number;
   adminNote: string | null;
   paidAt: Date | null;
   cancelledAt: Date | null;
@@ -386,7 +390,21 @@ function attachLatestStatusNote(
   };
 }
 
+function getOrderRejectCode(order: OrderRecord) {
+  return isSlipRejectCode(order.rejectReason) ? order.rejectReason : undefined;
+}
+
+function getOrderRejectMessage(order: OrderRecord) {
+  if (order.rejectMessage?.trim()) {
+    return order.rejectMessage;
+  }
+
+  return isSlipRejectCode(order.rejectReason) ? undefined : order.rejectReason ?? undefined;
+}
+
 export function serializeOrder(order: OrderSerializeInput) {
+  const rejectCode = getOrderRejectCode(order);
+  const rejectMessage = getOrderRejectMessage(order);
   const base = {
     id: order.id,
     order_number: order.orderNumber,
@@ -408,7 +426,7 @@ export function serializeOrder(order: OrderSerializeInput) {
     wht_applicable: order.hasWht,
     wht_amount: toNumber(order.whtAmount),
     pay_amount: toNumber(order.payAmount),
-    status: order.status === "PENDING_PAYMENT" && order.rejectReason
+    status: order.status === "PENDING_PAYMENT" && (rejectCode || rejectMessage)
       ? "REJECTED" as LegacyOrderStatus
       : serializeLegacyOrderStatus(order.status),
     expires_at: order.expiresAt.toISOString(),
@@ -419,7 +437,11 @@ export function serializeOrder(order: OrderSerializeInput) {
     slip_url: resolveStoredFileUrl(order.slipUrl) ?? undefined,
     wht_cert_url: resolveStoredFileUrl(order.whtCertUrl) ?? undefined,
     easyslip_verified: order.easyslipVerified ?? undefined,
-    reject_reason: order.rejectReason ?? undefined,
+    reject_reason: rejectMessage ?? rejectCode,
+    reject_code: rejectCode,
+    reject_message: rejectMessage,
+    rejected_at: order.rejectedAt?.toISOString(),
+    slip_attempt_count: order.slipAttemptCount,
     admin_note: order.adminNote ?? undefined,
     paid_at: order.paidAt?.toISOString(),
     cancelled_at: order.cancelledAt?.toISOString(),
@@ -440,6 +462,8 @@ export function serializeOrder(order: OrderSerializeInput) {
 }
 
 export function serializeOrderV2(order: OrderSerializeInput) {
+  const rejectCode = getOrderRejectCode(order);
+  const rejectMessage = getOrderRejectMessage(order);
   const base = {
     id: order.id,
     order_number: order.orderNumber,
@@ -470,7 +494,11 @@ export function serializeOrderV2(order: OrderSerializeInput) {
     slip_url: resolveStoredFileUrl(order.slipUrl) ?? undefined,
     wht_cert_url: resolveStoredFileUrl(order.whtCertUrl) ?? undefined,
     easyslip_verified: order.easyslipVerified ?? undefined,
-    reject_reason: order.rejectReason ?? undefined,
+    reject_reason: rejectMessage ?? rejectCode,
+    reject_code: rejectCode,
+    reject_message: rejectMessage,
+    rejected_at: order.rejectedAt?.toISOString(),
+    slip_attempt_count: order.slipAttemptCount,
     admin_note: order.adminNote ?? undefined,
     paid_at: order.paidAt?.toISOString(),
     cancelled_at: order.cancelledAt?.toISOString(),

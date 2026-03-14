@@ -6,6 +6,7 @@ import { renderOrderQuotationPdf } from "@/lib/orders/pdf";
 import { renderOrderAccountingDocumentPdf } from "@/lib/orders/pdf";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { orderPdfSelect } from "@/lib/orders/api";
+import { readStoredFile } from "@/lib/storage/service";
 
 const TYPE_MAP = {
   quotation: "QUOTATION",
@@ -87,9 +88,23 @@ export async function buildOrderDocumentDownloadResponse(
         type: true,
         documentNumber: true,
         issuedAt: true,
+        pdfUrl: true,
       },
     });
     if (!document) throw new ApiError(404, "ไม่พบเอกสาร");
+
+    if (document.pdfUrl?.startsWith("r2:")) {
+      const file = await readStoredFile(document.pdfUrl);
+      headers.set(
+        "Content-Disposition",
+        `${download ? "attachment" : "inline"}; filename="${document.documentNumber}.pdf"`,
+      );
+      headers.set("Content-Length", String(file.contentLength));
+
+      return new NextResponse(new Uint8Array(file.body), {
+        headers,
+      });
+    }
 
     const pdfBuffer = await renderOrderAccountingDocumentPdf(order, {
       documentNumber: document.documentNumber,

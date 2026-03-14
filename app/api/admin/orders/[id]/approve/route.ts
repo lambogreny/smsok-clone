@@ -47,6 +47,8 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
           reviewedBy: admin.id,
           reviewedAt: new Date(),
           rejectReason: null,
+          rejectMessage: null,
+          rejectedAt: null,
         },
         select: orderSummarySelect,
       });

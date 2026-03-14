@@ -104,6 +104,9 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
         where: { id: order.id },
         data: {
           status: nextStatus,
+          rejectReason: nextStatus === "PAID" ? null : undefined,
+          rejectMessage: nextStatus === "PAID" ? null : undefined,
+          rejectedAt: nextStatus === "PAID" ? null : undefined,
           paidAt: nextStatus === "PAID" ? new Date() : undefined,
           completedAt: nextStatus === "PAID" ? new Date() : undefined,
           cancelledAt: nextStatus === "CANCELLED" ? new Date() : undefined,
