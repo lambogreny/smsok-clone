@@ -17,43 +17,13 @@ const PUBLIC_SESSION_PAGES = new Set([
   "/reset-password",
 ]);
 
-function buildContentSecurityPolicy(pathname: string) {
-  const scriptSrc = process.env.NODE_ENV === "production"
-    ? ["'self'", "'unsafe-inline'"]
-    : ["'self'", "'unsafe-inline'", "'unsafe-eval'"];
-  const styleSrc = ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"];
-  const connectSrc = ["'self'", "https://*.ingest.sentry.io"];
-
-  if (pathname.startsWith("/api/v1/docs")) {
-    scriptSrc.push("https://cdn.jsdelivr.net");
-    styleSrc.push("https://cdn.jsdelivr.net");
-  }
-
-  if (process.env.NODE_ENV !== "production") {
-    connectSrc.push("ws:", "http://localhost:*", "https://localhost:*");
-  }
-
-  return [
-    "default-src 'self'",
-    `script-src ${scriptSrc.join(" ")}`,
-    `style-src ${styleSrc.join(" ")}`,
-    "img-src 'self' data: blob: https:",
-    "font-src 'self' data: https://fonts.gstatic.com",
-    `connect-src ${connectSrc.join(" ")}`,
-    "frame-ancestors 'none'",
-  ].join("; ");
-}
-
-function applySecurityHeaders(response: NextResponse, pathname: string) {
+function applySecurityHeaders(response: NextResponse, _pathname: string) {
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("X-Frame-Options", "DENY");
   response.headers.set("X-XSS-Protection", "1; mode=block");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-  response.headers.set(
-    "Content-Security-Policy",
-    buildContentSecurityPolicy(pathname),
-  );
+  // CSP is handled by Nginx (infra/nginx.conf line 66) to avoid dual-header conflicts
 
   if (process.env.NODE_ENV === "production") {
     response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
