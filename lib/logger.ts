@@ -22,7 +22,7 @@ function log(level: LogLevel, msg: string, meta?: Record<string, unknown>) {
   } else if (level === "warn") {
     console.warn(output);
   } else {
-    console.log(output);
+    console.info(output);
   }
 }
 

@@ -10,6 +10,7 @@ import { Worker } from "bullmq"
 import { workerConnectionOptions } from "../connection"
 import { QUEUE_NAMES, QUEUE_CONFIG, type SmsJobData, type SmsJobResult } from "../types"
 import { maskPhoneForLog } from "../../log-masking"
+import { logger } from "../../logger"
 
 export function createOtpWorker() {
   const config = QUEUE_CONFIG[QUEUE_NAMES.SMS_OTP]
@@ -37,9 +38,11 @@ export function createOtpWorker() {
         throw new Error(result.error || "SMS send failed")
       }
 
-      console.log(
-        `[OTP Worker] ✓ correlationId=${correlationId} phone=${maskPhoneForLog(phone)} jobId=${job.id}`
-      )
+      logger.info("otp worker sent sms", {
+        correlationId,
+        phone: maskPhoneForLog(phone),
+        jobId: job.id,
+      })
 
       return {
         smsId: job.data.id,
@@ -63,7 +66,7 @@ export function createOtpWorker() {
 
   worker.on("completed", (job) => {
     if (job) {
-      console.log(`[OTP Worker] Job ${job.id} completed`)
+      logger.info("otp worker job completed", { jobId: job.id })
     }
   })
 

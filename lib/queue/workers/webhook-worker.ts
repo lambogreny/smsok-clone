@@ -10,6 +10,7 @@ import { Worker } from "bullmq"
 import { workerConnectionOptions } from "../connection"
 import { QUEUE_NAMES, QUEUE_CONFIG, type WebhookJobData, type WebhookJobResult } from "../types"
 import { prisma } from "../../db"
+import { logger } from "../../logger"
 
 const MAX_RESPONSE_BYTES = 1024 * 1024
 
@@ -88,9 +89,13 @@ export function createWebhookWorker() {
           data: { failCount: 0 },
         }).catch((err) => console.error(`[Webhook Worker] Failed to reset failCount: webhookId=${webhookId}`, err))
 
-        console.log(
-          `[Webhook Worker] ✓ correlationId=${correlationId} event=${event} status=${statusCode} latency=${latency}ms jobId=${job.id}`
-        )
+        logger.info("webhook worker delivered event", {
+          correlationId,
+          event,
+          statusCode,
+          latency,
+          jobId: job.id,
+        })
 
         return { statusCode, success: true, latency }
       }
@@ -121,7 +126,7 @@ export function createWebhookWorker() {
   )
 
   worker.on("completed", (job) => {
-    if (job) console.log(`[Webhook Worker] Job ${job.id} completed`)
+    if (job) logger.info("webhook worker job completed", { jobId: job.id })
   })
 
   worker.on("failed", (job, err) => {

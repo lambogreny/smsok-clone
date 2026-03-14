@@ -11,6 +11,7 @@ import { workerConnectionOptions } from "../connection"
 import { QUEUE_NAMES, QUEUE_CONFIG, type SmsJobData, type SmsJobResult } from "../types"
 import { singleQueue } from "../queues"
 import { randomBytes } from "crypto"
+import { logger } from "../../logger"
 
 const CHUNK_SIZE = 50
 
@@ -53,9 +54,11 @@ export function createBatchWorker() {
         await job.updateProgress(Math.round((dispatched / recipients.length) * 100))
       }
 
-      console.log(
-        `[Batch Worker] ✓ correlationId=${correlationId} dispatched=${dispatched} jobs to sms-single queue jobId=${job.id}`
-      )
+      logger.info("batch worker dispatched jobs", {
+        correlationId,
+        dispatched,
+        jobId: job.id,
+      })
 
       return {
         smsId: job.data.id,
@@ -71,7 +74,7 @@ export function createBatchWorker() {
   )
 
   worker.on("completed", (job) => {
-    if (job) console.log(`[Batch Worker] Job ${job.id} completed`)
+    if (job) logger.info("batch worker job completed", { jobId: job.id })
   })
 
   worker.on("failed", (job, err) => {

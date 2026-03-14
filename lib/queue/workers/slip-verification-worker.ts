@@ -12,6 +12,7 @@ import {
   markQueuedOrderForManualReview,
   processQueuedOrderSlipVerification,
 } from "@/lib/orders/slip-verification";
+import { logger } from "@/lib/logger";
 
 export function createSlipVerificationWorker() {
   const config = QUEUE_CONFIG[QUEUE_NAMES.SLIP_VERIFY];
@@ -34,7 +35,10 @@ export function createSlipVerificationWorker() {
   );
 
   worker.on("completed", (job, result) => {
-    console.log(`[Slip Worker] Job ${job.id} completed: ${result?.status ?? "unknown"}`);
+    logger.info("slip worker job completed", {
+      jobId: job.id,
+      status: result?.status ?? "unknown",
+    });
   });
 
   worker.on("failed", async (job, err) => {

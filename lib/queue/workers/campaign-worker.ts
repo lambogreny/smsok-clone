@@ -11,6 +11,7 @@ import { workerConnectionOptions } from "../connection"
 import { QUEUE_NAMES, QUEUE_CONFIG, type SmsJobData, type SmsJobResult } from "../types"
 import { prisma } from "../../db"
 import { dispatchWebhookEvent } from "../../webhook-dispatch"
+import { logger } from "../../logger"
 
 const CHUNK_SIZE = 100
 
@@ -95,9 +96,13 @@ export function createCampaignWorker() {
         correlationId,
       })
 
-      console.log(
-        `[Campaign Worker] ✓ correlationId=${correlationId} sent=${sent} failed=${failed} total=${recipients.length} jobId=${job.id}`
-      )
+      logger.info("campaign worker processed job", {
+        correlationId,
+        sent,
+        failed,
+        total: recipients.length,
+        jobId: job.id,
+      })
 
       return {
         smsId: job.data.id,
@@ -113,7 +118,7 @@ export function createCampaignWorker() {
   )
 
   worker.on("completed", (job) => {
-    if (job) console.log(`[Campaign Worker] Job ${job.id} completed`)
+    if (job) logger.info("campaign worker job completed", { jobId: job.id })
   })
 
   worker.on("failed", (job, err) => {

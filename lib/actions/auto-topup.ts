@@ -1,4 +1,5 @@
 import { prisma as db } from "../db";
+import { logger } from "../logger";
 import { getRemainingQuota } from "../package/quota";
 
 /**
@@ -138,9 +139,12 @@ export async function checkAndAutoTopup(userId: string): Promise<{
     return pkg;
   });
 
-  console.log(
-    `[auto-topup] User ${userId}: auto-purchased ${setting.tier.name} (${setting.tier.totalSms} SMS)`,
-  );
+  logger.info("auto-topup purchase created", {
+    userId,
+    tierName: setting.tier.name,
+    smsTotal: setting.tier.totalSms,
+    purchaseId: purchase.id,
+  });
 
   return { triggered: true, purchaseId: purchase.id };
 }
