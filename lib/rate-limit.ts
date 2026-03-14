@@ -12,7 +12,7 @@ export type RateLimitConfig = {
   maxRequests: number;
 };
 
-const DEFAULTS: Record<string, RateLimitConfig> = {
+export const RATE_LIMIT_DEFAULTS = {
   sms: { windowMs: 60_000, maxRequests: 10 },
   batch: { windowMs: 60_000, maxRequests: 5 },
   auth: { windowMs: 15 * 60_000, maxRequests: 10 },
@@ -46,7 +46,9 @@ const DEFAULTS: Record<string, RateLimitConfig> = {
   ticket_create: { windowMs: 60 * 60_000, maxRequests: 5 },   // 5/hour
   ticket_reply: { windowMs: 60_000, maxRequests: 10 },         // 10/min
   kb_read: { windowMs: 60_000, maxRequests: 60 },              // 60/min
-};
+} satisfies Record<string, RateLimitConfig>;
+
+const DEFAULTS = RATE_LIMIT_DEFAULTS;
 
 function shouldBypassRateLimit() {
   return process.env.NODE_ENV === "development";

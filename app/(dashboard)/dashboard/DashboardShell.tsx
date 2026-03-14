@@ -392,7 +392,7 @@ export default function DashboardShell({
                   ))
                 )}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer justify-center" onClick={() => router.push("/dashboard/messages")}>
+                <DropdownMenuItem className="cursor-pointer justify-center" onClick={() => router.push("/dashboard/notifications")}>
                   <span className="text-xs text-[var(--accent)]">ดูทั้งหมด →</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
