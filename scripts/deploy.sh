@@ -14,6 +14,10 @@ bun install --frozen-lockfile
 npx prisma generate
 npx prisma migrate deploy
 bun run build
+# Copy static assets for standalone mode (Next.js standalone doesn't include these)
+cp -r .next/static .next/standalone/.next/static
+cp -r public .next/standalone/public
+cp .env .next/standalone/.env 2>/dev/null || true
 pm2 restart smsok || pm2 start bun --name smsok -- run start
 echo "[1/2] smsok-clone deployed!"
 
