@@ -2,10 +2,13 @@ import { NextRequest } from "next/server";
 import { apiResponse, apiError } from "@/lib/api-auth";
 import { authenticateAdmin } from "@/lib/admin-auth";
 import { exportAuditLogs } from "@/lib/actions/audit";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
   try {
-    await authenticateAdmin(req);
+    const admin = await authenticateAdmin(req);
+    const rl = await applyRateLimit(admin.id, "admin");
+    if (rl.blocked) return rl.blocked;
     const body = await req.json();
 
     const format = body.format === "csv" ? "csv" : "json";

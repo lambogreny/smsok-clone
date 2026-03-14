@@ -48,10 +48,29 @@ export async function POST(req: NextRequest) {
           where: { id: input.id },
           data: { status: "APPROVED", approvedAt: new Date(), approvedBy: admin.id },
         });
+        await tx.senderNameHistory.create({
+          data: {
+            senderNameId: input.id,
+            action: "approved",
+            fromStatus: senderName.status,
+            toStatus: "APPROVED",
+            performedBy: admin.id,
+          },
+        });
       } else {
         await tx.senderName.update({
           where: { id: input.id },
           data: { status: "REJECTED", rejectNote: input.rejectNote },
+        });
+        await tx.senderNameHistory.create({
+          data: {
+            senderNameId: input.id,
+            action: "rejected",
+            fromStatus: senderName.status,
+            toStatus: "REJECTED",
+            note: input.rejectNote,
+            performedBy: admin.id,
+          },
         });
       }
     });

@@ -111,7 +111,7 @@ export async function createCampaign(userIdOrData: string | unknown, maybeData?:
 
   if (input.senderName && input.senderName !== "EasySlip") {
     const sender = await db.senderName.findFirst({
-      where: { userId, name: input.senderName, status: "APPROVED" },
+      where: { userId, name: input.senderName, status: { in: ["APPROVED", "ACTIVE"] } },
       select: { id: true },
     });
     if (!sender) throw new Error("ชื่อผู้ส่งยังไม่ได้รับอนุมัติ");

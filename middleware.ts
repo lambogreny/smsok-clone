@@ -85,6 +85,10 @@ function shouldVerifySession(pathname: string, hasApiKeyAuth: boolean) {
   return false;
 }
 
+function shouldVerifyAdminSession(pathname: string) {
+  return pathname === "/admin" || pathname.startsWith("/admin/");
+}
+
 function isPageNavigation(pathname: string) {
   return !pathname.startsWith("/api/");
 }
@@ -261,6 +265,18 @@ export async function middleware(req: NextRequest) {
       if (!result.allowed) {
         return rateLimitResponse(result.resetIn);
       }
+    }
+  }
+
+  // --- Admin page protection: require admin_session cookie ---
+  if (shouldVerifyAdminSession(pathname)) {
+    const adminToken = req.cookies.get("admin_session")?.value;
+    if (!adminToken) {
+      const target = new URL("/login", req.url);
+      const redirect = NextResponse.redirect(target);
+      applySecurityHeaders(redirect, target.pathname);
+      redirect.headers.set("X-Request-Id", requestId);
+      return redirect;
     }
   }
 

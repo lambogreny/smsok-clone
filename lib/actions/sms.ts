@@ -68,7 +68,7 @@ export async function sendSms(dataOrUserId: unknown, maybeData?: unknown, channe
 
   // Check sender name is approved
   const sender = await db.senderName.findFirst({
-    where: { userId, name: input.senderName, status: "APPROVED" },
+    where: { userId, name: input.senderName, status: { in: ["APPROVED", "ACTIVE"] } },
   });
   if (!sender) {
     throw new Error("ชื่อผู้ส่งยังไม่ได้รับอนุมัติ");
@@ -204,7 +204,7 @@ export async function sendBatchSms(dataOrUserId: unknown, maybeData?: unknown, c
 
   // Check sender name
   const sender = await db.senderName.findFirst({
-    where: { userId, name: input.senderName, status: "APPROVED" },
+    where: { userId, name: input.senderName, status: { in: ["APPROVED", "ACTIVE"] } },
   });
   if (!sender) {
     throw new Error("ชื่อผู้ส่งยังไม่ได้รับอนุมัติ");

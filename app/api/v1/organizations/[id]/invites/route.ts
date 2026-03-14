@@ -2,12 +2,15 @@ import { NextRequest } from "next/server";
 import { apiResponse, apiError, ApiError, authenticateRequest } from "@/lib/api-auth";
 import { createInvite, getOrgInvites, revokeInvite } from "@/lib/actions/organizations";
 import { resolveOrganizationIdForUser } from "@/lib/organizations/resolve";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function GET(req: NextRequest, { params }: Params) {
   try {
     const user = await authenticateRequest(req);
+    const rl = await applyRateLimit(user.id, "api");
+    if (rl.blocked) return rl.blocked;
     const { id } = await params;
     const organizationId = await resolveOrganizationIdForUser(user.id, id);
     const invites = await getOrgInvites(user.id, organizationId);
@@ -20,6 +23,8 @@ export async function GET(req: NextRequest, { params }: Params) {
 export async function POST(req: NextRequest, { params }: Params) {
   try {
     const user = await authenticateRequest(req);
+    const rl = await applyRateLimit(user.id, "api");
+    if (rl.blocked) return rl.blocked;
     const { id } = await params;
     const organizationId = await resolveOrganizationIdForUser(user.id, id);
     let body: unknown;
@@ -38,6 +43,8 @@ export async function POST(req: NextRequest, { params }: Params) {
 export async function DELETE(req: NextRequest, { params }: Params) {
   try {
     const user = await authenticateRequest(req);
+    const rl = await applyRateLimit(user.id, "api");
+    if (rl.blocked) return rl.blocked;
     const { id } = await params;
     const organizationId = await resolveOrganizationIdForUser(user.id, id);
     const { searchParams } = new URL(req.url);

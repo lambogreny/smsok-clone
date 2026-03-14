@@ -2,12 +2,15 @@ import { NextRequest } from "next/server";
 import { ApiError, apiResponse, apiError } from "@/lib/api-auth";
 import { getSession } from "@/lib/auth";
 import { prisma as db } from "@/lib/db";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // GET /api/v1/settings/activity — user activity log
 export async function GET(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session?.id) throw new ApiError(401, "กรุณาเข้าสู่ระบบ");
+    const rl = await applyRateLimit(session.id, "api");
+    if (rl.blocked) return rl.blocked;
 
     const { searchParams } = new URL(req.url);
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));

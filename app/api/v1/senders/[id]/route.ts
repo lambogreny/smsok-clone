@@ -15,7 +15,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     });
     if (!sender) throw new ApiError(404, "ไม่พบชื่อผู้ส่ง");
 
-    if (sender.status === "APPROVED") {
+    if (sender.status === "APPROVED" || sender.status === "ACTIVE") {
       throw new ApiError(400, "ไม่สามารถลบชื่อผู้ส่งที่ได้รับอนุมัติแล้ว");
     }
 

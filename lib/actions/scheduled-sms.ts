@@ -23,7 +23,7 @@ export async function createScheduledSms(
   }
 ) {
   const sender = await prisma.senderName.findFirst({
-    where: { userId, name: data.senderName, status: "APPROVED" },
+    where: { userId, name: data.senderName, status: { in: ["APPROVED", "ACTIVE"] } },
     select: { id: true },
   });
   if (!sender) {

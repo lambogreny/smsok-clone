@@ -134,7 +134,7 @@ async function updateCampaignRecord(userId: string, id: string, body: unknown) {
 
   if (nextSenderName !== "EasySlip") {
     const sender = await db.senderName.findFirst({
-      where: { userId, name: nextSenderName, status: "APPROVED" },
+      where: { userId, name: nextSenderName, status: { in: ["APPROVED", "ACTIVE"] } },
       select: { id: true },
     });
     if (!sender) throw new ApiError(400, "ชื่อผู้ส่งยังไม่ได้รับอนุมัติ");
