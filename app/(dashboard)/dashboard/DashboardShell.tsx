@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from "react";
 import { broadcastLogout } from "@/components/AuthGuard";
 import ReconsentModal from "@/components/reconsent-modal";
 import LanguageSwitcher from "@/components/language-switcher";
+import DashboardBreadcrumb from "@/components/DashboardBreadcrumb";
 import { cn } from "@/lib/utils";
 
 // shadcn components
@@ -430,7 +431,12 @@ export default function DashboardShell({
         </header>
 
         {/* Page Content — no page transitions per Nansen directive */}
-        <div className="flex-1 pb-20 md:pb-0">{children}</div>
+        <div className="flex-1 pb-20 md:pb-0">
+          <div className="px-6 md:px-8 pt-4">
+            <DashboardBreadcrumb />
+          </div>
+          {children}
+        </div>
 
         {/* Footer */}
         <footer className="border-t border-[var(--border-default)] px-8 py-4 shrink-0">
