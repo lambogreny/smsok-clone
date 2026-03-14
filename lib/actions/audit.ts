@@ -2,6 +2,7 @@
 import { Prisma } from "@prisma/client";
 import { NextRequest } from "next/server";
 import { prisma as db } from "../db";
+import { toCsvCell } from "../csv";
 
 // ── Audit Log Helper (append-only) ─────────────────────
 
@@ -192,18 +193,27 @@ export async function exportAuditLogs(
   }
 
   // CSV format
-  const csvHeaders = "timestamp,userId,userName,action,resource,resourceId,result,ipAddress";
+  const csvHeaders = [
+    "timestamp",
+    "userId",
+    "userName",
+    "action",
+    "resource",
+    "resourceId",
+    "result",
+    "ipAddress",
+  ].map(toCsvCell).join(",");
   const csvRows = logs.map((log) => {
     const userName = log.user?.name ?? "";
     return [
-      log.createdAt.toISOString(),
-      log.userId ?? "",
-      `"${userName.replace(/"/g, '""')}"`,
-      log.action,
-      log.resource,
-      log.resourceId ?? "",
-      log.result,
-      log.ipAddress ?? "",
+      toCsvCell(log.createdAt.toISOString()),
+      toCsvCell(log.userId ?? ""),
+      toCsvCell(userName),
+      toCsvCell(log.action),
+      toCsvCell(log.resource),
+      toCsvCell(log.resourceId ?? ""),
+      toCsvCell(log.result),
+      toCsvCell(log.ipAddress ?? ""),
     ].join(",");
   });
 

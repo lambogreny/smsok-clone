@@ -84,7 +84,7 @@ function CreditBalanceHero({ summary }: { summary: CreditSummary }) {
 
   return (
     <div
-      className="rounded-xl p-8 max-md:p-5 mb-6"
+      className="rounded-lg p-8 max-md:p-5 mb-6"
       style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)" }}
     >
       {/* Balance */}
@@ -172,7 +172,7 @@ function ActivePackagesList({ packages }: { packages: ActivePackage[] }) {
 
   return (
     <div
-      className="rounded-xl overflow-hidden mb-6"
+      className="rounded-lg overflow-hidden mb-6"
       style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)" }}
     >
       <p className="px-5 pt-4 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
@@ -248,7 +248,7 @@ function CreditHistoryTable({ events }: { events: CreditEvent[] }) {
 
   return (
     <div
-      className="rounded-xl overflow-hidden"
+      className="rounded-lg overflow-hidden"
       style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)" }}
     >
       {/* Tabs */}

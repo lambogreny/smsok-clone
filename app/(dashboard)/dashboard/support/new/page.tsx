@@ -194,7 +194,7 @@ function StepFAQ({
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center space-y-2">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[rgba(var(--accent-rgb),0.1)] mb-2">
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-lg bg-[rgba(var(--accent-rgb),0.1)] mb-2">
           <FileText className="w-6 h-6 text-[var(--accent)]" />
         </div>
         <h2 className="text-lg font-semibold text-[var(--text-primary)]">
@@ -222,7 +222,7 @@ function StepFAQ({
       {/* Results */}
       {searched && !loading && articles.length === 0 && (
         <div className="text-center py-8 space-y-3">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-default)]">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-default)]">
             <Search className="w-5 h-5 text-[var(--text-muted)]" />
           </div>
           <p className="text-sm text-[var(--text-muted)]">
@@ -242,7 +242,7 @@ function StepFAQ({
                 key={article.id}
                 href={`/dashboard/support/kb?article=${article.slug}`}
                 target="_blank"
-                className="group flex items-start gap-3 p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-[rgba(var(--accent-rgb),0.3)] transition-all duration-200"
+                className="group flex items-start gap-3 p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-[rgba(var(--accent-rgb),0.3)] transition-all duration-200"
               >
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors line-clamp-1">
@@ -458,7 +458,7 @@ function StepConfirm({
       </div>
 
       {/* Review card */}
-      <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl p-5 space-y-4">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg p-5 space-y-4">
         {/* Subject */}
         <div>
           <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">
@@ -638,7 +638,7 @@ export default function NewSupportTicketPage() {
         <Link href="/dashboard/support">
           <button
             type="button"
-            className="w-9 h-9 rounded-xl border border-[var(--border-default)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors cursor-pointer"
+            className="w-9 h-9 rounded-lg border border-[var(--border-default)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
@@ -657,7 +657,7 @@ export default function NewSupportTicketPage() {
       <Stepper currentStep={step} />
 
       {/* Card wrapper */}
-      <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl p-6 max-md:p-4">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg p-6 max-md:p-4">
         {step === 1 && (
           <StepFAQ onNext={goToStep2} onSkip={goToStep2} />
         )}

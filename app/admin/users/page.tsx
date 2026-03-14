@@ -5,7 +5,7 @@ export default function AdminUsersPage() {
     <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
       <div className="flex flex-col items-center gap-4 text-center max-w-md">
         <div
-          className="w-16 h-16 rounded-2xl flex items-center justify-center"
+          className="w-16 h-16 rounded-lg flex items-center justify-center"
           style={{
             background: "rgba(var(--accent-rgb), 0.08)",
           }}

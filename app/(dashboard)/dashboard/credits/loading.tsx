@@ -13,7 +13,7 @@ export default function CreditsLoading() {
       </div>
 
       {/* Hero skeleton */}
-      <div className="rounded-xl p-8 bg-[var(--bg-surface)] border border-[var(--border-default)]">
+      <div className="rounded-lg p-8 bg-[var(--bg-surface)] border border-[var(--border-default)]">
         <div className="flex flex-col items-center">
           <Skeleton className="h-4 w-24 mb-3" />
           <Skeleton className="h-12 w-40 mb-5" />
@@ -31,7 +31,7 @@ export default function CreditsLoading() {
       </div>
 
       {/* Packages skeleton */}
-      <div className="rounded-xl bg-[var(--bg-surface)] border border-[var(--border-default)] overflow-hidden">
+      <div className="rounded-lg bg-[var(--bg-surface)] border border-[var(--border-default)] overflow-hidden">
         {Array.from({ length: 2 }).map((_, i) => (
           <div
             key={i}
@@ -48,7 +48,7 @@ export default function CreditsLoading() {
       </div>
 
       {/* Table skeleton */}
-      <div className="rounded-xl bg-[var(--bg-surface)] border border-[var(--border-default)] overflow-hidden">
+      <div className="rounded-lg bg-[var(--bg-surface)] border border-[var(--border-default)] overflow-hidden">
         <div className="px-5 pt-4 pb-2">
           <Skeleton className="h-9 w-64" />
         </div>

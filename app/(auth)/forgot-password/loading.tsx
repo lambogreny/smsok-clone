@@ -16,7 +16,7 @@ export default function ForgotPasswordLoading() {
               <Skeleton className="h-3 w-20" />
               <Skeleton className="h-11 w-full rounded-lg" />
             </div>
-            <Skeleton className="h-11 w-full rounded-xl" />
+            <Skeleton className="h-11 w-full rounded-lg" />
           </div>
         </div>
       </div>

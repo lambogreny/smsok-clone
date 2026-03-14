@@ -324,7 +324,7 @@ export default function DashboardShell({
       </aside>
 
       {/* ── Main Content ── */}
-      <main className="flex-1 overflow-auto flex flex-col">
+      <main id="main-content" className="flex-1 overflow-auto flex flex-col">
         {/* Header */}
         <header className="sticky top-0 z-40 border-b border-[var(--border-default)] bg-[var(--bg-base)] h-12 md:h-14 flex items-center justify-between px-4 md:px-8">
           <h1 className="text-base font-semibold text-[var(--text-primary)] tracking-tight">
@@ -559,7 +559,7 @@ export default function DashboardShell({
                     href={item.href}
                     onClick={() => setMobileSheetOpen(false)}
                     className={cn(
-                      "flex flex-col items-center gap-2 p-3 rounded-xl transition-colors duration-200",
+                      "flex flex-col items-center gap-2 p-3 rounded-lg transition-colors duration-200",
                       isActive
                         ? "bg-[rgba(var(--accent-rgb),0.08)] text-[var(--accent)] border border-[rgba(var(--accent-rgb),0.15)]"
                         : "text-[var(--text-muted)] hover:bg-white/[0.04] border border-transparent"

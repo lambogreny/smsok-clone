@@ -415,7 +415,7 @@ export default function GroupsPageClient({
                         href={`/dashboard/groups/${g.id}`}
                         className="flex items-center gap-3 group"
                       >
-                        <div className="w-9 h-9 rounded-xl bg-[rgba(var(--accent-rgb),0.08)] border border-[rgba(var(--accent-rgb),0.15)] flex items-center justify-center text-[var(--accent)] flex-shrink-0 group-hover:bg-[rgba(var(--accent-rgb),0.12)] transition-all">
+                        <div className="w-9 h-9 rounded-lg bg-[rgba(var(--accent-rgb),0.08)] border border-[rgba(var(--accent-rgb),0.15)] flex items-center justify-center text-[var(--accent)] flex-shrink-0 group-hover:bg-[rgba(var(--accent-rgb),0.12)] transition-all">
                           <FolderOpen className="w-4 h-4" />
                         </div>
                         <span className="text-sm font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent)] group-hover:underline transition-colors truncate">
@@ -478,10 +478,10 @@ export default function GroupsPageClient({
             {groups.map((g) => (
               <Card
                 key={g.id}
-                className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-xl p-4"
+                className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg p-4"
               >
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-[rgba(var(--accent-rgb),0.08)] border border-[rgba(var(--accent-rgb),0.15)] flex items-center justify-center text-[var(--accent)] flex-shrink-0">
+                  <div className="w-10 h-10 rounded-lg bg-[rgba(var(--accent-rgb),0.08)] border border-[rgba(var(--accent-rgb),0.15)] flex items-center justify-center text-[var(--accent)] flex-shrink-0">
                     <FolderOpen className="w-5 h-5" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -575,7 +575,7 @@ export default function GroupsPageClient({
                         placeholder="ชื่อกลุ่ม"
                         maxLength={100}
                         autoFocus
-                        className="h-11 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+                        className="h-11 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)]"
                         {...field}
                       />
                     </FormControl>

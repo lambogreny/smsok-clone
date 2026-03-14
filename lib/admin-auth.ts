@@ -17,6 +17,7 @@ type AdminPayload = {
   adminId: string;
   role: string;
   sessionId: string;
+  jti: string;
 };
 
 type AdminSessionRecord = {
@@ -38,7 +39,7 @@ function buildAdminSessionKey(sessionId: string) {
 
 export function signAdminToken(adminId: string, role: string, sessionId: string) {
   return jwt.sign(
-    { type: "admin", adminId, role, sessionId },
+    { type: "admin", adminId, role, sessionId, jti: randomUUID() },
     ADMIN_JWT_SECRET,
     { expiresIn: `${ADMIN_SESSION_TTL_SECONDS}s` },
   );
@@ -51,7 +52,8 @@ export function verifyAdminToken(token: string): AdminPayload | null {
       payload?.type !== "admin" ||
       !payload?.adminId ||
       !payload?.role ||
-      !payload?.sessionId
+      !payload?.sessionId ||
+      !payload?.jti
     ) {
       return null;
     }
@@ -186,7 +188,7 @@ export async function loginAdmin(email: string, password: string) {
 export function getAdminSessionCookieOptions() {
   return {
     httpOnly: true,
-    sameSite: "lax" as const,
+    sameSite: "strict" as const,
     secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: ADMIN_SESSION_TTL_SECONDS,

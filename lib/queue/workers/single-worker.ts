@@ -10,6 +10,7 @@ import { workerConnectionOptions } from "../connection"
 import { QUEUE_NAMES, QUEUE_CONFIG, type SmsJobData, type SmsJobResult } from "../types"
 import { prisma } from "../../db"
 import { dispatchWebhookEvent } from "../../webhook-dispatch"
+import { maskPhoneForLog } from "../../log-masking"
 
 export function createSingleWorker() {
   const config = QUEUE_CONFIG[QUEUE_NAMES.SMS_SINGLE]
@@ -72,7 +73,7 @@ export function createSingleWorker() {
       })
 
       console.log(
-        `[Single Worker] ✓ correlationId=${correlationId} phone=${phone} jobId=${job.id}`
+        `[Single Worker] ✓ correlationId=${correlationId} phone=${maskPhoneForLog(phone)} jobId=${job.id}`
       )
 
       return {

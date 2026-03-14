@@ -55,13 +55,13 @@ export default function OptoutPage() {
             ลิงก์ opt-out ที่ใช้งานอยู่
           </p>
           <div className="flex items-center gap-2">
-            <div className="flex-1 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] font-mono truncate">
+            <div className="flex-1 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg px-4 py-2.5 text-sm text-[var(--text-primary)] font-mono truncate">
               {optoutUrl}
             </div>
             <Button
               onClick={handleCopy}
               variant="outline"
-              className="border-[var(--border-default)] text-[var(--text-secondary)] gap-2 rounded-xl flex-shrink-0"
+              className="border-[var(--border-default)] text-[var(--text-secondary)] gap-2 rounded-lg flex-shrink-0"
             >
               {copied ? (
                 <>
@@ -111,7 +111,7 @@ export default function OptoutPage() {
               value={confirmMsg}
               onChange={(e) => setConfirmMsg(e.target.value)}
               rows={3}
-              className="w-full bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none resize-none"
+              className="w-full bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none resize-none"
             />
           </div>
         </div>
@@ -119,13 +119,13 @@ export default function OptoutPage() {
         {/* SMS Preview */}
         <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg p-5">
           <p className="text-sm text-[var(--text-secondary)] mb-3">ตัวอย่างลิงก์ใน SMS:</p>
-          <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] italic">
+          <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg px-4 py-3 text-sm text-[var(--text-primary)] italic">
             &ldquo;ยกเลิกรับข้อความ: https://smsok.app/o/abc123&rdquo;
           </div>
         </div>
 
         {/* Sending Hours */}
-        <div className="rounded-xl border-l-[3px] border-[var(--warning)] bg-[rgba(var(--warning-rgb),0.06)] px-4 py-3">
+        <div className="rounded-lg border-l-[3px] border-[var(--warning)] bg-[rgba(var(--warning-rgb),0.06)] px-4 py-3">
           <div className="flex items-start gap-2">
             <Clock className="w-4 h-4 text-[var(--warning)] mt-0.5 flex-shrink-0" />
             <div>
@@ -159,7 +159,7 @@ export default function OptoutPage() {
         </div>
 
         {/* Save */}
-        <Button className="bg-[var(--accent)] hover:bg-[var(--accent)]/80 text-[var(--text-on-accent)] font-semibold rounded-xl">
+        <Button className="bg-[var(--accent)] hover:bg-[var(--accent)]/80 text-[var(--text-on-accent)] font-semibold rounded-lg">
           บันทึกการตั้งค่า
         </Button>
       </div>

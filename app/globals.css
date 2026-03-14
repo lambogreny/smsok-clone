@@ -195,6 +195,15 @@
 
 @layer components {
 
+  /* ── GLOBAL FOCUS RING for all form inputs ── */
+  input:not([type="checkbox"]):not([type="radio"]):focus,
+  textarea:focus,
+  select:focus {
+    outline: none;
+    border-color: rgba(var(--accent-rgb), 0.5);
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.15);
+  }
+
   /* .glass*, .glass-cyan, .glass-blue, .glass-emerald, .glass-rose REMOVED — v3 uses inline Tailwind */
 
   .surface-elevated {

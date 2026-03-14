@@ -297,12 +297,378 @@ function LineChart({ data }: { data: DailyDataPoint[] }) {
   );
 }
 
+// ── Horizontal Bar Chart (Top Campaigns) ──
+
+function HorizontalBarChart({ data }: { data: { name: string; value: number; color: string }[] }) {
+  const maxVal = Math.max(...data.map((d) => d.value), 1);
+  if (data.length === 0) return null;
+
+  return (
+    <div className="space-y-3">
+      {data.map((d) => {
+        const pct = (d.value / maxVal) * 100;
+        return (
+          <div key={d.name}>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[12px] truncate max-w-[200px]" style={{ color: "var(--text-secondary)" }}>
+                {d.name}
+              </span>
+              <span className="text-[12px] font-bold font-mono tabular-nums" style={{ color: d.color }}>
+                {d.value.toLocaleString()}
+              </span>
+            </div>
+            <div
+              className="h-2 rounded-full overflow-hidden"
+              style={{ background: "rgba(var(--border-default-rgb,40,45,55),0.3)" }}
+            >
+              <div
+                className="h-full rounded-full"
+                style={{
+                  backgroundColor: d.color,
+                  width: `${pct}%`,
+                  transition: "width 0.8s ease",
+                }}
+              />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Heatmap (Hour × Day of Week) ──
+
+function SendTimeHeatmap({ data }: { data: number[][] }) {
+  // data[dayOfWeek 0-6][hour 0-23] = count
+  const days = ["จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส.", "อา."];
+  const maxVal = Math.max(...data.flat(), 1);
+
+  function cellColor(val: number): string {
+    if (val === 0) return "rgba(var(--border-default-rgb,40,45,55),0.15)";
+    const intensity = Math.min(val / maxVal, 1);
+    const alpha = 0.15 + intensity * 0.7;
+    return `rgba(var(--accent-rgb),${alpha})`;
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <div className="min-w-[500px]">
+        {/* Hour labels */}
+        <div className="flex items-center mb-1 pl-10">
+          {Array.from({ length: 24 }, (_, h) => (
+            <div key={h} className="flex-1 text-center">
+              <span className="text-[9px]" style={{ color: "var(--text-muted)" }}>
+                {h % 6 === 0 ? `${h}` : ""}
+              </span>
+            </div>
+          ))}
+        </div>
+        {/* Grid */}
+        {days.map((day, di) => (
+          <div key={day} className="flex items-center gap-1 mb-[2px]">
+            <span className="w-9 text-[10px] text-right shrink-0" style={{ color: "var(--text-muted)" }}>
+              {day}
+            </span>
+            <div className="flex flex-1 gap-[2px]">
+              {Array.from({ length: 24 }, (_, h) => {
+                const val = data[di]?.[h] ?? 0;
+                return (
+                  <div
+                    key={h}
+                    className="flex-1 h-4 rounded-[2px] transition-colors"
+                    style={{ backgroundColor: cellColor(val) }}
+                    title={`${day} ${h}:00 — ${val} SMS`}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        ))}
+        {/* Legend */}
+        <div className="flex items-center justify-end gap-2 mt-2 pr-1">
+          <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>น้อย</span>
+          {[0.15, 0.3, 0.5, 0.7, 0.85].map((a) => (
+            <div
+              key={a}
+              className="w-3 h-3 rounded-[2px]"
+              style={{ backgroundColor: `rgba(var(--accent-rgb),${a})` }}
+            />
+          ))}
+          <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>มาก</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Campaign Performance Table ──
+
+function CampaignTable({
+  campaigns,
+  sortKey,
+  sortDir,
+  onSort,
+}: {
+  campaigns: CampaignRow[];
+  sortKey: SortKey;
+  sortDir: SortDir;
+  onSort: (key: SortKey) => void;
+}) {
+  function SortIcon({ col }: { col: SortKey }) {
+    if (sortKey !== col) return <ChevronUp size={12} style={{ opacity: 0.2 }} />;
+    return sortDir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />;
+  }
+
+  function getDuration(c: CampaignRow): string {
+    if (!c.startedAt || !c.completedAt) return "—";
+    const ms = new Date(c.completedAt).getTime() - new Date(c.startedAt).getTime();
+    const mins = Math.round(ms / 60000);
+    if (mins < 1) return "<1 นาที";
+    if (mins < 60) return `${mins} นาที`;
+    return `${Math.floor(mins / 60)} ชม. ${mins % 60} นาที`;
+  }
+
+  const statusMap: Record<string, { color: string; label: string }> = {
+    completed: { color: "var(--success)", label: "เสร็จ" },
+    sending: { color: "var(--accent)", label: "กำลังส่ง" },
+    scheduled: { color: "var(--warning)", label: "ตั้งเวลา" },
+    draft: { color: "var(--text-muted)", label: "แบบร่าง" },
+    failed: { color: "var(--error)", label: "ล้มเหลว" },
+    cancelled: { color: "var(--text-muted)", label: "ยกเลิก" },
+  };
+
+  const headers: { key: SortKey; label: string; align?: string }[] = [
+    { key: "name", label: "แคมเปญ" },
+    { key: "sentCount", label: "ส่งทั้งหมด", align: "right" },
+    { key: "deliveredRate", label: "สำเร็จ %", align: "right" },
+    { key: "failedRate", label: "ล้มเหลว %", align: "right" },
+    { key: "duration", label: "ระยะเวลา", align: "right" },
+  ];
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full">
+        <thead>
+          <tr>
+            {headers.map((h) => (
+              <th
+                key={h.key}
+                className={`px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider cursor-pointer select-none ${h.align === "right" ? "text-right" : "text-left"}`}
+                style={{ color: "var(--text-muted)" }}
+                onClick={() => onSort(h.key)}
+              >
+                <span className="inline-flex items-center gap-1">
+                  {h.label}
+                  <SortIcon col={h.key} />
+                </span>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {campaigns.length === 0 ? (
+            <tr>
+              <td colSpan={5} className="text-center py-12">
+                <Table2 size={32} style={{ color: "var(--border-default)" }} className="mx-auto mb-2" />
+                <p className="text-[13px]" style={{ color: "var(--text-muted)" }}>ยังไม่มีแคมเปญ</p>
+              </td>
+            </tr>
+          ) : (
+            campaigns.map((c) => {
+              const deliveredRate = c.totalRecipients > 0 ? Math.round((c.deliveredCount / c.totalRecipients) * 100) : 0;
+              const failedRate = c.totalRecipients > 0 ? Math.round((c.failedCount / c.totalRecipients) * 100) : 0;
+              const st = statusMap[c.status] || statusMap.draft;
+              return (
+                <tr key={c.id} style={{ borderTop: "1px solid var(--border-default)" }}>
+                  <td className="px-4 py-3">
+                    <Link href={`/dashboard/campaigns`} className="group">
+                      <p className="text-[13px] font-medium group-hover:underline" style={{ color: "var(--text-primary)" }}>
+                        {c.name}
+                      </p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: st.color }} />
+                        <span className="text-[11px]" style={{ color: st.color }}>{st.label}</span>
+                      </div>
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <span className="text-[13px] font-mono tabular-nums" style={{ color: "var(--text-primary)" }}>
+                      {c.sentCount.toLocaleString()}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <span className="text-[13px] font-mono tabular-nums" style={{ color: deliveredRate >= 90 ? "var(--success)" : deliveredRate >= 70 ? "var(--warning)" : "var(--error)" }}>
+                      {deliveredRate}%
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <span className="text-[13px] font-mono tabular-nums" style={{ color: failedRate > 10 ? "var(--error)" : "var(--text-muted)" }}>
+                      {failedRate}%
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <span className="text-[12px]" style={{ color: "var(--text-muted)" }}>
+                      {getDuration(c)}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ── Export Chart as PNG ──
+
+function exportChartAsPng(ref: React.RefObject<HTMLDivElement | null>, filename: string) {
+  const el = ref.current;
+  if (!el) return;
+
+  // Use html2canvas-like approach with SVG foreignObject
+  const svgs = el.querySelectorAll("svg");
+  if (svgs.length === 0) return;
+
+  const svg = svgs[0];
+  const svgData = new XMLSerializer().serializeToString(svg);
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  const img = new window.Image();
+  const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(svgBlob);
+
+  img.onload = () => {
+    canvas.width = img.width * 2;
+    canvas.height = img.height * 2;
+    ctx.scale(2, 2);
+    ctx.drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+
+    const pngUrl = canvas.toDataURL("image/png");
+    const a = document.createElement("a");
+    a.href = pngUrl;
+    a.download = `${filename}-${new Date().toISOString().slice(0, 10)}.png`;
+    a.click();
+  };
+  img.src = url;
+}
+
 // ── Main ──
 
 export default function AnalyticsContent({ stats }: { stats: Stats }) {
   const [period, setPeriod] = useState<Period>("today");
   const [dailyData, setDailyData] = useState<DailyDataPoint[]>([]);
   const [chartLoading, setChartLoading] = useState(false);
+  const [campaigns, setCampaigns] = useState<CampaignRow[]>([]);
+  const [campaignsLoading, setCampaignsLoading] = useState(false);
+  const [heatmapData, setHeatmapData] = useState<number[][]>(
+    Array.from({ length: 7 }, () => Array(24).fill(0))
+  );
+  const [sortKey, setSortKey] = useState<SortKey>("sentCount");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+
+  const lineChartRef = useRef<HTMLDivElement>(null);
+  const donutChartRef = useRef<HTMLDivElement>(null);
+
+  // Fetch campaigns
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchCampaigns() {
+      setCampaignsLoading(true);
+      try {
+        const res = await fetch("/api/v1/campaigns?limit=50");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        if (!cancelled && Array.isArray(json.campaigns)) {
+          setCampaigns(
+            json.campaigns.map((c: Record<string, unknown>) => ({
+              id: c.id as string,
+              name: c.name as string,
+              status: c.status as string,
+              sentCount: (c.sentCount as number) ?? 0,
+              deliveredCount: (c.deliveredCount as number) ?? 0,
+              failedCount: (c.failedCount as number) ?? 0,
+              totalRecipients: (c.totalRecipients as number) ?? 0,
+              startedAt: (c.startedAt as string) ?? null,
+              completedAt: (c.completedAt as string) ?? null,
+            }))
+          );
+        }
+      } catch {
+        if (!cancelled) setCampaigns([]);
+      } finally {
+        if (!cancelled) setCampaignsLoading(false);
+      }
+    }
+    fetchCampaigns();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Build heatmap from recent messages
+  useEffect(() => {
+    const grid = Array.from({ length: 7 }, () => Array(24).fill(0) as number[]);
+    for (const msg of stats.recentMessages) {
+      const d = new Date(msg.createdAt);
+      const day = (d.getDay() + 6) % 7; // Mon=0
+      const hour = d.getHours();
+      grid[day][hour]++;
+    }
+    setHeatmapData(grid);
+  }, [stats.recentMessages]);
+
+  // Sort campaigns
+  const sortedCampaigns = [...campaigns].sort((a, b) => {
+    const dir = sortDir === "asc" ? 1 : -1;
+    switch (sortKey) {
+      case "name":
+        return dir * a.name.localeCompare(b.name, "th");
+      case "sentCount":
+        return dir * (a.sentCount - b.sentCount);
+      case "deliveredRate": {
+        const rA = a.totalRecipients > 0 ? a.deliveredCount / a.totalRecipients : 0;
+        const rB = b.totalRecipients > 0 ? b.deliveredCount / b.totalRecipients : 0;
+        return dir * (rA - rB);
+      }
+      case "failedRate": {
+        const rA = a.totalRecipients > 0 ? a.failedCount / a.totalRecipients : 0;
+        const rB = b.totalRecipients > 0 ? b.failedCount / b.totalRecipients : 0;
+        return dir * (rA - rB);
+      }
+      case "duration": {
+        const dA = a.startedAt && a.completedAt ? new Date(a.completedAt).getTime() - new Date(a.startedAt).getTime() : 0;
+        const dB = b.startedAt && b.completedAt ? new Date(b.completedAt).getTime() - new Date(b.startedAt).getTime() : 0;
+        return dir * (dA - dB);
+      }
+      default:
+        return 0;
+    }
+  });
+
+  function handleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("desc");
+    }
+  }
+
+  // Top 5 campaigns by volume
+  const top5Campaigns = [...campaigns]
+    .sort((a, b) => b.sentCount - a.sentCount)
+    .slice(0, 5)
+    .map((c, i) => ({
+      name: c.name,
+      value: c.sentCount,
+      color: ["var(--accent)", "var(--success)", "var(--accent-blue, #3b82f6)", "var(--warning)", "var(--accent-secondary, #a855f7)"][i] || "var(--accent)",
+    }));
 
   // Fetch daily chart data
   useEffect(() => {
@@ -408,6 +774,28 @@ export default function AnalyticsContent({ stats }: { stats: Stats }) {
               </button>
             ))}
           </div>
+          {/* Date Range Picker */}
+          <div
+            className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1"
+            style={{ border: "1px solid var(--border-default)", background: "var(--bg-base)" }}
+          >
+            <Calendar size={13} style={{ color: "var(--text-muted)" }} />
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="bg-transparent text-[12px] border-none outline-none w-[110px]"
+              style={{ color: "var(--text-secondary)", colorScheme: "dark" }}
+            />
+            <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>—</span>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="bg-transparent text-[12px] border-none outline-none w-[110px]"
+              style={{ color: "var(--text-secondary)", colorScheme: "dark" }}
+            />
+          </div>
           {/* Export CSV */}
           <button
             type="button"
@@ -419,7 +807,7 @@ export default function AnalyticsContent({ stats }: { stats: Stats }) {
             }}
           >
             <Download size={14} />
-            Export CSV
+            CSV
           </button>
           <Link
             href="/dashboard/campaigns"
@@ -502,6 +890,7 @@ export default function AnalyticsContent({ stats }: { stats: Stats }) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Donut Chart Card */}
         <div
+          ref={donutChartRef}
           className="relative rounded-lg p-6 overflow-hidden"
           style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)" }}
         >
@@ -509,11 +898,23 @@ export default function AnalyticsContent({ stats }: { stats: Stats }) {
             className="absolute top-0 left-0 right-0 h-[2px]"
             style={{ background: "linear-gradient(90deg, transparent, var(--accent), transparent)", opacity: 0.3 }}
           />
-          <div className="flex items-center gap-2 mb-6">
-            <BarChart3 size={16} style={{ color: "var(--accent)" }} />
-            <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-              สัดส่วนสถานะ
-            </h3>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2">
+              <BarChart3 size={16} style={{ color: "var(--accent)" }} />
+              <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                สัดส่วนสถานะ
+              </h3>
+            </div>
+            <button
+              type="button"
+              onClick={() => exportChartAsPng(donutChartRef, "sms-status")}
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] transition-colors cursor-pointer"
+              style={{ color: "var(--text-muted)", border: "1px solid var(--border-default)" }}
+              title="Export as PNG"
+            >
+              <Image size={12} />
+              PNG
+            </button>
           </div>
           {totalMessages > 0 ? (
             <DonutChart data={donutData} />
@@ -567,6 +968,7 @@ export default function AnalyticsContent({ stats }: { stats: Stats }) {
 
       {/* ── Daily Trend Chart ── */}
       <div
+        ref={lineChartRef}
         className="relative rounded-lg p-6 overflow-hidden mb-6"
         style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)" }}
       >
@@ -574,11 +976,23 @@ export default function AnalyticsContent({ stats }: { stats: Stats }) {
           className="absolute top-0 left-0 right-0 h-[2px]"
           style={{ background: "linear-gradient(90deg, transparent, var(--accent-blue, var(--accent)), transparent)", opacity: 0.3 }}
         />
-        <div className="flex items-center gap-2 mb-5">
-          <Calendar size={16} style={{ color: "var(--accent)" }} />
-          <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-            แนวโน้มการส่ง SMS รายวัน
-          </h3>
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2">
+            <Calendar size={16} style={{ color: "var(--accent)" }} />
+            <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+              แนวโน้มการส่ง SMS รายวัน
+            </h3>
+          </div>
+          <button
+            type="button"
+            onClick={() => exportChartAsPng(lineChartRef, "sms-trend")}
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] transition-colors cursor-pointer"
+            style={{ color: "var(--text-muted)", border: "1px solid var(--border-default)" }}
+            title="Export as PNG"
+          >
+            <Image size={12} />
+            PNG
+          </button>
         </div>
         {chartLoading ? (
           <div className="text-center py-12">
@@ -590,6 +1004,88 @@ export default function AnalyticsContent({ stats }: { stats: Stats }) {
           <div className="text-center py-12">
             <BarChart3 size={36} style={{ color: "var(--border-default)" }} className="mx-auto mb-3" />
             <p className="text-[13px]" style={{ color: "var(--text-muted)" }}>ยังไม่มีข้อมูลรายวัน</p>
+          </div>
+        )}
+      </div>
+
+      {/* ── Top 5 Campaigns + Heatmap ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* Top 5 Campaigns */}
+        <div
+          className="relative rounded-lg p-6 overflow-hidden"
+          style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)" }}
+        >
+          <div
+            className="absolute top-0 left-0 right-0 h-[2px]"
+            style={{ background: "linear-gradient(90deg, transparent, var(--success), transparent)", opacity: 0.3 }}
+          />
+          <div className="flex items-center gap-2 mb-5">
+            <BarChart3 size={16} style={{ color: "var(--success)" }} />
+            <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+              Top 5 แคมเปญตามปริมาณ
+            </h3>
+          </div>
+          {top5Campaigns.length > 0 ? (
+            <HorizontalBarChart data={top5Campaigns} />
+          ) : (
+            <div className="text-center py-12">
+              <BarChart3 size={32} style={{ color: "var(--border-default)" }} className="mx-auto mb-2" />
+              <p className="text-[13px]" style={{ color: "var(--text-muted)" }}>ยังไม่มีแคมเปญ</p>
+            </div>
+          )}
+        </div>
+
+        {/* Send Time Heatmap */}
+        <div
+          className="relative rounded-lg p-6 overflow-hidden"
+          style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)" }}
+        >
+          <div
+            className="absolute top-0 left-0 right-0 h-[2px]"
+            style={{ background: "linear-gradient(90deg, transparent, var(--accent), transparent)", opacity: 0.3 }}
+          />
+          <div className="flex items-center gap-2 mb-5">
+            <Clock size={16} style={{ color: "var(--accent)" }} />
+            <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+              ช่วงเวลาส่ง SMS (ชม. × วัน)
+            </h3>
+          </div>
+          <SendTimeHeatmap data={heatmapData} />
+        </div>
+      </div>
+
+      {/* ── Campaign Performance Table ── */}
+      <div
+        className="relative rounded-lg overflow-hidden mb-6"
+        style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)" }}
+      >
+        <div
+          className="absolute top-0 left-0 right-0 h-[2px]"
+          style={{ background: "linear-gradient(90deg, transparent, var(--accent-secondary, #a855f7), transparent)", opacity: 0.3 }}
+        />
+        <div className="flex items-center justify-between px-6 pt-5 pb-4">
+          <div className="flex items-center gap-2">
+            <Table2 size={16} style={{ color: "var(--accent-secondary, #a855f7)" }} />
+            <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+              ประสิทธิภาพแคมเปญ
+            </h3>
+          </div>
+          <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
+            {campaigns.length} แคมเปญ
+          </span>
+        </div>
+        {campaignsLoading ? (
+          <div className="text-center py-12">
+            <p className="text-[13px]" style={{ color: "var(--text-muted)" }}>กำลังโหลด...</p>
+          </div>
+        ) : (
+          <div className="px-4 pb-4">
+            <CampaignTable
+              campaigns={sortedCampaigns}
+              sortKey={sortKey}
+              sortDir={sortDir}
+              onSort={handleSort}
+            />
           </div>
         )}
       </div>

@@ -144,7 +144,7 @@ export default function LandingPage() {
             <span className="text-xl font-bold gradient-text-mixed tracking-tight">SMSOK</span>
           </Link>
 
-          <div className="hidden md:flex items-center gap-8 text-sm text-slate-300">
+          <div className="hidden md:flex items-center gap-8 text-sm text-[var(--text-secondary)]">
             {[{ href: "#why", label: "ทำไมต้องเรา" }, { href: "#features", label: "ฟีเจอร์" }, { href: "#pricing", label: "ราคา" }, { href: "#faq", label: "FAQ" }].map((item) => (
               <a key={item.href} href={item.href} className="relative hover:text-white transition-colors duration-300 py-1 group">
                 {item.label}
@@ -155,13 +155,13 @@ export default function LandingPage() {
 
           <div className="hidden md:flex items-center gap-3">
             <LanguageSwitcher />
-            <Link href="/login" className="bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] rounded-xl hover:border-[rgba(var(--accent-rgb),0.3)] hover:bg-[rgba(var(--accent-rgb),0.04)] cursor-pointer px-5 py-2 text-sm inline-block">เข้าสู่ระบบ</Link>
+            <Link href="/login" className="bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] rounded-lg hover:border-[rgba(var(--accent-rgb),0.3)] hover:bg-[rgba(var(--accent-rgb),0.04)] cursor-pointer px-5 py-2 text-sm inline-block">เข้าสู่ระบบ</Link>
             <Link href="/register" className="btn-primary px-5 py-2 text-sm inline-block">สมัครฟรี</Link>
           </div>
 
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden text-slate-300 hover:text-white transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer"
+            className="md:hidden text-[var(--text-secondary)] hover:text-white transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer"
             aria-label={mobileOpen ? "ปิดเมนู" : "เปิดเมนู"}
           >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -180,10 +180,10 @@ export default function LandingPage() {
               className="md:hidden border-t border-white/5 bg-[var(--bg-base)]/95 px-4 py-4 flex flex-col gap-1 overflow-hidden"
             >
               {[{ href: "#why", label: "ทำไมต้องเรา" }, { href: "#features", label: "ฟีเจอร์" }, { href: "#pricing", label: "ราคา" }, { href: "#faq", label: "FAQ" }].map((item) => (
-                <a key={item.href} href={item.href} onClick={() => setMobileOpen(false)} className="text-slate-300 hover:text-white py-3 px-3 transition-colors rounded-lg hover:bg-white/5 min-h-[44px] flex items-center">{item.label}</a>
+                <a key={item.href} href={item.href} onClick={() => setMobileOpen(false)} className="text-[var(--text-secondary)] hover:text-white py-3 px-3 transition-colors rounded-lg hover:bg-white/5 min-h-[44px] flex items-center">{item.label}</a>
               ))}
               <div className="flex gap-3 pt-3 mt-2 border-t border-white/5">
-                <Link href="/login" className="bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] rounded-xl hover:border-[rgba(var(--accent-rgb),0.3)] hover:bg-[rgba(var(--accent-rgb),0.04)] cursor-pointer px-4 py-3 text-sm flex-1 text-center min-h-[44px] flex items-center justify-center">เข้าสู่ระบบ</Link>
+                <Link href="/login" className="bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] rounded-lg hover:border-[rgba(var(--accent-rgb),0.3)] hover:bg-[rgba(var(--accent-rgb),0.04)] cursor-pointer px-4 py-3 text-sm flex-1 text-center min-h-[44px] flex items-center justify-center">เข้าสู่ระบบ</Link>
                 <Link href="/register" className="btn-primary px-4 py-3 text-sm flex-1 text-center min-h-[44px] flex items-center justify-center">สมัครฟรี</Link>
               </div>
             </motion.div>
@@ -192,7 +192,7 @@ export default function LandingPage() {
       </nav>
 
       {/* ─── HERO ─── */}
-      <section className="relative pt-32 sm:pt-40 pb-20 sm:pb-28 px-4 sm:px-6">
+      <section id="main-content" className="relative pt-32 sm:pt-40 pb-20 sm:pb-28 px-4 sm:px-6">
         <div className="max-w-5xl mx-auto text-center">
 
           {/* Badge */}
@@ -227,7 +227,7 @@ export default function LandingPage() {
             initial="hidden"
             animate="show"
             transition={{ delay: 0.2 }}
-            className="text-base sm:text-lg md:text-xl text-slate-300 max-w-2xl mx-auto mb-10 sm:mb-12 leading-relaxed px-2"
+            className="text-base sm:text-lg md:text-xl text-[var(--text-secondary)] max-w-2xl mx-auto mb-10 sm:mb-12 leading-relaxed px-2"
           >
             ส่ง SMS ผ่านเว็บหรือ API ได้ทันที ราคาเริ่มต้น ฿0.147/ข้อความ
             <br className="hidden sm:block" />
@@ -244,13 +244,13 @@ export default function LandingPage() {
             className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-2 mb-12 sm:mb-16"
           >
             <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-              <Link href="/register" className="btn-primary px-8 py-3.5 text-base rounded-xl w-full sm:w-auto text-center min-h-[48px] flex items-center justify-center gap-2 font-semibold">
+              <Link href="/register" className="btn-primary px-8 py-3.5 text-base rounded-lg w-full sm:w-auto text-center min-h-[48px] flex items-center justify-center gap-2 font-semibold">
                 สมัครฟรี — รับ 15 SMS ฟรี
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
               </Link>
             </motion.div>
             <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-              <a href="#pricing" className="bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] rounded-xl hover:border-[rgba(var(--accent-rgb),0.3)] hover:bg-[rgba(var(--accent-rgb),0.04)] cursor-pointer px-8 py-3.5 text-base rounded-xl w-full sm:w-auto text-center min-h-[48px] flex items-center justify-center font-medium">ดูราคา</a>
+              <a href="#pricing" className="bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] rounded-lg hover:border-[rgba(var(--accent-rgb),0.3)] hover:bg-[rgba(var(--accent-rgb),0.04)] cursor-pointer px-8 py-3.5 text-base rounded-lg w-full sm:w-auto text-center min-h-[48px] flex items-center justify-center font-medium">ดูราคา</a>
             </motion.div>
           </motion.div>
 
@@ -260,7 +260,7 @@ export default function LandingPage() {
             initial="hidden"
             animate="show"
             transition={{ delayChildren: 0.4 }}
-            className="flex flex-wrap items-center justify-center gap-6 sm:gap-10 text-xs sm:text-sm text-slate-300"
+            className="flex flex-wrap items-center justify-center gap-6 sm:gap-10 text-xs sm:text-sm text-[var(--text-secondary)]"
           >
             {["ไม่มีค่าแรกเข้า", "เริ่มใช้ได้ทันที", "ซัพพอร์ต 24/7"].map((t) => (
               <motion.span key={t} variants={fadeUp} className="flex items-center gap-2">
@@ -288,7 +288,7 @@ export default function LandingPage() {
               {numericStats.map((s) => (
                 <motion.div key={s.label} variants={scaleIn} className="px-4 py-5 sm:py-6 text-center">
                   <StatCounter num={s.num} prefix={s.prefix} suffix={s.suffix} decimals={s.decimals} />
-                  <div className="text-[11px] sm:text-xs text-slate-300 uppercase tracking-wider">{s.label}</div>
+                  <div className="text-[11px] sm:text-xs text-[var(--text-secondary)] uppercase tracking-wider">{s.label}</div>
                 </motion.div>
               ))}
             </motion.div>
@@ -298,7 +298,7 @@ export default function LandingPage() {
 
       {/* ─── Divider ─── */}
       <div className="relative h-px pointer-events-none mx-8 sm:mx-24">
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[rgba(0,255,167,0.2)] to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[rgba(var(--accent-rgb),0.2)] to-transparent" />
       </div>
 
       {/* ─── WHY US ─── */}
@@ -322,7 +322,7 @@ export default function LandingPage() {
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
               ทำไมต้อง <span className="gradient-text-mixed">SMSOK</span>?
             </h2>
-            <p className="text-slate-300 max-w-xl mx-auto text-sm sm:text-base">บริการส่ง SMS ที่ครบทุกฟีเจอร์ ในราคาที่ถูกที่สุด</p>
+            <p className="text-[var(--text-secondary)] max-w-xl mx-auto text-sm sm:text-base">บริการส่ง SMS ที่ครบทุกฟีเจอร์ ในราคาที่ถูกที่สุด</p>
           </motion.div>
 
           <motion.div
@@ -336,14 +336,14 @@ export default function LandingPage() {
               <motion.div
                 key={b.title}
                 variants={fadeUp}
-                whileHover={{ y: -4, boxShadow: "0 20px 40px rgba(0,255,167,0.2)" }}
+                whileHover={{ y: -4, boxShadow: "0 20px 40px rgba(var(--accent-rgb),0.2)" }}
                 className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg card-lift p-5 sm:p-6 text-center group"
               >
-                <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-[rgba(var(--accent-rgb),0.08)] border border-[rgba(var(--accent-rgb),0.1)] flex items-center justify-center text-[var(--accent)] group-hover:text-[var(--accent-blue)] group-hover:bg-[rgba(var(--accent-rgb),0.12)] group-hover:border-[rgba(var(--accent-rgb),0.2)] group-hover:shadow-[0_0_20px_rgba(var(--accent-rgb),0.15)] transition-all duration-500">
+                <div className="w-12 h-12 mx-auto mb-4 rounded-lg bg-[rgba(var(--accent-rgb),0.08)] border border-[rgba(var(--accent-rgb),0.1)] flex items-center justify-center text-[var(--accent)] group-hover:text-[var(--accent-blue)] group-hover:bg-[rgba(var(--accent-rgb),0.12)] group-hover:border-[rgba(var(--accent-rgb),0.2)] group-hover:shadow-[0_0_20px_rgba(var(--accent-rgb),0.15)] transition-all duration-500">
                   {b.icon}
                 </div>
                 <h3 className="font-semibold text-white mb-1.5 text-xs sm:text-sm md:text-base">{b.title}</h3>
-                <p className="text-[10px] sm:text-xs md:text-sm text-slate-300 leading-relaxed">{b.desc}</p>
+                <p className="text-[10px] sm:text-xs md:text-sm text-[var(--text-secondary)] leading-relaxed">{b.desc}</p>
               </motion.div>
             ))}
           </motion.div>
@@ -352,7 +352,7 @@ export default function LandingPage() {
 
       {/* ─── Divider ─── */}
       <div className="relative h-px pointer-events-none mx-8 sm:mx-24">
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[rgba(0,255,167,0.15)] to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[rgba(var(--accent-rgb),0.15)] to-transparent" />
       </div>
 
       {/* ─── FEATURES ─── */}
@@ -376,7 +376,7 @@ export default function LandingPage() {
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
               ฟีเจอร์<span className="neon-cyan">ครบ</span>ทุกความต้องการ
             </h2>
-            <p className="text-slate-300 max-w-xl mx-auto text-sm sm:text-base">ไม่ว่าจะส่งผ่านเว็บหรือ API เรามีทุกอย่างที่คุณต้องการ</p>
+            <p className="text-[var(--text-secondary)] max-w-xl mx-auto text-sm sm:text-base">ไม่ว่าจะส่งผ่านเว็บหรือ API เรามีทุกอย่างที่คุณต้องการ</p>
           </motion.div>
 
           <motion.div
@@ -390,15 +390,15 @@ export default function LandingPage() {
               <motion.div
                 key={f.title}
                 variants={fadeUp}
-                whileHover={{ y: -4, boxShadow: "0 20px 40px rgba(0,255,167,0.15)" }}
+                whileHover={{ y: -4, boxShadow: "0 20px 40px rgba(var(--accent-rgb),0.15)" }}
                 className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg card-lift p-6 sm:p-8 flex gap-5 group"
               >
-                <div className="w-14 h-14 flex-shrink-0 rounded-xl bg-[rgba(var(--accent-rgb),0.08)] border border-[rgba(var(--accent-rgb),0.1)] flex items-center justify-center text-[var(--accent)] group-hover:text-[var(--accent-blue)] group-hover:bg-[rgba(var(--accent-rgb),0.12)] group-hover:border-[rgba(var(--accent-rgb),0.2)] group-hover:shadow-[0_0_20px_rgba(var(--accent-rgb),0.15)] transition-all duration-500">
+                <div className="w-14 h-14 flex-shrink-0 rounded-lg bg-[rgba(var(--accent-rgb),0.08)] border border-[rgba(var(--accent-rgb),0.1)] flex items-center justify-center text-[var(--accent)] group-hover:text-[var(--accent-blue)] group-hover:bg-[rgba(var(--accent-rgb),0.12)] group-hover:border-[rgba(var(--accent-rgb),0.2)] group-hover:shadow-[0_0_20px_rgba(var(--accent-rgb),0.15)] transition-all duration-500">
                   {f.icon}
                 </div>
                 <div>
                   <h3 className="font-semibold text-white text-base sm:text-lg mb-2">{f.title}</h3>
-                  <p className="text-slate-300 leading-relaxed text-sm">{f.desc}</p>
+                  <p className="text-[var(--text-secondary)] leading-relaxed text-sm">{f.desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -433,7 +433,7 @@ export default function LandingPage() {
                 <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
                 <div className="w-3 h-3 rounded-full bg-green-500/60" />
               </div>
-              <span className="text-xs text-slate-300 ml-2 font-mono">send-sms.js</span>
+              <span className="text-xs text-[var(--text-secondary)] ml-2 font-mono">send-sms.js</span>
             </div>
             <div className="p-5 sm:p-6 font-mono text-xs sm:text-sm leading-relaxed overflow-x-auto">
               <div><span className="text-[var(--accent)]">const</span> <span className="text-[var(--accent)]">response</span> <span className="text-white/50">=</span> <span className="text-[var(--accent)]">await</span> <span className="text-emerald-400">fetch</span><span className="text-white/40">(</span></div>
@@ -458,7 +458,7 @@ export default function LandingPage() {
 
       {/* ─── Divider ─── */}
       <div className="relative h-px pointer-events-none mx-8 sm:mx-24">
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[rgba(0,255,167,0.2)] to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[rgba(var(--accent-rgb),0.2)] to-transparent" />
       </div>
 
       {/* ─── PRICING ─── */}
@@ -482,7 +482,7 @@ export default function LandingPage() {
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
               เลือก<span className="gradient-text-mixed">แพ็กเกจ</span>ที่เหมาะกับคุณ
             </h2>
-            <p className="text-slate-300 max-w-xl mx-auto text-sm sm:text-base">ยิ่งซื้อมาก ยิ่งถูก — โบนัสสูงสุด 50%</p>
+            <p className="text-[var(--text-secondary)] max-w-xl mx-auto text-sm sm:text-base">ยิ่งซื้อมาก ยิ่งถูก — โบนัสสูงสุด 50%</p>
           </motion.div>
 
           <motion.div
@@ -496,7 +496,7 @@ export default function LandingPage() {
               <motion.div
                 key={pkg.name}
                 variants={scaleIn}
-                whileHover={{ y: -6, boxShadow: pkg.best ? "0 20px 40px rgba(0,255,167,0.3)" : "0 20px 40px rgba(0,255,167,0.15)" }}
+                whileHover={{ y: -6, boxShadow: pkg.best ? "0 20px 40px rgba(var(--accent-rgb),0.3)" : "0 20px 40px rgba(var(--accent-rgb),0.15)" }}
                 className={`bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg card-lift p-5 sm:p-6 flex flex-col group relative ${
                   pkg.best ? "border-[rgba(var(--accent-rgb),0.3)] scale-[1.02] z-10" : ""
                 }`}
@@ -504,13 +504,13 @@ export default function LandingPage() {
                 {/* Best seller accent */}
                 {pkg.best && (
                   <motion.div
-                    className="absolute -inset-px rounded-xl pointer-events-none"
-                    animate={{ boxShadow: ["0 0 20px rgba(0,255,167,0.3)", "0 0 40px rgba(0,255,167,0.6)", "0 0 20px rgba(0,255,167,0.3)"] }}
+                    className="absolute -inset-px rounded-lg pointer-events-none"
+                    animate={{ boxShadow: ["0 0 20px rgba(var(--accent-rgb),0.3)", "0 0 40px rgba(var(--accent-rgb),0.6)", "0 0 20px rgba(var(--accent-rgb),0.3)"] }}
                     transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
                   />
                 )}
                 {pkg.best && (
-                  <div className="absolute -inset-px rounded-xl bg-gradient-to-b from-[rgba(0,255,167,0.2)] via-transparent to-[rgba(0,255,167,0.1)] pointer-events-none" />
+                  <div className="absolute -inset-px rounded-lg bg-gradient-to-b from-[rgba(var(--accent-rgb),0.2)] via-transparent to-[rgba(var(--accent-rgb),0.1)] pointer-events-none" />
                 )}
 
                 {pkg.best && (
@@ -523,7 +523,7 @@ export default function LandingPage() {
                 )}
 
                 <div className="relative">
-                  <div className="text-sm text-slate-300 mb-1">SMSOK {pkg.name}</div>
+                  <div className="text-sm text-[var(--text-secondary)] mb-1">SMSOK {pkg.name}</div>
                   <div className="text-2xl sm:text-3xl font-bold text-white mb-1 group-hover:text-[var(--accent)] transition-colors duration-300">
                     ฿{fmt(pkg.price)}
                   </div>
@@ -534,7 +534,7 @@ export default function LandingPage() {
                     </div>
                   ) : <div className="mb-4" />}
 
-                  <div className="space-y-2.5 text-sm text-slate-300 flex-1">
+                  <div className="space-y-2.5 text-sm text-[var(--text-secondary)] flex-1">
                     <div className="flex justify-between"><span>SMS</span><span className="text-white/80 font-medium">{fmt(pkg.sms)}</span></div>
                     <div className="flex justify-between"><span>ราคา/SMS</span><span className="text-white/80 font-medium">฿{pkg.cost}</span></div>
                     <div className="flex justify-between"><span>Sender Names</span><span className="text-white/80 font-medium">{pkg.senders === -1 ? "ไม่จำกัด" : pkg.senders}</span></div>
@@ -543,7 +543,7 @@ export default function LandingPage() {
 
                   <Link
                     href="/register"
-                    className={`mt-6 w-full py-3 rounded-xl font-semibold text-sm transition-all text-center min-h-[44px] flex items-center justify-center gap-2 ${pkg.best ? "btn-primary" : "bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] rounded-xl hover:border-[rgba(var(--accent-rgb),0.3)] hover:bg-[rgba(var(--accent-rgb),0.04)] cursor-pointer"}`}
+                    className={`mt-6 w-full py-3 rounded-lg font-semibold text-sm transition-all text-center min-h-[44px] flex items-center justify-center gap-2 ${pkg.best ? "btn-primary" : "bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] rounded-lg hover:border-[rgba(var(--accent-rgb),0.3)] hover:bg-[rgba(var(--accent-rgb),0.04)] cursor-pointer"}`}
                   >
                     เลือกแพ็กเกจ
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all">
@@ -577,16 +577,16 @@ export default function LandingPage() {
           viewport={{ once: false, margin: "-80px" }}
           className="max-w-4xl mx-auto bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg p-10 sm:p-14 text-center relative animate-breathe"
         >
-          <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[rgba(0,255,167,0.05)] to-[rgba(50,152,218,0.03)] pointer-events-none" />
+          <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-[rgba(var(--accent-rgb),0.05)] to-[rgba(50,152,218,0.03)] pointer-events-none" />
           <div className="relative">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">ต้องการแพ็กเกจพิเศษ?</h2>
-            <p className="text-slate-300 mb-8 text-sm sm:text-base max-w-lg mx-auto">
+            <p className="text-[var(--text-secondary)] mb-8 text-sm sm:text-base max-w-lg mx-auto">
               สำหรับธุรกิจที่ส่ง SMS มากกว่า 1 ล้านข้อความ/เดือน ติดต่อเราเพื่อรับราคาพิเศษ
             </p>
             <motion.button
-              whileHover={{ scale: 1.04, boxShadow: "0 0 30px rgba(0,255,167,0.4)" }}
+              whileHover={{ scale: 1.04, boxShadow: "0 0 30px rgba(var(--accent-rgb),0.4)" }}
               whileTap={{ scale: 0.97 }}
-              className="btn-primary px-8 py-3.5 text-base rounded-xl cursor-pointer min-h-[48px] inline-flex items-center gap-2 font-semibold"
+              className="btn-primary px-8 py-3.5 text-base rounded-lg cursor-pointer min-h-[48px] inline-flex items-center gap-2 font-semibold"
             >
               ติดต่อฝ่ายขาย
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
@@ -597,7 +597,7 @@ export default function LandingPage() {
 
       {/* ─── Divider ─── */}
       <div className="relative h-px pointer-events-none mx-8 sm:mx-24">
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[rgba(0,255,167,0.15)] to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[rgba(var(--accent-rgb),0.15)] to-transparent" />
       </div>
 
       {/* ─── HOW IT WORKS ─── */}
@@ -620,7 +620,7 @@ export default function LandingPage() {
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
               เริ่มต้นใช้งานใน <span className="gradient-text-mixed">3 ขั้นตอน</span>
             </h2>
-            <p className="text-slate-300 max-w-xl mx-auto text-sm sm:text-base">สมัคร → ตั้งค่า → เริ่มส่ง</p>
+            <p className="text-[var(--text-secondary)] max-w-xl mx-auto text-sm sm:text-base">สมัคร → ตั้งค่า → เริ่มส่ง</p>
           </motion.div>
 
           <motion.div
@@ -656,18 +656,18 @@ export default function LandingPage() {
               <motion.div
                 key={item.step}
                 variants={fadeUp}
-                whileHover={{ y: -4, boxShadow: "0 20px 40px rgba(0,255,167,0.15)" }}
+                whileHover={{ y: -4, boxShadow: "0 20px 40px rgba(var(--accent-rgb),0.15)" }}
                 className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg card-lift p-6 sm:p-8 text-center group relative"
               >
                 {/* Step number badge */}
                 <div className="w-10 h-10 mx-auto mb-5 rounded-full bg-[rgba(var(--accent-rgb),0.12)] border border-[rgba(var(--accent-rgb),0.2)] flex items-center justify-center text-[var(--accent)] font-bold text-lg relative z-10">
                   {item.step}
                 </div>
-                <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-[rgba(var(--accent-rgb),0.08)] border border-[rgba(var(--accent-rgb),0.1)] flex items-center justify-center text-[var(--accent)] group-hover:text-[var(--accent-blue)] group-hover:bg-[rgba(var(--accent-rgb),0.12)] group-hover:border-[rgba(var(--accent-rgb),0.2)] group-hover:shadow-[0_0_20px_rgba(var(--accent-rgb),0.15)] transition-all duration-500">
+                <div className="w-14 h-14 mx-auto mb-4 rounded-lg bg-[rgba(var(--accent-rgb),0.08)] border border-[rgba(var(--accent-rgb),0.1)] flex items-center justify-center text-[var(--accent)] group-hover:text-[var(--accent-blue)] group-hover:bg-[rgba(var(--accent-rgb),0.12)] group-hover:border-[rgba(var(--accent-rgb),0.2)] group-hover:shadow-[0_0_20px_rgba(var(--accent-rgb),0.15)] transition-all duration-500">
                   {item.icon}
                 </div>
                 <h3 className="font-semibold text-white text-base sm:text-lg mb-2">{item.title}</h3>
-                <p className="text-slate-300 leading-relaxed text-sm">{item.desc}</p>
+                <p className="text-[var(--text-secondary)] leading-relaxed text-sm">{item.desc}</p>
               </motion.div>
             ))}
           </motion.div>
@@ -699,7 +699,7 @@ export default function LandingPage() {
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
               ใช้ได้กับ<span className="gradient-text-mixed">ทุกธุรกิจ</span>
             </h2>
-            <p className="text-slate-300 max-w-xl mx-auto text-sm sm:text-base">ไม่ว่าจะ OTP, การตลาด หรือแจ้งเตือน</p>
+            <p className="text-[var(--text-secondary)] max-w-xl mx-auto text-sm sm:text-base">ไม่ว่าจะ OTP, การตลาด หรือแจ้งเตือน</p>
           </motion.div>
 
           <motion.div
@@ -734,15 +734,15 @@ export default function LandingPage() {
               <motion.div
                 key={item.title}
                 variants={fadeUp}
-                whileHover={{ y: -4, boxShadow: "0 20px 40px rgba(0,255,167,0.15)" }}
+                whileHover={{ y: -4, boxShadow: "0 20px 40px rgba(var(--accent-rgb),0.15)" }}
                 className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg card-lift p-6 sm:p-8 flex gap-5 group"
               >
-                <div className="w-14 h-14 flex-shrink-0 rounded-xl bg-[rgba(var(--accent-rgb),0.08)] border border-[rgba(var(--accent-rgb),0.1)] flex items-center justify-center text-[var(--accent)] group-hover:text-[var(--accent-blue)] group-hover:bg-[rgba(var(--accent-rgb),0.12)] group-hover:border-[rgba(var(--accent-rgb),0.2)] group-hover:shadow-[0_0_20px_rgba(var(--accent-rgb),0.15)] transition-all duration-500">
+                <div className="w-14 h-14 flex-shrink-0 rounded-lg bg-[rgba(var(--accent-rgb),0.08)] border border-[rgba(var(--accent-rgb),0.1)] flex items-center justify-center text-[var(--accent)] group-hover:text-[var(--accent-blue)] group-hover:bg-[rgba(var(--accent-rgb),0.12)] group-hover:border-[rgba(var(--accent-rgb),0.2)] group-hover:shadow-[0_0_20px_rgba(var(--accent-rgb),0.15)] transition-all duration-500">
                   {item.icon}
                 </div>
                 <div>
                   <h3 className="font-semibold text-white text-base sm:text-lg mb-2">{item.title}</h3>
-                  <p className="text-slate-300 leading-relaxed text-sm">{item.desc}</p>
+                  <p className="text-[var(--text-secondary)] leading-relaxed text-sm">{item.desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -752,7 +752,7 @@ export default function LandingPage() {
 
       {/* ─── Divider ─── */}
       <div className="relative h-px pointer-events-none mx-8 sm:mx-24">
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[rgba(0,255,167,0.2)] to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[rgba(var(--accent-rgb),0.2)] to-transparent" />
       </div>
 
       {/* ─── SOCIAL PROOF ─── */}
@@ -775,7 +775,7 @@ export default function LandingPage() {
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
               ลูกค้า<span className="gradient-text-mixed">พูดถึงเรา</span>
             </h2>
-            <p className="text-slate-300 max-w-xl mx-auto text-sm sm:text-base">ธุรกิจกว่า 500+ รายไว้วางใจ SMSOK</p>
+            <p className="text-[var(--text-secondary)] max-w-xl mx-auto text-sm sm:text-base">ธุรกิจกว่า 500+ รายไว้วางใจ SMSOK</p>
           </motion.div>
 
           <motion.div
@@ -808,14 +808,14 @@ export default function LandingPage() {
               <motion.div
                 key={t.name}
                 variants={fadeUp}
-                whileHover={{ y: -4, boxShadow: "0 20px 40px rgba(0,255,167,0.15)" }}
+                whileHover={{ y: -4, boxShadow: "0 20px 40px rgba(var(--accent-rgb),0.15)" }}
                 className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg card-lift p-6 sm:p-8 group backdrop-blur-sm"
               >
                 {/* Quote icon */}
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className="text-[rgba(var(--accent-rgb),0.2)] mb-4">
                   <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10H14.017zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10H0z" />
                 </svg>
-                <p className="text-slate-300 leading-relaxed text-sm sm:text-base mb-6">{t.quote}</p>
+                <p className="text-[var(--text-secondary)] leading-relaxed text-sm sm:text-base mb-6">{t.quote}</p>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-[rgba(var(--accent-rgb),0.12)] border border-[rgba(var(--accent-rgb),0.2)] flex items-center justify-center text-[var(--accent)] font-bold text-sm">
                     {t.initials}
@@ -868,7 +868,7 @@ export default function LandingPage() {
               <motion.div
                 key={faq.q}
                 variants={fadeUp}
-                className={`bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg transition-all duration-400 ${openFaq === i ? "border-[rgba(var(--accent-rgb),0.25)] shadow-[0_0_30px_rgba(0,255,167,0.06)]" : ""}`}
+                className={`bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg transition-all duration-400 ${openFaq === i ? "border-[rgba(var(--accent-rgb),0.25)] shadow-[0_0_30px_rgba(var(--accent-rgb),0.06)]" : ""}`}
               >
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
@@ -894,7 +894,7 @@ export default function LandingPage() {
                       transition={{ duration: 0.25, ease: "easeInOut" }}
                       className="overflow-hidden"
                     >
-                      <div className="px-5 sm:px-6 pb-5 sm:pb-6 text-slate-300 leading-relaxed text-sm sm:text-base">{faq.a}</div>
+                      <div className="px-5 sm:px-6 pb-5 sm:pb-6 text-[var(--text-secondary)] leading-relaxed text-sm sm:text-base">{faq.a}</div>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -906,7 +906,7 @@ export default function LandingPage() {
 
       {/* ─── Divider ─── */}
       <div className="relative h-px pointer-events-none mx-8 sm:mx-24">
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[rgba(0,255,167,0.1)] to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[rgba(var(--accent-rgb),0.1)] to-transparent" />
       </div>
 
       {/* ─── FOOTER ─── */}
@@ -921,16 +921,16 @@ export default function LandingPage() {
                 </svg>
                 <span className="text-lg font-bold gradient-text-mixed">SMSOK</span>
               </Link>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">แพลตฟอร์มส่ง SMS ที่ธุรกิจไว้วางใจ ราคาถูก ส่งเร็ว ซัพพอร์ต 24/7</p>
+              <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">แพลตฟอร์มส่ง SMS ที่ธุรกิจไว้วางใจ ราคาถูก ส่งเร็ว ซัพพอร์ต 24/7</p>
             </div>
             {[
-              { title: "Product", links: [{ href: "#features", label: "ฟีเจอร์" }, { href: "#pricing", label: "ราคา" }, { href: "/register", label: "สมัครฟรี" }, { href: "#", label: "API Docs" }] },
-              { title: "Company", links: [{ href: "#", label: "เกี่ยวกับเรา" }, { href: "#", label: "บล็อก" }, { href: "#", label: "ติดต่อเรา" }, { href: "#", label: "ร่วมงานกับเรา" }] },
-              { title: "Legal", links: [{ href: "#", label: "เงื่อนไขการใช้งาน" }, { href: "#", label: "นโยบายความเป็นส่วนตัว" }, { href: "#", label: "SLA" }, { href: "#", label: "PDPA" }] },
+              { title: "Product", links: [{ href: "#features", label: "ฟีเจอร์" }, { href: "#pricing", label: "ราคา" }, { href: "/register", label: "สมัครฟรี" }, { href: "/docs", label: "API Docs" }] },
+              { title: "Company", links: [{ href: "/about", label: "เกี่ยวกับเรา" }, { href: "/blog", label: "บล็อก" }, { href: "mailto:support@smsok.com", label: "ติดต่อเรา" }, { href: "/careers", label: "ร่วมงานกับเรา" }] },
+              { title: "Legal", links: [{ href: "/terms", label: "เงื่อนไขการใช้งาน" }, { href: "/privacy", label: "นโยบายความเป็นส่วนตัว" }, { href: "/sla", label: "SLA" }, { href: "/privacy#pdpa", label: "PDPA" }] },
             ].map((col) => (
               <div key={col.title}>
-                <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-4">{col.title}</h4>
-                <ul className="space-y-3 text-sm text-slate-300">
+                <h4 className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-4">{col.title}</h4>
+                <ul className="space-y-3 text-sm text-[var(--text-secondary)]">
                   {col.links.map((l) => (
                     <li key={l.label}><a href={l.href} className="hover:text-white/70 transition-colors">{l.label}</a></li>
                   ))}
@@ -943,11 +943,11 @@ export default function LandingPage() {
             <div className="text-xs sm:text-sm text-slate-400">&copy; 2026 SMSOK — SMS Sending Platform</div>
             <div className="flex items-center gap-4">
               {[
-                { label: "LINE", path: "M12 2C6.48 2 2 5.81 2 10.41c0 4.15 3.68 7.63 8.65 8.28.34.07.8.22.91.51.1.26.07.67.03.93l-.15.87c-.04.25-.2.98.87.53s5.8-3.41 7.9-5.84C22.15 13.59 22 12.03 22 10.41 22 5.81 17.52 2 12 2z" },
-                { label: "Facebook", path: "M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" },
-                { label: "X", path: "M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" },
+                { label: "LINE", href: "https://line.me/ti/p/@smsok", path: "M12 2C6.48 2 2 5.81 2 10.41c0 4.15 3.68 7.63 8.65 8.28.34.07.8.22.91.51.1.26.07.67.03.93l-.15.87c-.04.25-.2.98.87.53s5.8-3.41 7.9-5.84C22.15 13.59 22 12.03 22 10.41 22 5.81 17.52 2 12 2z" },
+                { label: "Facebook", href: "https://facebook.com/smsok", path: "M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" },
+                { label: "X", href: "https://x.com/smsok", path: "M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" },
               ].map((s) => (
-                <motion.a key={s.label} href="#" whileHover={{ scale: 1.2, color: "var(--accent)" }} className="text-slate-400 transition-colors p-1" aria-label={s.label}>
+                <motion.a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" whileHover={{ scale: 1.2, color: "var(--accent)" }} className="text-slate-400 transition-colors p-1" aria-label={s.label}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d={s.path} /></svg>
                 </motion.a>
               ))}

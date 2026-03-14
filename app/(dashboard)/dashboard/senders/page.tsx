@@ -215,11 +215,11 @@ export default function SendersPage() {
         <Skeleton className="h-4 w-72 rounded-lg mb-8" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-24 rounded-xl" />
+            <Skeleton key={i} className="h-24 rounded-lg" />
           ))}
         </div>
         <Skeleton className="h-10 w-full max-w-sm rounded-lg mb-4" />
-        <Skeleton className="h-64 rounded-xl" />
+        <Skeleton className="h-64 rounded-lg" />
       </div>
     );
   }
@@ -281,7 +281,7 @@ export default function SendersPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         {/* Total */}
         <div
-          className="rounded-xl p-4"
+          className="rounded-lg p-4"
           style={{
             background: "var(--bg-surface)",
             border: "1px solid var(--border-default)",
@@ -300,7 +300,7 @@ export default function SendersPage() {
 
         {/* Active */}
         <div
-          className="rounded-xl p-4"
+          className="rounded-lg p-4"
           style={{
             background: "var(--bg-surface)",
             border: "1px solid var(--border-default)",
@@ -320,7 +320,7 @@ export default function SendersPage() {
 
         {/* Pending */}
         <div
-          className="rounded-xl p-4"
+          className="rounded-lg p-4"
           style={{
             background: "var(--bg-surface)",
             border: "1px solid var(--border-default)",
@@ -340,7 +340,7 @@ export default function SendersPage() {
 
         {/* Rejected */}
         <div
-          className="rounded-xl p-4"
+          className="rounded-lg p-4"
           style={{
             background: "var(--bg-surface)",
             border: "1px solid var(--border-default)",
@@ -362,7 +362,7 @@ export default function SendersPage() {
       {/* ========== Quota Bar ========== */}
       {quota.limit > 0 && (
         <div
-          className="rounded-xl p-4 mb-6 flex items-center gap-4"
+          className="rounded-lg p-4 mb-6 flex items-center gap-4"
           style={{
             background: "var(--bg-surface)",
             border: "1px solid var(--border-default)",
@@ -419,7 +419,7 @@ export default function SendersPage() {
 
       {/* ========== Senders Table ========== */}
       <div
-        className="rounded-xl overflow-hidden mb-6"
+        className="rounded-lg overflow-hidden mb-6"
         style={{
           background: "var(--bg-surface)",
           border: "1px solid var(--border-default)",
@@ -453,7 +453,7 @@ export default function SendersPage() {
               <tbody>
                 <tr>
                   <td colSpan={6} className="text-center py-14">
-                    <div className="w-14 h-14 mx-auto mb-3 rounded-xl flex items-center justify-center" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)" }}>
+                    <div className="w-14 h-14 mx-auto mb-3 rounded-lg flex items-center justify-center" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)" }}>
                       <Radio className="size-6 text-[var(--text-muted)]" />
                     </div>
                     <p className="text-sm text-[var(--text-primary)] mb-1">ไม่พบชื่อผู้ส่ง</p>
@@ -539,7 +539,7 @@ export default function SendersPage() {
                               {/* Mini stat cards */}
                               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                                 <div
-                                  className="rounded-xl p-3 flex items-center gap-3"
+                                  className="rounded-lg p-3 flex items-center gap-3"
                                   style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)" }}
                                 >
                                   <Send className="size-4 text-[var(--accent)]" />
@@ -551,7 +551,7 @@ export default function SendersPage() {
                                   </div>
                                 </div>
                                 <div
-                                  className="rounded-xl p-3 flex items-center gap-3"
+                                  className="rounded-lg p-3 flex items-center gap-3"
                                   style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)" }}
                                 >
                                   <Calendar className="size-4 text-[var(--text-muted)]" />
@@ -563,7 +563,7 @@ export default function SendersPage() {
                                   </div>
                                 </div>
                                 <div
-                                  className="rounded-xl p-3 flex items-center gap-3"
+                                  className="rounded-lg p-3 flex items-center gap-3"
                                   style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)" }}
                                 >
                                   <Hash className="size-4 text-[var(--text-muted)]" />
@@ -615,7 +615,7 @@ export default function SendersPage() {
 
       {/* ========== Info Banner ========== */}
       <div
-        className="rounded-xl p-4 flex items-start gap-3"
+        className="rounded-lg p-4 flex items-start gap-3"
         style={{
           background: "var(--bg-surface)",
           border: "1px solid var(--border-default)",
@@ -693,7 +693,7 @@ export default function SendersPage() {
 
             {/* Warning */}
             <div
-              className="rounded-xl p-3 flex items-start gap-2.5"
+              className="rounded-lg p-3 flex items-start gap-2.5"
               style={{ background: "var(--warning-bg)", border: "1px solid rgba(250,205,99,0.12)" }}
             >
               <AlertTriangle className="size-4 flex-shrink-0 mt-0.5" style={{ color: "var(--warning)" }} />

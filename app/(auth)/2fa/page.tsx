@@ -140,7 +140,7 @@ function TwoFactorContent() {
                           <Input
                             type="text"
                             placeholder="xxxx-xxxx-xxxx"
-                            className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg font-mono focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+                            className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg font-mono focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)]"
                             autoFocus
                             {...field}
                             onChange={(e) => field.onChange(e.target.value.toLowerCase())}
@@ -153,7 +153,7 @@ function TwoFactorContent() {
                   <Button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full h-11 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] rounded-xl text-[15px] font-semibold transition-all duration-200 hover:shadow-[0_4px_16px_rgba(0,255,167,0.25)] group"
+                    className="w-full h-11 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] rounded-lg text-[15px] font-semibold transition-all duration-200 hover:shadow-[0_4px_16px_rgba(var(--accent-rgb),0.25)] group"
                   >
                     {isSubmitting ? (
                       <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />กำลังยืนยัน...</span>
@@ -189,7 +189,7 @@ function TwoFactorContent() {
                                   <InputOTPSlot
                                     key={i}
                                     index={i}
-                                    className="w-12 h-14 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white text-2xl font-bold font-mono rounded-lg data-[active=true]:border-[var(--accent)] data-[active=true]:ring-[rgba(0,255,167,0.12)]"
+                                    className="w-12 h-14 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white text-2xl font-bold font-mono rounded-lg data-[active=true]:border-[var(--accent)] data-[active=true]:ring-[rgba(var(--accent-rgb),0.12)]"
                                   />
                                 ))}
                               </InputOTPGroup>
@@ -203,7 +203,7 @@ function TwoFactorContent() {
                   <Button
                     type="submit"
                     disabled={isSubmitting || otpForm.watch("code").length < 6}
-                    className="w-full h-11 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] rounded-xl text-[15px] font-semibold transition-all duration-200 hover:shadow-[0_4px_16px_rgba(0,255,167,0.25)] group"
+                    className="w-full h-11 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] rounded-lg text-[15px] font-semibold transition-all duration-200 hover:shadow-[0_4px_16px_rgba(var(--accent-rgb),0.25)] group"
                   >
                     {isSubmitting ? (
                       <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />กำลังยืนยัน...</span>

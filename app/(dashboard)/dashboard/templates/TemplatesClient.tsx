@@ -542,7 +542,7 @@ export default function TemplatesClient({
                       <Input
                         placeholder="เช่น ยืนยัน OTP, โปรโมชั่นประจำเดือน"
                         maxLength={100}
-                        className="h-11 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+                        className="h-11 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)]"
                         {...field}
                       />
                     </FormControl>
@@ -617,7 +617,7 @@ export default function TemplatesClient({
                         placeholder="พิมพ์ข้อความ... ใช้ {{name}} สำหรับตัวแปร"
                         maxLength={1000}
                         rows={5}
-                        className="bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg resize-y min-h-[120px] focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+                        className="bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg resize-y min-h-[120px] focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)]"
                         {...field}
                         ref={(el) => {
                           field.ref(el);

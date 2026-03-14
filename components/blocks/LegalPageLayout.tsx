@@ -192,7 +192,7 @@ export default function LegalPageLayout({
 
             {/* Mobile TOC */}
             <div className="toc-mobile lg:hidden mb-6">
-              <div className="rounded-xl bg-[var(--bg-surface)] border border-[var(--border-default)]">
+              <div className="rounded-lg bg-[var(--bg-surface)] border border-[var(--border-default)]">
                 <button
                   type="button"
                   onClick={() => setMobileTocOpen((v) => !v)}
@@ -299,7 +299,7 @@ export default function LegalPageLayout({
                       href={isCurrent ? "#" : doc.href}
                       onClick={isCurrent ? (e) => e.preventDefault() : undefined}
                       className={cn(
-                        "block rounded-xl p-5 text-center transition-all bg-[var(--bg-surface)] border",
+                        "block rounded-lg p-5 text-center transition-all bg-[var(--bg-surface)] border",
                         isCurrent
                           ? "border-[var(--accent)] opacity-40 pointer-events-none cursor-default"
                           : "border-[var(--border-default)] hover:border-[rgba(var(--accent-rgb),0.3)] hover:-translate-y-px",

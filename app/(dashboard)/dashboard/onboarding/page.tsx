@@ -192,7 +192,7 @@ function Step1({
       {/* Preview */}
       {sanitized.length > 0 && (
         <div
-          className="rounded-xl p-4"
+          className="rounded-lg p-4"
           style={{
             backgroundColor: "var(--bg-surface)",
             border: "1px solid var(--border-default)",
@@ -218,7 +218,7 @@ function Step1({
 
       {/* Info box */}
       <div
-        className="rounded-xl p-4 flex gap-3"
+        className="rounded-lg p-4 flex gap-3"
         style={{
           backgroundColor: "var(--bg-surface)",
           border: "1px solid var(--border-default)",
@@ -292,7 +292,7 @@ function Step2({
               key={id}
               type="button"
               onClick={() => onChange({ contactMode: id })}
-              className="flex flex-col items-center gap-2 rounded-xl p-4 text-center transition-all cursor-pointer"
+              className="flex flex-col items-center gap-2 rounded-lg p-4 text-center transition-all cursor-pointer"
               style={{
                 border: selected
                   ? "2px solid var(--accent)"
@@ -330,7 +330,7 @@ function Step2({
       {/* CSV hidden input */}
       {state.contactMode === "csv" && (
         <div
-          className="rounded-xl p-6 text-center"
+          className="rounded-lg p-6 text-center"
           style={{ border: "2px dashed var(--border-default)" }}
         >
           <input
@@ -366,7 +366,7 @@ function Step2({
             กรอกเบอร์โทรศัพท์ (1 เบอร์ต่อบรรทัด)
           </label>
           <textarea
-            className="w-full rounded-xl p-3 text-sm resize-none outline-none focus:ring-2 transition-all"
+            className="w-full rounded-lg p-3 text-sm resize-none outline-none focus:ring-2 transition-all"
             rows={6}
             placeholder={"0812345678\n0898765432\n0661234567"}
             value={state.manualPhones}
@@ -468,7 +468,7 @@ function Step3({
             ข้อความทดสอบ
           </label>
           <textarea
-            className="w-full rounded-xl p-3 text-sm resize-none outline-none focus:ring-2 transition-all"
+            className="w-full rounded-lg p-3 text-sm resize-none outline-none focus:ring-2 transition-all"
             rows={4}
             value={state.testMessage}
             onChange={(e) => onChange({ testMessage: e.target.value })}
@@ -486,7 +486,7 @@ function Step3({
 
       {state.testError && (
         <div
-          className="rounded-xl p-4 flex items-center gap-3"
+          className="rounded-lg p-4 flex items-center gap-3"
           style={{
             backgroundColor: "color-mix(in srgb, var(--error, #ef4444) 10%, transparent)",
             border: "1px solid var(--error, #ef4444)",
@@ -500,7 +500,7 @@ function Step3({
 
       {state.testSent ? (
         <div
-          className="rounded-xl p-4 flex items-center gap-3"
+          className="rounded-lg p-4 flex items-center gap-3"
           style={{
             backgroundColor: "color-mix(in srgb, var(--accent) 10%, transparent)",
             border: "1px solid var(--accent)",
@@ -595,7 +595,7 @@ function Step4({
         </div>
       ) : error || packages.length === 0 ? (
         <div
-          className="rounded-xl p-6 text-center"
+          className="rounded-lg p-6 text-center"
           style={{
             backgroundColor: "var(--bg-surface)",
             border: "1px solid var(--border-default)",
@@ -617,7 +617,7 @@ function Step4({
                 key={pkg.id}
                 type="button"
                 onClick={() => onChange({ selectedPackage: pkg.id })}
-                className="relative flex flex-col items-center gap-2 rounded-xl p-4 text-center transition-all cursor-pointer"
+                className="relative flex flex-col items-center gap-2 rounded-lg p-4 text-center transition-all cursor-pointer"
                 style={{
                   border: selected
                     ? "2px solid var(--accent)"
@@ -743,7 +743,7 @@ function Step5({
 
       {/* Preview card */}
       <div
-        className="rounded-xl p-4 space-y-3"
+        className="rounded-lg p-4 space-y-3"
         style={{
           border: "1px solid var(--border-default)",
           backgroundColor: "var(--bg-surface)",

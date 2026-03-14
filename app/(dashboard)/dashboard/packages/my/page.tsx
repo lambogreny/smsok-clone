@@ -212,7 +212,7 @@ export default function MyPackagesPage() {
 
         {/* Sub-stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
-          <div className="rounded-xl p-3 bg-[var(--bg-elevated)] border border-[var(--border-default)]">
+          <div className="rounded-lg p-3 bg-[var(--bg-elevated)] border border-[var(--border-default)]">
             <div className="flex items-center gap-2 mb-1">
               <Smartphone size={14} className="text-[var(--text-muted)]" />
               <span className="text-xs text-[var(--text-muted)]">Senders</span>
@@ -221,7 +221,7 @@ export default function MyPackagesPage() {
               {totalSendersUsed} / {totalSendersMax === Infinity ? "∞" : totalSendersMax} used
             </p>
           </div>
-          <div className="rounded-xl p-3 bg-[var(--bg-elevated)] border border-[var(--border-default)]">
+          <div className="rounded-lg p-3 bg-[var(--bg-elevated)] border border-[var(--border-default)]">
             <div className="flex items-center gap-2 mb-1">
               <Clock size={14} className="text-[var(--text-muted)]" />
               <span className="text-xs text-[var(--text-muted)]">หมดอายุเร็วสุด</span>
@@ -389,7 +389,7 @@ export default function MyPackagesPage() {
           {expired.map((ep) => (
             <div
               key={ep.id}
-              className="rounded-xl px-5 py-3.5 mb-2 opacity-60 bg-[var(--bg-elevated)] border border-[var(--border-subtle)]"
+              className="rounded-lg px-5 py-3.5 mb-2 opacity-60 bg-[var(--bg-elevated)] border border-[var(--border-subtle)]"
             >
               <span className="text-[13px] line-through text-[var(--text-muted)]">📦 {ep.name}</span>
               <span className="text-xs ml-3 text-[var(--text-muted)]">

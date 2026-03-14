@@ -74,7 +74,7 @@ function TicketDetailSkeleton() {
               <div className="skeleton h-5 w-16 rounded-full" />
             </div>
           </div>
-          <div className="skeleton h-9 w-24 rounded-xl" />
+          <div className="skeleton h-9 w-24 rounded-lg" />
         </div>
       </div>
 
@@ -108,7 +108,7 @@ function TicketDetailSkeleton() {
       {/* Composer skeleton */}
       <div className="shrink-0 p-4 sm:p-6 border-t border-[var(--border-default)]">
         <div className="skeleton h-20 w-full rounded-lg mb-3" />
-        <div className="skeleton h-10 w-32 rounded-xl ml-auto" />
+        <div className="skeleton h-10 w-32 rounded-lg ml-auto" />
       </div>
     </div>
   );
@@ -303,7 +303,7 @@ export default function TicketDetailPage() {
           {!isClosed && (
             <motion.button
               onClick={() => setConfirmClose(true)}
-              className="shrink-0 inline-flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-xl border border-[var(--border-default)] text-[var(--text-secondary)] hover:text-[var(--error)] hover:border-red-500/30 hover:bg-red-500/[0.05] transition-colors"
+              className="shrink-0 inline-flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-lg border border-[var(--border-default)] text-[var(--text-secondary)] hover:text-[var(--error)] hover:border-red-500/30 hover:bg-red-500/[0.05] transition-colors"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
@@ -380,7 +380,7 @@ export default function TicketDetailPage() {
                   {/* Bubble */}
                   <div className="flex flex-col gap-1">
                     <div
-                      className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
+                      className={`rounded-lg px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
                         isUser
                           ? "bg-[var(--bg-surface)] border border-[var(--border-default)] text-[var(--text-primary)] rounded-tl-md"
                           : "bg-[rgba(var(--info-rgb),0.1)] border border-[rgba(var(--info-rgb),0.15)] text-[var(--text-primary)] rounded-tr-md"
@@ -453,7 +453,7 @@ export default function TicketDetailPage() {
             <motion.button
               onClick={handleSendReply}
               disabled={!replyContent.trim() || sending}
-              className="inline-flex items-center gap-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] font-semibold text-sm px-5 py-2.5 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] font-semibold text-sm px-5 py-2.5 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               whileHover={{ scale: sending ? 1 : 1.02 }}
               whileTap={{ scale: sending ? 1 : 0.98 }}
             >

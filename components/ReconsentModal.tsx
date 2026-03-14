@@ -41,7 +41,7 @@ export default function ReconsentModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
       <div className="w-full max-w-[440px] bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg p-8 shadow-2xl">
         {/* Icon */}
-        <div className="w-12 h-12 rounded-xl bg-[rgba(var(--accent-rgb),0.08)] border border-[rgba(var(--accent-rgb),0.15)] flex items-center justify-center mx-auto mb-5">
+        <div className="w-12 h-12 rounded-lg bg-[rgba(var(--accent-rgb),0.08)] border border-[rgba(var(--accent-rgb),0.15)] flex items-center justify-center mx-auto mb-5">
           <FileText className="w-6 h-6 text-[var(--accent)]" />
         </div>
 
@@ -59,7 +59,7 @@ export default function ReconsentModal({
         <p className="text-[13px] text-[var(--text-muted)] text-center mb-5">วันที่: {date}</p>
 
         {/* Changes */}
-        <div className="bg-[var(--bg-base)] border border-[var(--border-default)] rounded-xl p-4 mb-5">
+        <div className="bg-[var(--bg-base)] border border-[var(--border-default)] rounded-lg p-4 mb-5">
           <p className="text-[13px] font-medium text-[var(--text-secondary)] mb-2">สรุปการเปลี่ยนแปลง:</p>
           <ul className="space-y-1.5">
             {changes.map((change) => (
@@ -99,9 +99,9 @@ export default function ReconsentModal({
           onClick={handleAccept}
           disabled={!accepted || submitting}
           className={cn(
-            "w-full h-12 rounded-xl text-[15px] font-semibold transition-all duration-200",
+            "w-full h-12 rounded-lg text-[15px] font-semibold transition-all duration-200",
             "bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)]",
-            "hover:shadow-[0_4px_16px_rgba(0,255,167,0.25)]",
+            "hover:shadow-[0_4px_16px_rgba(var(--accent-rgb),0.25)]",
             "disabled:opacity-50 disabled:cursor-not-allowed"
           )}
         >

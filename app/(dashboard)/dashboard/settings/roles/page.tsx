@@ -341,7 +341,7 @@ export default function RolesPage() {
               key={tab.key}
               type="button"
               onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors cursor-pointer ${
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
                 isActive
                   ? "bg-[rgba(var(--accent-rgb),0.08)] text-[var(--accent)] border border-[rgba(var(--accent-rgb),0.2)]"
                   : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/[0.04] border border-transparent"
@@ -471,7 +471,7 @@ function RoleRow({ role, onClick }: { role: Role; onClick: () => void }) {
     >
       {/* Icon */}
       <span
-        className="w-9 h-9 rounded-xl flex items-center justify-center text-base flex-shrink-0"
+        className="w-9 h-9 rounded-lg flex items-center justify-center text-base flex-shrink-0"
         style={{ background: color.bg }}
       >
         {icon}

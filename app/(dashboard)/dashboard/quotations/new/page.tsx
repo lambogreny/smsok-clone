@@ -120,7 +120,7 @@ export default function NewQuotationPage() {
         <Link href="/dashboard/quotations">
           <button
             type="button"
-            className="w-9 h-9 rounded-xl border border-[var(--border-default)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors cursor-pointer"
+            className="w-9 h-9 rounded-lg border border-[var(--border-default)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
@@ -130,7 +130,7 @@ export default function NewQuotationPage() {
 
       {/* Error */}
       {error && (
-        <div className="mb-4 px-4 py-3 rounded-xl bg-[var(--danger-bg)] border border-[rgba(242,54,69,0.2)] text-sm text-[var(--error)]">
+        <div className="mb-4 px-4 py-3 rounded-lg bg-[var(--danger-bg)] border border-[rgba(242,54,69,0.2)] text-sm text-[var(--error)]">
           {error}
         </div>
       )}

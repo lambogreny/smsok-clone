@@ -2,19 +2,14 @@ import { NextRequest } from "next/server";
 import { authenticateRequest, apiResponse, apiError } from "@/lib/api-auth";
 import { requireApiPermission } from "@/lib/rbac";
 import { exportContacts } from "@/lib/actions/contacts";
-
-/** Escape a value for safe CSV output (prevents CSV injection + XSS) */
-function escapeCsvField(value: unknown): string {
-  const str = String(value ?? "");
-  // Strip formula injection characters at start (=, +, -, @, \t, \r)
-  const sanitized = str.replace(/^[=+\-@\t\r]+/, "");
-  // Escape double quotes by doubling them, wrap in quotes
-  return `"${sanitized.replace(/"/g, '""')}"`;
-}
+import { applyRateLimit } from "@/lib/rate-limit";
+import { toCsvCell } from "@/lib/csv";
 
 export async function GET(req: NextRequest) {
   try {
     const user = await authenticateRequest(req);
+    const rl = await applyRateLimit(user.id, "api");
+    if (rl.blocked) return rl.blocked;
 
     const denied = await requireApiPermission(user.id, "read", "contact");
     if (denied) return denied;
@@ -28,7 +23,7 @@ export async function GET(req: NextRequest) {
       const header = "name,phone,email,tags,groups,createdAt";
       const rows = contacts.map(
         (c: typeof contacts[number]) => [c.name, c.phone, c.email, c.tags, c.groups, c.createdAt]
-          .map(escapeCsvField)
+          .map(toCsvCell)
           .join(",")
       );
       // UTF-8 BOM (\uFEFF) for Excel to recognize Thai characters

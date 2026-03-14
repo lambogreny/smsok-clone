@@ -136,7 +136,7 @@ export function BatchBar({ count, children, onCancel }: BatchBarProps) {
   if (count === 0) return null;
 
   return (
-    <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl px-4 py-2.5 flex items-center gap-3 mb-3 animate-fade-in">
+    <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg px-4 py-2.5 flex items-center gap-3 mb-3 animate-fade-in">
       <span className="text-[13px] font-medium text-white">
         เลือก {count} รายการ
       </span>

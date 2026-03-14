@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
 
   // Rate limit BEFORE auth — prevents TOTP brute-force
   const ip = getClientIp(req.headers)
-  const rl = await applyRateLimit(ip, "auth")
+  const rl = await applyRateLimit(`2fa:${ip}`, "auth_2fa")
   if (rl.blocked) return rl.blocked
 
   try {

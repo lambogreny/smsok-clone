@@ -26,7 +26,7 @@ export default function ScheduledPage() {
         </div>
         <Link
           href="/dashboard"
-          className="bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] rounded-xl hover:border-[rgba(var(--accent-rgb),0.3)] hover:bg-[rgba(var(--accent-rgb),0.04)] px-4 py-2 text-sm font-medium"
+          className="bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] rounded-lg hover:border-[rgba(var(--accent-rgb),0.3)] hover:bg-[rgba(var(--accent-rgb),0.04)] px-4 py-2 text-sm font-medium"
         >
           กลับแดชบอร์ด
         </Link>

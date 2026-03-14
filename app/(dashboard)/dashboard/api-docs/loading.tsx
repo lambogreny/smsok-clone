@@ -23,7 +23,7 @@ export default function ApiDocsLoading() {
       {Array.from({ length: 5 }).map((_, i) => (
         <div
           key={i}
-          className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl p-5 space-y-3"
+          className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg p-5 space-y-3"
         >
           <div className="flex items-center gap-3">
             <Skeleton className="h-6 w-14 rounded" />

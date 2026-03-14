@@ -216,7 +216,7 @@ function FaqAccordion({ items }: { items: FaqItem[] }) {
           <div
             key={i}
             className={cn(
-              "rounded-xl border transition-all duration-200",
+              "rounded-lg border transition-all duration-200",
               isOpen
                 ? "border-[rgba(var(--accent-rgb),0.2)] bg-[rgba(var(--accent-rgb),0.03)]"
                 : "border-[var(--border-default)] bg-[var(--bg-surface)]"
@@ -263,7 +263,7 @@ function PricingCard({ tier }: { tier: PricingTier }) {
   return (
     <div
       className={cn(
-        "group relative flex flex-col rounded-2xl border p-8 transition-all duration-300",
+        "group relative flex flex-col rounded-lg border p-8 transition-all duration-300",
         tier.popular
           ? "border-[rgba(var(--accent-rgb),0.3)] bg-[linear-gradient(180deg,rgba(var(--accent-rgb),0.06)_0%,var(--bg-surface)_100%)] shadow-[0_0_40px_rgba(var(--accent-rgb),0.08)] hover:shadow-[0_0_60px_rgba(var(--accent-rgb),0.12)] scale-[1.02] lg:scale-105 z-10"
           : "border-[var(--border-default)] bg-[var(--bg-surface)] hover:border-[rgba(var(--accent-rgb),0.15)] hover:shadow-[0_8px_40px_rgba(0,0,0,0.3)]"
@@ -281,7 +281,7 @@ function PricingCard({ tier }: { tier: PricingTier }) {
       <div className="mb-6">
         <div
           className={cn(
-            "mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl",
+            "mb-4 inline-flex h-11 w-11 items-center justify-center rounded-lg",
             tier.popular
               ? "bg-[rgba(var(--accent-rgb),0.12)] text-[var(--accent)]"
               : "bg-[var(--bg-muted)] text-[var(--text-muted)]"
@@ -476,7 +476,7 @@ export default function PricingPage() {
         </div>
 
         {/* ═══ Bottom CTA ═══ */}
-        <div className="mb-12 rounded-2xl border border-[rgba(var(--accent-rgb),0.15)] bg-[linear-gradient(135deg,rgba(var(--accent-rgb),0.05)_0%,rgba(var(--accent-purple-rgb),0.05)_100%)] p-10 text-center">
+        <div className="mb-12 rounded-lg border border-[rgba(var(--accent-rgb),0.15)] bg-[linear-gradient(135deg,rgba(var(--accent-rgb),0.05)_0%,rgba(var(--accent-purple-rgb),0.05)_100%)] p-10 text-center">
           <h2 className="text-2xl font-bold text-[var(--text-primary)]">
             พร้อมเริ่มส่ง SMS แล้วหรือยัง?
           </h2>

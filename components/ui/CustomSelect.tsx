@@ -103,7 +103,7 @@ export default function CustomSelect({
           exit={{ opacity: 0, y: -4 }}
           transition={{ duration: 0.15 }}
           style={{ position: "fixed", top: rect.top, left: rect.left, width: rect.width, zIndex: 9999 }}
-          className="rounded-xl overflow-hidden
+          className="rounded-lg overflow-hidden
             bg-[var(--bg-elevated)]/95 border border-white/10
             shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
         >
@@ -133,7 +133,7 @@ export default function CustomSelect({
         onClick={toggle}
         onKeyDown={handleKeyDown}
         disabled={disabled}
-        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm
+        className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm
           bg-[var(--bg-surface)]/80 border transition-colors
           ${open ? "border-[rgba(var(--accent-rgb),0.15)]" : "border-[var(--border-subtle)] hover:border-[rgba(var(--accent-rgb),0.15)]"}
           text-[var(--text-secondary)] disabled:opacity-50 disabled:cursor-not-allowed`}

@@ -29,6 +29,7 @@ import { useToast } from "@/app/components/ui/Toast";
 import SendingHoursWarning from "@/components/blocks/SendingHoursWarning";
 import EmptyStateShared from "@/components/EmptyState";
 import { formatThaiDateShort } from "@/lib/format-thai-date";
+import CampaignWizard from "@/components/campaigns/CampaignWizard";
 
 // ─── Campaign form validation schema ────────────────────────────────────────
 const campaignFormSchema = z.object({
@@ -176,6 +177,7 @@ export default function CampaignsClient({
   const [isPending, startTransition] = useTransition();
   const [campaigns, setCampaigns] = useState<Campaign[]>(initialCampaigns);
   const [showForm, setShowForm] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
   const [filterStatus, setFilterStatus] = useState<CampaignStatus | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -373,7 +375,7 @@ export default function CampaignsClient({
       {/* Feedback toast */}
       {feedback && (
         <div
-          className={`mb-4 px-4 py-2.5 rounded-xl text-sm font-medium ${
+          className={`mb-4 px-4 py-2.5 rounded-lg text-sm font-medium ${
             feedback.type === "success"
               ? "bg-[rgba(16,185,129,0.08)] text-[var(--success)] border border-[rgba(16,185,129,0.2)]"
               : "bg-[rgba(239,68,68,0.08)] text-[var(--error)] border border-[rgba(239,68,68,0.2)]"
@@ -385,7 +387,7 @@ export default function CampaignsClient({
 
       {/* Load error banner */}
       {loadError && (
-        <div className="mb-4 px-4 py-3 rounded-xl text-sm font-medium bg-[rgba(239,68,68,0.08)] text-[var(--error)] border border-[rgba(239,68,68,0.2)] flex items-center justify-between">
+        <div className="mb-4 px-4 py-3 rounded-lg text-sm font-medium bg-[rgba(239,68,68,0.08)] text-[var(--error)] border border-[rgba(239,68,68,0.2)] flex items-center justify-between">
           <span>ไม่สามารถโหลดข้อมูลแคมเปญได้ กรุณาลองใหม่</span>
           <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
             ลองใหม่
@@ -401,22 +403,13 @@ export default function CampaignsClient({
         actions={
           <Button
             onClick={() => {
-              setShowForm(!showForm);
+              setShowWizard(true);
               setSelectedCampaign(null);
             }}
             className="bg-[var(--accent)] text-[var(--text-on-accent)] hover:bg-[var(--accent)]/90 font-semibold cursor-pointer"
           >
-            {showForm ? (
-              <>
-                <X className="w-4 h-4 mr-1.5" />
-                ยกเลิก
-              </>
-            ) : (
-              <>
-                <Plus className="w-4 h-4 mr-1.5" />
-                สร้างแคมเปญ
-              </>
-            )}
+            <Plus className="w-4 h-4 mr-1.5" />
+            สร้างแคมเปญ
           </Button>
         }
       />
@@ -578,7 +571,7 @@ export default function CampaignsClient({
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="mt-4 p-4 rounded-xl bg-[rgba(255,255,255,0.02)] border border-[var(--table-border)]"
+                  className="mt-4 p-4 rounded-lg bg-[rgba(255,255,255,0.02)] border border-[var(--table-border)]"
                 >
                   <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-2">ตัวอย่างข้อความ</p>
                   <p className="text-sm text-[var(--text-secondary)]">{templates.find((t) => t.id === formTemplate)?.body || ""}</p>
@@ -641,7 +634,7 @@ export default function CampaignsClient({
                 { label: "สำเร็จ", value: selectedCampaign.deliveredCount, color: "var(--accent)" },
                 { label: "ล้มเหลว", value: selectedCampaign.failedCount, color: "var(--error)" },
               ].map((s) => (
-                <div key={s.label} className="p-3 rounded-xl bg-[var(--table-alt-row)] border border-[var(--table-border)]">
+                <div key={s.label} className="p-3 rounded-lg bg-[var(--table-alt-row)] border border-[var(--table-border)]">
                   <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">{s.label}</p>
                   <p className="text-lg font-bold tabular-nums" style={{ color: s.color }}>
                     {s.value.toLocaleString()}
@@ -819,14 +812,11 @@ export default function CampaignsClient({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent
                           align="end"
-                          className="bg-[var(--table-header)] border-[var(--table-border)] rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
+                          className="bg-[var(--table-header)] border-[var(--table-border)] rounded-lg shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
                         >
                           <DropdownMenuItem
                             className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] focus:text-[var(--text-primary)] focus:bg-[rgba(255,255,255,0.04)] cursor-pointer"
-                            onClick={() => {
-                              setSelectedCampaign(campaign);
-                              setShowForm(false);
-                            }}
+                            onClick={() => router.push(`/dashboard/campaigns/${campaign.id}`)}
                           >
                             <Eye className="w-4 h-4 mr-2" />
                             ดูรายละเอียด
@@ -957,6 +947,19 @@ export default function CampaignsClient({
             />
           </TableWrapper>
         )
+      )}
+      {/* Campaign Wizard Modal */}
+      {showWizard && (
+        <CampaignWizard
+          groups={groups}
+          templates={templates}
+          senderNames={senderNames}
+          onClose={() => setShowWizard(false)}
+          onCreated={() => {
+            setShowWizard(false);
+            router.refresh();
+          }}
+        />
       )}
     </PageLayout>
   );

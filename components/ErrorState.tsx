@@ -71,7 +71,7 @@ export function ErrorState({
   return (
     <div className="flex flex-col items-center justify-center text-center min-h-[300px] px-10 py-10">
       <div
-        className="flex items-center justify-center w-14 h-14 rounded-xl mb-5"
+        className="flex items-center justify-center w-14 h-14 rounded-lg mb-5"
         style={{ backgroundColor: config.bg }}
       >
         <Icon size={24} style={{ color: config.color }} />
@@ -100,7 +100,7 @@ export function SectionErrorFallback({
   onRetry?: () => void;
 }) {
   return (
-    <div className="flex items-center gap-3 p-6 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl">
+    <div className="flex items-center gap-3 p-6 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg">
       <AlertTriangle size={20} className="text-[var(--error)] shrink-0" />
       <p className="text-[13px] text-[var(--text-body)]">
         {message ?? "เกิดข้อผิดพลาด กรุณาลองใหม่"}

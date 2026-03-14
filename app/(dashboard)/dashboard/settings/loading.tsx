@@ -32,7 +32,7 @@ export default function SettingsLoading() {
         <div className="space-y-1.5">
           <Skeleton className="h-3 w-12" />
           <Skeleton className="h-10 w-full rounded-lg" />
-          <Skeleton className="h-10 w-28 rounded-xl" />
+          <Skeleton className="h-10 w-28 rounded-lg" />
         </div>
       </SkeletonCard>
 
@@ -58,7 +58,7 @@ export default function SettingsLoading() {
           <Skeleton className="h-10 w-full rounded-lg" />
           <Skeleton className="h-10 w-full rounded-lg" />
           <Skeleton className="h-10 w-full rounded-lg" />
-          <Skeleton className="h-10 w-32 rounded-xl" />
+          <Skeleton className="h-10 w-32 rounded-lg" />
         </div>
       </SkeletonCard>
 
@@ -69,7 +69,7 @@ export default function SettingsLoading() {
           <Skeleton className="h-5 w-40" />
         </div>
         <Skeleton className="h-4 w-64 mb-4" />
-        <Skeleton className="h-10 w-36 rounded-xl" />
+        <Skeleton className="h-10 w-36 rounded-lg" />
       </SkeletonCard>
     </div>
   );

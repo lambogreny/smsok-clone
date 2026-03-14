@@ -26,7 +26,7 @@ interface StatCardProps {
 
 function StatCardSkeleton({ className }: { className?: string }) {
   return (
-    <div className={cn("rounded-xl bg-[var(--bg-surface)] border border-[var(--border-default)] p-5", className)}>
+    <div className={cn("rounded-lg bg-[var(--bg-surface)] border border-[var(--border-default)] p-5", className)}>
       <div className="flex items-center gap-2 mb-2">
         <Skeleton className="w-7 h-7 rounded-lg" />
         <Skeleton className="h-3 w-16" />
@@ -62,7 +62,7 @@ export function StatCard({
   return (
     <div
       aria-label={`${label}: ${valuePrefix ?? ""}${value}${valueSuffix ?? ""}`}
-      className={cn("rounded-xl bg-[var(--bg-surface)] border border-[var(--border-default)] p-5 max-md:p-4", className)}
+      className={cn("rounded-lg bg-[var(--bg-surface)] border border-[var(--border-default)] p-5 max-md:p-4", className)}
     >
       {/* Icon + Label */}
       <div className="flex items-center gap-2 mb-2">

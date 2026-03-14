@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 type Variant = "danger" | "warning" | "info";
@@ -34,26 +35,71 @@ export default function ConfirmDialog({
   loading = false,
 }: ConfirmDialogProps) {
   const config = variantConfig[variant];
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const cancelRef = useRef<HTMLButtonElement>(null);
+
+  // Focus trap + escape key
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === "Escape" && !loading) {
+      onClose();
+      return;
+    }
+    if (e.key === "Tab" && dialogRef.current) {
+      const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    }
+  }, [onClose, loading]);
+
+  useEffect(() => {
+    if (open) {
+      document.addEventListener("keydown", handleKeyDown);
+      // Focus cancel button on open
+      setTimeout(() => cancelRef.current?.focus(), 50);
+      return () => document.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [open, handleKeyDown]);
 
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="confirm-dialog-title"
+          aria-describedby="confirm-dialog-desc"
+        >
           <motion.div
             className="absolute inset-0 bg-black/80"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
+            onClick={loading ? undefined : onClose}
           />
           <motion.div
+            ref={dialogRef}
             className="surface-elevated relative max-w-sm w-full p-6 rounded-lg"
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
           >
-            <div className={`w-12 h-12 mx-auto mb-4 rounded-xl ${config.iconBg} border ${config.iconBorder} flex items-center justify-center`}>
+            <div className={`w-12 h-12 mx-auto mb-4 rounded-lg ${config.iconBg} border ${config.iconBorder} flex items-center justify-center`}>
               {variant === "danger" ? (
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={config.icon}>
                   <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
@@ -65,20 +111,21 @@ export default function ConfirmDialog({
                 </svg>
               )}
             </div>
-            <h3 className="text-lg font-semibold text-white text-center mb-2">{title}</h3>
-            <p className="text-sm text-[var(--text-secondary)] text-center mb-6">{description}</p>
+            <h3 id="confirm-dialog-title" className="text-lg font-semibold text-white text-center mb-2">{title}</h3>
+            <p id="confirm-dialog-desc" className="text-sm text-[var(--text-secondary)] text-center mb-6">{description}</p>
             <div className="flex gap-3">
               <button
+                ref={cancelRef}
                 onClick={onClose}
                 disabled={loading}
-                className="flex-1 bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] hover:border-[rgba(var(--accent-rgb),0.3)] hover:bg-[rgba(var(--accent-rgb),0.04)] py-2.5 rounded-xl text-sm font-medium"
+                className="flex-1 bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] hover:border-[rgba(var(--accent-rgb),0.3)] hover:bg-[rgba(var(--accent-rgb),0.04)] py-2.5 rounded-lg text-sm font-medium cursor-pointer"
               >
                 {cancelLabel}
               </button>
               <motion.button
                 onClick={onConfirm}
                 disabled={loading}
-                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold text-white ${config.btnBg} transition-colors disabled:opacity-50`}
+                className={`flex-1 py-2.5 rounded-lg text-sm font-semibold text-white ${config.btnBg} transition-colors disabled:opacity-50 cursor-pointer`}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >

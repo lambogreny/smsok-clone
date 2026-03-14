@@ -598,7 +598,7 @@ export default function CTODashboardPage() {
               return (
                 <div
                   key={alert.id}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl border"
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg border"
                   style={{
                     background: cfg.bg,
                     borderColor: `${cfg.color}25`,

@@ -40,7 +40,7 @@ export default function Error({
         </p>
         <button
           onClick={reset}
-          className="px-6 py-2.5 bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] text-sm font-medium rounded-xl border border-[var(--border)] transition-colors cursor-pointer"
+          className="px-6 py-2.5 bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] text-sm font-medium rounded-lg border border-[var(--border)] transition-colors cursor-pointer"
         >
           ลองใหม่
         </button>

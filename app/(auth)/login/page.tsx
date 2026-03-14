@@ -23,6 +23,7 @@ import {
 import { Send, ArrowLeft, ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { clearLogoutMarker } from "@/components/AuthGuard";
+import RateLimitCountdown, { extractRateLimitSeconds, friendlyRateLimitMessage } from "@/components/RateLimitCountdown";
 
 type LoginValues = z.infer<typeof loginSchema>;
 
@@ -30,6 +31,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [serverError, setServerError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [rateLimitSeconds, setRateLimitSeconds] = useState<number | null>(null);
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -50,8 +52,15 @@ export default function LoginPage() {
       const result: LoginResponse = await res.json();
       if (!res.ok) {
         const msg = (result as { error?: string }).error || "เกิดข้อผิดพลาด กรุณาลองใหม่";
-        setServerError(msg);
-        toast.error(msg);
+        const rlSeconds = extractRateLimitSeconds(msg);
+        if (rlSeconds) {
+          setRateLimitSeconds(rlSeconds);
+          setServerError("");
+          toast.error(friendlyRateLimitMessage(rlSeconds));
+        } else {
+          setServerError(msg);
+          toast.error(msg);
+        }
         return;
       }
       if (result.needs2FA) {
@@ -95,7 +104,12 @@ export default function LoginPage() {
           </CardHeader>
 
           <CardContent className="px-8 pt-6 pb-2">
-            {serverError && (
+            {rateLimitSeconds && rateLimitSeconds > 0 && (
+              <div className="mb-4">
+                <RateLimitCountdown seconds={rateLimitSeconds} onExpire={() => setRateLimitSeconds(null)} />
+              </div>
+            )}
+            {serverError && !rateLimitSeconds && (
               <div className="mb-4 p-3 rounded-lg bg-[rgba(var(--error-rgb),0.06)] border border-[rgba(var(--error-rgb),0.15)] text-[var(--error)] text-[13px] text-center">
                 {serverError}
               </div>
@@ -114,8 +128,9 @@ export default function LoginPage() {
                       <FormControl>
                         <Input
                           type="email"
+                          autoComplete="email"
                           placeholder="you@example.com"
-                          className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+                          className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)]"
                           {...field}
                         />
                       </FormControl>
@@ -144,8 +159,9 @@ export default function LoginPage() {
                         <div className="relative">
                           <Input
                             type={showPassword ? "text" : "password"}
+                            autoComplete="current-password"
                             placeholder="••••••••"
-                            className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg pr-11 focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+                            className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg pr-11 focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)]"
                             {...field}
                           />
                           <button
@@ -165,8 +181,8 @@ export default function LoginPage() {
 
                 <Button
                   type="submit"
-                  disabled={isSubmitting || !form.formState.isValid}
-                  className="w-full h-11 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] rounded-xl text-[15px] font-semibold transition-all duration-200 hover:shadow-[0_4px_16px_rgba(0,255,167,0.25)] group disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isSubmitting || !form.formState.isValid || !!rateLimitSeconds}
+                  className="w-full h-11 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] rounded-lg text-[15px] font-semibold transition-all duration-200 hover:shadow-[0_4px_16px_rgba(var(--accent-rgb),0.25)] group disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? (
                     <span className="flex items-center gap-2">

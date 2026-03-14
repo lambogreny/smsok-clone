@@ -54,7 +54,7 @@ export default function ForceChangeModal({ userId }: { userId: string }) {
         </div>
 
         {error && (
-          <div className="mb-4 p-3 rounded-xl bg-[rgba(var(--error-rgb,239,68,68),0.08)] border border-[rgba(var(--error-rgb,239,68,68),0.15)] text-[var(--error)] text-sm text-center">
+          <div className="mb-4 p-3 rounded-lg bg-[rgba(var(--error-rgb,239,68,68),0.08)] border border-[rgba(var(--error-rgb,239,68,68),0.15)] text-[var(--error)] text-sm text-center">
             {error}
           </div>
         )}
@@ -105,7 +105,7 @@ export default function ForceChangeModal({ userId }: { userId: string }) {
           <button
             onClick={handleSubmit}
             disabled={isPending || !isValid}
-            className="w-full btn-primary py-3 rounded-xl text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full btn-primary py-3 rounded-lg text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {isPending ? (
               <>

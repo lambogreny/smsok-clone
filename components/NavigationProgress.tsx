@@ -76,7 +76,7 @@ export default function NavigationProgress() {
         style={{
           width: `${progress}%`,
           transition: progress === 0 ? "none" : "width 200ms ease",
-          boxShadow: "0 0 8px rgba(0,255,167,0.4)",
+          boxShadow: "0 0 8px rgba(var(--accent-rgb),0.4)",
         }}
       />
     </div>

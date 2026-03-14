@@ -484,7 +484,7 @@ export default function GroupDetailClient({
             setSearch(e.target.value);
             setPage(1);
           }}
-          className="pl-10 h-11 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+          className="pl-10 h-11 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)]"
         />
       </div>
 
@@ -833,7 +833,7 @@ export default function GroupDetailClient({
                     value={addSearch}
                     onChange={(e) => setAddSearch(e.target.value)}
                     autoFocus
-                    className="pl-10 h-10 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg text-sm focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+                    className="pl-10 h-10 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg text-sm focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)]"
                   />
                 </div>
                 <input
@@ -931,7 +931,7 @@ export default function GroupDetailClient({
                       <button
                         key={c.id}
                         onClick={() => toggleAddSelect(c.id)}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all text-left ${
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-all text-left ${
                           addSelectedIds.has(c.id)
                             ? "bg-[rgba(var(--accent-rgb),0.06)] border-[rgba(var(--accent-rgb),0.2)]"
                             : "bg-transparent border-transparent hover:bg-[rgba(var(--accent-rgb),0.04)] hover:border-[var(--border-default)]"

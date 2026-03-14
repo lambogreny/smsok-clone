@@ -121,7 +121,7 @@ function ProfileCard({
     <>
       {/* Avatar + Info */}
       <div className="flex items-center gap-3.5 sm:gap-5 pb-4 border-b border-[rgba(43,53,64,0.5)] mb-4">
-        <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-gradient-to-br from-[var(--accent)]/30 to-[var(--accent-secondary)]/20 border border-[rgba(var(--accent-rgb),0.15)] flex items-center justify-center shrink-0">
+        <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg bg-gradient-to-br from-[var(--accent)]/30 to-[var(--accent-secondary)]/20 border border-[rgba(var(--accent-rgb),0.15)] flex items-center justify-center shrink-0">
           <span className="text-base sm:text-xl font-bold text-[var(--text-primary)]">
             {initials}
           </span>
@@ -156,7 +156,7 @@ function ProfileCard({
               value={user.email}
               aria-readonly="true"
               aria-label="อีเมล (ไม่สามารถแก้ไข)"
-              className="bg-[var(--bg-base)] border border-[var(--border-default)] rounded-xl text-[var(--text-secondary)] cursor-not-allowed w-full px-3.5 h-11 text-base sm:text-sm opacity-60"
+              className="bg-[var(--bg-base)] border border-[var(--border-default)] rounded-lg text-[var(--text-secondary)] cursor-not-allowed w-full px-3.5 h-11 text-base sm:text-sm opacity-60"
             />
             <p className="text-[10px] text-[var(--text-muted)] mt-1">
               อีเมลไม่สามารถเปลี่ยนแปลงได้
@@ -169,7 +169,7 @@ function ProfileCard({
             <input
               readOnly
               value={user.phone || "ไม่ได้ระบุ"}
-              className="bg-[var(--bg-base)] border border-[var(--border-default)] rounded-xl text-[var(--text-secondary)] cursor-not-allowed font-mono select-none w-full px-3.5 h-11 text-base sm:text-sm opacity-60"
+              className="bg-[var(--bg-base)] border border-[var(--border-default)] rounded-lg text-[var(--text-secondary)] cursor-not-allowed font-mono select-none w-full px-3.5 h-11 text-base sm:text-sm opacity-60"
             />
             <p className="text-[10px] text-[var(--text-muted)] mt-1">
               เบอร์โทรไม่สามารถเปลี่ยนได้หลังสมัคร{" "}
@@ -351,7 +351,7 @@ function DangerZone() {
       <button
         type="button"
         disabled
-        className="px-4 py-2 rounded-xl text-xs font-medium bg-[rgba(var(--error-rgb,239,68,68),0.1)] text-[var(--error)] opacity-70 border border-[rgba(var(--error-rgb,239,68,68),0.1)] cursor-not-allowed"
+        className="px-4 py-2 rounded-lg text-xs font-medium bg-[rgba(var(--error-rgb,239,68,68),0.1)] text-[var(--error)] opacity-70 border border-[rgba(var(--error-rgb,239,68,68),0.1)] cursor-not-allowed"
       >
         ลบบัญชี (ติดต่อแอดมิน)
       </button>

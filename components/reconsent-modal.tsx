@@ -56,9 +56,9 @@ export default function ReconsentModal() {
       {/* Backdrop — no dismiss on click (forced acceptance) */}
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
 
-      <div className="relative bg-[var(--bg-elevated)] border border-[var(--border-default)] rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+      <div className="relative bg-[var(--bg-elevated)] border border-[var(--border-default)] rounded-lg p-6 max-w-md w-full mx-4 shadow-2xl">
         {/* Icon */}
-        <div className="w-14 h-14 rounded-xl bg-[rgba(var(--accent-rgb),0.1)] border border-[rgba(var(--accent-rgb),0.15)] flex items-center justify-center mx-auto mb-5">
+        <div className="w-14 h-14 rounded-lg bg-[rgba(var(--accent-rgb),0.1)] border border-[rgba(var(--accent-rgb),0.15)] flex items-center justify-center mx-auto mb-5">
           <Shield className="w-7 h-7 text-[var(--accent)]" />
         </div>
 

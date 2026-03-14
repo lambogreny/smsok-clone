@@ -323,7 +323,7 @@ export default function RoleDetailPage() {
           </Link>
           <div className="h-4 w-px bg-[var(--border-default)]" />
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[rgba(var(--accent-rgb),0.08)] border border-[rgba(var(--accent-rgb),0.15)] flex items-center justify-center text-[var(--accent)]">
+            <div className="w-10 h-10 rounded-lg bg-[rgba(var(--accent-rgb),0.08)] border border-[rgba(var(--accent-rgb),0.15)] flex items-center justify-center text-[var(--accent)]">
               <Shield className="w-5 h-5" />
             </div>
             <div>
@@ -382,7 +382,7 @@ export default function RoleDetailPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               readOnly={isSystemRole}
-              className={`h-10 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)] ${
+              className={`h-10 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)] ${
                 isSystemRole ? "opacity-60 cursor-not-allowed" : ""
               }`}
             />
@@ -412,7 +412,7 @@ export default function RoleDetailPage() {
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
               placeholder="Role description..."
-              className="bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg resize-none focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+              className="bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg resize-none focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)]"
             />
           </div>
         </div>

@@ -12,7 +12,7 @@ export default function ScheduledLoading() {
           </div>
           <Skeleton className="h-4 w-64" />
         </div>
-        <Skeleton className="h-9 w-32 rounded-xl" />
+        <Skeleton className="h-9 w-32 rounded-lg" />
       </div>
 
       {/* Form card */}
@@ -47,7 +47,7 @@ export default function ScheduledLoading() {
           </div>
         </div>
         {/* Button */}
-        <Skeleton className="h-11 w-48 rounded-xl" />
+        <Skeleton className="h-11 w-48 rounded-lg" />
       </div>
 
       {/* Empty state placeholder */}

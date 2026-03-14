@@ -33,6 +33,7 @@ import {
 import { Send, ArrowLeft, ArrowRight, Eye, EyeOff, Loader2, Smartphone, Check, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { clearLogoutMarker } from "@/components/AuthGuard";
+import RateLimitCountdown, { extractRateLimitSeconds, friendlyRateLimitMessage } from "@/components/RateLimitCountdown";
 
 const formSchema = registerSchema.extend({
   confirmPassword: z.string(),
@@ -62,6 +63,7 @@ export default function RegisterPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [capsLockOn, setCapsLockOn] = useState(false);
   const [formError, setFormError] = useState("");
+  const [rateLimitSeconds, setRateLimitSeconds] = useState<number | null>(null);
 
   // OTP state
   const [otpCode, setOtpCode] = useState("");
@@ -197,8 +199,15 @@ export default function RegisterPage() {
       }
     } catch (e) {
       const msg = safeErrorMessage(e) || "เกิดข้อผิดพลาด กรุณาลองใหม่";
-      setFormError(msg);
-      toast.error(msg);
+      const rlSeconds = extractRateLimitSeconds(msg);
+      if (rlSeconds) {
+        setRateLimitSeconds(rlSeconds);
+        setFormError("");
+        toast.error(friendlyRateLimitMessage(rlSeconds));
+      } else {
+        setFormError(msg);
+        toast.error(msg);
+      }
     }
   }
 
@@ -307,7 +316,12 @@ export default function RegisterPage() {
               </CardHeader>
 
               <CardContent className="px-8 pt-6 pb-2">
-                {formError && (
+                {rateLimitSeconds && rateLimitSeconds > 0 && (
+                  <div className="mb-4">
+                    <RateLimitCountdown seconds={rateLimitSeconds} onExpire={() => setRateLimitSeconds(null)} />
+                  </div>
+                )}
+                {formError && !rateLimitSeconds && (
                   <div className="mb-4 p-3 rounded-lg bg-[rgba(239,68,68,0.06)] border border-[rgba(239,68,68,0.15)] text-[var(--error)] text-[13px] text-center">
                     {formError}
                   </div>
@@ -323,7 +337,7 @@ export default function RegisterPage() {
                           <FormItem>
                             <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-secondary)]">ชื่อ</FormLabel>
                             <FormControl>
-                              <Input placeholder="สมชาย" className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]" {...field} />
+                              <Input placeholder="สมชาย" className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)]" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -336,7 +350,7 @@ export default function RegisterPage() {
                           <FormItem>
                             <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-secondary)]">นามสกุล</FormLabel>
                             <FormControl>
-                              <Input placeholder="ใจดี" className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]" {...field} />
+                              <Input placeholder="ใจดี" className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)]" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -351,7 +365,7 @@ export default function RegisterPage() {
                         <FormItem>
                           <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-secondary)]">อีเมล</FormLabel>
                           <FormControl>
-                            <Input type="email" placeholder="you@example.com" onKeyDown={blockThai} className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]" {...field} />
+                            <Input type="email" autoComplete="email" placeholder="you@example.com" onKeyDown={blockThai} className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)]" {...field} />
                           </FormControl>
                           <FormMessage />
                           {emailAvailability.status !== "idle" && (
@@ -379,7 +393,7 @@ export default function RegisterPage() {
                             หมายเลขโทรศัพท์
                           </FormLabel>
                           <FormControl>
-                            <Input type="tel" inputMode="numeric" maxLength={10} placeholder="0891234567" onKeyDown={blockNonNumeric} className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]" {...field} />
+                            <Input type="tel" autoComplete="tel" inputMode="numeric" maxLength={10} placeholder="0891234567" onKeyDown={blockNonNumeric} className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)]" {...field} />
                           </FormControl>
                           <p className="text-[11px] text-[var(--text-muted)]">ใช้สำหรับรับ OTP ยืนยันตัวตน</p>
                           <FormMessage />
@@ -410,8 +424,9 @@ export default function RegisterPage() {
                               <Input
                                 {...field}
                                 type={showPassword ? "text" : "password"}
+                                autoComplete="new-password"
                                 placeholder="••••••••"
-                                className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg pr-11 focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+                                className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg pr-11 focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)]"
                                 onKeyDown={(e) => setCapsLockOn(e.getModifierState("CapsLock"))}
                                 onKeyUp={(e) => setCapsLockOn(e.getModifierState("CapsLock"))}
                                 onBlur={(e) => { setCapsLockOn(false); field.onBlur(); }}
@@ -470,8 +485,9 @@ export default function RegisterPage() {
                               <Input
                                 {...field}
                                 type={showConfirm ? "text" : "password"}
+                                autoComplete="new-password"
                                 placeholder="••••••••"
-                                className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg pr-11 focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+                                className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg pr-11 focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)]"
                                 onKeyDown={(e) => setCapsLockOn(e.getModifierState("CapsLock"))}
                                 onKeyUp={(e) => setCapsLockOn(e.getModifierState("CapsLock"))}
                                 onBlur={(e) => { setCapsLockOn(false); field.onBlur(); }}
@@ -593,7 +609,7 @@ export default function RegisterPage() {
                     <Button
                       type="submit"
                       disabled={isSubmitting || !termsAccepted || !passwordsMatch || hasBlockingDuplicate}
-                      className="w-full h-11 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] rounded-xl text-[15px] font-semibold transition-all duration-200 hover:shadow-[0_4px_16px_rgba(0,255,167,0.25)] group disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full h-11 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] rounded-lg text-[15px] font-semibold transition-all duration-200 hover:shadow-[0_4px_16px_rgba(var(--accent-rgb),0.25)] group disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isSubmitting ? (
                         <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />กำลังส่ง OTP...</span>
@@ -659,7 +675,7 @@ export default function RegisterPage() {
                           <InputOTPSlot
                             key={i}
                             index={i}
-                            className="w-12 h-14 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white text-2xl font-bold font-mono rounded-lg data-[active=true]:border-[var(--accent)] data-[active=true]:ring-[rgba(0,255,167,0.12)]"
+                            className="w-12 h-14 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white text-2xl font-bold font-mono rounded-lg data-[active=true]:border-[var(--accent)] data-[active=true]:ring-[rgba(var(--accent-rgb),0.12)]"
                           />
                         ))}
                       </InputOTPGroup>
@@ -681,7 +697,7 @@ export default function RegisterPage() {
                   <Button
                     onClick={handleVerifyOtp}
                     disabled={otpPending || otpCode.length < 6 || countdown === 0}
-                    className="w-full h-11 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] rounded-xl text-[15px] font-semibold transition-all duration-200 hover:shadow-[0_4px_16px_rgba(0,255,167,0.25)] group"
+                    className="w-full h-11 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] rounded-lg text-[15px] font-semibold transition-all duration-200 hover:shadow-[0_4px_16px_rgba(var(--accent-rgb),0.25)] group"
                   >
                     {otpPending ? (
                       <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />กำลังยืนยัน...</span>

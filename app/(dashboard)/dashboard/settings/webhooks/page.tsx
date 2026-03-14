@@ -202,7 +202,7 @@ function DeliveryLogSection({ webhookId }: { webhookId: string }) {
       {logs.map((log) => (
         <div
           key={log.id}
-          className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl overflow-hidden"
+          className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg overflow-hidden"
         >
           <button
             type="button"
@@ -560,7 +560,7 @@ function WebhookDialog({
                 return (
                   <div
                     key={group}
-                    className="bg-black/20 border border-[var(--border-default)] rounded-xl p-3"
+                    className="bg-black/20 border border-[var(--border-default)] rounded-lg p-3"
                   >
                     {/* Group header */}
                     <div className="flex items-center justify-between mb-2">

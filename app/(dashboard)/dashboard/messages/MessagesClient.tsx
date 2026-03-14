@@ -22,6 +22,7 @@ import { Search, ArrowRight, Inbox, ChevronLeft, ChevronRight, MessageSquare, Do
 import EmptyState from "@/components/EmptyState";
 import { formatThaiDateTimeShort } from "@/lib/format-thai-date";
 import type { MessageItem, PaginationMeta } from "@/lib/types/api-responses";
+import { toCsvCell } from "@/lib/csv";
 
 const statusConfig: Record<string, { badge: string; label: string }> = {
   delivered: { badge: "bg-[rgba(var(--success-rgb),0.08)] text-[var(--success)] border-[rgba(var(--success-rgb),0.2)]", label: "ส่งสำเร็จ" },
@@ -84,14 +85,14 @@ export default function MessagesClient({
 
   function handleExportCsv() {
     const rows = [
-      ["วันที่", "ผู้รับ", "เนื้อหา", "ผู้ส่ง", "สถานะ", "ราคา (SMS)"],
+      ["วันที่", "ผู้รับ", "เนื้อหา", "ผู้ส่ง", "สถานะ", "ราคา (SMS)"].map(toCsvCell),
       ...filtered.map((msg) => [
-        new Date(msg.createdAt).toISOString(),
-        msg.recipient,
-        `"${msg.content.replace(/"/g, '""')}"`,
-        msg.senderName,
-        msg.status,
-        String(msg.creditCost),
+        toCsvCell(new Date(msg.createdAt).toISOString()),
+        toCsvCell(msg.recipient),
+        toCsvCell(msg.content),
+        toCsvCell(msg.senderName),
+        toCsvCell(msg.status),
+        toCsvCell(msg.creditCost),
       ]),
     ];
     const csv = rows.map((r) => r.join(",")).join("\n");
@@ -138,7 +139,7 @@ export default function MessagesClient({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
             <Input
               type="text"
-              className="pl-10 h-11 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-xl focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+              className="pl-10 h-11 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)]"
               placeholder="ค้นหาเบอร์, เนื้อหา, ผู้ส่ง..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -198,7 +199,7 @@ export default function MessagesClient({
             const status = statusConfig[msg.status] ?? statusConfig.pending;
             const msgType = detectType(msg.content);
             return (
-              <Card key={msg.id} className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-xl">
+              <Card key={msg.id} className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm text-[var(--text-primary)] font-mono">{msg.recipient}</span>

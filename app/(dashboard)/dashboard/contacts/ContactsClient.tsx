@@ -23,6 +23,7 @@ import EmptyState from "@/components/EmptyState";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { TAG_PRESETS, MAX_VISIBLE_TAGS, getTagColor, parseTags } from "@/lib/tag-utils";
 import type { ContactItem, ContactGroupItem, PaginationMeta } from "@/lib/types/api-responses";
+import { toCsvCell } from "@/lib/csv";
 
 // shadcn
 import { Button } from "@/components/ui/button";
@@ -270,7 +271,7 @@ function TagInput({
 
       {/* Suggestions dropdown */}
       {suggestions.length > 0 && (
-        <div className="absolute z-50 top-full left-0 right-0 mt-1 rounded-xl border border-[var(--border-default)] bg-[var(--bg-surface)] shadow-xl overflow-hidden">
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] shadow-xl overflow-hidden">
           {suggestions.map((s) => (
             <button
               key={s}
@@ -631,7 +632,7 @@ export default function ContactsClient({
           headers.join(","),
           ...data.map((row: Record<string, string>) =>
             headers
-              .map((h) => `"${(row[h] || "").replace(/"/g, '""')}"`)
+              .map((h) => toCsvCell(row[h] || ""))
               .join(","),
           ),
         ].join("\n");
@@ -804,7 +805,7 @@ export default function ContactsClient({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
           <Input
             type="text"
-            className="pl-10 h-11 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+            className="pl-10 h-11 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)]"
             placeholder="ค้นหาชื่อ, เบอร์โทร, อีเมล หรือแท็ก..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -902,7 +903,7 @@ export default function ContactsClient({
 
       {/* Batch Actions Toolbar */}
       {hasSelection && (
-        <Card className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-xl p-4 mb-4">
+        <Card className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg p-4 mb-4">
           <div className="flex items-center gap-3 flex-wrap">
             <span className="text-sm text-[var(--text-primary)] font-medium">
               เลือก {selectedIds.size} รายชื่อ
@@ -1116,7 +1117,7 @@ export default function ContactsClient({
                               <Plus className="w-2.5 h-2.5" />
                             </PopoverTrigger>
                             <PopoverContent
-                              className="w-52 p-0 bg-[var(--bg-surface)] border-[var(--border-default)] rounded-xl shadow-xl"
+                              className="w-52 p-0 bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg shadow-xl"
                               align="start"
                             >
                               <div className="px-3 py-2.5 border-b border-[var(--border-default)]">
@@ -1328,7 +1329,7 @@ export default function ContactsClient({
               return (
                 <Card
                   key={contact.id}
-                  className={`bg-[var(--bg-surface)] border-[var(--border-default)] rounded-xl p-4 ${
+                  className={`bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg p-4 ${
                     selectedIds.has(contact.id)
                       ? "border-[rgba(var(--accent-rgb),0.3)] bg-[rgba(var(--accent-rgb),0.02)]"
                       : ""
@@ -1521,7 +1522,7 @@ export default function ContactsClient({
                     <FormControl>
                       <Input
                         placeholder="ชื่อ-นามสกุล"
-                        className="h-11 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+                        className="h-11 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)]"
                         {...field}
                       />
                     </FormControl>
@@ -1544,7 +1545,7 @@ export default function ContactsClient({
                         inputMode="numeric"
                         maxLength={10}
                         placeholder="0891234567"
-                        className="h-11 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg font-mono focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+                        className="h-11 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg font-mono focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)]"
                         {...field}
                       />
                     </FormControl>
@@ -1565,7 +1566,7 @@ export default function ContactsClient({
                       <Input
                         type="email"
                         placeholder="email@example.com"
-                        className="h-11 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+                        className="h-11 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)]"
                         {...field}
                       />
                     </FormControl>
@@ -1642,7 +1643,7 @@ export default function ContactsClient({
                     <FormControl>
                       <Input
                         placeholder="เช่น Import 10 มี.ค."
-                        className="h-11 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+                        className="h-11 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)]"
                         {...field}
                       />
                     </FormControl>
@@ -1661,7 +1662,7 @@ export default function ContactsClient({
                     </FormLabel>
                     <FormControl>
                       <textarea
-                        className="flex w-full rounded-lg bg-[var(--bg-base)] border border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] font-mono text-sm min-h-[120px] px-3 py-2 focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)] focus:outline-none"
+                        className="flex w-full rounded-lg bg-[var(--bg-base)] border border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] font-mono text-sm min-h-[120px] px-3 py-2 focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)] focus:outline-none"
                         placeholder={"0891234567\n0812345678\n0823456789"}
                         {...field}
                       />
@@ -1794,7 +1795,7 @@ export default function ContactsClient({
               <button
                 key={g.id}
                 onClick={() => setAddToGroupId(g.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left ${
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg border transition-all text-left ${
                   addToGroupId === g.id
                     ? "bg-[rgba(var(--accent-rgb),0.06)] border-[rgba(var(--accent-rgb),0.3)] text-[var(--text-primary)]"
                     : "bg-transparent border-[var(--border-default)] text-[var(--text-muted)] hover:bg-[rgba(var(--accent-rgb),0.02)] hover:border-[rgba(var(--accent-rgb),0.15)]"

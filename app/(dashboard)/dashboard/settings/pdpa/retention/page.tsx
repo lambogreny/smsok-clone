@@ -173,7 +173,7 @@ export default function RetentionPage() {
       </div>
 
       {/* Warning Banner */}
-      <div className="rounded-xl border-l-[3px] border-[var(--warning)] bg-[rgba(var(--warning-rgb),0.06)] px-4 py-3 mb-5">
+      <div className="rounded-lg border-l-[3px] border-[var(--warning)] bg-[rgba(var(--warning-rgb),0.06)] px-4 py-3 mb-5">
         <div className="flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 text-[var(--warning)] mt-0.5 flex-shrink-0" />
           <div className="text-[13px] text-[var(--text-secondary)]">
@@ -183,7 +183,7 @@ export default function RetentionPage() {
         </div>
       </div>
 
-      <Button className="bg-[var(--accent)] hover:bg-[var(--accent)]/80 text-[var(--text-on-accent)] font-semibold rounded-xl">
+      <Button className="bg-[var(--accent)] hover:bg-[var(--accent)]/80 text-[var(--text-on-accent)] font-semibold rounded-lg">
         บันทึกการตั้งค่า
       </Button>
     </PageLayout>

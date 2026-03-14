@@ -4,8 +4,16 @@ import { getDashboardStats } from "@/lib/actions/sms";
 import { getSenderNames } from "@/lib/actions/sender-names";
 import { getContacts } from "@/lib/actions/contacts";
 import { getRemainingQuota } from "@/lib/package/quota";
-import DashboardContent from "./DashboardContent";
+import dynamic from "next/dynamic";
 import { ErrorState } from "@/components/ErrorState";
+
+const DashboardContent = dynamic(() => import("./DashboardContent"), {
+  loading: () => (
+    <div className="flex items-center justify-center py-20">
+      <div className="w-6 h-6 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+    </div>
+  ),
+});
 
 export default async function DashboardPage() {
   const user = await getSession();

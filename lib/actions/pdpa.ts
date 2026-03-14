@@ -228,6 +228,93 @@ export async function createDataRequest(
   });
 }
 
+const SELF_SERVICE_TYPES = ["PORTABILITY", "DELETE"] as const;
+const ACTIVE_SELF_SERVICE_STATUSES = ["PENDING", "PROCESSING"] as const;
+
+type SelfServiceDataRequestType = typeof SELF_SERVICE_TYPES[number];
+
+async function getSelfServiceRequester(userId: string) {
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      email: true,
+      phone: true,
+      deletedAt: true,
+    },
+  });
+
+  if (!user || user.deletedAt) {
+    throw new ApiError(404, "ไม่พบบัญชีผู้ใช้งาน", "NOT_FOUND");
+  }
+
+  return user;
+}
+
+function buildRequestDueDate() {
+  const dueDate = new Date();
+  dueDate.setDate(dueDate.getDate() + 30);
+  return dueDate;
+}
+
+export async function listSelfServiceDataRequests(
+  userId: string,
+  orgId: string | null,
+  types: SelfServiceDataRequestType[],
+) {
+  const user = await getSelfServiceRequester(userId);
+
+  return db.dataRequest.findMany({
+    where: {
+      organizationId: orgId ?? null,
+      requestorEmail: user.email,
+      type: { in: types },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 20,
+  });
+}
+
+export async function submitSelfServiceDataRequest(
+  userId: string,
+  orgId: string | null,
+  type: SelfServiceDataRequestType,
+) {
+  const user = await getSelfServiceRequester(userId);
+
+  const existing = await db.dataRequest.findFirst({
+    where: {
+      organizationId: orgId ?? null,
+      requestorEmail: user.email,
+      type,
+      status: { in: [...ACTIVE_SELF_SERVICE_STATUSES] },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (existing) {
+    return {
+      created: false,
+      request: existing,
+    };
+  }
+
+  const request = await db.dataRequest.create({
+    data: {
+      organizationId: orgId,
+      type,
+      requestorEmail: user.email,
+      requestorPhone: user.phone,
+      dueDate: buildRequestDueDate(),
+    },
+  });
+
+  return {
+    created: true,
+    request,
+  };
+}
+
 export async function getDataRequests(
   userId: string,
   orgId: string | null,

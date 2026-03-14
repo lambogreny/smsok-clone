@@ -398,7 +398,7 @@ export default function TeamPage() {
                     key={role.value}
                     type="button"
                     onClick={() => setInviteRole(role.value)}
-                    className={`rounded-xl p-3 text-center transition-all cursor-pointer ${
+                    className={`rounded-lg p-3 text-center transition-all cursor-pointer ${
                       inviteRole === role.value
                         ? "border-2 border-[var(--accent)] bg-[rgba(var(--accent-rgb),0.04)]"
                         : "border border-[var(--border-default)] hover:border-[rgba(var(--accent-rgb),0.2)]"
@@ -425,7 +425,7 @@ export default function TeamPage() {
                 value={inviteMessage}
                 onChange={(e) => setInviteMessage(e.target.value)}
                 rows={3}
-                className="w-full bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none resize-none"
+                className="w-full bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none resize-none"
               />
             </div>
           </div>

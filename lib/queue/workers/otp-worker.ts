@@ -9,6 +9,7 @@
 import { Worker } from "bullmq"
 import { workerConnectionOptions } from "../connection"
 import { QUEUE_NAMES, QUEUE_CONFIG, type SmsJobData, type SmsJobResult } from "../types"
+import { maskPhoneForLog } from "../../log-masking"
 
 export function createOtpWorker() {
   const config = QUEUE_CONFIG[QUEUE_NAMES.SMS_OTP]
@@ -37,7 +38,7 @@ export function createOtpWorker() {
       }
 
       console.log(
-        `[OTP Worker] ✓ correlationId=${correlationId} phone=${phone} jobId=${job.id}`
+        `[OTP Worker] ✓ correlationId=${correlationId} phone=${maskPhoneForLog(phone)} jobId=${job.id}`
       )
 
       return {

@@ -88,7 +88,7 @@ export default function ForgotPasswordPage() {
               </CardHeader>
               <CardContent className="px-8 pt-6 pb-8">
                 <Link href="/login">
-                  <Button className="w-full h-11 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] rounded-xl text-[15px] font-semibold transition-all duration-200 hover:shadow-[0_4px_16px_rgba(0,255,167,0.25)] group">
+                  <Button className="w-full h-11 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] rounded-lg text-[15px] font-semibold transition-all duration-200 hover:shadow-[0_4px_16px_rgba(var(--accent-rgb),0.25)] group">
                     <span className="flex items-center gap-2">
                       ไปหน้า Login
                       <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
@@ -137,7 +137,7 @@ export default function ForgotPasswordPage() {
                               maxLength={10}
                               placeholder="0891234567"
                               onKeyDown={blockNonNumeric}
-                              className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.12)]"
+                              className="h-11 bg-[var(--bg-base)] border-[var(--border-subtle)] text-white placeholder:text-[var(--text-muted)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.12)]"
                               autoFocus
                               {...field}
                             />
@@ -150,7 +150,7 @@ export default function ForgotPasswordPage() {
                     <Button
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full h-11 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] rounded-xl text-[15px] font-semibold transition-all duration-200 hover:shadow-[0_4px_16px_rgba(0,255,167,0.25)] group"
+                      className="w-full h-11 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] rounded-lg text-[15px] font-semibold transition-all duration-200 hover:shadow-[0_4px_16px_rgba(var(--accent-rgb),0.25)] group"
                     >
                       {isSubmitting ? (
                         <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />กำลังส่ง SMS...</span>

@@ -182,7 +182,7 @@ function DetailRow({ entry }: { entry: AuditEntry }) {
     <tr>
       <td colSpan={8} className="p-0">
         <div
-          className="mx-4 my-2 rounded-xl border p-4"
+          className="mx-4 my-2 rounded-lg border p-4"
           style={{
             background: "rgba(0,0,0,0.25)",
             borderColor: "var(--border-default)",
@@ -278,7 +278,7 @@ function ExportDropdown() {
           {/* backdrop */}
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div
-            className="absolute right-0 top-full mt-1 z-50 rounded-xl overflow-hidden border shadow-xl min-w-[140px]"
+            className="absolute right-0 top-full mt-1 z-50 rounded-lg overflow-hidden border shadow-xl min-w-[140px]"
             style={{
               background: "var(--bg-surface)",
               borderColor: "var(--border-default)",

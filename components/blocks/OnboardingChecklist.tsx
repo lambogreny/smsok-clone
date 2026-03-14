@@ -201,7 +201,7 @@ export default function OnboardingChecklist({
 
       {/* Bonus banner */}
       <div
-        className="rounded-xl px-4 py-3 text-center text-sm font-medium"
+        className="rounded-lg px-4 py-3 text-center text-sm font-medium"
         style={{
           background: allDone
             ? "rgba(var(--accent-rgb, 0 128 128) / 0.08)"

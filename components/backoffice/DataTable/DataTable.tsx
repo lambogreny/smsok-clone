@@ -125,7 +125,7 @@ export function DataTable<T>({
   const visibleColumns = columns;
 
   return (
-    <div className={cn("rounded-xl bg-[var(--bg-surface)] border border-[var(--border-default)] overflow-hidden", className)}>
+    <div className={cn("rounded-lg bg-[var(--bg-surface)] border border-[var(--border-default)] overflow-hidden", className)}>
       {/* Toolbar: Search + Filters */}
       {(onSearchChange || filters) && (
         <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--border-default)] flex-wrap">

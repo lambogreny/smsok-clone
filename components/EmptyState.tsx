@@ -57,7 +57,7 @@ export default function EmptyState({
         <div className="flex items-center gap-3">
           <Button
             onClick={ctaAction}
-            className="h-10 px-5 rounded-xl font-semibold bg-[var(--accent)] text-[var(--text-on-accent)] hover:opacity-90"
+            className="h-10 px-5 rounded-lg font-semibold bg-[var(--accent)] text-[var(--text-on-accent)] hover:opacity-90"
           >
             {ctaLabel}
           </Button>
@@ -65,7 +65,7 @@ export default function EmptyState({
             <Button
               variant="outline"
               onClick={ctaSecondaryAction}
-              className="h-10 px-5 rounded-xl font-semibold"
+              className="h-10 px-5 rounded-lg font-semibold"
             >
               {ctaSecondaryLabel}
             </Button>

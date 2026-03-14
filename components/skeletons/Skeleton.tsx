@@ -31,12 +31,12 @@ export function SkeletonButton() {
 }
 
 export function SkeletonChart() {
-  return <Skeleton className="h-[200px] w-full rounded-xl" />;
+  return <Skeleton className="h-[200px] w-full rounded-lg" />;
 }
 
 export function SkeletonCard({ children, className }: { children?: React.ReactNode; className?: string }) {
   return (
-    <div className={cn("bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl p-4", className)}>
+    <div className={cn("bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg p-4", className)}>
       {children || (
         <div className="space-y-3">
           <SkeletonText variant="short" />
@@ -50,7 +50,7 @@ export function SkeletonCard({ children, className }: { children?: React.ReactNo
 
 export function TableSkeleton({ columns = 5, rows = 5 }: { columns?: number; rows?: number }) {
   return (
-    <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl overflow-hidden">
+    <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg overflow-hidden">
       {/* Header */}
       <div className="flex gap-4 px-4 py-3 bg-[var(--table-header)]">
         {Array.from({ length: columns }).map((_, i) => (

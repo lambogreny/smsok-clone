@@ -33,13 +33,13 @@ export default function AuthError({
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button
               onClick={reset}
-              className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] rounded-xl font-semibold gap-2"
+              className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] rounded-lg font-semibold gap-2"
             >
               <RotateCcw className="w-4 h-4" />
               ลองใหม่
             </Button>
             <Link href="/login">
-              <Button variant="outline" className="border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-white rounded-xl gap-2">
+              <Button variant="outline" className="border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-white rounded-lg gap-2">
                 <ArrowLeft className="w-4 h-4" />
                 กลับหน้าเข้าสู่ระบบ
               </Button>

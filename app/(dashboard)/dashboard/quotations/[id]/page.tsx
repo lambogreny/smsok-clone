@@ -177,7 +177,7 @@ export default function QuotationDetailPage() {
           <Link href="/dashboard/quotations">
             <button
               type="button"
-              className="w-9 h-9 rounded-xl border border-[var(--border-default)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors cursor-pointer"
+              className="w-9 h-9 rounded-lg border border-[var(--border-default)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>

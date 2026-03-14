@@ -205,7 +205,7 @@ export default function MarketingDashboardPage() {
         title="Marketing Dashboard"
         description="การเติบโตและ Conversion"
         actions={
-          <div className="flex items-center gap-1 bg-[var(--bg-elevated)] border border-[var(--border-default)] rounded-xl p-1">
+          <div className="flex items-center gap-1 bg-[var(--bg-elevated)] border border-[var(--border-default)] rounded-lg p-1">
             {DATE_PILLS.map((pill) => (
               <button
                 key={pill.value}
@@ -413,7 +413,7 @@ export default function MarketingDashboardPage() {
                   <Td>
                     <button
                       type="button"
-                      className="text-[10px] font-medium px-2 py-1 rounded-lg bg-[rgba(0,255,167,0.08)] text-[var(--accent)] hover:bg-[rgba(0,255,167,0.15)] transition-colors cursor-pointer whitespace-nowrap"
+                      className="text-[10px] font-medium px-2 py-1 rounded-lg bg-[rgba(var(--accent-rgb),0.08)] text-[var(--accent)] hover:bg-[rgba(var(--accent-rgb),0.15)] transition-colors cursor-pointer whitespace-nowrap"
                     >
                       ส่ง Win-back
                     </button>
@@ -452,7 +452,7 @@ export default function MarketingDashboardPage() {
                     </span>
                   </Td>
                   <Td>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-[rgba(0,255,167,0.08)] text-[var(--accent)]">
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-[rgba(var(--accent-rgb),0.08)] text-[var(--accent)]">
                       {u.plan}
                     </span>
                   </Td>

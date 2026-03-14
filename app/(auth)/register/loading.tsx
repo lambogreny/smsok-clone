@@ -43,7 +43,7 @@ export default function RegisterLoading() {
               <Skeleton className="h-3 w-28" />
               <Skeleton className="h-11 w-full rounded-lg" />
             </div>
-            <Skeleton className="h-11 w-full rounded-xl" />
+            <Skeleton className="h-11 w-full rounded-lg" />
           </div>
         </div>
       </div>

@@ -510,7 +510,7 @@ function CodeTabs({ endpoint }: { endpoint: Endpoint }) {
   return (
     <div>
       <p className="text-[10px] font-medium text-[var(--text-muted)] mb-2 uppercase tracking-wider">Code Examples</p>
-      <div className="bg-[var(--code-bg)] rounded-xl border border-[var(--border-default)] overflow-hidden">
+      <div className="bg-[var(--code-bg)] rounded-lg border border-[var(--border-default)] overflow-hidden">
         <div className="flex border-b border-[var(--border-default)]">
           {(Object.keys(codeMap) as Array<keyof typeof codeMap>).map((tab) => (
             <button
@@ -567,7 +567,7 @@ function TryItPanel({ endpoint }: { endpoint: Endpoint }) {
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[var(--accent)]"><polygon points="5 3 19 12 5 21 5 3" /></svg>
         Try It
       </p>
-      <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl p-4 space-y-3">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg p-4 space-y-3">
         {/* Auth */}
         <div>
           <label className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-medium">Authorization</label>
@@ -606,7 +606,7 @@ function TryItPanel({ endpoint }: { endpoint: Endpoint }) {
         <button
           onClick={handleSend}
           disabled={loading}
-          className="btn-primary w-full py-2.5 text-sm font-medium rounded-xl flex items-center justify-center gap-2 disabled:opacity-50"
+          className="btn-primary w-full py-2.5 text-sm font-medium rounded-lg flex items-center justify-center gap-2 disabled:opacity-50"
         >
           {loading ? (
             <>
@@ -636,7 +636,7 @@ function TryItPanel({ endpoint }: { endpoint: Endpoint }) {
                   {response.status}
                 </span>
               </div>
-              <div className="bg-[var(--code-bg)] rounded-xl p-3 relative border border-[var(--border-default)]">
+              <div className="bg-[var(--code-bg)] rounded-lg p-3 relative border border-[var(--border-default)]">
                 <pre className="text-emerald-300/80 font-mono text-xs whitespace-pre overflow-x-auto">{response.body}</pre>
                 <CopyButton text={response.body} />
               </div>
@@ -652,7 +652,7 @@ function ResponseFieldsTable({ fields }: { fields: { name: string; type: string;
   return (
     <div>
       <p className="text-[10px] font-medium text-[var(--text-muted)] mb-2 uppercase tracking-wider">Response Fields</p>
-      <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl overflow-hidden">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg overflow-hidden">
         <table className="w-full text-xs">
           <thead>
             <tr className="border-b border-[var(--border-default)]">
@@ -729,19 +729,19 @@ function EndpointCard({ endpoint, isExpanded, onToggle, id }: { endpoint: Endpoi
                   <div>
                     <p className="text-[10px] font-medium text-[var(--text-muted)] mb-2 uppercase tracking-wider">Request</p>
                     {endpoint.headers && (
-                      <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl p-3 mb-2">
+                      <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg p-3 mb-2">
                         <p className="text-[9px] font-medium text-[var(--text-muted)] mb-1 uppercase tracking-wider">Headers</p>
                         <code className="text-[var(--accent)]/80 font-mono text-xs">{endpoint.headers}</code>
                       </div>
                     )}
                     {endpoint.body ? (
-                      <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl p-3 relative">
+                      <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg p-3 relative">
                         <p className="text-[9px] font-medium text-[var(--text-muted)] mb-1 uppercase tracking-wider">Body</p>
                         <pre className="text-[var(--accent)]/80 font-mono text-xs whitespace-pre overflow-x-auto">{endpoint.body}</pre>
                         <CopyButton text={endpoint.body} />
                       </div>
                     ) : (
-                      <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl p-3">
+                      <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg p-3">
                         <p className="text-xs text-[var(--text-muted)] italic">ไม่มี Request Body</p>
                       </div>
                     )}
@@ -750,7 +750,7 @@ function EndpointCard({ endpoint, isExpanded, onToggle, id }: { endpoint: Endpoi
                   {/* Response */}
                   <div>
                     <p className="text-[10px] font-medium text-[var(--text-muted)] mb-2 uppercase tracking-wider">Response <span className="text-emerald-400">200</span></p>
-                    <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl p-3 relative">
+                    <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg p-3 relative">
                       <pre className="text-emerald-300/80 font-mono text-xs whitespace-pre overflow-x-auto">{endpoint.response}</pre>
                       <CopyButton text={endpoint.response} />
                     </div>
@@ -779,7 +779,7 @@ function EndpointCard({ endpoint, isExpanded, onToggle, id }: { endpoint: Endpoi
                 {endpoint.errors && endpoint.errors.length > 0 && (
                   <div className="mb-5">
                     <p className="text-[10px] font-medium text-[var(--text-muted)] mb-2 uppercase tracking-wider">Error Codes</p>
-                    <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl overflow-hidden">
+                    <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg overflow-hidden">
                       <table className="w-full text-xs">
                         <tbody>
                           {endpoint.errors.map((err) => (
@@ -973,7 +973,7 @@ export default function ApiDocsPage() {
               <p className="text-[var(--text-secondary)] text-sm">SMSOK REST API v1 -- {endpoints.length} endpoints</p>
             </div>
             <div className="flex items-center gap-3">
-              <Link href="/dashboard/api-keys" className="btn-primary px-4 py-2.5 text-sm font-medium rounded-xl flex items-center gap-2">
+              <Link href="/dashboard/api-keys" className="btn-primary px-4 py-2.5 text-sm font-medium rounded-lg flex items-center gap-2">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" /></svg>
                 API Keys
               </Link>
@@ -983,7 +983,7 @@ export default function ApiDocsPage() {
           {/* Authentication Section */}
           <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg p-6 mb-6">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-[rgba(var(--accent-rgb),0.1)] border border-[rgba(var(--accent-rgb),0.15)] flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-[rgba(var(--accent-rgb),0.1)] border border-[rgba(var(--accent-rgb),0.15)] flex items-center justify-center">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[var(--accent)]"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
               </div>
               <div>
@@ -1005,7 +1005,7 @@ export default function ApiDocsPage() {
                 </code>
               </div>
             </div>
-            <div className="mt-4 bg-[var(--code-bg)] rounded-xl p-4 relative border border-[var(--border-default)]">
+            <div className="mt-4 bg-[var(--code-bg)] rounded-lg p-4 relative border border-[var(--border-default)]">
               <pre className="text-[var(--accent)]/80 font-mono text-xs whitespace-pre overflow-x-auto">{`// Example: Using fetch
 const res = await fetch('https://api.smsok.com/api/v1/balance', {
   headers: { 'Authorization': 'Bearer sk_live_your_api_key' }
@@ -1057,11 +1057,11 @@ const res = await fetch('https://api.smsok.com/api/v1/balance', {
               {filtered.length} endpoint{filtered.length !== 1 ? "s" : ""}
             </p>
             <div className="flex gap-2">
-              <button onClick={expandAll} className="bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] rounded-xl hover:border-[rgba(var(--accent-rgb),0.3)] hover:bg-[rgba(var(--accent-rgb),0.04)] px-3 py-1.5 text-[11px] rounded-lg flex items-center gap-1.5">
+              <button onClick={expandAll} className="bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] rounded-lg hover:border-[rgba(var(--accent-rgb),0.3)] hover:bg-[rgba(var(--accent-rgb),0.04)] px-3 py-1.5 text-[11px] rounded-lg flex items-center gap-1.5">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 3 21 3 21 9" /><polyline points="9 21 3 21 3 15" /><line x1="21" y1="3" x2="14" y2="10" /><line x1="3" y1="21" x2="10" y2="14" /></svg>
                 Expand All
               </button>
-              <button onClick={collapseAll} className="bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] rounded-xl hover:border-[rgba(var(--accent-rgb),0.3)] hover:bg-[rgba(var(--accent-rgb),0.04)] px-3 py-1.5 text-[11px] rounded-lg flex items-center gap-1.5">
+              <button onClick={collapseAll} className="bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] rounded-lg hover:border-[rgba(var(--accent-rgb),0.3)] hover:bg-[rgba(var(--accent-rgb),0.04)] px-3 py-1.5 text-[11px] rounded-lg flex items-center gap-1.5">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="4 14 10 14 10 20" /><polyline points="20 10 14 10 14 4" /><line x1="14" y1="10" x2="21" y2="3" /><line x1="3" y1="21" x2="10" y2="14" /></svg>
                 Collapse All
               </button>
@@ -1113,7 +1113,7 @@ const res = await fetch('https://api.smsok.com/api/v1/balance', {
                 { code: "429", label: "Too Many Requests", desc: "เกินลิมิต rate limit", color: "text-orange-400 bg-orange-500/10 border-orange-500/20" },
                 { code: "500", label: "Server Error", desc: "เกิดข้อผิดพลาดภายใน", color: "text-[var(--error)] bg-[rgba(var(--error-rgb,239,68,68),0.1)] border-[rgba(var(--error-rgb,239,68,68),0.2)]" },
               ].map((err) => (
-                <div key={err.code} className={`rounded-xl p-3 border ${err.color}`}>
+                <div key={err.code} className={`rounded-lg p-3 border ${err.color}`}>
                   <span className="text-lg font-bold">{err.code}</span>
                   <p className="text-xs font-medium mt-0.5">{err.label}</p>
                   <p className="text-[10px] opacity-70 mt-0.5">{err.desc}</p>
@@ -1125,7 +1125,7 @@ const res = await fetch('https://api.smsok.com/api/v1/balance', {
           {/* SDK Section */}
           <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg p-6 mt-6">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-[rgba(var(--accent-rgb),0.1)] border border-[rgba(var(--accent-rgb),0.15)] flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-[rgba(var(--accent-rgb),0.1)] border border-[rgba(var(--accent-rgb),0.15)] flex items-center justify-center">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[var(--accent)]"><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></svg>
               </div>
               <div>
@@ -1138,7 +1138,7 @@ const res = await fetch('https://api.smsok.com/api/v1/balance', {
               {/* Install */}
               <div>
                 <p className="text-[10px] font-medium text-[var(--text-muted)] mb-2 uppercase tracking-wider">Installation</p>
-                <div className="bg-[var(--code-bg)] rounded-xl p-4 relative border border-[var(--border-default)]">
+                <div className="bg-[var(--code-bg)] rounded-lg p-4 relative border border-[var(--border-default)]">
                   <pre className="text-[var(--accent)]/80 font-mono text-xs">{`# npm
 npm install @smsok/sdk
 
@@ -1154,7 +1154,7 @@ pnpm add @smsok/sdk`}</pre>
               {/* Quick Start */}
               <div>
                 <p className="text-[10px] font-medium text-[var(--text-muted)] mb-2 uppercase tracking-wider">Quick Start</p>
-                <div className="bg-[var(--code-bg)] rounded-xl p-4 relative border border-[var(--border-default)]">
+                <div className="bg-[var(--code-bg)] rounded-lg p-4 relative border border-[var(--border-default)]">
                   <pre className="text-[var(--accent)]/80 font-mono text-xs">{`import { SMSOK } from '@smsok/sdk';
 
 const sms = new SMSOK('sk_live_your_key');

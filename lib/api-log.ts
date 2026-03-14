@@ -28,7 +28,7 @@ export const ERROR_CODES = {
 
 const SENSITIVE_HEADERS = new Set(["authorization", "x-api-key", "cookie"]);
 const SENSITIVE_BODY_FIELDS = new Set([
-  "password", "newPassword", "confirmPassword", "token",
+  "password", "currentPassword", "newPassword", "confirmPassword", "token",
   "apiKey", "key", "secret", "otpCode", "code",
 ]);
 const MAX_FIELD_LENGTH = 4000;

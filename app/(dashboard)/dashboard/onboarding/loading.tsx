@@ -17,7 +17,7 @@ export default function OnboardingLoading() {
       </div>
 
       {/* Step content card */}
-      <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl p-8 w-full max-w-2xl space-y-6">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg p-8 w-full max-w-2xl space-y-6">
         <div className="text-center space-y-2">
           <Skeleton className="h-6 w-48 mx-auto" />
           <Skeleton className="h-4 w-72 mx-auto" />
@@ -37,8 +37,8 @@ export default function OnboardingLoading() {
 
         {/* Navigation buttons */}
         <div className="flex justify-between pt-4">
-          <Skeleton className="h-10 w-24 rounded-xl" />
-          <Skeleton className="h-10 w-32 rounded-xl" />
+          <Skeleton className="h-10 w-24 rounded-lg" />
+          <Skeleton className="h-10 w-32 rounded-lg" />
         </div>
       </div>
     </div>

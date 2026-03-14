@@ -48,7 +48,7 @@ export default function SendingHoursWarning({
 
   return (
     <div
-      className={`rounded-xl px-4 py-3 flex items-start gap-2.5 ${className}`}
+      className={`rounded-lg px-4 py-3 flex items-start gap-2.5 ${className}`}
       style={{
         background: "rgba(245,158,11,0.06)",
         border: "1px solid rgba(245,158,11,0.15)",

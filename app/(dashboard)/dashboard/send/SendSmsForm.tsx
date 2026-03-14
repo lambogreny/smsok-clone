@@ -152,7 +152,7 @@ export default function SendSmsForm({ senderNames: rawNames = [] }: { senderName
 
   const handleSend = () => {
     if (!recipients.trim() || !message.trim()) return;
-    if (isOutsideSendingHours) {
+    if (isOutsideSendingHours && scheduleMode === "now") {
       const errorMessage = sendingHoursState.message || "ไม่สามารถส่ง SMS นอกเวลาที่กำหนด";
       setResult({ type: "error", text: errorMessage });
       toast.error(errorMessage);
@@ -162,6 +162,36 @@ export default function SendSmsForm({ senderNames: rawNames = [] }: { senderName
 
     startTransition(async () => {
       try {
+        // Scheduled SMS
+        if (scheduleMode === "later" && scheduleDate && scheduleTime) {
+          const scheduledAt = new Date(`${scheduleDate}T${scheduleTime}:00`).toISOString();
+          const res = await fetch("/api/v1/sms/scheduled", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              action: "create",
+              senderName: senderName || "",
+              recipients: validPhones,
+              message,
+              scheduledAt,
+            }),
+          });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({ error: "ตั้งเวลาส่งล้มเหลว" }));
+            throw new Error(err.error || "ตั้งเวลาส่งล้มเหลว");
+          }
+          setResult({ type: "success", text: `ตั้งเวลาส่งสำเร็จ ${validPhones.length} เบอร์ — ${scheduleDate} ${scheduleTime}` });
+          toast.success("ตั้งเวลาส่ง SMS สำเร็จ!");
+          setRecipients("");
+          setMessage("");
+          setScheduleMode("now");
+          setScheduleDate("");
+          setScheduleTime("");
+          return;
+        }
+
+        // Immediate send
         const result = recipientCount === 1
           ? await sendSms({ senderName, recipient: recipientList[0], message })
           : await sendBatchSms({ senderName, recipients: recipientList, message });
@@ -220,7 +250,7 @@ export default function SendSmsForm({ senderNames: rawNames = [] }: { senderName
       {/* No Approved Senders Warning */}
       {hasNoSenders && (
         <div
-          className="flex items-center gap-3 p-3.5 rounded-xl text-sm border"
+          className="flex items-center gap-3 p-3.5 rounded-lg text-sm border"
           style={{
             background: "rgba(var(--warning-rgb,245,158,11),0.06)",
             borderColor: "rgba(var(--warning-rgb,245,158,11),0.15)",
@@ -236,7 +266,7 @@ export default function SendSmsForm({ senderNames: rawNames = [] }: { senderName
       {/* Insufficient Credits Warning */}
       {(hasNoCredits || hasInsufficientCredits) && (
         <div
-          className="flex items-center justify-between gap-3 p-3.5 rounded-xl text-sm border flex-wrap"
+          className="flex items-center justify-between gap-3 p-3.5 rounded-lg text-sm border flex-wrap"
           style={{
             background: "rgba(var(--warning-rgb,245,158,11),0.06)",
             borderColor: "rgba(var(--warning-rgb,245,158,11),0.15)",
@@ -263,7 +293,7 @@ export default function SendSmsForm({ senderNames: rawNames = [] }: { senderName
 
       {/* Feedback Alert */}
       {result && (
-        <div className={`p-3 rounded-xl text-sm font-medium border transition-opacity duration-200 ${
+        <div className={`p-3 rounded-lg text-sm font-medium border transition-opacity duration-200 ${
           result.type === "success"
             ? "bg-[var(--success-bg)] border-[rgba(8,153,129,0.15)] text-[var(--success)]"
             : "bg-[var(--danger-bg)] border-[rgba(242,54,69,0.15)] text-[var(--error)]"
@@ -330,7 +360,7 @@ export default function SendSmsForm({ senderNames: rawNames = [] }: { senderName
                 <Textarea
                   value={recipients}
                   onChange={(e) => setRecipients(e.target.value)}
-                  className={`bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-xl resize-none focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.15)] ${phoneError ? "border-[rgba(239,68,68,0.6)]" : validPhones.length > 0 ? "border-[rgba(16,185,129,0.4)]" : ""}`}
+                  className={`bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg resize-none focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.15)] ${phoneError ? "border-[rgba(239,68,68,0.6)]" : validPhones.length > 0 ? "border-[rgba(16,185,129,0.4)]" : ""}`}
                   rows={4}
                   placeholder={"กรอกเบอร์โทร (คั่นด้วย Enter หรือ comma)\n0891234567\n0891234568"}
                 />
@@ -364,7 +394,7 @@ export default function SendSmsForm({ senderNames: rawNames = [] }: { senderName
                     lastCursorPos.current = { start: t.selectionStart, end: t.selectionEnd };
                   }}
                   onBlur={() => setTimeout(autocomplete.closeSuggestions, 150)}
-                  className="bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-xl resize-none focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(0,255,167,0.15)]"
+                  className="bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg resize-none focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.15)]"
                   rows={5}
                   placeholder="พิมพ์ข้อความ SMS ที่นี่... พิมพ์ {{ เพื่อแทรกตัวแปร"
                   maxLength={1000}
@@ -560,8 +590,8 @@ export default function SendSmsForm({ senderNames: rawNames = [] }: { senderName
             <span className="text-base font-bold text-[var(--accent)]">{totalSmsCost} SMS</span>
           </div>
           <Button
-            onClick={handleSend}
-            disabled={isPending || !recipients.trim() || !message.trim() || !!phoneError || hasNoCredits || hasInsufficientCredits || isOutsideSendingHours || hasNoSenders}
+            onClick={() => setShowConfirmModal(true)}
+            disabled={isPending || !recipients.trim() || !message.trim() || !!phoneError || hasNoCredits || hasInsufficientCredits || (scheduleMode === "now" && isOutsideSendingHours) || hasNoSenders || (scheduleMode === "later" && (!scheduleDate || !scheduleTime))}
             className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] rounded-lg font-semibold disabled:opacity-50" size="lg"
           >
             {isPending ? (
@@ -575,10 +605,10 @@ export default function SendSmsForm({ senderNames: rawNames = [] }: { senderName
 
       {/* Confirmation Modal */}
       {showConfirmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-xl border border-[var(--border-default)] bg-[var(--bg-surface)] p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="sms-confirm-title">
+          <div className="w-full max-w-md rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-[var(--text-primary)]">ยืนยันการส่ง SMS</h3>
+              <h3 id="sms-confirm-title" className="text-lg font-bold text-[var(--text-primary)]">ยืนยันการส่ง SMS</h3>
               <button
                 type="button"
                 onClick={() => setShowConfirmModal(false)}

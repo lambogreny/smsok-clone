@@ -585,7 +585,7 @@ export default function KnowledgeBasePage() {
                 type="button"
                 onClick={() => handleCategoryClick(cat.key)}
                 className={cn(
-                  "group flex flex-col items-center gap-2.5 rounded-xl border p-4 transition-all",
+                  "group flex flex-col items-center gap-2.5 rounded-lg border p-4 transition-all",
                   "hover:border-transparent",
                   isActive
                     ? "border-transparent"

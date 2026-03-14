@@ -199,7 +199,7 @@ const FAQ_LINKS = [
 
 function TicketCardSkeleton() {
   return (
-    <div className="rounded-xl border border-[var(--border-default)] bg-[var(--bg-surface)] p-4 sm:p-5">
+    <div className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] p-4 sm:p-5">
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex-1 space-y-2">
           <Skeleton className="h-5 w-3/4 bg-[var(--bg-elevated)]" />
@@ -305,7 +305,7 @@ export default function SupportPage() {
         </div>
         <Button
           onClick={() => router.push("/dashboard/support/new")}
-          className="h-10 gap-2 rounded-xl bg-[var(--accent)] px-5 font-semibold text-[var(--text-on-accent)] hover:opacity-90 shrink-0"
+          className="h-10 gap-2 rounded-lg bg-[var(--accent)] px-5 font-semibold text-[var(--text-on-accent)] hover:opacity-90 shrink-0"
         >
           <Plus size={18} />
           สร้างตั๋วใหม่
@@ -342,7 +342,7 @@ export default function SupportPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="ค้นหาตั๋วจากหัวข้อ..."
-            className="h-10 rounded-xl border-[var(--border-default)] bg-[var(--bg-surface)] pl-9 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]"
+            className="h-10 rounded-lg border-[var(--border-default)] bg-[var(--bg-surface)] pl-9 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]"
           />
         </div>
         <div className="flex gap-2">
@@ -415,7 +415,7 @@ export default function SupportPage() {
                 key={ticket.id}
                 type="button"
                 onClick={() => router.push(`/dashboard/support/${ticket.id}`)}
-                className="group w-full rounded-xl border border-[var(--border-default)] bg-[var(--bg-surface)] p-4 sm:p-5 text-left transition-all hover:border-[rgba(var(--accent-rgb),0.3)] hover:bg-[var(--bg-elevated)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-1 focus:ring-offset-[var(--bg-base)]"
+                className="group w-full rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] p-4 sm:p-5 text-left transition-all hover:border-[rgba(var(--accent-rgb),0.3)] hover:bg-[var(--bg-elevated)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-1 focus:ring-offset-[var(--bg-base)]"
               >
                 {/* Top row: subject + status badge */}
                 <div className="flex items-start justify-between gap-3 mb-3">
@@ -569,7 +569,7 @@ export default function SupportPage() {
                 key={faq.href}
                 type="button"
                 onClick={() => router.push(faq.href)}
-                className="group/faq flex items-start gap-3 rounded-xl border border-[var(--border-default)] bg-[var(--bg-surface)] p-4 text-left transition-all hover:border-[rgba(var(--accent-rgb),0.3)] hover:bg-[var(--bg-elevated)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-1 focus:ring-offset-[var(--bg-base)]"
+                className="group/faq flex items-start gap-3 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] p-4 text-left transition-all hover:border-[rgba(var(--accent-rgb),0.3)] hover:bg-[var(--bg-elevated)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-1 focus:ring-offset-[var(--bg-base)]"
               >
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[rgba(var(--accent-rgb),0.1)] border border-[rgba(var(--accent-rgb),0.15)]">
                   <FaqIcon size={18} className="text-[var(--accent)]" />

@@ -58,7 +58,7 @@ export default function SenderNameForm({ userId }: { userId: string }) {
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>
-          <label className="block text-xs text-slate-300 uppercase tracking-wider mb-2 font-medium">ชื่อผู้ส่ง (3-11 ตัวอักษร, A-Z, 0-9)</label>
+          <label className="block text-xs text-[var(--text-secondary)] uppercase tracking-wider mb-2 font-medium">ชื่อผู้ส่ง (3-11 ตัวอักษร, A-Z, 0-9)</label>
           <input
             type="text"
             onKeyDown={allowAlphaNumericSpace}
@@ -79,7 +79,7 @@ export default function SenderNameForm({ userId }: { userId: string }) {
           </div>
         </div>
         <div>
-          <label className="block text-xs text-slate-300 uppercase tracking-wider mb-2 font-medium">วัตถุประสงค์การใช้งาน</label>
+          <label className="block text-xs text-[var(--text-secondary)] uppercase tracking-wider mb-2 font-medium">วัตถุประสงค์การใช้งาน</label>
           <input
             type="text"
             className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none px-3 py-2 w-full"
@@ -87,13 +87,13 @@ export default function SenderNameForm({ userId }: { userId: string }) {
             value={purpose}
             onChange={(e) => setPurpose(e.target.value)}
           />
-          <p className="text-[11px] text-slate-300 mt-2">ระบุเพื่อช่วยให้อนุมัติเร็วขึ้น</p>
+          <p className="text-[11px] text-[var(--text-secondary)] mt-2">ระบุเพื่อช่วยให้อนุมัติเร็วขึ้น</p>
         </div>
       </div>
 
       {/* Sender Type */}
       <div>
-        <label className="block text-xs text-slate-300 uppercase tracking-wider mb-2 font-medium">ประเภทการใช้งาน</label>
+        <label className="block text-xs text-[var(--text-secondary)] uppercase tracking-wider mb-2 font-medium">ประเภทการใช้งาน</label>
         <div className="grid grid-cols-3 gap-3">
           {SENDER_TYPES.map((t) => (
             <button
@@ -121,7 +121,7 @@ export default function SenderNameForm({ userId }: { userId: string }) {
 
       {/* Document Upload */}
       <div>
-        <label className="block text-xs text-slate-300 uppercase tracking-wider mb-2 font-medium">
+        <label className="block text-xs text-[var(--text-secondary)] uppercase tracking-wider mb-2 font-medium">
           เอกสารประกอบ <span style={{ color: "var(--text-muted)" }}>(ไม่บังคับ)</span>
         </label>
         <div
@@ -171,7 +171,7 @@ export default function SenderNameForm({ userId }: { userId: string }) {
         <motion.button
           type="submit"
           disabled={!isValid || loading}
-          className="btn-primary px-6 py-3 rounded-xl text-sm font-semibold flex items-center gap-2 disabled:opacity-50 whitespace-nowrap"
+          className="btn-primary px-6 py-3 rounded-lg text-sm font-semibold flex items-center gap-2 disabled:opacity-50 whitespace-nowrap"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
@@ -189,7 +189,7 @@ export default function SenderNameForm({ userId }: { userId: string }) {
             </>
           )}
         </motion.button>
-        <p className="text-[11px] text-slate-300">คำขอจะถูกตรวจสอบโดยทีมงานภายใน 1-2 วันทำการ</p>
+        <p className="text-[11px] text-[var(--text-secondary)]">คำขอจะถูกตรวจสอบโดยทีมงานภายใน 1-2 วันทำการ</p>
       </div>
 
       <AnimatePresence mode="wait">
@@ -200,7 +200,7 @@ export default function SenderNameForm({ userId }: { userId: string }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
-            className={`p-4 rounded-xl border text-sm font-medium ${
+            className={`p-4 rounded-lg border text-sm font-medium ${
               result.type === "success"
                 ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
                 : "bg-[rgba(var(--error-rgb,239,68,68),0.1)] border-[rgba(var(--error-rgb,239,68,68),0.2)] text-[var(--error)]"

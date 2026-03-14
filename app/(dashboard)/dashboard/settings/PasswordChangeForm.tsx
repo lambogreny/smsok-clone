@@ -51,7 +51,7 @@ export default function PasswordChangeForm() {
     <form onSubmit={handleSubmit}>
       <div className="space-y-4">
         <div>
-          <label className="block text-xs text-slate-300 uppercase tracking-wider mb-2 font-medium">รหัสผ่านปัจจุบัน</label>
+          <label className="block text-xs text-[var(--text-secondary)] uppercase tracking-wider mb-2 font-medium">รหัสผ่านปัจจุบัน</label>
           <input
             type="password"
             className={fieldCls(undefined, currentPassword)}
@@ -62,7 +62,7 @@ export default function PasswordChangeForm() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs text-slate-300 uppercase tracking-wider mb-2 font-medium">รหัสผ่านใหม่</label>
+            <label className="block text-xs text-[var(--text-secondary)] uppercase tracking-wider mb-2 font-medium">รหัสผ่านใหม่</label>
             <input
               type="password"
               className={fieldCls(newPassword && (newPassword.length < 8 || !/[A-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) ? "error" : undefined, newPassword)}
@@ -80,7 +80,7 @@ export default function PasswordChangeForm() {
             )}
           </div>
           <div>
-            <label className="block text-xs text-slate-300 uppercase tracking-wider mb-2 font-medium">ยืนยันรหัสผ่านใหม่</label>
+            <label className="block text-xs text-[var(--text-secondary)] uppercase tracking-wider mb-2 font-medium">ยืนยันรหัสผ่านใหม่</label>
             <input
               type="password"
               className={fieldCls(confirmPassword && newPassword !== confirmPassword ? "error" : undefined, confirmPassword)}
@@ -105,7 +105,7 @@ export default function PasswordChangeForm() {
         <button
           type="submit"
           disabled={!isValid || loading}
-          className="btn-primary px-6 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
+          className="btn-primary px-6 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
         >
           {loading ? (
             <span className="flex items-center gap-2">

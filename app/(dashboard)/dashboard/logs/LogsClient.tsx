@@ -8,6 +8,7 @@ import PillTabs from "@/components/ui/PillTabs";
 import { Input } from "@/components/ui/input";
 import EmptyState from "@/components/EmptyState";
 import { formatThaiTimestamp, formatThaiTimestampFull } from "@/lib/format-thai-date";
+import { toCsvCell } from "@/lib/csv";
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -102,18 +103,30 @@ function buildCurl(log: LogEntry): string {
 }
 
 function exportCsv(logs: LogEntry[]) {
-  const header = "Timestamp,Method,Endpoint,Status,Latency (ms),IP,Source,API Key,Phone,Message ID,Error\n";
+  const header = [
+    "Timestamp",
+    "Method",
+    "Endpoint",
+    "Status",
+    "Latency (ms)",
+    "IP",
+    "Source",
+    "API Key",
+    "Phone",
+    "Message ID",
+    "Error",
+  ].map(toCsvCell).join(",");
   const rows = logs.map((log) =>
     [
       log.timestamp, log.method, log.url, log.statusCode, log.latencyMs,
       log.ip, log.source, log.apiKeyName || "", log.phone || "",
       log.messageId || "", log.errorMessage || "",
     ]
-      .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+      .map(toCsvCell)
       .join(",")
   );
-  const csv = header + rows.join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const csv = [header, ...rows].join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -353,7 +366,7 @@ function DetailPane({
           )}
           {tab === "error" && log.errorCode && (
             <motion.div key="err" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.1 }}>
-              <div className="p-4 rounded-xl bg-[rgba(var(--error-rgb,239,68,68),0.06)] border border-[rgba(var(--error-rgb,239,68,68),0.15)]">
+              <div className="p-4 rounded-lg bg-[rgba(var(--error-rgb,239,68,68),0.06)] border border-[rgba(var(--error-rgb,239,68,68),0.15)]">
                 <div className="flex items-center gap-3 mb-2">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[var(--error)] shrink-0">
                     <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
@@ -529,7 +542,7 @@ export default function LogsClient() {
         <div className="flex items-center gap-2">
           <motion.button
             onClick={() => exportCsv(logs)}
-            className="bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] rounded-xl hover:border-[rgba(var(--accent-rgb),0.3)] hover:bg-[rgba(var(--accent-rgb),0.04)] px-3 py-1.5 rounded-lg text-[11px] font-medium inline-flex items-center gap-1.5 cursor-pointer"
+            className="bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] rounded-lg hover:border-[rgba(var(--accent-rgb),0.3)] hover:bg-[rgba(var(--accent-rgb),0.04)] px-3 py-1.5 rounded-lg text-[11px] font-medium inline-flex items-center gap-1.5 cursor-pointer"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
@@ -551,7 +564,7 @@ export default function LogsClient() {
           </button>
           <motion.button
             onClick={() => fetchLogs()}
-            className="bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] rounded-xl hover:border-[rgba(var(--accent-rgb),0.3)] hover:bg-[rgba(var(--accent-rgb),0.04)] px-3 py-1.5 rounded-lg text-[11px] font-medium inline-flex items-center gap-1.5 cursor-pointer"
+            className="bg-transparent border border-[var(--border-default)] text-[var(--text-primary)] rounded-lg hover:border-[rgba(var(--accent-rgb),0.3)] hover:bg-[rgba(var(--accent-rgb),0.04)] px-3 py-1.5 rounded-lg text-[11px] font-medium inline-flex items-center gap-1.5 cursor-pointer"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
@@ -820,7 +833,7 @@ export default function LogsClient() {
         {!selectedLog && (
           <div className="hidden lg:flex bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg w-[55%] items-center justify-center">
             <div className="text-center">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-default)] flex items-center justify-center">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-default)] flex items-center justify-center">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="text-[var(--text-muted)]">
                   <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" />
                 </svg>

@@ -71,7 +71,7 @@ function BackupCodesDisplay({
   return (
     <div>
       <div
-        className="rounded-xl p-5 mb-4"
+        className="rounded-lg p-5 mb-4"
         style={{
           background: "var(--bg-inset, var(--bg-base))",
           border: "1px solid var(--border-default)",
@@ -360,7 +360,7 @@ export default function TwoFactorSection() {
   if (loading) {
     return (
       <div
-        className="rounded-xl p-6 md:p-8"
+        className="rounded-lg p-6 md:p-8"
         style={{
           background: "var(--bg-surface)",
           border: "1px solid var(--border-default)",
@@ -378,7 +378,7 @@ export default function TwoFactorSection() {
             />
           </div>
           <div
-            className="h-24 rounded-xl"
+            className="h-24 rounded-lg"
             style={{ background: "var(--bg-base)" }}
           />
         </div>
@@ -392,7 +392,7 @@ export default function TwoFactorSection() {
   return (
     <>
       <div
-        className="rounded-xl p-6 md:p-8"
+        className="rounded-lg p-6 md:p-8"
         style={{
           background: "var(--bg-surface)",
           border: "1px solid var(--border-default)",
@@ -429,7 +429,7 @@ export default function TwoFactorSection() {
 
         {/* Status card */}
         <div
-          className="rounded-xl p-6"
+          className="rounded-lg p-6"
           style={{
             background: "var(--bg-inset, var(--bg-base))",
             border: "1px solid var(--border-default)",
@@ -440,7 +440,7 @@ export default function TwoFactorSection() {
             <>
               <div className="flex items-start gap-4 mb-5">
                 <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+                  className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0"
                   style={{
                     background: "rgba(var(--success-rgb),0.1)",
                     border: "1px solid rgba(var(--success-rgb),0.15)",
@@ -529,7 +529,7 @@ export default function TwoFactorSection() {
             <>
               <div className="flex items-start gap-4 mb-5">
                 <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+                  className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0"
                   style={{
                     background: "rgba(var(--error-rgb),0.08)",
                     border: "1px solid rgba(var(--error-rgb),0.12)",
@@ -632,7 +632,7 @@ export default function TwoFactorSection() {
                 <div className="flex flex-col sm:flex-row gap-5">
                   {/* QR Code */}
                   <div
-                    className="flex justify-center p-4 rounded-xl self-center"
+                    className="flex justify-center p-4 rounded-lg self-center"
                     style={{ background: "white" }}
                   >
                     <img
@@ -757,7 +757,7 @@ export default function TwoFactorSection() {
                       <InputOTPSlot
                         key={i}
                         index={i}
-                        className="w-12 h-14 bg-[var(--bg-inset)] border-[var(--border-default)] text-[var(--text-primary)] text-2xl font-bold font-mono rounded-lg data-[active=true]:border-[var(--accent)] data-[active=true]:ring-[rgba(0,255,167,0.12)]"
+                        className="w-12 h-14 bg-[var(--bg-inset)] border-[var(--border-default)] text-[var(--text-primary)] text-2xl font-bold font-mono rounded-lg data-[active=true]:border-[var(--accent)] data-[active=true]:ring-[rgba(var(--accent-rgb),0.12)]"
                         aria-label={`รหัสยืนยัน หลักที่ ${i + 1}`}
                       />
                     ))}
@@ -768,7 +768,7 @@ export default function TwoFactorSection() {
                       <InputOTPSlot
                         key={i}
                         index={i}
-                        className="w-12 h-14 bg-[var(--bg-inset)] border-[var(--border-default)] text-[var(--text-primary)] text-2xl font-bold font-mono rounded-lg data-[active=true]:border-[var(--accent)] data-[active=true]:ring-[rgba(0,255,167,0.12)]"
+                        className="w-12 h-14 bg-[var(--bg-inset)] border-[var(--border-default)] text-[var(--text-primary)] text-2xl font-bold font-mono rounded-lg data-[active=true]:border-[var(--accent)] data-[active=true]:ring-[rgba(var(--accent-rgb),0.12)]"
                         aria-label={`รหัสยืนยัน หลักที่ ${i + 1}`}
                       />
                     ))}
@@ -1066,7 +1066,7 @@ export default function TwoFactorSection() {
                           <InputOTPSlot
                             key={i}
                             index={i}
-                            className="w-12 h-14 bg-[var(--bg-inset)] border-[var(--border-default)] text-[var(--text-primary)] text-2xl font-bold font-mono rounded-lg data-[active=true]:border-[var(--accent)] data-[active=true]:ring-[rgba(0,255,167,0.12)]"
+                            className="w-12 h-14 bg-[var(--bg-inset)] border-[var(--border-default)] text-[var(--text-primary)] text-2xl font-bold font-mono rounded-lg data-[active=true]:border-[var(--accent)] data-[active=true]:ring-[rgba(var(--accent-rgb),0.12)]"
                           />
                         ))}
                       </InputOTPGroup>
@@ -1076,7 +1076,7 @@ export default function TwoFactorSection() {
                           <InputOTPSlot
                             key={i}
                             index={i}
-                            className="w-12 h-14 bg-[var(--bg-inset)] border-[var(--border-default)] text-[var(--text-primary)] text-2xl font-bold font-mono rounded-lg data-[active=true]:border-[var(--accent)] data-[active=true]:ring-[rgba(0,255,167,0.12)]"
+                            className="w-12 h-14 bg-[var(--bg-inset)] border-[var(--border-default)] text-[var(--text-primary)] text-2xl font-bold font-mono rounded-lg data-[active=true]:border-[var(--accent)] data-[active=true]:ring-[rgba(var(--accent-rgb),0.12)]"
                           />
                         ))}
                       </InputOTPGroup>

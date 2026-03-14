@@ -149,7 +149,7 @@ export const primaryButtonVariants: Variants = {
   idle: { scale: 1 },
   hover: {
     scale: 1.03,
-    boxShadow: "0 0 20px rgba(0, 255, 167, 0.3)",
+    boxShadow: "0 0 20px rgba(var(--accent-rgb), 0.3)",
     transition: { type: "spring", stiffness: 400, damping: 15 },
   },
   tap: {
@@ -175,12 +175,12 @@ export const iconTap = { scale: 0.9 };
 export const cardHover: Variants = {
   rest: {
     y: 0,
-    boxShadow: "0 0 0 0 rgba(0, 255, 167, 0)",
+    boxShadow: "0 0 0 0 rgba(var(--accent-rgb), 0)",
     borderColor: "#2B3540",
   },
   hover: {
     y: -4,
-    boxShadow: "0 8px 30px rgba(0, 255, 167, 0.1)",
+    boxShadow: "0 8px 30px rgba(var(--accent-rgb), 0.1)",
     borderColor: "var(--accent)",
     transition: { type: "spring", stiffness: 300, damping: 20 },
   },

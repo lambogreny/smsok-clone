@@ -70,7 +70,7 @@ function ToastItem({ toast, config, onDismiss }: { toast: Toast; config: typeof 
       animate={{ opacity: 1, x: 0, scale: 1 }}
       exit={{ opacity: 0, x: 80, scale: 0.95 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
-      className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${config.border} ${config.bg}`}
+      className={`flex items-center gap-3 px-4 py-3 rounded-lg border ${config.border} ${config.bg}`}
     >
       <span className={`w-2 h-2 rounded-full flex-shrink-0 ${config.dot}`} />
       <p className={`text-sm font-medium flex-1 ${config.text}`}>{toast.message}</p>
