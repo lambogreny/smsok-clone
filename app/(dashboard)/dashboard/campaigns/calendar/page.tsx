@@ -7,7 +7,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Megaphone,
-  Clock,
   CheckCircle2,
   XCircle,
   Repeat,

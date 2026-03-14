@@ -1,1 +1,1 @@
-npx tsc --noEmit && bun run build
+npx tsc --noEmit && rm -rf .next && bun run build

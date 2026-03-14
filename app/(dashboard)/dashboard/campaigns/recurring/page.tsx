@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import {
   Repeat,
   Plus,
@@ -11,15 +10,10 @@ import {
   Trash2,
   Play,
   Pause,
-  Clock,
   CalendarDays,
-  Users,
-  MessageSquare,
   CheckCircle2,
   X,
-  Loader2,
   Search,
-  ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatThaiDate, formatThaiDateOnly } from "@/lib/format-thai-date";
@@ -37,7 +31,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import CustomSelect from "@/components/ui/CustomSelect";
 import {
   DropdownMenu,
@@ -191,13 +184,11 @@ const PER_PAGE = 20;
 
 // ─── Main Component ──────────────────────────────────────────────────────
 export default function RecurringCampaignPage() {
-  const router = useRouter();
   const [campaigns, setCampaigns] = useState<RecurringCampaign[]>([]);
   const [filterStatus, setFilterStatus] = useState<RecurringStatus | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   // Form state
   const [formName, setFormName] = useState("");
