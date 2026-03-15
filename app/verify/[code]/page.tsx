@@ -1,8 +1,13 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { CheckCircle2, FileSearch, ShieldAlert } from "lucide-react";
 import { formatThaiDateOnly, formatThaiDateTimeShort } from "@/lib/format-thai-date";
-import { getPublicOrderDocumentVerification } from "@/lib/orders/verify";
+import {
+  checkPublicOrderDocumentVerificationRateLimit,
+  formatPublicOrderDocumentVerificationRateLimitMessage,
+  getPublicOrderDocumentVerification,
+} from "@/lib/orders/verify";
 
 type PageProps = {
   params: Promise<{ code: string }>;
@@ -23,6 +28,56 @@ function formatBaht(amount: number) {
 }
 
 export default async function VerifyDocumentPage({ params }: PageProps) {
+  const requestHeaders = await headers();
+  const rateLimit = await checkPublicOrderDocumentVerificationRateLimit(requestHeaders);
+
+  if (rateLimit.limited) {
+    return (
+      <main className="min-h-screen bg-[var(--bg-base)] px-4 py-10 text-[var(--text-primary)] sm:px-6">
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              Document Verification
+            </p>
+            <h1 className="mt-2 text-3xl font-bold">ลองใหม่ภายหลัง</h1>
+            <p className="mt-2 text-sm text-[var(--text-secondary)]">
+              ระบบจำกัดจำนวนการตรวจสอบเอกสารต่อ IP เพื่อป้องกันการไล่เดารหัสเอกสาร
+            </p>
+          </div>
+
+          <section className="rounded-2xl border border-[rgba(var(--error-rgb),0.24)] bg-[var(--bg-surface)] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.18)]">
+            <div className="flex items-start gap-4">
+              <div
+                className="flex h-14 w-14 items-center justify-center rounded-2xl"
+                style={{
+                  background: "rgba(var(--error-rgb),0.12)",
+                  color: "var(--error)",
+                }}
+              >
+                <ShieldAlert className="h-7 w-7" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-semibold">Too Many Requests</h2>
+                <p className="mt-2 text-sm text-[var(--text-secondary)]">
+                  {formatPublicOrderDocumentVerificationRateLimitMessage(rateLimit.retryAfter)}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <Link
+                href="/"
+                className="inline-flex rounded-lg border border-[var(--border-default)] px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              >
+                กลับหน้าหลัก
+              </Link>
+            </div>
+          </section>
+        </div>
+      </main>
+    );
+  }
+
   const { code } = await params;
   const verification = await getPublicOrderDocumentVerification(code);
 

@@ -1,18 +1,19 @@
-import { SkeletonCard, SkeletonTitle, TableSkeleton } from "@/components/skeletons/Skeleton";
+import { Skeleton, TableSkeleton } from "@/components/skeletons/Skeleton";
 
 export default function SendersLoading() {
   return (
     <div className="px-8 py-6 max-md:px-4 space-y-6">
-      {/* Title */}
-      <SkeletonTitle />
-      {/* Stats row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <SkeletonCard key={i} />
-        ))}
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <Skeleton className="h-7 w-[150px]" />
+          <Skeleton className="h-4 w-[260px]" />
+        </div>
+        <Skeleton className="h-10 w-[150px] rounded-lg" />
       </div>
-      {/* Table */}
-      <TableSkeleton columns={5} rows={5} />
+
+      {/* Table with 6 rows, 3 columns */}
+      <TableSkeleton columns={3} rows={6} />
     </div>
   );
 }

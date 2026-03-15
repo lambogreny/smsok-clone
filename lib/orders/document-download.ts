@@ -83,6 +83,7 @@ export async function buildOrderDocumentDownloadResponse(
         id: true,
         type: true,
         documentNumber: true,
+        verificationCode: true,
         issuedAt: true,
         pdfUrl: true,
       },
@@ -104,6 +105,7 @@ export async function buildOrderDocumentDownloadResponse(
 
     const pdfBuffer = await renderOrderAccountingDocumentPdf(order, {
       documentNumber: document.documentNumber,
+      verificationCode: document.verificationCode,
       type: PDF_TYPE_BY_DOCUMENT[document.type],
       issuedAt: document.issuedAt,
     });

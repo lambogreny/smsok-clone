@@ -33,6 +33,7 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
         id: true,
         type: true,
         documentNumber: true,
+        verificationCode: true,
         issuedAt: true,
         pdfUrl: true,
         order: {
@@ -57,6 +58,7 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
 
     const pdfBuffer = await renderOrderAccountingDocumentPdf(document.order, {
       documentNumber: document.documentNumber,
+      verificationCode: document.verificationCode,
       type: PDF_TYPE_BY_DOCUMENT[document.type],
       issuedAt: document.issuedAt,
     });

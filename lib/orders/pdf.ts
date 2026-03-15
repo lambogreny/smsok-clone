@@ -17,6 +17,7 @@ import {
 } from "@/lib/accounting/pdf/quotation-pdf";
 import { buildDocumentVerificationAssets } from "@/lib/accounting/pdf/document-verification";
 import { numberToThaiText } from "@/lib/accounting/thai-number";
+import { prisma as db } from "@/lib/db";
 
 type NumericLike = { toNumber(): number } | number;
 type PdfRenderable = Parameters<typeof renderToBuffer>[0];
@@ -186,6 +187,7 @@ async function buildOrderInvoicePdfData(
   order: OrderPdfRecord,
   options: {
     documentNumber: string;
+    verificationCode: string;
     type: InvoicePdfData["type"];
     issuedAt: Date;
     notes?: string | null;
@@ -197,7 +199,7 @@ async function buildOrderInvoicePdfData(
   const total = toNumber(order.totalAmount);
   const whtAmount = order.hasWht ? toNumber(order.whtAmount) : null;
   const netPayable = order.hasWht ? toNumber(order.payAmount) : null;
-  const verification = await buildDocumentVerificationAssets(options.documentNumber);
+  const verification = await buildDocumentVerificationAssets(options.verificationCode);
 
   return {
     invoiceNumber: options.documentNumber,
@@ -292,8 +294,13 @@ export async function renderOrderInvoicePdf(order: OrderPdfRecord) {
       ["ยอดชำระสุทธิ", toNumber(order.payAmount).toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })],
     ],
     async () => {
+      const doc = await db.orderDocument.findFirst({
+        where: { orderId: order.id, documentNumber: order.invoiceNumber!, deletedAt: null },
+        select: { verificationCode: true },
+      });
       const data = await buildOrderInvoicePdfData(order, {
         documentNumber: order.invoiceNumber!,
+        verificationCode: doc?.verificationCode ?? order.invoiceNumber!,
         type: "TAX_INVOICE_RECEIPT",
         issuedAt: order.paidAt ?? order.createdAt,
       });
@@ -309,6 +316,7 @@ export async function renderOrderAccountingDocumentPdf(
   order: OrderPdfRecord,
   options: {
     documentNumber: string;
+    verificationCode: string;
     type: "INVOICE" | "TAX_INVOICE" | "RECEIPT" | "CREDIT_NOTE";
     issuedAt: Date;
     notes?: string | null;

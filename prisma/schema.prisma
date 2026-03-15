@@ -1054,6 +1054,7 @@ model OrderDocument {
   orderId            String            @map("order_id")
   type               OrderDocumentType
   documentNumber     String            @unique @map("document_number")
+  verificationCode   String            @unique @default(uuid()) @map("verification_code")
   issuedAt           DateTime          @default(now()) @map("issued_at")
   voidedAt           DateTime?         @map("voided_at")
   voidReason         String?           @map("void_reason")

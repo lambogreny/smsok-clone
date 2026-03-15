@@ -42,7 +42,6 @@ ENV JWT_SECRET=build-only-dummy-secret-not-used-in-production
 ENV REDIS_URL=redis://localhost:6379
 ENV REDIS_HOST=localhost
 ENV REDIS_PORT=6379
-ENV R2_PUBLIC_URL=https://build-only.example.com
 ENV OTP_HASH_SECRET=build-only-dummy-otp-hash-secret
 
 RUN bun run build

@@ -154,6 +154,7 @@ async function syncOrderDocumentPdfToR2(
     id: string;
     type: OrderDocumentType;
     documentNumber: string;
+    verificationCode: string;
     issuedAt: Date;
     pdfUrl: string | null;
   },
@@ -190,6 +191,7 @@ async function syncOrderDocumentPdfToR2(
 
   const pdfBuffer = await renderOrderAccountingDocumentPdf(orderForPdf, {
     documentNumber: document.documentNumber,
+    verificationCode: document.verificationCode,
     type: document.type,
     issuedAt: document.issuedAt,
   });

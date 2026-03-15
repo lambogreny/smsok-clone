@@ -1,5 +1,8 @@
 import { ApiError, apiError, apiResponse } from "@/lib/api-auth";
-import { getPublicOrderDocumentVerification } from "@/lib/orders/verify";
+import {
+  enforcePublicOrderDocumentVerificationRateLimit,
+  getPublicOrderDocumentVerification,
+} from "@/lib/orders/verify";
 
 type RouteContext = {
   params: Promise<{ code: string }>;
@@ -7,6 +10,8 @@ type RouteContext = {
 
 export async function GET(_req: Request, ctx: RouteContext) {
   try {
+    await enforcePublicOrderDocumentVerificationRateLimit(_req.headers);
+
     const { code } = await ctx.params;
     const verification = await getPublicOrderDocumentVerification(code);
 

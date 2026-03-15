@@ -12,19 +12,19 @@ function getVerifyBaseUrl() {
   return baseUrl.replace(/\/+$/, "");
 }
 
-export function buildDocumentVerificationUrl(documentNumber: string) {
+export function buildDocumentVerificationUrl(verificationCode: string) {
   const baseUrl = getVerifyBaseUrl();
-  const encodedDocumentNumber = encodeURIComponent(documentNumber);
+  const encoded = encodeURIComponent(verificationCode);
 
   if (baseUrl.endsWith("/verify")) {
-    return `${baseUrl}/${encodedDocumentNumber}`;
+    return `${baseUrl}/${encoded}`;
   }
 
-  return `${baseUrl}/verify/${encodedDocumentNumber}`;
+  return `${baseUrl}/verify/${encoded}`;
 }
 
-export async function buildDocumentVerificationAssets(documentNumber: string) {
-  const verificationUrl = buildDocumentVerificationUrl(documentNumber);
+export async function buildDocumentVerificationAssets(verificationCode: string) {
+  const verificationUrl = buildDocumentVerificationUrl(verificationCode);
   const verificationQrDataUrl = await QRCode.toDataURL(verificationUrl, {
     margin: 0,
     width: 128,

@@ -2,8 +2,17 @@ import Redis from "ioredis";
 import { logger } from "@/lib/logger";
 
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
+const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build";
 
-function createRedisClient() {
+function createRedisClient(): Redis {
+  if (isBuildPhase) {
+    // During Next.js build, return a lazy client that won't attempt connection
+    const client = new Redis({ lazyConnect: true, enableOfflineQueue: false });
+    // Disconnect immediately to prevent any connection attempts
+    client.disconnect();
+    return client;
+  }
+
   const client = new Redis(REDIS_URL, {
     maxRetriesPerRequest: 3,
     retryStrategy(times) {
