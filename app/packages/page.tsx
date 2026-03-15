@@ -152,7 +152,7 @@ function PackageCard({ pkg, compact = false }: { pkg: Package; compact?: boolean
             : "bg-transparent text-[var(--accent)] border border-[rgba(var(--accent-rgb),0.3)] hover:bg-[rgba(var(--accent-rgb),0.08)]",
         )}
         size="lg"
-        onClick={() => router.push(`/dashboard/billing/checkout?packageId=${pkg.tier}`)}
+        onClick={() => router.push(`/dashboard/billing/checkout?packageId=${encodeURIComponent(pkg.tier)}`)}
       >
         เลือกแพ็กเกจนี้
       </Button>

@@ -1,21 +1,20 @@
 import { NextRequest } from "next/server";
-import { ApiError, apiResponse, apiError } from "@/lib/api-auth";
-import { getSession } from "@/lib/auth";
+import { ApiError, apiResponse, apiError, authenticateRequest } from "@/lib/api-auth";
 import { prisma as db } from "@/lib/db";
 type Ctx = { params: Promise<{ id: string }> };
 
 // GET /api/v1/tickets/:id — ticket detail with replies + attachments
 export async function GET(req: NextRequest, ctx: Ctx) {
   try {
-    const session = await getSession();
+    const session = await authenticateRequest(req);
     if (!session?.id) throw new ApiError(401, "กรุณาเข้าสู่ระบบ");
     const { id } = await ctx.params;
 
-    const ticket = await db.supportTicket.findUnique({
-      where: { id },
+    // Auth-first: query with both id AND userId to prevent IDOR
+    const ticket = await db.supportTicket.findFirst({
+      where: { id, userId: session.id },
       select: {
         id: true,
-        userId: true,
         subject: true,
         description: true,
         status: true,
@@ -48,10 +47,8 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     });
 
     if (!ticket) throw new ApiError(404, "ไม่พบ Ticket");
-    if (ticket.userId !== session.id) throw new ApiError(403, "ไม่มีสิทธิ์เข้าถึง Ticket นี้");
 
-    const { userId: _, ...ticketData } = ticket;
-    return apiResponse(ticketData);
+    return apiResponse(ticket);
   } catch (error) {
     return apiError(error);
   }

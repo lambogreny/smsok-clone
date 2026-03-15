@@ -500,7 +500,12 @@ export default function CheckoutPage() {
 
       const data = await res.json();
       toast.success("สร้างคำสั่งซื้อสำเร็จ");
-      router.push(`/dashboard/billing/orders/${data.id}`);
+      const orderId = String(data.id ?? "");
+      if (/^[a-zA-Z0-9_-]+$/.test(orderId)) {
+        router.push(`/dashboard/billing/orders/${orderId}`);
+      } else {
+        router.push("/dashboard/billing");
+      }
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : "เกิดข้อผิดพลาด"

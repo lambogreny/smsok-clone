@@ -1,6 +1,5 @@
 import { NextRequest } from "next/server";
-import { ApiError, apiResponse, apiError } from "@/lib/api-auth";
-import { getSession } from "@/lib/auth";
+import { ApiError, apiResponse, apiError, authenticateRequest } from "@/lib/api-auth";
 import { prisma as db } from "@/lib/db";
 import { z } from "zod";
 
@@ -13,20 +12,20 @@ type Ctx = { params: Promise<{ id: string }> };
 // POST /api/v1/tickets/:id/reply — add reply to ticket
 export async function POST(req: NextRequest, ctx: Ctx) {
   try {
-    const session = await getSession();
+    const session = await authenticateRequest(req);
     if (!session?.id) throw new ApiError(401, "กรุณาเข้าสู่ระบบ");
     const { id } = await ctx.params;
     const input = replySchema.parse(await req.json());
 
-    // Verify ticket belongs to user and is not closed
-    const ticket = await db.supportTicket.findUnique({
-      where: { id },
-      select: { id: true, userId: true, status: true },
+    // Auth-first: query with userId to prevent IDOR
+    const ticket = await db.supportTicket.findFirst({
+      where: { id, userId: session.id },
+      select: { id: true, status: true },
     });
 
     if (!ticket) throw new ApiError(404, "ไม่พบ Ticket");
-    if (ticket.userId !== session.id) throw new ApiError(403, "ไม่มีสิทธิ์เข้าถึง Ticket นี้");
     if (ticket.status === "CLOSED") throw new ApiError(400, "Ticket นี้ปิดแล้ว ไม่สามารถตอบกลับได้");
+    if (ticket.status === "IN_PROGRESS") throw new ApiError(400, "Ticket อยู่ระหว่างดำเนินการ กรุณารอเจ้าหน้าที่ตอบกลับ");
 
     // Create reply + update ticket status to OPEN (customer replied)
     const [reply] = await db.$transaction([

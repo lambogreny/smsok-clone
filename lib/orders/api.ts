@@ -57,6 +57,7 @@ export const orderDetailSelect = {
       id: true,
       type: true,
       documentNumber: true,
+      verificationCode: true,
       issuedAt: true,
       voidedAt: true,
       voidReason: true,

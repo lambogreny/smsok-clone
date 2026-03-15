@@ -16,6 +16,7 @@ import {
   ClipboardList,
   SendHorizonal,
   AlertCircle,
+  ShieldCheck,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -71,9 +72,10 @@ type FormData = {
   category: string;
   priority: string;
   description: string;
+  pdpaConsent: boolean;
 };
 
-type FormErrors = Partial<Record<keyof FormData, string>>;
+type FormErrors = Partial<Record<keyof FormData | "pdpaConsent", string>>;
 
 /* ─── Stepper Component ─── */
 
@@ -404,6 +406,45 @@ function StepDetails({
         </div>
       </div>
 
+      {/* PDPA Consent */}
+      <div className="pt-1">
+        <label className="flex items-start gap-3 cursor-pointer group">
+          <div className="relative mt-0.5">
+            <input
+              type="checkbox"
+              checked={form.pdpaConsent}
+              onChange={(e) => updateField("pdpaConsent", e.target.checked)}
+              className="peer sr-only"
+            />
+            <div className={`w-5 h-5 rounded border-2 transition-all flex items-center justify-center ${
+              form.pdpaConsent
+                ? "bg-[var(--accent)] border-[var(--accent)]"
+                : errors.pdpaConsent
+                  ? "border-[var(--error)]"
+                  : "border-[var(--border-default)] group-hover:border-[var(--text-muted)]"
+            }`}>
+              {form.pdpaConsent && <Check className="w-3 h-3 text-[var(--bg-base)]" />}
+            </div>
+          </div>
+          <div className="flex-1">
+            <span className="text-sm text-[var(--text-secondary)] leading-relaxed">
+              <ShieldCheck className="w-3.5 h-3.5 inline mr-1 text-[var(--accent)]" />
+              ข้าพเจ้ายินยอมให้ SMSOK เก็บรวบรวม ใช้ และเปิดเผยข้อมูลส่วนบุคคลที่ให้ไว้ในตั๋วนี้
+              เพื่อวัตถุประสงค์ในการให้บริการสนับสนุนลูกค้าตาม{" "}
+              <a href="/privacy" target="_blank" className="text-[var(--accent)] hover:underline">
+                นโยบายความเป็นส่วนตัว
+              </a>
+            </span>
+            {errors.pdpaConsent && (
+              <p className="text-[11px] text-[var(--error)] flex items-center gap-1 mt-1">
+                <AlertCircle className="w-3 h-3" />
+                {errors.pdpaConsent}
+              </p>
+            )}
+          </div>
+        </label>
+      </div>
+
       {/* Actions */}
       <div className="flex items-center justify-between pt-2">
         <Button
@@ -554,6 +595,7 @@ export default function NewSupportTicketPage() {
     category: "",
     priority: "MEDIUM",
     description: "",
+    pdpaConsent: false,
   });
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -577,6 +619,10 @@ export default function NewSupportTicketPage() {
       newErrors.description = `กรุณากรอกอย่างน้อย 20 ตัวอักษร (ขณะนี้ ${form.description.trim().length} ตัวอักษร)`;
     } else if (form.description.trim().length > 2000) {
       newErrors.description = "รายละเอียดต้องไม่เกิน 2,000 ตัวอักษร";
+    }
+
+    if (!form.pdpaConsent) {
+      newErrors.pdpaConsent = "กรุณายินยอมข้อกำหนดความเป็นส่วนตัว";
     }
 
     setErrors(newErrors);
@@ -608,6 +654,7 @@ export default function NewSupportTicketPage() {
           description: form.description.trim(),
           category: form.category,
           priority: form.priority,
+          pdpaConsent: form.pdpaConsent,
         }),
       });
 
@@ -620,7 +667,13 @@ export default function NewSupportTicketPage() {
       toast.success("สร้างตั๋วสำเร็จ", {
         description: `ตั๋ว #${data.id ?? ""} ถูกสร้างแล้ว`,
       });
-      router.push(`/dashboard/support/${data.id ?? ""}`);
+      // Validate ticket ID format before redirect (prevent open redirect)
+      const ticketId = String(data.id ?? "");
+      if (/^[a-zA-Z0-9_-]+$/.test(ticketId)) {
+        router.push(`/dashboard/support/${ticketId}`);
+      } else {
+        router.push("/dashboard/support");
+      }
     } catch (err) {
       toast.error("เกิดข้อผิดพลาด", {
         description:

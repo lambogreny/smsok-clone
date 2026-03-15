@@ -107,6 +107,7 @@ type Props = {
   onboardingSteps?: string[];
   showOnboarding?: boolean;
   accountStatus?: AccountStatus;
+  alerts?: SmartAlert[];
 };
 
 /* ── Package Upgrade Banner ── */
@@ -974,6 +975,7 @@ export default function DashboardContent({
   onboardingSteps = [],
   showOnboarding = false,
   accountStatus,
+  alerts = [],
 }: Props) {
   const sparklineData = stats?.last7Days?.map((d) => d.sms) ?? [];
 
@@ -995,8 +997,11 @@ export default function DashboardContent({
         </Link>
       </div>
 
-      {/* ── Alert Bar (conditional) ── */}
-      <AlertBar quota={quota} />
+      {/* ── Package Upgrade Banner (conditional) ── */}
+      <PackageUpgradeBanner quota={quota} />
+
+      {/* ── Smart Alert Cards ── */}
+      <SmartAlertCards alerts={alerts} />
 
       {/* ── Onboarding Checklist (conditional) ── */}
       {showOnboarding && <OnboardingChecklist completedSteps={onboardingSteps} />}

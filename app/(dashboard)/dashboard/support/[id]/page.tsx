@@ -245,6 +245,8 @@ export default function TicketDetailPage() {
   const status = statusConfig[ticket.status] || statusConfig.OPEN;
   const priority = priorityConfig[ticket.priority] || priorityConfig.LOW;
   const isClosed = ticket.status === "CLOSED";
+  const isInProgress = ticket.status === "IN_PROGRESS";
+  const canReply = !isClosed && !isInProgress;
 
   return (
     <div className="h-full flex flex-col">
@@ -426,7 +428,7 @@ export default function TicketDetailPage() {
       </div>
 
       {/* ===== Reply Composer ===== */}
-      {!isClosed ? (
+      {canReply ? (
         <motion.div
           className="shrink-0 p-4 sm:p-6 border-t border-[var(--border-default)] bg-[var(--bg-base)]"
           initial={{ opacity: 0, y: 20 }}
@@ -475,7 +477,9 @@ export default function TicketDetailPage() {
         <div className="shrink-0 p-4 sm:p-6 border-t border-[var(--border-default)] bg-[var(--bg-base)]">
           <div className="flex items-center justify-center gap-2 py-3 text-sm text-[var(--text-muted)]">
             <XCircle size={14} />
-            ตั๋วนี้ถูกปิดแล้ว ไม่สามารถส่งข้อความเพิ่มได้
+            {isClosed
+              ? "ตั๋วนี้ถูกปิดแล้ว ไม่สามารถส่งข้อความเพิ่มได้"
+              : "ตั๋วอยู่ระหว่างดำเนินการ กรุณารอเจ้าหน้าที่ตอบกลับ"}
           </div>
         </div>
       )}

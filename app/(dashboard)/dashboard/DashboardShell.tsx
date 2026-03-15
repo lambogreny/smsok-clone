@@ -377,7 +377,7 @@ export default function DashboardShell({
                     <DropdownMenuItem key={n.id} className="flex items-start gap-3 px-3 py-2.5 cursor-pointer">
                       <div className={cn(
                         "w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5",
-                        n.type === "sms_success" && "bg-[rgba(16,185,129,0.1)] text-emerald-400",
+                        n.type === "sms_success" && "bg-[rgba(var(--success-rgb),0.1)] text-[var(--success)]",
                         n.type === "sms_failed" && "bg-[rgba(var(--error-rgb,239,68,68),0.1)] text-[var(--error)]",
                         n.type === "topup" && "bg-[rgba(var(--accent-secondary-rgb,50,152,218),0.1)] text-[var(--accent-secondary)]",
                         !["sms_success", "sms_failed", "topup"].includes(n.type) && "bg-[rgba(var(--accent-rgb),0.1)] text-[var(--accent)]"

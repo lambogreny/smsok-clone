@@ -477,6 +477,116 @@ function NotificationsContent({
   );
 }
 
+// ── Push Notification Opt-In ──
+
+function PushNotificationOptIn() {
+  const [permission, setPermission] = useState<NotificationPermission | "unsupported">("default");
+  const [subscribing, setSubscribing] = useState(false);
+
+  useEffect(() => {
+    if (!("Notification" in window)) {
+      setPermission("unsupported");
+    } else {
+      setPermission(Notification.permission);
+    }
+  }, []);
+
+  async function handleEnable() {
+    if (!("Notification" in window)) {
+      toast.error("เบราว์เซอร์นี้ไม่รองรับ Push Notification");
+      return;
+    }
+    setSubscribing(true);
+    try {
+      const result = await Notification.requestPermission();
+      setPermission(result);
+      if (result === "granted") {
+        toast.success("เปิดการแจ้งเตือนเรียบร้อย");
+      } else if (result === "denied") {
+        toast.error("การแจ้งเตือนถูกปิด กรุณาเปิดในการตั้งค่าเบราว์เซอร์");
+      }
+    } catch {
+      toast.error("ไม่สามารถขออนุญาตได้");
+    } finally {
+      setSubscribing(false);
+    }
+  }
+
+  const isGranted = permission === "granted";
+  const isDenied = permission === "denied";
+  const isUnsupported = permission === "unsupported";
+
+  return (
+    <div
+      className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg p-6 md:p-8"
+    >
+      <h2 className="text-base font-semibold text-[var(--text-primary)] mb-1 flex items-center gap-2.5">
+        <div className="w-8 h-8 rounded-lg bg-[rgba(var(--accent-rgb),0.1)] border border-[rgba(var(--accent-rgb),0.15)] flex items-center justify-center">
+          <Globe size={16} className="text-[var(--accent)]" />
+        </div>
+        Push Notification
+      </h2>
+      <p className="text-xs text-[var(--text-muted)] mb-5 ml-[42px]">
+        รับการแจ้งเตือนผ่านเบราว์เซอร์แม้ไม่ได้เปิดเว็บไซต์
+      </p>
+
+      <div className="flex items-center justify-between p-4 rounded-lg" style={{ background: "var(--bg-base)", border: "1px solid var(--border-default)" }}>
+        <div className="flex items-center gap-3 min-w-0">
+          <div
+            className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+            style={{
+              background: isGranted ? "rgba(var(--success-rgb),0.1)" : "rgba(var(--text-muted-rgb),0.08)",
+            }}
+          >
+            <Bell
+              size={18}
+              style={{
+                color: isGranted ? "var(--success)" : "var(--text-muted)",
+              }}
+            />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-[var(--text-primary)]">
+              {isGranted ? "เปิดอยู่" : isDenied ? "ถูกบล็อก" : isUnsupported ? "ไม่รองรับ" : "ปิดอยู่"}
+            </p>
+            <p className="text-xs text-[var(--text-muted)]">
+              {isGranted
+                ? "คุณจะได้รับแจ้งเตือนผ่านเบราว์เซอร์"
+                : isDenied
+                ? "กรุณาเปิดใหม่ในการตั้งค่าเบราว์เซอร์"
+                : isUnsupported
+                ? "เบราว์เซอร์นี้ไม่รองรับ Push Notification"
+                : "เปิดเพื่อรับแจ้งเตือนแม้ไม่ได้เปิดเว็บ"}
+            </p>
+          </div>
+        </div>
+
+        {!isGranted && !isDenied && !isUnsupported && (
+          <button
+            type="button"
+            onClick={handleEnable}
+            disabled={subscribing}
+            className="px-4 py-2 rounded-lg text-xs font-semibold transition-colors shrink-0"
+            style={{
+              background: "var(--accent)",
+              color: "var(--bg-base)",
+            }}
+          >
+            {subscribing ? "กำลังขออนุญาต..." : "เปิดการแจ้งเตือน"}
+          </button>
+        )}
+
+        {isGranted && (
+          <span className="text-xs font-medium text-[var(--success)] flex items-center gap-1.5 shrink-0">
+            <span className="w-2 h-2 rounded-full bg-[var(--success)]" />
+            Active
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function DangerZone() {
   return (
     <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg p-6 md:p-8 border-[rgba(var(--error-rgb,239,68,68),0.1)]">
@@ -864,13 +974,14 @@ export default function SettingsContent({
 
           {/* Notifications Tab */}
           {activeTab === "notifications" && (
-            <div role="tabpanel" id="settings-panel-notifications" aria-labelledby="settings-tab-notifications">
+            <div role="tabpanel" id="settings-panel-notifications" aria-labelledby="settings-tab-notifications" className="space-y-6">
               <NotificationsContent
                 notifPrefs={notifPrefs}
                 toggleNotif={toggleNotif}
                 savingId={savingId}
                 apiUnavailable={apiUnavailable}
               />
+              <PushNotificationOptIn />
             </div>
           )}
         </div>

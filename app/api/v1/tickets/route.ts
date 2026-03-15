@@ -1,6 +1,5 @@
 import { NextRequest } from "next/server";
-import { ApiError, apiResponse, apiError } from "@/lib/api-auth";
-import { getSession } from "@/lib/auth";
+import { ApiError, apiResponse, apiError, authenticateRequest } from "@/lib/api-auth";
 import { prisma as db } from "@/lib/db";
 import { z } from "zod";
 
@@ -17,12 +16,13 @@ const createSchema = z.object({
   description: z.string().min(1).max(5000),
   category: z.enum(["BILLING", "TECHNICAL", "SENDER_NAME", "DELIVERY", "ACCOUNT", "GENERAL"]),
   priority: z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]).default("MEDIUM"),
+  pdpaConsent: z.boolean().refine((v) => v === true, { message: "กรุณายินยอมข้อกำหนด PDPA" }),
 });
 
 // GET /api/v1/tickets — list user's tickets
 export async function GET(req: NextRequest) {
   try {
-    const session = await getSession();
+    const session = await authenticateRequest(req);
     if (!session?.id) throw new ApiError(401, "กรุณาเข้าสู่ระบบ");
     const params = Object.fromEntries(new URL(req.url).searchParams);
     const input = listSchema.parse(params);
@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
 // POST /api/v1/tickets — create ticket
 export async function POST(req: NextRequest) {
   try {
-    const session = await getSession();
+    const session = await authenticateRequest(req);
     if (!session?.id) throw new ApiError(401, "กรุณาเข้าสู่ระบบ");
     const input = createSchema.parse(await req.json());
 

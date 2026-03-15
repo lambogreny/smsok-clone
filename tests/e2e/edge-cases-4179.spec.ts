@@ -37,11 +37,14 @@ test.describe("EDGE-01: Login Edge Cases", () => {
   test("EDGE-01-02: Login with SQL injection attempt", async ({ page }) => {
     await page.goto("/login");
     await page.waitForLoadState("networkidle");
+    // Dismiss cookie consent if present
+    const cookieBtn = page.locator('button:has-text("ยอมรับ"), button:has-text("Accept"), button:has-text("ตกลง")').first();
+    if (await cookieBtn.count() > 0) await cookieBtn.click().catch(() => {});
     await page.fill('input[name="email"], input[type="email"]', "admin@test.com");
     await page.fill('input[name="password"], input[type="password"]', "' OR '1'='1");
     const submitBtn = page.locator('button[type="submit"]');
     if (await submitBtn.isEnabled()) {
-      await submitBtn.click();
+      await submitBtn.click({ force: true });
       await page.waitForTimeout(3000);
     }
     await page.screenshot({ path: "test-results/edge-01-02-sql-injection.png", fullPage: true });
@@ -53,11 +56,14 @@ test.describe("EDGE-01: Login Edge Cases", () => {
   test("EDGE-01-03: Login with XSS attempt", async ({ page }) => {
     await page.goto("/login");
     await page.waitForLoadState("networkidle");
+    // Dismiss cookie consent if present
+    const cookieBtn = page.locator('button:has-text("ยอมรับ"), button:has-text("Accept"), button:has-text("ตกลง")').first();
+    if (await cookieBtn.count() > 0) await cookieBtn.click().catch(() => {});
     await page.fill('input[name="email"], input[type="email"]', "xss@test.com");
     await page.fill('input[name="password"], input[type="password"]', "<img src=x onerror=alert(1)>");
     const submitBtn = page.locator('button[type="submit"]');
     if (await submitBtn.isEnabled()) {
-      await submitBtn.click();
+      await submitBtn.click({ force: true });
       await page.waitForTimeout(3000);
     }
     await page.screenshot({ path: "test-results/edge-01-03-xss.png", fullPage: true });

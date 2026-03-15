@@ -455,11 +455,36 @@ export default function PricingPage() {
         </div>
 
         {/* ═══ Pricing Cards ═══ */}
-        <div className="mb-20 grid grid-cols-1 items-start gap-6 md:grid-cols-3 lg:gap-4">
-          {tiers.map((tier) => (
-            <PricingCard key={tier.id} tier={tier} onSelect={setSelectedTier} />
-          ))}
-        </div>
+        {loading ? (
+          <div className="mb-20 grid grid-cols-1 items-start gap-6 md:grid-cols-3 lg:gap-4">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="flex flex-col rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] p-8 animate-pulse"
+              >
+                <div className="mb-4 h-11 w-11 rounded-lg bg-[var(--bg-muted)]" />
+                <div className="h-6 w-28 rounded bg-[var(--bg-muted)] mb-2" />
+                <div className="h-4 w-40 rounded bg-[var(--bg-muted)] mb-6" />
+                <div className="h-10 w-32 rounded bg-[var(--bg-muted)] mb-2" />
+                <div className="h-4 w-24 rounded bg-[var(--bg-muted)] mb-2" />
+                <div className="h-3 w-36 rounded bg-[var(--bg-muted)] mb-6" />
+                <div className="h-px w-full bg-[var(--border-default)] mb-6" />
+                <div className="space-y-3 mb-8">
+                  {[1, 2, 3, 4, 5].map((j) => (
+                    <div key={j} className="h-4 w-full rounded bg-[var(--bg-muted)]" />
+                  ))}
+                </div>
+                <div className="h-12 w-full rounded-md bg-[var(--bg-muted)]" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="mb-20 grid grid-cols-1 items-start gap-6 md:grid-cols-3 lg:gap-4">
+            {tiers.map((tier) => (
+              <PricingCard key={tier.id} tier={tier} onSelect={setSelectedTier} />
+            ))}
+          </div>
+        )}
 
         {/* ═══ Confirm Purchase Dialog ═══ */}
         <AlertDialog open={!!selectedTier} onOpenChange={(open) => { if (!open) setSelectedTier(null); }}>
@@ -474,7 +499,7 @@ export default function PricingPage() {
                 ยืนยันเลือกแพ็กเกจ {selectedTier?.name}
               </AlertDialogTitle>
               <AlertDialogDescription className="text-sm text-[var(--text-secondary)]">
-                <span className="block space-y-3">
+                <div className="space-y-3">
                   <div className="rounded-lg p-4 space-y-2" style={{ background: "var(--bg-base)", border: "1px solid var(--border-default)" }}>
                     <div className="flex justify-between">
                       <span>แพ็กเกจ</span>
@@ -501,7 +526,7 @@ export default function PricingPage() {
                   <p className="text-xs text-[var(--text-muted)]">
                     คุณจะถูกนำไปหน้ากรอกข้อมูลสำหรับออกใบกำกับภาษี
                   </p>
-                </span>
+                </div>
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -512,7 +537,7 @@ export default function PricingPage() {
                 className="bg-[var(--accent)] text-[var(--text-on-accent)] hover:brightness-110"
                 onClick={() => {
                   if (selectedTier) {
-                    router.push(`/dashboard/billing/checkout?packageId=${selectedTier.id}`);
+                    router.push(`/dashboard/billing/checkout?packageId=${encodeURIComponent(selectedTier.id)}`);
                   }
                 }}
               >

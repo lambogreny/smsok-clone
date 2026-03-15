@@ -45,7 +45,7 @@ function getNotifColor(type: NotifType) {
   switch (type) {
     case "sms_success":
     case "sender_approved":
-      return "bg-[rgba(16,185,129,0.1)] text-emerald-400";
+      return "bg-[rgba(var(--success-rgb),0.1)] text-[var(--success)]";
     case "sms_failed":
     case "sender_rejected":
       return "bg-[rgba(var(--error-rgb,239,68,68),0.1)] text-[var(--error)]";
