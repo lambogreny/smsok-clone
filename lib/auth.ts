@@ -2,6 +2,7 @@ import { randomBytes } from "crypto";
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
+import * as argon2 from "argon2";
 import { prisma } from "./db";
 import { redis } from "./redis";
 import { env } from "./env";
@@ -402,8 +403,13 @@ export async function hashPassword(password: string) {
       timeCost: 2,
     });
   }
-  // Fallback: bcrypt when running under Node.js (e.g. next dev)
-  return bcrypt.hash(password, 12);
+  // Node.js fallback: argon2id via argon2 package (OWASP recommended params)
+  return argon2.hash(password, {
+    type: argon2.argon2id,
+    memoryCost: 19456,
+    timeCost: 2,
+    parallelism: 1,
+  });
 }
 
 /**
@@ -413,12 +419,9 @@ export async function verifyPassword(password: string, hash: string) {
   if (hasBunRuntime) {
     return Bun.password.verify(password, hash);
   }
-  // Fallback: bcrypt.compare handles both bcrypt and argon2id-prefixed hashes
-  // For bcrypt hashes ($2b$), bcryptjs works. For argon2id, this will fail gracefully.
-  if (hash.startsWith("$argon2id$")) {
-    // Cannot verify argon2id without Bun runtime — log warning
-    logger.warn("Cannot verify argon2id hash without Bun runtime, rejecting");
-    return false;
+  // Node.js fallback: argon2 package for argon2id, bcryptjs for legacy bcrypt
+  if (hash.startsWith("$argon2")) {
+    return argon2.verify(hash, password);
   }
   return bcrypt.compare(password, hash);
 }
@@ -441,7 +444,7 @@ export async function verifyAndMigratePassword(
   const valid = await verifyPassword(password, currentHash);
   if (!valid) return { valid: false };
 
-  if (hasBunRuntime && needsRehash(currentHash)) {
+  if (needsRehash(currentHash)) {
     const newHash = await hashPassword(password);
     return { valid: true, newHash };
   }

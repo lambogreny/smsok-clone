@@ -53,6 +53,7 @@
     "@radix-ui/react-label": "^2.1.8",
     "@react-pdf/renderer": "^4.3.2",
     "@sentry/nextjs": "^10.43.0",
+    "argon2": "^0.44.0",
     "bcryptjs": "^3.0.3",
     "bullmq": "^5.70.4",
     "class-variance-authority": "^0.7.1",
