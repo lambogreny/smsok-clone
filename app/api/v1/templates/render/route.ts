@@ -4,6 +4,7 @@ import { requireApiPermission } from "@/lib/rbac";
 import { substituteVariables, extractVariables } from "@/lib/template-utils";
 import { prisma as db } from "@/lib/db";
 import { templateRenderSchema } from "@/lib/validations";
+import { getSmsSegmentMetrics } from "@/lib/package/quota";
 
 // POST /api/v1/templates/render
 // Body: { templateId: "xxx", variables: { name: "John", phone: "089..." } }
@@ -39,19 +40,16 @@ export async function POST(req: NextRequest) {
     const rendered = substituteVariables(content, variables);
     const missingVars = requiredVars.filter((v) => !(v in variables));
 
-    const hasThai = /[\u0E00-\u0E7F]/.test(rendered);
-    const hasNonGsm = /[^\x00-\x7F]/.test(rendered);
-    const encoding = hasThai || hasNonGsm ? "UCS-2" : "GSM-7";
-    const charsPerSegment = encoding === "UCS-2" ? 70 : 160;
+    const metrics = getSmsSegmentMetrics(rendered);
 
     return apiResponse({
       rendered,
       variables: requiredVars,
       missing: missingVars,
-      charCount: rendered.length,
-      encoding,
-      charsPerSegment,
-      smsCount: Math.max(1, Math.ceil(rendered.length / charsPerSegment)),
+      charCount: metrics.charCount,
+      encoding: metrics.encoding,
+      charsPerSegment: metrics.singleLimit,
+      smsCount: metrics.segments,
     });
   } catch (error) {
     return apiError(error);

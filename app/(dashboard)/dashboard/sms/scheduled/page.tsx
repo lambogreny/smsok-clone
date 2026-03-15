@@ -193,6 +193,7 @@ function StatCard({
 export default function ScheduledSmsPage() {
   const [items, setItems] = useState<ScheduledSms[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
@@ -202,6 +203,7 @@ export default function ScheduledSmsPage() {
 
   const fetchScheduled = useCallback(async () => {
     setLoading(true);
+    setLoadError(false);
     try {
       const res = await fetch("/api/v1/sms/scheduled");
       if (!res.ok) throw new Error();
@@ -222,6 +224,7 @@ export default function ScheduledSmsPage() {
       );
     } catch {
       setItems([]);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -342,6 +345,24 @@ export default function ScheduledSmsPage() {
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <Loader2 className="w-8 h-8 animate-spin text-[var(--accent)]" />
           <span className="text-[13px] text-[var(--text-muted)]">กำลังโหลด...</span>
+        </div>
+      ) : loadError ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-3">
+          <div className="w-14 h-14 rounded-lg bg-[rgba(var(--error-rgb),0.08)] flex items-center justify-center">
+            <AlertTriangle className="w-7 h-7 text-[var(--error)]" />
+          </div>
+          <p className="text-[15px] font-medium text-[var(--text-primary)]">
+            โหลดข้อมูลไม่สำเร็จ
+          </p>
+          <p className="text-[13px] text-[var(--text-muted)]">
+            เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่
+          </p>
+          <Button
+            onClick={fetchScheduled}
+            className="gap-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] mt-2"
+          >
+            <RefreshCw className="w-4 h-4" /> ลองใหม่
+          </Button>
         </div>
       ) : items.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
@@ -533,10 +554,12 @@ function CreateScheduledSmsDialog({
   const [creating, setCreating] = useState(false);
 
   const charCount = message.length;
-  // GSM-7: 160 chars/segment, UCS-2 (Thai/emoji): 70 chars/segment
+  // GSM-7: 160/153 chars, UCS-2 (Thai/emoji): 70/67 chars (multi-segment uses shorter limit)
   const isGsm7 = /^[\x20-\x7E\n\r]*$/.test(message);
-  const charsPerSegment = isGsm7 ? 160 : 70;
-  const smsCount = charCount === 0 ? 0 : Math.ceil(charCount / charsPerSegment);
+  const singleLimit = isGsm7 ? 160 : 70;
+  const multiLimit = isGsm7 ? 153 : 67;
+  const charsPerSegment = singleLimit;
+  const smsCount = charCount === 0 ? 0 : charCount <= singleLimit ? 1 : Math.ceil(charCount / multiLimit);
   const isValidPhone = phoneNumber.trim().length >= 9;
 
   async function handleCreate() {

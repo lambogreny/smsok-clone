@@ -4,21 +4,8 @@ import { prisma as db } from "../db";
 import { revalidatePath } from "next/cache";
 import { templateSchema } from "../validations";
 import { resolveActionUserId, type InternalActionUserToken } from "../action-user";
-
-/** Extract {{varName}} from template content */
-function extractVariables(content: string): string[] {
-  const matches = content.match(/\{\{(\w+)(?:\|[^}]*)?\}\}/g) ?? [];
-  const vars = matches.map((m) => m.replace(/\{\{(\w+)(?:\|[^}]*)?\}\}/, "$1"));
-  return [...new Set(vars)];
-}
-
-/** Calculate SMS segments: Thai = UCS-2 (70 chars/seg), ASCII = GSM-7 (160 chars/seg) */
-function calculateSegments(content: string): number {
-  const hasThai = /[\u0E00-\u0E7F]/.test(content);
-  const hasNonGsm = /[^\x00-\x7F]/.test(content);
-  const charsPerSegment = hasThai || hasNonGsm ? 70 : 160;
-  return Math.max(1, Math.ceil(content.length / charsPerSegment));
-}
+import { extractVariables } from "../template-utils";
+import { calculateSmsSegments } from "../package/quota";
 
 // ==========================================
 // List templates
@@ -55,7 +42,7 @@ export async function createTemplate(userIdOrData: string | unknown, maybeData?:
   }
 
   const variables = extractVariables(input.content);
-  const segmentCount = calculateSegments(input.content);
+  const segmentCount = calculateSmsSegments(input.content);
 
   const template = await db.messageTemplate.create({
     data: {
@@ -100,7 +87,7 @@ export async function updateTemplate(userIdOrTemplateId: string, templateIdOrDat
 
   if (input.content !== undefined) {
     updateData.variables = extractVariables(newContent);
-    updateData.segmentCount = calculateSegments(newContent);
+    updateData.segmentCount = calculateSmsSegments(newContent);
   }
 
   const updated = await db.messageTemplate.update({

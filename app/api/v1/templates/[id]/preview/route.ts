@@ -2,17 +2,12 @@ import { NextRequest } from "next/server";
 import { ApiError, apiResponse, apiError, authenticateRequest } from "@/lib/api-auth";
 import { prisma as db } from "@/lib/db";
 import { z } from "zod";
+import { substituteVariables } from "@/lib/template-utils";
+import { getSmsSegmentMetrics } from "@/lib/package/quota";
 
 const previewSchema = z.object({
   variables: z.record(z.string(), z.string()).default({}),
 });
-
-function calculateSegments(content: string): number {
-  const hasThai = /[\u0E00-\u0E7F]/.test(content);
-  const hasNonGsm = /[^\x00-\x7F]/.test(content);
-  const charsPerSegment = hasThai || hasNonGsm ? 70 : 160;
-  return Math.max(1, Math.ceil(content.length / charsPerSegment));
-}
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -33,25 +28,15 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       throw new ApiError(403, "ไม่มีสิทธิ์เข้าถึง Template นี้");
     }
 
-    // Replace {{varName}} and {{varName|default}} with provided values or defaults
-    const rendered = template.content.replace(
-      /\{\{(\w+)(?:\|([^}]*))?\}\}/g,
-      (_, varName: string, defaultVal?: string) => {
-        return input.variables[varName] ?? defaultVal ?? `{{${varName}}}`;
-      },
-    );
-
-    const hasThai = /[\u0E00-\u0E7F]/.test(rendered);
-    const hasNonGsm = /[^\x00-\x7F]/.test(rendered);
-    const encoding = hasThai || hasNonGsm ? "UCS-2" : "GSM-7";
-    const charsPerSegment = encoding === "UCS-2" ? 70 : 160;
+    const rendered = substituteVariables(template.content, input.variables);
+    const metrics = getSmsSegmentMetrics(rendered);
 
     return apiResponse({
       rendered,
-      encoding,
-      charCount: rendered.length,
-      charsPerSegment,
-      segmentCount: calculateSegments(rendered),
+      encoding: metrics.encoding,
+      charCount: metrics.charCount,
+      charsPerSegment: metrics.singleLimit,
+      segmentCount: metrics.segments,
     });
   } catch (error) {
     return apiError(error);
