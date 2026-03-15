@@ -154,6 +154,11 @@ async function updateCampaignRecord(userId: string, id: string, body: unknown) {
     if (!sender) throw new ApiError(400, "ชื่อผู้ส่งยังไม่ได้รับอนุมัติ");
   }
 
+  // Scheduled campaigns MUST have a sender name
+  if (nextScheduledAt && !nextSenderName) {
+    throw new ApiError(400, "แคมเปญที่ตั้งเวลาต้องระบุชื่อผู้ส่ง");
+  }
+
   await ensureSufficientQuota(userId, creditReserved);
 
   return db.campaign.update({

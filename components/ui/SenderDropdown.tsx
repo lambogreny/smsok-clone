@@ -19,11 +19,15 @@ export default function SenderDropdown({
   onChange: (v: string) => void;
   senderNames?: string[];
 }) {
-  // Auto-select when only 1 sender available (useRef to avoid infinite loop from unstable onChange)
+  // Auto-select when only 1 sender available, or fix stale value not in approved list
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
   useEffect(() => {
-    if (senderNames.length === 1 && !value) onChangeRef.current(senderNames[0]);
+    if (senderNames.length === 0) return;
+    // Auto-select if empty or if current value is not in the approved list
+    if (!value || !senderNames.includes(value)) {
+      onChangeRef.current(senderNames[0]);
+    }
   }, [senderNames, value]);
 
   if (senderNames.length === 0) {

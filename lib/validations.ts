@@ -588,6 +588,13 @@ export const updateCampaignSchema = z.object({
 }).refine(
   (value) => Object.values(value).some((entry) => entry !== undefined),
   { message: "กรุณาระบุข้อมูลที่ต้องการอัปเดต" },
+).refine(
+  (value) => {
+    // If scheduling, senderName must be provided (not null)
+    if (value.scheduledAt && value.senderName === null) return false;
+    return true;
+  },
+  { path: ["senderName"], message: "แคมเปญที่ตั้งเวลาต้องระบุชื่อผู้ส่ง" },
 );
 
 export const templateSchema = z.object({
