@@ -77,34 +77,6 @@ function StatCard({
   );
 }
 
-// ── Countdown Mini ──
-
-function CountdownMini({ expiresAt }: { expiresAt: string }) {
-  const [text, setText] = useState("");
-
-  useEffect(() => {
-    function update() {
-      const diff = new Date(expiresAt).getTime() - Date.now();
-      if (diff <= 0) {
-        setText("หมดเวลา");
-        return;
-      }
-      const h = Math.floor(diff / (1000 * 60 * 60));
-      const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      setText(`⏱️ ${h}:${String(m).padStart(2, "0")}`);
-    }
-    update();
-    const interval = setInterval(update, 60000);
-    return () => clearInterval(interval);
-  }, [expiresAt]);
-
-  return (
-    <span className="text-xs font-mono" style={{ color: "var(--warning)" }}>
-      {text}
-    </span>
-  );
-}
-
 // ── Status Options ──
 
 const STATUS_OPTIONS = [
@@ -518,11 +490,6 @@ export default function OrderManagementPage() {
                     </TableCell>
                     <TableCell>
                       <OrderStatusBadge status={order.status} />
-                      {order.status === "PENDING" && (
-                        <div className="mt-0.5">
-                          <CountdownMini expiresAt={order.expires_at} />
-                        </div>
-                      )}
                       {order.status === "REJECTED" && order.reject_reason && (
                         <p
                           className="text-[10px] mt-0.5 line-clamp-1 max-w-[120px]"
@@ -598,11 +565,6 @@ export default function OrderManagementPage() {
                     {formatThaiDateOnly(order.created_at)}
                   </span>
                 </div>
-                {order.status === "PENDING" && (
-                  <div className="mt-1">
-                    <CountdownMini expiresAt={order.expires_at} />
-                  </div>
-                )}
                 <div className="mt-3">{renderAction(order)}</div>
               </button>
             ))}

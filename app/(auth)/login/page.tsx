@@ -79,7 +79,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-6 bg-[var(--bg-base)]">
+    <div className="min-h-dvh flex items-center justify-center px-6 bg-[var(--bg-base)]">
       {/* Back button */}
       <Link
         href="/"

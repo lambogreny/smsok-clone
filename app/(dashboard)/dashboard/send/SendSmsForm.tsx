@@ -399,6 +399,7 @@ export default function SendSmsForm({ senderNames: rawNames = [] }: { senderName
                 <Textarea
                   value={recipients}
                   onChange={(e) => setRecipients(e.target.value)}
+                  onFocus={(e) => { setTimeout(() => { e.target.scrollIntoView({ behavior: "smooth", block: "center" }); }, 300); }}
                   className={`bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg resize-none focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-[rgba(var(--accent-rgb),0.15)] ${phoneError ? "border-[rgba(239,68,68,0.6)]" : validPhones.length > 0 ? "border-[rgba(16,185,129,0.4)]" : ""}`}
                   rows={4}
                   placeholder={"กรอกเบอร์โทร (คั่นด้วย Enter หรือ comma)\n0891234567\n0891234568"}
@@ -428,6 +429,7 @@ export default function SendSmsForm({ senderNames: rawNames = [] }: { senderName
                   onChange={(e) => setMessage(e.target.value)}
                   onInput={autocomplete.handleInput}
                   onKeyDown={autocomplete.handleKeyDown}
+                  onFocus={(e) => { setTimeout(() => { e.target.scrollIntoView({ behavior: "smooth", block: "center" }); }, 300); }}
                   onSelect={(e) => {
                     const t = e.currentTarget;
                     lastCursorPos.current = { start: t.selectionStart, end: t.selectionEnd };

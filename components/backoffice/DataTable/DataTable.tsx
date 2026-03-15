@@ -192,7 +192,7 @@ export function DataTable<T>({
                       "px-4 py-3 text-left text-xs font-semibold text-[var(--text-muted)] uppercase tracking-[0.05em] whitespace-nowrap select-none",
                       col.sortable && "cursor-pointer hover:text-[var(--text-secondary)]",
                       col.hideOnMobile && "max-md:hidden",
-                      colIdx === 0 && !selectable && "sticky left-0 z-10 bg-[var(--bg-elevated)]",
+                      colIdx === 0 && !selectable && "sticky left-0 z-10 bg-[var(--bg-elevated)] shadow-[2px_0_4px_rgba(0,0,0,0.1)]",
                       col.className,
                     )}
                     style={{ width: col.width }}
@@ -312,7 +312,7 @@ function TableRow<T>({
             className={cn(
               "px-4 py-3 text-[13px] text-[var(--text-secondary)] align-middle",
               col.hideOnMobile && "max-md:hidden",
-              colIdx === 0 && !selectable && "sticky left-0 z-10 bg-[var(--bg-surface)]",
+              colIdx === 0 && !selectable && "sticky left-0 z-10 bg-[var(--bg-surface)] shadow-[2px_0_4px_rgba(0,0,0,0.1)]",
               col.className,
             )}
           >
