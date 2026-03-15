@@ -1564,9 +1564,9 @@ export default function ContactsClient({
         /* Empty state */
         <EmptyState
           icon={Users}
-          iconColor="#4779FF"
-          iconBg="rgba(71,121,255,0.08)"
-          iconBorder="rgba(71,121,255,0.15)"
+          iconColor="var(--accent-blue)"
+          iconBg="rgba(var(--accent-blue-rgb),0.08)"
+          iconBorder="rgba(var(--accent-blue-rgb),0.15)"
           title="ยังไม่มีรายชื่อ"
           description="เพิ่มรายชื่อผู้รับ SMS เพื่อเริ่มส่งข้อความ"
           ctaLabel="เพิ่มรายชื่อ"

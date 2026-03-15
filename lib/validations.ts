@@ -346,6 +346,7 @@ export const webhookTestActionSchema = z.object({
 
 export const stopWebhookBodySchema = z.object({
   phone: z.string().min(1, "กรุณาระบุเบอร์โทร"),
+  keyword: z.string().optional(), // "STOP", "0", etc.
 })
 
 export const testNotificationSchema = z.object({

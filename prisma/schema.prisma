@@ -181,6 +181,7 @@ model User {
   passwordHistory     PasswordHistory[]
   payments            Payment[]
   consentLogs         PdpaConsentLog[]
+  consentStatuses     ConsentStatus[]
   createdPolicies     PdpaPolicy[]       @relation("PolicyCreator")
   quotations          Quotation[]
   scheduledSms        ScheduledSms[]
@@ -1812,6 +1813,7 @@ model PdpaConsentLog {
   action      ConsentAction
   ipAddress   String?       @map("ip_address")
   userAgent   String?       @map("user_agent")
+  channel     String        @default("WEB") // WEB | SMS | API
   metadata    Json?
   recordedAt  DateTime      @default(now()) @map("recorded_at")
   policy      PdpaPolicy    @relation(fields: [policyId], references: [id])
@@ -1821,6 +1823,20 @@ model PdpaConsentLog {
   @@index([consentType, action])
   @@index([policyId])
   @@map("pdpa_consent_logs")
+}
+
+model ConsentStatus {
+  id            String      @id @default(cuid())
+  userId        String      @map("user_id")
+  consentType   ConsentType @map("consent_type")
+  isConsented   Boolean     @default(false) @map("is_consented")
+  policyVersion String      @map("policy_version")
+  lastUpdatedAt DateTime    @updatedAt @map("last_updated_at")
+  user          User        @relation(fields: [userId], references: [id])
+
+  @@unique([userId, consentType])
+  @@index([consentType, isConsented])
+  @@map("consent_statuses")
 }
 
 model BankAccount {

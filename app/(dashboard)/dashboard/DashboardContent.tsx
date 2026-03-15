@@ -411,7 +411,7 @@ function StatCardsGrid({
       label: "ส่งวันนี้",
       value: todayTotal.toLocaleString(),
       href: "/dashboard/messages",
-      iconBg: "rgba(71,121,255,0.08)",
+      iconBg: "rgba(var(--accent-blue-rgb),0.08)",
       iconColor: "var(--accent-secondary)",
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[var(--accent-secondary)]">

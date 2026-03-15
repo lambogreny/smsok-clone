@@ -579,8 +579,8 @@ export default function ApiKeysContent({
           <div className="p-8">
             <EmptyState
               icon={Key}
-              iconColor="#4779FF"
-              iconBg="rgba(71,121,255,0.08)"
+              iconColor="var(--accent-blue)"
+              iconBg="rgba(var(--accent-blue-rgb),0.08)"
               title="ยังไม่มี API Key"
               description="สร้าง API Key เพื่อเชื่อมต่อระบบของคุณกับ SMSOK API"
               ctaLabel="สร้าง API Key"

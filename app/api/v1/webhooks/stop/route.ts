@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { timingSafeEqual, createHash } from "crypto";
 import { prisma } from "@/lib/db";
 import { stopWebhookBodySchema } from "@/lib/validations";
+import { processSmsReplyOptOut } from "@/lib/actions/consent";
 
 function hashForCompare(value: string): Buffer {
   return createHash("sha256").update(value).digest();
@@ -41,18 +42,25 @@ export async function POST(req: NextRequest) {
   // Normalize phone (strip leading 0, add +66)
   const normalized = phone.startsWith("+") ? phone : phone.startsWith("0") ? `+66${phone.slice(1)}` : `+66${phone}`;
 
-  // PDPA/TCPA compliance: STOP opt-out is GLOBAL across all orgs
-  // A recipient who says STOP must be respected everywhere — not org-scoped
+  // PDPA/TCPA compliance: STOP/0 opt-out is GLOBAL across all orgs
+  // A recipient who says STOP or "0" must be respected everywhere — not org-scoped
+  const keyword = parsed.data.keyword?.trim() || "STOP";
+  const reason = keyword === "0" ? "SMS reply 0 (PDPA opt-out)" : `${keyword} keyword`;
+
   const result = await prisma.contact.updateMany({
     where: { phone: normalized, consentStatus: { not: "OPTED_OUT" } },
     data: {
       smsConsent: false,
       consentStatus: "OPTED_OUT",
       optOutAt: new Date(),
-      optOutReason: "STOP keyword",
+      optOutReason: reason,
     },
   });
 
-  return Response.json({ success: true });
+  // Also log to PDPA consent system for audit trail
+  const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "webhook";
+  await processSmsReplyOptOut({ phone: normalized, ipAddress: clientIp }).catch(() => {});
+
+  return Response.json({ success: true, updated: result.count });
 }
 

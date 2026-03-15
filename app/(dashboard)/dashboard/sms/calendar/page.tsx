@@ -46,10 +46,10 @@ const STATUS_CONFIG: Record<
 > = {
   pending: {
     label: "รอส่ง",
-    color: "var(--accent-blue, #4779FF)",
-    rgb: "71,121,255",
+    color: "var(--accent-blue)",
+    rgb: "var(--accent-blue-rgb)",
     icon: Clock,
-    bg: "rgba(71,121,255,0.08)",
+    bg: "rgba(var(--accent-blue-rgb),0.08)",
   },
   sent: {
     label: "ส่งแล้ว",

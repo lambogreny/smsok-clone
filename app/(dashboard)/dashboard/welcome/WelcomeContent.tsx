@@ -84,8 +84,8 @@ export default function WelcomeContent({
         <div
           className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-4"
           style={{
-            background: "rgba(0, 226, 181, 0.08)",
-            border: "1px solid rgba(0, 226, 181, 0.2)",
+            background: "rgba(var(--accent-rgb), 0.08)",
+            border: "1px solid rgba(var(--accent-rgb), 0.2)",
           }}
         >
           <Sparkles size={14} style={{ color: "var(--accent)" }} />
@@ -163,7 +163,7 @@ export default function WelcomeContent({
               className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg overflow-hidden transition-all duration-200"
               style={
                 isExpanded && !isCompleted
-                  ? { borderColor: "rgba(0, 226, 181, 0.3)" }
+                  ? { borderColor: "rgba(var(--accent-rgb), 0.3)" }
                   : undefined
               }
             >
@@ -226,7 +226,7 @@ export default function WelcomeContent({
                   <span
                     className="text-[11px] font-medium px-2 py-0.5 rounded-full"
                     style={{
-                      background: "rgba(0, 226, 181, 0.08)",
+                      background: "rgba(var(--accent-rgb), 0.08)",
                       color: "var(--accent)",
                     }}
                   >

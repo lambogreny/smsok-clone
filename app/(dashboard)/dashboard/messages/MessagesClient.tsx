@@ -38,7 +38,7 @@ const statusConfig: Record<string, { badge: string; label: string }> = {
 };
 
 const typeConfig: Record<string, string> = {
-  SMS: "bg-[rgba(71,121,255,0.08)] text-[var(--accent-secondary)]",
+  SMS: "bg-[rgba(var(--accent-blue-rgb),0.08)] text-[var(--accent-secondary)]",
   OTP: "bg-[rgba(var(--accent-rgb),0.08)] text-[var(--accent)]",
 };
 

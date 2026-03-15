@@ -142,7 +142,7 @@ const STATUS_CONFIG: Record<
   waiting: {
     label: "รอลูกค้า",
     color: "var(--accent-blue)",
-    bg: "rgba(71,121,255,0.08)",
+    bg: "rgba(var(--accent-blue-rgb),0.08)",
   },
   resolved: {
     label: "แก้ไขแล้ว",

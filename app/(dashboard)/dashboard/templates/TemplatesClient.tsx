@@ -441,8 +441,8 @@ export default function TemplatesClient({
         <EmptyState
           icon={FileText}
           iconColor="var(--accent-secondary)"
-          iconBg="rgba(71,121,255,0.06)"
-          iconBorder="rgba(71,121,255,0.1)"
+          iconBg="rgba(var(--accent-blue-rgb),0.06)"
+          iconBorder="rgba(var(--accent-blue-rgb),0.1)"
           title="ยังไม่มี Template"
           description="สร้างเทมเพลตข้อความเพื่อใช้ซ้ำได้สะดวก"
           ctaLabel="+ สร้าง Template"

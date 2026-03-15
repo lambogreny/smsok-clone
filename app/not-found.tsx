@@ -8,8 +8,8 @@ export default function NotFound() {
     <div className="bg-[var(--bg-base)]">
       <StateDisplay
         icon={Search}
-        iconColor="#4779FF"
-        iconBg="rgba(71,121,255,0.08)"
+        iconColor="var(--accent-blue)"
+        iconBg="rgba(var(--accent-blue-rgb),0.08)"
         errorCode="404"
         title="ไม่พบหน้าที่คุณต้องการ"
         description="หน้านี้อาจถูกย้ายหรือลบไปแล้ว"

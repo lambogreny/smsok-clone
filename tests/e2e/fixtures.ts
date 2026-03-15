@@ -2,8 +2,8 @@ import { test as base, expect, type Page } from "@playwright/test";
 
 // Test data — must match DB users
 export const TEST_USER = {
-  email: "qa-judge2@smsok.test",
-  password: "QAJudge2026!",
+  email: "qa-suite@smsok.test",
+  password: "QATest123!",
 };
 
 export const TEST_ADMIN = {

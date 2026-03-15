@@ -1,15 +1,15 @@
 /**
  * Sending Hours Enforcement — PDPA Compliance
  * Marketing SMS blocked outside organization's configured hours
- * Default: 08:00-20:00 (Thailand time, ICT UTC+7)
- * Legal minimum: start >= 8, end <= 20
+ * Default: 08:00-21:00 (Thailand time, ICT UTC+7)
+ * Legal bounds: start >= 8, end <= 21 (quiet hours = 21:00-08:00 per PDPA spec)
  */
 
 import { prisma as db } from "./db";
 import { ApiError } from "./api-auth";
 
 const DEFAULT_START = 8;  // 08:00
-const DEFAULT_END = 20;   // 20:00
+const DEFAULT_END = 21;   // 21:00
 const TIMEZONE = "Asia/Bangkok";
 
 /**
@@ -25,9 +25,9 @@ async function getOrgHours(orgId?: string): Promise<{ start: number; end: number
 
   if (!org) return { start: DEFAULT_START, end: DEFAULT_END };
 
-  // Enforce legal bounds: start >= 8, end <= 20
+  // Enforce legal bounds: start >= 8, end <= 21 (PDPA quiet hours = 21:00-08:00)
   const start = Math.max(org.sendingHoursStart ?? DEFAULT_START, 8);
-  const end = Math.min(org.sendingHoursEnd ?? DEFAULT_END, 20);
+  const end = Math.min(org.sendingHoursEnd ?? DEFAULT_END, 21);
 
   return { start, end };
 }
@@ -94,7 +94,7 @@ export async function assertSendingHours(orgId?: string): Promise<void> {
  */
 export function validateSendingHours(start: number, end: number): { valid: boolean; error?: string } {
   if (start < 8) return { valid: false, error: "เวลาเริ่มต้นต้องไม่น้อยกว่า 08:00 (กฎหมาย PDPA)" };
-  if (end > 20) return { valid: false, error: "เวลาสิ้นสุดต้องไม่เกิน 20:00 (กฎหมาย PDPA)" };
+  if (end > 21) return { valid: false, error: "เวลาสิ้นสุดต้องไม่เกิน 21:00 (กฎหมาย PDPA)" };
   if (start >= end) return { valid: false, error: "เวลาเริ่มต้นต้องน้อยกว่าเวลาสิ้นสุด" };
   return { valid: true };
 }

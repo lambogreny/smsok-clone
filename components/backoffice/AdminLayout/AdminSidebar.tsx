@@ -24,23 +24,23 @@ import { cn } from "@/lib/utils";
 
 const NAV_CONFIG = {
   main: {
-    label: "MAIN",
+    label: "หลัก",
     items: [
-      { label: "Dashboard",    href: "/admin",              icon: LayoutDashboard },
-      { label: "Users",        href: "/admin/users",        icon: Users },
-      { label: "Transactions", href: "/admin/transactions", icon: Receipt },
+      { label: "แดชบอร์ด",    href: "/admin",              icon: LayoutDashboard },
+      { label: "ผู้ใช้งาน",     href: "/admin/users",        icon: Users },
+      { label: "ธุรกรรม",      href: "/admin/transactions", icon: Receipt },
       { label: "SMS",          href: "/admin/sms",          icon: MessageSquare },
-      { label: "Senders",      href: "/admin/senders",      icon: Radio,     badge: "pending" as const },
-      { label: "Campaigns",    href: "/admin/campaigns",    icon: Megaphone },
+      { label: "ชื่อผู้ส่ง",     href: "/admin/senders",      icon: Radio,     badge: "pending" as const },
+      { label: "แคมเปญ",      href: "/admin/campaigns",    icon: Megaphone },
     ],
   },
   system: {
-    label: "SYSTEM",
+    label: "ระบบ",
     items: [
-      { label: "Revenue",  href: "/admin/revenue",  icon: TrendingUp, badge: "mtdRevenue" as const },
-      { label: "Settings", href: "/admin/settings", icon: Settings },
-      { label: "Logs",     href: "/admin/logs",     icon: ScrollText },
-      { label: "Support",  href: "/admin/support",  icon: Headphones, badge: "openTickets" as const },
+      { label: "รายได้",    href: "/admin/revenue",  icon: TrendingUp, badge: "mtdRevenue" as const },
+      { label: "ตั้งค่า",    href: "/admin/settings", icon: Settings },
+      { label: "ล็อก",      href: "/admin/logs",     icon: ScrollText },
+      { label: "ซัพพอร์ต",  href: "/admin/support",  icon: Headphones, badge: "openTickets" as const },
     ],
   },
 } as const;
@@ -156,8 +156,8 @@ export function AdminSidebar({
               A
             </div>
             <div className="min-w-0">
-              <p className="text-[13px] font-medium text-[var(--text-primary)] truncate">Admin</p>
-              <p className="text-[11px] text-[var(--text-muted)]">Super Admin</p>
+              <p className="text-[13px] font-medium text-[var(--text-primary)] truncate">ผู้ดูแล</p>
+              <p className="text-[11px] text-[var(--text-muted)]">ผู้ดูแลระบบ</p>
             </div>
             <Button variant="ghost" size="icon-sm" className="ml-auto shrink-0">
               <LogOut size={14} />

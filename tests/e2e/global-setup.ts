@@ -3,8 +3,8 @@ import path from "path";
 import fs from "fs";
 
 const TEST_USER = {
-  email: "qa-judge2@smsok.test",
-  password: "QAJudge2026!",
+  email: "qa-suite@smsok.test",
+  password: "QATest123!",
 };
 
 async function globalSetup(config: FullConfig) {

@@ -23,7 +23,7 @@ function getNextPolicyVersion(currentVersion?: string | null) {
   return `${majorNumber}.${minorNumber + 1}`;
 }
 
-// ── Log Consent (append-only) ───────────────────────────
+// ── Log Consent (append-only) + update materialized status ──
 
 export async function logConsent(opts: {
   userId: string;
@@ -32,19 +32,49 @@ export async function logConsent(opts: {
   action: ConsentAction;
   ipAddress?: string;
   userAgent?: string;
+  channel?: string;
   metadata?: Record<string, string | number | boolean | null>;
 }) {
-  return db.pdpaConsentLog.create({
-    data: {
-      userId: opts.userId,
-      policyId: opts.policyId,
-      consentType: opts.consentType,
-      action: opts.action,
-      ipAddress: opts.ipAddress,
-      userAgent: opts.userAgent,
-      metadata: opts.metadata as Prisma.InputJsonValue ?? undefined,
-    },
+  const policy = await db.pdpaPolicy.findUnique({
+    where: { id: opts.policyId },
+    select: { version: true },
   });
+
+  const [log] = await db.$transaction([
+    db.pdpaConsentLog.create({
+      data: {
+        userId: opts.userId,
+        policyId: opts.policyId,
+        consentType: opts.consentType,
+        action: opts.action,
+        ipAddress: opts.ipAddress,
+        userAgent: opts.userAgent,
+        channel: opts.channel ?? "WEB",
+        metadata: opts.metadata as Prisma.InputJsonValue ?? undefined,
+      },
+    }),
+    // Upsert materialized ConsentStatus for fast lookups
+    db.consentStatus.upsert({
+      where: {
+        userId_consentType: {
+          userId: opts.userId,
+          consentType: opts.consentType,
+        },
+      },
+      update: {
+        isConsented: opts.action === "OPT_IN",
+        policyVersion: policy?.version ?? "1.0",
+      },
+      create: {
+        userId: opts.userId,
+        consentType: opts.consentType,
+        isConsented: opts.action === "OPT_IN",
+        policyVersion: policy?.version ?? "1.0",
+      },
+    }),
+  ]);
+
+  return log;
 }
 
 // ── Log multiple consents at registration ───────────────
@@ -261,6 +291,56 @@ export async function bumpPolicyVersion(adminId: string, data: {
     summary: data.summary,
     requiresReconsent: true,
   });
+}
+
+// ── SMS Marketing Consent Guard ─────────────────────────
+
+export async function hasMarketingConsent(userId: string): Promise<boolean> {
+  const status = await db.consentStatus.findUnique({
+    where: { userId_consentType: { userId, consentType: "MARKETING" } },
+    select: { isConsented: true },
+  });
+  return status?.isConsented ?? false;
+}
+
+export async function assertMarketingConsent(userId: string): Promise<void> {
+  const consented = await hasMarketingConsent(userId);
+  if (!consented) {
+    throw new Error("ผู้ใช้ไม่ได้ให้ความยินยอมรับ SMS การตลาด (PDPA)");
+  }
+}
+
+// ── SMS Reply Opt-out ("0") ─────────────────────────────
+
+export async function processSmsReplyOptOut(opts: {
+  phone: string;
+  ipAddress?: string;
+}): Promise<{ processed: boolean; userId?: string }> {
+  // Find user by phone
+  const user = await db.user.findFirst({
+    where: { phone: opts.phone },
+    select: { id: true },
+  });
+  if (!user) return { processed: false };
+
+  // Find active MARKETING policy
+  const policy = await db.pdpaPolicy.findFirst({
+    where: { type: "MARKETING", isActive: true },
+    select: { id: true },
+  });
+  if (!policy) return { processed: false };
+
+  await logConsent({
+    userId: user.id,
+    policyId: policy.id,
+    consentType: "MARKETING",
+    action: "OPT_OUT",
+    ipAddress: opts.ipAddress,
+    channel: "SMS",
+    metadata: { reason: "sms_reply_0", phone: opts.phone },
+  });
+
+  return { processed: true, userId: user.id };
 }
 
 export async function getActivePolicies() {
