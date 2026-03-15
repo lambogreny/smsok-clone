@@ -47,6 +47,12 @@ export default function SendSmsForm({ senderNames: rawNames = [] }: { senderName
   const messageTextareaRef = useRef<HTMLTextAreaElement>(null);
   const lastCursorPos = useRef<{ start: number; end: number } | null>(null);
 
+  // Today's date (client-only to avoid hydration mismatch)
+  const [todayStr, setTodayStr] = useState("");
+  useEffect(() => {
+    setTodayStr(new Date().toISOString().slice(0, 10));
+  }, []);
+
   // Fetch SMS quota on mount
   useEffect(() => {
     async function fetchBalance() {
@@ -295,7 +301,7 @@ export default function SendSmsForm({ senderNames: rawNames = [] }: { senderName
           </p>
           <button
             type="button"
-            onClick={() => router.push("/dashboard/packages")}
+            onClick={() => router.push("/dashboard/billing/packages")}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-opacity hover:opacity-90"
             style={{ background: "var(--accent)", color: "var(--bg-base)" }}
           >
@@ -321,7 +327,7 @@ export default function SendSmsForm({ senderNames: rawNames = [] }: { senderName
           </div>
           <button
             type="button"
-            onClick={() => router.push("/dashboard/packages")}
+            onClick={() => router.push("/dashboard/billing/packages")}
             className="text-sm font-semibold px-3 py-1.5 rounded-lg transition-colors"
             style={{ background: "var(--warning)", color: "var(--bg-base)" }}
           >
@@ -592,7 +598,7 @@ export default function SendSmsForm({ senderNames: rawNames = [] }: { senderName
                       type="date"
                       value={scheduleDate}
                       onChange={(e) => setScheduleDate(e.target.value)}
-                      min={new Date().toISOString().slice(0, 10)}
+                      min={todayStr || undefined}
                       className="flex-1 h-9 px-3 rounded-lg text-sm bg-[var(--bg-base)] border border-[var(--border-default)] text-[var(--text-primary)] focus:outline-none focus:border-[rgba(var(--accent-rgb),0.6)]"
                     />
                     <input

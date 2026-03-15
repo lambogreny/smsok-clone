@@ -210,14 +210,14 @@ export function invoiceEmail(
     ${statsTable([
       ["เลขที่ใบเสร็จ", `#${data.invoiceNumber}`],
       ["วันที่", data.date],
-      ["จำนวนเครดิต", `${data.amount.toLocaleString()} เครดิต`],
+      ["จำนวนข้อความ", `${data.amount.toLocaleString()} ข้อความ`],
       ["ข้อความที่ได้รับ", `${data.credits.toLocaleString()} SMS`],
     ])}
     ${downloadBtn}
     ${paragraph("หากมีข้อสงสัยเกี่ยวกับใบเสร็จ สามารถตอบกลับอีเมลนี้ได้เลย")}
   `);
 
-  const text = `สวัสดี ${name}\n\nใบเสร็จ #${data.invoiceNumber}\nวันที่: ${data.date}\nจำนวนเครดิต: ${data.amount.toLocaleString()} เครดิต\nข้อความ: ${data.credits.toLocaleString()} SMS${data.pdfUrl ? `\n\nดาวน์โหลด: ${data.pdfUrl}` : ""}`;
+  const text = `สวัสดี ${name}\n\nใบเสร็จ #${data.invoiceNumber}\nวันที่: ${data.date}\nจำนวนข้อความ: ${data.amount.toLocaleString()} ข้อความ\nSMS: ${data.credits.toLocaleString()} SMS${data.pdfUrl ? `\n\nดาวน์โหลด: ${data.pdfUrl}` : ""}`;
 
   return { subject, html, text };
 }

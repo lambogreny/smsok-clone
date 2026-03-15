@@ -329,7 +329,7 @@ function EmptyState() {
         เมื่อคุณซื้อแพ็กเกจ SMS รายการชำระเงินจะแสดงที่นี่
       </p>
       <Link
-        href="/dashboard/packages"
+        href="/dashboard/billing/packages"
         className="inline-flex items-center justify-center rounded-lg px-4 h-10 text-sm font-medium bg-[var(--accent)] text-[var(--bg-base)] hover:bg-[var(--accent)]/90 transition-all"
       >
         ดูแพ็กเกจ
@@ -440,7 +440,7 @@ export default function BillingPage() {
           </p>
         </div>
         <Link
-          href="/dashboard/packages"
+          href="/dashboard/billing/packages"
           className="inline-flex items-center justify-center rounded-lg px-4 h-10 text-sm font-medium bg-[var(--accent)] text-[var(--bg-base)] hover:bg-[var(--accent)]/90 transition-all w-fit"
         >
           <Plus className="h-4 w-4 mr-1.5" />

@@ -530,7 +530,7 @@ export default function CreditsPage() {
           title="ยังไม่มีข้อความ SMS"
           description="ซื้อแพ็กเกจเพื่อเริ่มส่งข้อความ"
           ctaLabel="ซื้อแพ็กเกจ →"
-          ctaAction={() => router.push("/dashboard/packages")}
+          ctaAction={() => router.push("/dashboard/billing/packages")}
         />
       </PageLayout>
     );
@@ -544,7 +544,7 @@ export default function CreditsPage() {
         actions={
           <Button
             size="lg"
-            onClick={() => router.push("/dashboard/packages")}
+            onClick={() => router.push("/dashboard/billing/packages")}
             className="text-sm font-semibold gap-2"
             style={{
               background: "var(--accent)",

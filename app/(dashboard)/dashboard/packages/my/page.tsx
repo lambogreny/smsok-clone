@@ -146,7 +146,7 @@ export default function MyPackagesPage() {
           <h1 className="text-xl font-bold text-[var(--text-primary)]">แพ็กเกจของฉัน</h1>
           <p className="text-sm text-[var(--text-muted)]">จัดการแพ็กเกจ SMS ที่ active</p>
         </div>
-        <Link href="/dashboard/packages">
+        <Link href="/dashboard/billing/packages">
           <Button className="gap-2 text-sm font-semibold bg-[var(--accent)] text-[var(--bg-base)] hover:bg-[var(--accent-hover)]">
             <Plus size={14} /> ซื้อเพิ่ม
           </Button>
@@ -169,7 +169,7 @@ export default function MyPackagesPage() {
               ⚠️ SMS เหลือน้อย{remainingPercent < 5 ? "มาก" : ""} — {totalRemaining.toLocaleString()}/{totalSms.toLocaleString()} ({remainingPercent.toFixed(1)}%)
             </span>
           </div>
-          <Link href="/dashboard/packages">
+          <Link href="/dashboard/billing/packages">
             <Button size="sm" className="text-xs font-medium bg-[var(--accent)] text-[var(--bg-base)] hover:bg-[var(--accent-hover)]">
               ซื้อเพิ่ม →
             </Button>
@@ -180,7 +180,7 @@ export default function MyPackagesPage() {
       {totalRemaining === 0 && totalSms > 0 && (
         <div className="flex items-center justify-between rounded-lg px-4 py-3 mb-4 bg-[rgba(var(--error-rgb,239,68,68),0.06)] border border-[rgba(var(--error-rgb,239,68,68),0.15)] border-l-[3px] border-l-[var(--error)]">
           <span className="text-sm text-[var(--text-primary)]">❌ SMS หมดแล้ว — ซื้อ package ใหม่เพื่อส่ง SMS ต่อ</span>
-          <Link href="/dashboard/packages">
+          <Link href="/dashboard/billing/packages">
             <Button size="sm" className="text-xs font-medium bg-[var(--error)] text-[var(--text-primary)] hover:opacity-90">
               ซื้อ Package →
             </Button>
@@ -241,7 +241,7 @@ export default function MyPackagesPage() {
           title="ยังไม่มี Package ที่ใช้งาน"
           description={"ซื้อ Package เพื่อรับ SMS quota\nเริ่มต้นที่ ฿500 สำหรับ 500 SMS"}
           ctaLabel="🛒 ดู Package ทั้งหมด"
-          ctaAction={() => { window.location.href = "/dashboard/packages"; }}
+          ctaAction={() => { window.location.href = "/dashboard/billing/packages"; }}
         />
       ) : (
         <div className="space-y-3 mb-6">

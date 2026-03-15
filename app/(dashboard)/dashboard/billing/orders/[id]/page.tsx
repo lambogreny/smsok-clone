@@ -149,6 +149,202 @@ function normalizeOrderPayload(payload: CanonicalOrderPayload): Order {
   };
 }
 
+// ── Slip Verification Progress ──
+
+const VERIFY_STEPS = [
+  { key: "uploaded", label: "อัพโหลดสลิป", icon: Upload },
+  { key: "verifying", label: "กำลังตรวจสอบ", icon: Loader2 },
+  { key: "verified", label: "ตรวจเสร็จ", icon: CheckCircle2 },
+  { key: "credited", label: "เติมโควต้า", icon: Package },
+] as const;
+
+function getVerifyStep(order: Order): number {
+  switch (order.status) {
+    case "SLIP_UPLOADED":
+      return 1; // verifying in progress
+    case "PENDING_REVIEW":
+      return 1; // manual review = still verifying
+    case "VERIFIED":
+    case "APPROVED":
+      return 2; // verified, credits pending
+    case "COMPLETED":
+      return 3; // all done
+    default:
+      return -1;
+  }
+}
+
+function SlipVerificationProgress({ order }: { order: Order }) {
+  const currentStep = getVerifyStep(order);
+  if (currentStep === -1) return null;
+
+  const isManualReview = order.status === "PENDING_REVIEW";
+  const uploadedAt = order.latest_slip_uploaded_at;
+
+  return (
+    <div
+      className="mt-4 rounded-lg p-4"
+      style={{
+        background: "rgba(var(--accent-rgb),0.04)",
+        border: "1px solid rgba(var(--accent-rgb),0.12)",
+      }}
+    >
+      <div className="flex items-center gap-2 mb-3">
+        <div
+          className="w-1.5 h-1.5 rounded-full"
+          style={{
+            background: "var(--accent)",
+            animation: currentStep < 3 ? "pulse 2s infinite" : undefined,
+          }}
+        />
+        <span
+          className="text-[12px] font-semibold uppercase tracking-wider"
+          style={{ color: "var(--accent)" }}
+        >
+          สถานะการตรวจสอบ
+        </span>
+      </div>
+
+      <div className="space-y-0">
+        {VERIFY_STEPS.map((step, i) => {
+          const isDone = currentStep > i;
+          const isCurrent = currentStep === i;
+          const isPending = currentStep < i;
+          const StepIcon = step.icon;
+
+          return (
+            <div key={step.key} className="flex items-stretch gap-3">
+              {/* Vertical line + circle */}
+              <div className="flex flex-col items-center w-5">
+                <div
+                  className="flex items-center justify-center rounded-full flex-shrink-0 transition-all"
+                  style={{
+                    width: 20,
+                    height: 20,
+                    background: isDone
+                      ? "var(--accent)"
+                      : isCurrent
+                        ? "transparent"
+                        : "transparent",
+                    border: isDone
+                      ? "none"
+                      : isCurrent
+                        ? "2px solid var(--accent)"
+                        : "2px solid var(--border-default)",
+                    boxShadow: isCurrent
+                      ? "0 0 0 3px rgba(var(--accent-rgb),0.15)"
+                      : "none",
+                  }}
+                >
+                  {isDone ? (
+                    <Check size={11} strokeWidth={3} color="var(--bg-base)" />
+                  ) : isCurrent ? (
+                    <div
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{ background: "var(--accent)" }}
+                    />
+                  ) : null}
+                </div>
+                {/* Connector line */}
+                {i < VERIFY_STEPS.length - 1 && (
+                  <div
+                    className="flex-1 min-h-[16px]"
+                    style={{
+                      width: 2,
+                      background: isDone
+                        ? "var(--accent)"
+                        : "var(--border-default)",
+                      borderRadius: 1,
+                    }}
+                  />
+                )}
+              </div>
+
+              {/* Content */}
+              <div className="pb-3 min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  {isCurrent && step.key === "verifying" ? (
+                    <Loader2
+                      size={13}
+                      className="animate-spin flex-shrink-0"
+                      style={{ color: "var(--accent)" }}
+                    />
+                  ) : (
+                    <StepIcon
+                      size={13}
+                      className="flex-shrink-0"
+                      style={{
+                        color: isDone
+                          ? "var(--accent)"
+                          : isCurrent
+                            ? "var(--text-primary)"
+                            : "var(--text-muted)",
+                      }}
+                    />
+                  )}
+                  <span
+                    className="text-[13px] font-medium"
+                    style={{
+                      color: isDone || isCurrent
+                        ? "var(--text-primary)"
+                        : "var(--text-muted)",
+                    }}
+                  >
+                    {step.label}
+                  </span>
+                  {isDone && (
+                    <span
+                      className="text-[10px] font-mono"
+                      style={{ color: "var(--accent)" }}
+                    >
+                      ✓
+                    </span>
+                  )}
+                </div>
+                {/* Sub-info for current step */}
+                {isCurrent && step.key === "verifying" && (
+                  <p
+                    className="text-[11px] mt-0.5 leading-relaxed"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    {isManualReview
+                      ? "เจ้าหน้าที่กำลังตรวจสอบ โดยปกติไม่เกิน 30 นาที"
+                      : "ระบบกำลังตรวจสอบอัตโนมัติ โดยปกติไม่เกิน 5 นาที"}
+                  </p>
+                )}
+                {isDone && step.key === "uploaded" && uploadedAt && (
+                  <p
+                    className="text-[11px] mt-0.5 font-mono"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    {formatThaiDateTimeShort(uploadedAt)}
+                  </p>
+                )}
+                {isDone && step.key === "verified" && order.paid_at && (
+                  <p
+                    className="text-[11px] mt-0.5 font-mono"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    {formatThaiDateTimeShort(order.paid_at)}
+                  </p>
+                )}
+                {isDone && step.key === "credited" && (
+                  <p
+                    className="text-[11px] mt-0.5"
+                    style={{ color: "var(--accent)" }}
+                  >
+                    โควต้า {order.sms_count.toLocaleString()} ข้อความถูกเพิ่มแล้ว
+                  </p>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ── Status Banner Config ──
 
 const STATUS_BANNER_CONFIG: Record<
@@ -571,6 +767,15 @@ function StatusBanner({ order }: { order: Order }) {
         <div className="mt-3 relative">
           <CountdownInline expiresAt={order.expires_at} />
         </div>
+      )}
+
+      {/* Slip verification progress (verifying/paid states) */}
+      {(order.status === "SLIP_UPLOADED" ||
+        order.status === "PENDING_REVIEW" ||
+        order.status === "VERIFIED" ||
+        order.status === "APPROVED" ||
+        order.status === "COMPLETED") && (
+        <SlipVerificationProgress order={order} />
       )}
 
       {/* Timeline */}

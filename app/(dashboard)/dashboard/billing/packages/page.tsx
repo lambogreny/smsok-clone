@@ -698,12 +698,30 @@ export default function PricingPage() {
   if (packageTiers.length === 0) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-16 text-center">
-        <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-          ไม่พบแพ็กเกจ กรุณาลองใหม่อีกครั้ง
+        <div
+          className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center"
+          style={{
+            background: "rgba(var(--accent-rgb),0.08)",
+            border: "1px solid rgba(var(--accent-rgb),0.15)",
+          }}
+        >
+          <Sparkles size={28} style={{ color: "var(--accent)" }} />
+        </div>
+        <h3
+          className="text-lg font-semibold mb-2"
+          style={{ color: "var(--text-primary)" }}
+        >
+          กำลังเตรียมแพ็กเกจ
+        </h3>
+        <p
+          className="text-sm max-w-sm mx-auto mb-6"
+          style={{ color: "var(--text-muted)" }}
+        >
+          ระบบกำลังเตรียมแพ็กเกจ SMS สำหรับคุณ กรุณารอสักครู่แล้วลองใหม่อีกครั้ง
         </p>
         <button
-          className="mt-4 text-sm font-medium"
-          style={{ color: "var(--accent)" }}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-90"
+          style={{ background: "var(--accent)", color: "var(--bg-base)" }}
           onClick={() => window.location.reload()}
         >
           โหลดใหม่

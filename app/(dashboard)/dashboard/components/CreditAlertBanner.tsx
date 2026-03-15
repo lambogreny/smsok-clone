@@ -110,7 +110,7 @@ export default function CreditAlertBanner() {
       {/* CTA + Dismiss */}
       <div className="flex w-full shrink-0 items-center gap-2 sm:w-auto">
         <Link
-          href="/dashboard/packages"
+          href="/dashboard/billing/packages"
           className={cn(
             "inline-flex w-full items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-opacity hover:opacity-80 sm:w-auto"
           )}

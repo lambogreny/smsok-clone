@@ -228,7 +228,7 @@ export default function InvoicesPage() {
             title="ยังไม่มีใบกำกับภาษี"
             description={"ใบกำกับภาษีจะสร้างอัตโนมัติเมื่อซื้อ Package\nสามารถดาวน์โหลด PDF ได้ที่นี่"}
             ctaLabel="🛒 ซื้อ Package แรก"
-            ctaAction={() => window.location.href = "/dashboard/packages"}
+            ctaAction={() => window.location.href = "/dashboard/billing/packages"}
           />
         )}
         {!loading && !fetchError && paged.length === 0 && invoices.length > 0 && (

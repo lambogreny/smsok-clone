@@ -704,7 +704,7 @@ export default function AnalyticsContent({ stats }: { stats: Stats }) {
   // Export CSV
   const handleExportCsv = useCallback(() => {
     const rows = [
-      ["สถานะ", "เบอร์ผู้รับ", "ผู้ส่ง", "เครดิต (SMS)", "วันที่"],
+      ["สถานะ", "เบอร์ผู้รับ", "ผู้ส่ง", "ข้อความ (SMS)", "วันที่"],
       ...stats.recentMessages.map((msg) => [
         msg.status,
         msg.recipient,
@@ -882,7 +882,7 @@ export default function AnalyticsContent({ stats }: { stats: Stats }) {
             border: "1px solid rgba(var(--accent-rgb),0.15)",
           }}
         >
-          เติมเครดิต
+          ซื้อแพ็กเกจ
         </Link>
       </div>
 
@@ -1124,7 +1124,7 @@ export default function AnalyticsContent({ stats }: { stats: Stats }) {
                   <th className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>สถานะ</th>
                   <th className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>เบอร์ผู้รับ</th>
                   <th className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider hidden sm:table-cell" style={{ color: "var(--text-muted)" }}>ผู้ส่ง</th>
-                  <th className="text-right px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>เครดิต</th>
+                  <th className="text-right px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>ข้อความ</th>
                 </tr>
               </thead>
               <tbody>

@@ -349,7 +349,7 @@ function QuickTestPanel() {
               ไม่สามารถส่ง OTP ได้ กรุณาซื้อแพ็กเกจเพิ่ม
             </p>
             <Link
-              href="/dashboard/packages"
+              href="/dashboard/billing/packages"
               className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-opacity hover:opacity-90"
               style={{ background: "var(--accent)", color: "var(--bg-base)" }}
             >

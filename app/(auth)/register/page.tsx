@@ -30,7 +30,7 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
-import { Send, ArrowLeft, ArrowRight, Eye, EyeOff, Loader2, Smartphone, Check, AlertTriangle } from "lucide-react";
+import { Send, ArrowLeft, ArrowRight, Eye, EyeOff, Loader2, Smartphone, Check, AlertTriangle, CircleCheck, CircleX } from "lucide-react";
 import { toast } from "sonner";
 import { clearLogoutMarker } from "@/components/AuthGuard";
 import RateLimitCountdown, { extractRateLimitSeconds, friendlyRateLimitMessage } from "@/components/RateLimitCountdown";
@@ -101,7 +101,11 @@ export default function RegisterPage() {
   const isSubmitting = form.formState.isSubmitting;
   const termsAccepted = consentService === true && consentThirdParty === true;
   const passwordsMatch = confirmPassword.length === 0 || password === confirmPassword;
-  const hasBlockingDuplicate = emailAvailability.status === "taken" || phoneAvailability.status === "taken";
+  const hasBlockingDuplicate =
+    emailAvailability.status === "taken" ||
+    phoneAvailability.status === "taken" ||
+    emailAvailability.status === "checking" ||
+    phoneAvailability.status === "checking";
 
   // Countdown timer for OTP
   useEffect(() => {
@@ -122,7 +126,7 @@ export default function RegisterPage() {
 
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
-      setEmailAvailability({ status: "checking", message: "กำลังตรวจสอบอีเมล..." });
+      setEmailAvailability({ status: "checking", message: "กำลังตรวจสอบ..." });
       try {
         const res = await fetch(`/api/auth/check-duplicate?email=${encodeURIComponent(trimmedEmail)}`, {
           signal: controller.signal,
@@ -136,7 +140,7 @@ export default function RegisterPage() {
         if ((error as Error).name === "AbortError") return;
         setEmailAvailability({ status: "idle", message: "" });
       }
-    }, 500);
+    }, 300);
 
     return () => {
       controller.abort();
@@ -153,7 +157,7 @@ export default function RegisterPage() {
 
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
-      setPhoneAvailability({ status: "checking", message: "กำลังตรวจสอบเบอร์..." });
+      setPhoneAvailability({ status: "checking", message: "กำลังตรวจสอบ..." });
       try {
         const res = await fetch(`/api/auth/check-duplicate?phone=${encodeURIComponent(trimmedPhone)}`, {
           signal: controller.signal,
@@ -167,7 +171,7 @@ export default function RegisterPage() {
         if ((error as Error).name === "AbortError") return;
         setPhoneAvailability({ status: "idle", message: "" });
       }
-    }, 500);
+    }, 300);
 
     return () => {
       controller.abort();
@@ -365,21 +369,58 @@ export default function RegisterPage() {
                         <FormItem>
                           <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-secondary)]">อีเมล</FormLabel>
                           <FormControl>
-                            <Input type="email" autoComplete="email" placeholder="you@example.com" onKeyDown={blockThai} className="h-11 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg focus:border-[var(--accent)] focus:ring-[rgba(var(--accent-rgb),0.12)]" {...field} />
+                            <div className="relative">
+                              <Input
+                                type="email"
+                                autoComplete="email"
+                                placeholder="you@example.com"
+                                onKeyDown={blockThai}
+                                aria-invalid={emailAvailability.status === "taken" || undefined}
+                                aria-describedby="email-availability"
+                                className="h-11 bg-[var(--bg-base)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg pr-10 transition-[border-color,box-shadow] duration-200"
+                                style={{
+                                  borderColor:
+                                    emailAvailability.status === "available" ? "#089981"
+                                    : emailAvailability.status === "taken" ? "#f23645"
+                                    : undefined,
+                                  boxShadow:
+                                    emailAvailability.status === "available" ? "0 0 0 1px rgba(8,153,129,0.2)"
+                                    : emailAvailability.status === "taken" ? "0 0 0 1px rgba(242,54,69,0.2)"
+                                    : undefined,
+                                }}
+                                {...field}
+                              />
+                              {emailAvailability.status === "checking" && (
+                                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-[#949FA8]" aria-label="กำลังตรวจสอบ" />
+                              )}
+                              {emailAvailability.status === "available" && (
+                                <CircleCheck className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#089981] animate-in fade-in duration-200" />
+                              )}
+                              {emailAvailability.status === "taken" && (
+                                <CircleX className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#f23645] animate-in fade-in duration-200" />
+                              )}
+                            </div>
                           </FormControl>
                           <FormMessage />
-                          {emailAvailability.status !== "idle" && (
-                            <p className={`text-[11px] ${
-                              emailAvailability.status === "available"
-                                ? "text-[var(--success)]"
-                                : emailAvailability.status === "taken"
-                                ? "text-[var(--error)]"
-                                : "text-[var(--text-muted)]"
-                            }`}>
-                              {emailAvailability.status === "available" ? "✓ " : emailAvailability.status === "taken" ? "✕ " : ""}
-                              {emailAvailability.message}
-                            </p>
-                          )}
+                          <div id="email-availability" className="min-h-[20px]">
+                            {emailAvailability.status !== "idle" && (
+                              <p
+                                role="status"
+                                className={`flex items-center gap-1 text-[12px] animate-in fade-in slide-in-from-bottom-1 duration-150 ${
+                                  emailAvailability.status === "available"
+                                    ? "text-[#089981]"
+                                    : emailAvailability.status === "taken"
+                                    ? "text-[#f23645]"
+                                    : "text-[#949FA8]"
+                                }`}
+                              >
+                                {emailAvailability.status === "checking" && <Loader2 className="w-3 h-3 animate-spin" />}
+                                {emailAvailability.status === "available" && <Check className="w-3 h-3" />}
+                                {emailAvailability.status === "taken" && <CircleX className="w-3 h-3" />}
+                                {emailAvailability.message}
+                              </p>
+                            )}
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -393,22 +434,61 @@ export default function RegisterPage() {
                             หมายเลขโทรศัพท์
                           </FormLabel>
                           <FormControl>
-                            <Input type="tel" autoComplete="tel" inputMode="numeric" maxLength={10} placeholder="0891234567" onKeyDown={blockNonNumeric} className="h-11 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg focus:border-[var(--accent)] focus:ring-[rgba(var(--accent-rgb),0.12)]" {...field} />
+                            <div className="relative">
+                              <Input
+                                type="tel"
+                                autoComplete="tel"
+                                inputMode="numeric"
+                                maxLength={10}
+                                placeholder="0891234567"
+                                onKeyDown={blockNonNumeric}
+                                aria-invalid={phoneAvailability.status === "taken" || undefined}
+                                aria-describedby="phone-availability"
+                                className="h-11 bg-[var(--bg-base)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] rounded-lg pr-10 transition-[border-color,box-shadow] duration-200"
+                                style={{
+                                  borderColor:
+                                    phoneAvailability.status === "available" ? "#089981"
+                                    : phoneAvailability.status === "taken" ? "#f23645"
+                                    : undefined,
+                                  boxShadow:
+                                    phoneAvailability.status === "available" ? "0 0 0 1px rgba(8,153,129,0.2)"
+                                    : phoneAvailability.status === "taken" ? "0 0 0 1px rgba(242,54,69,0.2)"
+                                    : undefined,
+                                }}
+                                {...field}
+                              />
+                              {phoneAvailability.status === "checking" && (
+                                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-[#949FA8]" aria-label="กำลังตรวจสอบ" />
+                              )}
+                              {phoneAvailability.status === "available" && (
+                                <CircleCheck className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#089981] animate-in fade-in duration-200" />
+                              )}
+                              {phoneAvailability.status === "taken" && (
+                                <CircleX className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#f23645] animate-in fade-in duration-200" />
+                              )}
+                            </div>
                           </FormControl>
                           <p className="text-[11px] text-[var(--text-muted)]">ใช้สำหรับรับ OTP ยืนยันตัวตน</p>
                           <FormMessage />
-                          {phoneAvailability.status !== "idle" && (
-                            <p className={`text-[11px] ${
-                              phoneAvailability.status === "available"
-                                ? "text-[var(--success)]"
-                                : phoneAvailability.status === "taken"
-                                ? "text-[var(--error)]"
-                                : "text-[var(--text-muted)]"
-                            }`}>
-                              {phoneAvailability.status === "available" ? "✓ " : phoneAvailability.status === "taken" ? "✕ " : ""}
-                              {phoneAvailability.message}
-                            </p>
-                          )}
+                          <div id="phone-availability" className="min-h-[20px]">
+                            {phoneAvailability.status !== "idle" && (
+                              <p
+                                role="status"
+                                className={`flex items-center gap-1 text-[12px] animate-in fade-in slide-in-from-bottom-1 duration-150 ${
+                                  phoneAvailability.status === "available"
+                                    ? "text-[#089981]"
+                                    : phoneAvailability.status === "taken"
+                                    ? "text-[#f23645]"
+                                    : "text-[#949FA8]"
+                                }`}
+                              >
+                                {phoneAvailability.status === "checking" && <Loader2 className="w-3 h-3 animate-spin" />}
+                                {phoneAvailability.status === "available" && <Check className="w-3 h-3" />}
+                                {phoneAvailability.status === "taken" && <CircleX className="w-3 h-3" />}
+                                {phoneAvailability.message}
+                              </p>
+                            )}
+                          </div>
                         </FormItem>
                       )}
                     />

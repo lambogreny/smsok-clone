@@ -132,10 +132,10 @@ function PackageUpgradeBanner({ quota }: { quota?: QuotaData }) {
   if (!isLowCredits && !isExpiring) return null;
 
   const isEmpty = remaining === 0;
-  const borderColor = isEmpty ? "#EF4444" : "#00E2B5";
+  const borderColor = isEmpty ? "var(--error)" : "var(--accent)";
   const bgGradient = isEmpty
-    ? "linear-gradient(135deg, #10161c, #1c1015)"
-    : "linear-gradient(135deg, #10161c, #0d2b26)";
+    ? "linear-gradient(135deg, var(--bg-base), rgba(var(--error-rgb),0.06))"
+    : "linear-gradient(135deg, var(--bg-base), rgba(var(--accent-rgb),0.06))";
 
   return (
     <div
@@ -146,7 +146,7 @@ function PackageUpgradeBanner({ quota }: { quota?: QuotaData }) {
       <button
         type="button"
         onClick={() => setDismissed(true)}
-        className="absolute top-3 right-3 p-1 rounded-md hover:bg-[rgba(255,255,255,0.05)] transition-colors text-[var(--text-muted)] hover:text-white cursor-pointer"
+        className="absolute top-3 right-3 p-1 rounded-md hover:bg-[rgba(var(--text-primary-rgb),0.05)] transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
         aria-label="ปิดแจ้งเตือน"
       >
         <X size={14} />
@@ -167,7 +167,7 @@ function PackageUpgradeBanner({ quota }: { quota?: QuotaData }) {
           <p>
             หมดอายุ: {formatThaiDateOnly(firstPkg!.expiresAt)}
             {daysUntilExpiry !== null && daysUntilExpiry <= 3 && (
-              <span className="text-[#EF4444] font-medium ml-1">
+              <span className="text-[var(--error)] font-medium ml-1">
                 (เหลืออีก {daysUntilExpiry} วัน)
               </span>
             )}
@@ -179,13 +179,13 @@ function PackageUpgradeBanner({ quota }: { quota?: QuotaData }) {
       <div className="ml-6 mb-4">
         <div
           className="w-full h-2 rounded-full overflow-hidden"
-          style={{ background: "rgba(255,255,255,0.08)" }}
+          style={{ background: "rgba(var(--text-primary-rgb),0.08)" }}
         >
           <div
             className="h-full rounded-full transition-all duration-500"
             style={{
               width: `${Math.min(pct, 100)}%`,
-              background: isEmpty ? "#EF4444" : "linear-gradient(90deg, #00E2B5, #00C9A0)",
+              background: isEmpty ? "var(--error)" : "linear-gradient(90deg, var(--accent), var(--accent-hover))",
             }}
           />
         </div>
@@ -193,9 +193,9 @@ function PackageUpgradeBanner({ quota }: { quota?: QuotaData }) {
       </div>
 
       <div className="ml-6">
-        <Link href="/dashboard/packages">
+        <Link href="/dashboard/billing/packages">
           <Button
-            className="bg-[#00E2B5] hover:bg-[#00C9A0] text-[#0b1118] font-semibold rounded-lg"
+            className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] font-semibold rounded-lg"
             size="sm"
           >
             อัพเกรดแพคเกจ →
@@ -279,7 +279,7 @@ const QUICK_ACTIONS = [
   { icon: Send, label: "ส่ง SMS", href: "/dashboard/send", color: "var(--accent)" },
   { icon: Megaphone, label: "สร้างแคมเปญ", href: "/dashboard/campaigns", color: "var(--accent-secondary)" },
   { icon: UserPlus, label: "เพิ่มรายชื่อ", href: "/dashboard/contacts", color: "var(--accent-purple)" },
-  { icon: Package, label: "ซื้อแพ็กเกจ", href: "/dashboard/packages", color: "var(--accent-warm)" },
+  { icon: Package, label: "ซื้อแพ็กเกจ", href: "/dashboard/billing/packages", color: "var(--accent-warm)" },
 ];
 
 function QuickActionsBar() {
@@ -612,9 +612,9 @@ function UsageChart({ chartData }: { chartData: DayStats[] }) {
               <Tooltip content={<ChartTooltip />} cursor={{ stroke: "rgba(255,255,255,0.1)", strokeDasharray: "4 4" }} />
               <ReferenceLine
                 y={avg}
-                stroke="rgba(250,205,99,0.25)"
+                stroke="rgba(var(--warning-rgb),0.25)"
                 strokeDasharray="6 4"
-                label={{ value: "avg", position: "right", fill: "rgba(250,205,99,0.4)", fontSize: 9 }}
+                label={{ value: "avg", position: "right", fill: "rgba(var(--warning-rgb),0.4)", fontSize: 9 }}
               />
               <Area
                 type="monotone"
@@ -705,7 +705,7 @@ function QuotaWidget({ quota }: { quota?: QuotaData }) {
           </div>
         )}
 
-        <Link href="/dashboard/packages">
+        <Link href="/dashboard/billing/packages">
           <Button
             variant="outline"
             className="w-full border-[var(--border-default)] text-[var(--text-primary)] hover:bg-[var(--bg-base)] rounded-lg"
@@ -734,7 +734,7 @@ function QuotaWidget({ quota }: { quota?: QuotaData }) {
                         {idx === 0 && (
                           <span
                             className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
-                            style={{ background: "rgba(250,205,99,0.15)", color: "var(--warning)" }}
+                            style={{ background: "rgba(var(--warning-rgb),0.15)", color: "var(--warning)" }}
                           >
                             ใช้ก่อน
                           </span>
@@ -871,7 +871,7 @@ function ActivityFeed({ messages }: { messages: DashboardStats["recentMessages"]
 const statusConfig: Record<string, { badge: string; label: string }> = {
   delivered: { badge: "bg-[var(--success-bg)] text-[var(--success)] border border-[rgba(8,153,129,0.2)]", label: "สำเร็จ" },
   sent: { badge: "bg-[rgba(var(--accent-rgb),0.08)] text-[var(--accent)] border border-[rgba(var(--accent-rgb),0.2)]", label: "ส่งแล้ว" },
-  pending: { badge: "bg-[var(--warning-bg)] text-[var(--warning)] border border-[rgba(250,205,99,0.2)]", label: "รอส่ง" },
+  pending: { badge: "bg-[var(--warning-bg)] text-[var(--warning)] border border-[rgba(var(--warning-rgb),0.2)]", label: "รอส่ง" },
   failed: { badge: "bg-[var(--danger-bg)] text-[var(--error)] border border-[rgba(242,54,69,0.2)]", label: "ล้มเหลว" },
 };
 

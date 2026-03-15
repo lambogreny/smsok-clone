@@ -17,6 +17,8 @@ import {
   Hash,
   Trash2,
   AlertTriangle,
+  Pencil,
+  Copy,
 } from "lucide-react";
 import { formatThaiDateOnly } from "@/lib/format-thai-date";
 import { Button } from "@/components/ui/button";
@@ -31,6 +33,23 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import CustomSelect from "@/components/ui/CustomSelect";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -130,6 +149,9 @@ export default function SendersPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
+  // Delete confirmation
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+
   // Add form
   const [newName, setNewName] = useState("");
   const [newType, setNewType] = useState("general");
@@ -194,13 +216,13 @@ export default function SendersPage() {
     }
   }
 
-  async function handleDelete(id: string, name: string) {
-    const ok = window.confirm(`ต้องการลบชื่อผู้ส่ง "${name}" ?`);
-    if (!ok) return;
+  async function confirmDelete() {
+    if (!deleteTarget) return;
     try {
-      const res = await fetch(`/api/v1/senders/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/v1/senders/${deleteTarget.id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("delete failed");
-      if (expandedId === id) setExpandedId(null);
+      if (expandedId === deleteTarget.id) setExpandedId(null);
+      setDeleteTarget(null);
       await fetchSenders();
     } catch {
       toast.error("ไม่สามารถลบชื่อผู้ส่งได้ กรุณาลองใหม่");
@@ -227,24 +249,70 @@ export default function SendersPage() {
   // ---- Empty state (no senders at all) ----
   if (senders.length === 0) {
     return (
-      <div className="p-6 md:p-8 max-w-6xl">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">ชื่อผู้ส่ง</h1>
-          <p className="text-sm text-[var(--text-muted)] mt-1">จัดการชื่อผู้ส่ง SMS ของคุณ</p>
+      <>
+        <div className="p-6 md:p-8 max-w-6xl">
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">ชื่อผู้ส่ง</h1>
+            <p className="text-sm text-[var(--text-muted)] mt-1">จัดการชื่อผู้ส่ง SMS ของคุณ</p>
+          </div>
+          <EmptyState
+            icon={Radio}
+            iconColor="var(--accent)"
+            iconBg="rgba(var(--accent-rgb),0.08)"
+            iconBorder="rgba(var(--accent-rgb),0.15)"
+            title="ยังไม่มีชื่อผู้ส่ง"
+            description={"เพิ่มชื่อผู้ส่งเพื่อเริ่มส่ง SMS\nชื่อผู้ส่งจะแสดงเป็นชื่อที่ผู้รับเห็น"}
+            ctaLabel="เพิ่มชื่อผู้ส่ง"
+            ctaAction={() => setDialogOpen(true)}
+            helpLabel="วิธีตั้งชื่อผู้ส่งที่ดี"
+            helpAction={() => router.push("/dashboard/docs/senders")}
+          />
         </div>
-        <EmptyState
-          icon={Radio}
-          iconColor="var(--accent)"
-          iconBg="rgba(var(--accent-rgb),0.08)"
-          iconBorder="rgba(var(--accent-rgb),0.15)"
-          title="ยังไม่มีชื่อผู้ส่ง"
-          description={"เพิ่มชื่อผู้ส่งเพื่อเริ่มส่ง SMS\nชื่อผู้ส่งจะแสดงเป็นชื่อที่ผู้รับเห็น"}
-          ctaLabel="เพิ่มชื่อผู้ส่ง"
-          ctaAction={() => setDialogOpen(true)}
-          helpLabel="วิธีตั้งชื่อผู้ส่งที่ดี"
-          helpAction={() => router.push("/dashboard/docs/senders")}
-        />
-      </div>
+
+        {/* Add Sender Dialog — must render even in empty state */}
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>เพิ่มชื่อผู้ส่งใหม่</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-2">
+              <div>
+                <label className="text-xs font-medium text-[var(--text-primary)] mb-1.5 block">ชื่อผู้ส่ง</label>
+                <div className="relative">
+                  <Input
+                    value={newName}
+                    onChange={(e) => { if (e.target.value.length <= 11) setNewName(e.target.value); }}
+                    placeholder="เช่น MyBrand"
+                    maxLength={11}
+                    className="h-[36px] text-sm pr-12"
+                    style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)]">{newName.length}/11</span>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-[var(--text-primary)] mb-1.5 block">ประเภท</label>
+                <CustomSelect value={newType} onChange={setNewType} options={TYPE_OPTIONS} placeholder="เลือกประเภท" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-[var(--text-primary)] mb-1.5 block">หมายเหตุ (ไม่บังคับ)</label>
+                <Textarea value={newNote} onChange={(e) => setNewNote(e.target.value)} placeholder="อธิบายการใช้งาน เช่น ส่ง OTP สำหรับยืนยันตัวตน" rows={3} className="text-sm" />
+              </div>
+              <div className="rounded-lg p-3 flex items-start gap-2.5" style={{ background: "var(--warning-bg)", border: "1px solid rgba(250,205,99,0.12)" }}>
+                <AlertTriangle className="size-4 flex-shrink-0 mt-0.5" style={{ color: "var(--warning)" }} />
+                <p className="text-xs leading-relaxed" style={{ color: "var(--warning)" }}>ชื่อผู้ส่งต้องผ่านการอนุมัติก่อนใช้งาน โดยปกติใช้เวลา 1-3 วันทำการ</p>
+              </div>
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <Button variant="ghost" size="sm" onClick={() => setDialogOpen(false)}>ยกเลิก</Button>
+                <Button size="sm" className="h-[36px] gap-1.5" onClick={handleAddSender} disabled={!newName.trim() || submitting}>
+                  {submitting ? <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Plus className="size-4" />}
+                  {submitting ? "กำลังส่ง..." : "ยื่นคำขอ"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </>
     );
   }
 
@@ -515,19 +583,48 @@ export default function SendersPage() {
                           {formatThaiDateOnly(sender.createdAt)}
                         </td>
 
-                        {/* Kebab */}
+                        {/* Kebab Menu */}
                         <td className="px-5 py-3.5 text-right">
-                          <button
-                            type="button"
-                            className="inline-flex items-center justify-center w-[28px] h-[28px] rounded-lg transition-colors hover:bg-white/[0.06] text-[var(--text-muted)]"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(sender.id, sender.name);
-                            }}
-                            title="ลบ"
-                          >
-                            <MoreHorizontal className="size-4" />
-                          </button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger
+                              className="inline-flex items-center justify-center w-[28px] h-[28px] rounded-lg transition-colors hover:bg-white/[0.06] text-[var(--text-muted)]"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <MoreHorizontal className="size-4" />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-40">
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setExpandedId(sender.id);
+                                }}
+                              >
+                                <Pencil className="size-4 mr-2" />
+                                แก้ไข
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigator.clipboard.writeText(sender.name);
+                                  toast.success(`คัดลอก "${sender.name}" แล้ว`);
+                                }}
+                              >
+                                <Copy className="size-4 mr-2" />
+                                คัดลอก
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeleteTarget({ id: sender.id, name: sender.name });
+                                }}
+                                className="text-[var(--error)] focus:text-[var(--error)]"
+                              >
+                                <Trash2 className="size-4 mr-2" />
+                                ลบ
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </td>
                       </tr>
 
@@ -595,7 +692,7 @@ export default function SendersPage() {
                                   variant="destructive"
                                   size="sm"
                                   className="h-[28px] gap-1.5 text-xs"
-                                  onClick={() => handleDelete(sender.id, sender.name)}
+                                  onClick={() => setDeleteTarget({ id: sender.id, name: sender.name })}
                                 >
                                   <Trash2 className="size-3.5" />
                                   ลบ
@@ -633,6 +730,27 @@ export default function SendersPage() {
           </p>
         </div>
       </div>
+
+      {/* ========== Delete Confirmation ========== */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>ยืนยันการลบชื่อผู้ส่ง</AlertDialogTitle>
+            <AlertDialogDescription>
+              ต้องการลบชื่อผู้ส่ง &quot;{deleteTarget?.name}&quot; หรือไม่? การดำเนินการนี้ไม่สามารถย้อนกลับได้
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-[var(--error)] text-white hover:bg-[var(--error)]/90"
+            >
+              ลบ
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* ========== Add Sender Dialog ========== */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

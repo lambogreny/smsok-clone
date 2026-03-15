@@ -41,7 +41,7 @@ const TOUR_STEPS: TourStep[] = [
     position: "right",
   },
   {
-    selector: '[href="/dashboard/packages"]',
+    selector: '[href="/dashboard/billing/packages"]',
     title: "ซื้อแพ็กเกจ",
     description: "เลือกแพ็กเกจ SMS ที่เหมาะกับธุรกิจของคุณ พร้อมราคาพิเศษสำหรับแพ็กเกจใหญ่",
     position: "right",

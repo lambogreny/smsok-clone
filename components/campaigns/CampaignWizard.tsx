@@ -508,7 +508,7 @@ export default function CampaignWizard({
                   const totalSms = seg.segments * recipients;
                   return {
                     label: "ค่าใช้จ่ายโดยประมาณ",
-                    value: `${recipients} ผู้รับ × ${seg.segments} segment${seg.segments > 1 ? "s" : ""} = ${totalSms} เครดิต`,
+                    value: `${recipients} ผู้รับ × ${seg.segments} segment${seg.segments > 1 ? "s" : ""} = ${totalSms} ข้อความ`,
                   };
                 })(),
               ].map((item) => (

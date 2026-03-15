@@ -23,7 +23,7 @@ const LABELS: Record<string, string> = {
   history: "ประวัติ",
   invoices: "ใบกำกับภาษี",
   quotations: "ใบเสนอราคา",
-  credits: "เครดิต",
+  credits: "โควต้า",
   settings: "ตั้งค่า",
   profile: "โปรไฟล์",
   security: "ความปลอดภัย",

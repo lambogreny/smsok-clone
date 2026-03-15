@@ -158,8 +158,8 @@ export default function CampaignDetailClient({ campaignId }: { campaignId: strin
         </div>
 
         <div className="mt-4 pt-4 border-t border-[var(--table-border)] grid grid-cols-2 gap-3 text-sm">
-          <div><p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">เครดิตสำรอง</p><p className="text-[var(--text-secondary)] tabular-nums">{campaign.creditReserved.toLocaleString()} SMS</p></div>
-          <div><p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">เครดิตใช้จริง</p><p className="text-[var(--text-secondary)] tabular-nums">{campaign.creditUsed.toLocaleString()} SMS</p></div>
+          <div><p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">โควต้าสำรอง</p><p className="text-[var(--text-secondary)] tabular-nums">{campaign.creditReserved.toLocaleString()} SMS</p></div>
+          <div><p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">โควต้าใช้จริง</p><p className="text-[var(--text-secondary)] tabular-nums">{campaign.creditUsed.toLocaleString()} SMS</p></div>
         </div>
       </div>
     </div>

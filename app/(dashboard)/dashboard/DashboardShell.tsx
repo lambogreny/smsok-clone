@@ -92,7 +92,7 @@ const sidebarItems: SidebarItem[] = [
   { icon: MessageSquare, label: "ประวัติการส่ง", href: "/dashboard/messages", section: "main" },
   { icon: Lock, label: "บริการ OTP", href: "/dashboard/otp", section: "main" },
   { icon: FileText, label: "เทมเพลต", href: "/dashboard/templates", section: "main" },
-  { icon: CircleDollarSign, label: "ซื้อแพ็กเกจ", href: "/dashboard/packages", section: "billing" },
+  { icon: CircleDollarSign, label: "ซื้อแพ็กเกจ", href: "/dashboard/billing/packages", section: "billing" },
   { icon: Receipt, label: "แพ็กเกจของฉัน", href: "/dashboard/packages/my", section: "billing" },
   { icon: ClipboardList, label: "ประวัติคำสั่งซื้อ", href: "/dashboard/billing/orders", section: "billing" },
   { icon: User, label: "รายชื่อผู้ติดต่อ", href: "/dashboard/contacts", section: "audience" },

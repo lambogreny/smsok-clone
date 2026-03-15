@@ -321,7 +321,7 @@ function PriceSummaryCard({
 export default function CheckoutPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const tierParam = searchParams.get("tier");
+  const tierParam = searchParams.get("packageId") ?? searchParams.get("tier");
   const isReorder = searchParams.get("reorder") === "1";
 
   const [tiers, setTiers] = useState<PackageTier[]>([]);

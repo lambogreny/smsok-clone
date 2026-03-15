@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function TopupRedirect() {
-  redirect("/dashboard/packages");
+  redirect("/dashboard/billing/packages");
 }
