@@ -93,6 +93,7 @@ model Role {
   parentRoleId   String?          @map("parent_role_id")
   createdAt      DateTime         @default(now()) @map("created_at")
   updatedAt      DateTime         @updatedAt @map("updated_at")
+  admin_roles    admin_roles[]
   permissions    RolePermission[]
   organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   parentRole     Role?            @relation("RoleHierarchy", fields: [parentRoleId], references: [id])
@@ -165,6 +166,7 @@ model User {
   bankAccounts        BankAccount[]
   billingInfo         BillingInfo?
   campaigns           Campaign[]
+  consentStatuses     ConsentStatus[]
   contactGroups       ContactGroup[]
   contacts            Contact[]
   couponUsages        CouponUsage[]
@@ -181,7 +183,6 @@ model User {
   passwordHistory     PasswordHistory[]
   payments            Payment[]
   consentLogs         PdpaConsentLog[]
-  consentStatuses     ConsentStatus[]
   createdPolicies     PdpaPolicy[]       @relation("PolicyCreator")
   quotations          Quotation[]
   scheduledSms        ScheduledSms[]
@@ -413,7 +414,6 @@ model SenderName {
   name           String
   status         String               @default("DRAFT")
   accountType    String?              @map("account_type")
-  senderType     String?              @map("sender_type")
   rejectNote     String?              @map("reject_note")
   adminNotes     String?              @map("admin_notes")
   submittedAt    DateTime?            @map("submitted_at")
@@ -423,6 +423,7 @@ model SenderName {
   operatorSentAt DateTime?            @map("operator_sent_at")
   createdAt      DateTime             @default(now()) @map("created_at")
   updatedAt      DateTime             @default(now()) @updatedAt @map("updated_at")
+  senderType     String?              @map("sender_type")
   documents      SenderNameDocument[]
   history        SenderNameHistory[]
   urls           SenderNameUrl[]
@@ -599,6 +600,7 @@ model ScheduledSms {
   errorCode      String?       @map("error_code")
   creditCost     Int           @default(1) @map("credit_cost")
   createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
   organization   Organization? @relation(fields: [organizationId], references: [id])
   user           User          @relation(fields: [userId], references: [id])
 
@@ -726,30 +728,30 @@ model CouponUsage {
 }
 
 model Invoice {
-  id             String        @id @default(cuid())
-  userId         String        @map("user_id")
-  organizationId String?       @map("organization_id")
-  transactionId  String?       @map("transaction_id")
-  invoiceNumber  String        @unique @map("invoice_number")
-  type           InvoiceType   @default(TAX_INVOICE)
-  status         InvoiceStatus @default(DRAFT)
-  items          Json
-  subtotal       Decimal       @db.Decimal(12, 2)
-  vatRate        Decimal       @default(7.00) @map("vat_rate") @db.Decimal(4, 2)
-  vatAmount      Decimal       @map("vat_amount") @db.Decimal(12, 2)
-  whtRate        Decimal?      @map("wht_rate") @db.Decimal(4, 2)
-  whtAmount      Decimal?      @map("wht_amount") @db.Decimal(12, 2)
-  total          Decimal       @db.Decimal(12, 2)
-  netPayable     Decimal?      @map("net_payable") @db.Decimal(12, 2)
-  amountInWords  String?       @map("amount_in_words")
-  dueDate        DateTime?     @map("due_date")
-  paidAt         DateTime?     @map("paid_at")
-  pdfUrl         String?       @map("pdf_url")
-  notes          String?
-  createdAt      DateTime      @default(now()) @map("created_at")
-  updatedAt      DateTime      @updatedAt @map("updated_at")
-  organization   Organization? @relation(fields: [organizationId], references: [id])
-  user           User          @relation(fields: [userId], references: [id])
+  id              String           @id @default(cuid())
+  userId          String           @map("user_id")
+  organizationId  String?          @map("organization_id")
+  transactionId   String?          @map("transaction_id")
+  invoiceNumber   String           @unique @map("invoice_number")
+  type            InvoiceType      @default(TAX_INVOICE)
+  status          InvoiceStatus    @default(DRAFT)
+  items           Json
+  subtotal        Decimal          @db.Decimal(12, 2)
+  vatRate         Decimal          @default(7.00) @map("vat_rate") @db.Decimal(4, 2)
+  vatAmount       Decimal          @map("vat_amount") @db.Decimal(12, 2)
+  whtRate         Decimal?         @map("wht_rate") @db.Decimal(4, 2)
+  whtAmount       Decimal?         @map("wht_amount") @db.Decimal(12, 2)
+  total           Decimal          @db.Decimal(12, 2)
+  netPayable      Decimal?         @map("net_payable") @db.Decimal(12, 2)
+  amountInWords   String?          @map("amount_in_words")
+  dueDate         DateTime?        @map("due_date")
+  paidAt          DateTime?        @map("paid_at")
+  pdfUrl          String?          @map("pdf_url")
+  notes           String?
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  organization    Organization?    @relation(fields: [organizationId], references: [id])
+  user            User             @relation(fields: [userId], references: [id])
   whtCertificates WhtCertificate[]
 
   @@index([userId, createdAt])
@@ -905,7 +907,6 @@ model WhtCertificate {
   id             String        @id @default(cuid())
   userId         String        @map("user_id")
   organizationId String?       @map("organization_id")
-  invoiceId      String?       @map("invoice_id")
   transactionId  String?       @map("transaction_id")
   whtNumber      String?       @map("wht_number")
   whtDate        DateTime      @map("wht_date")
@@ -919,6 +920,7 @@ model WhtCertificate {
   reviewedAt     DateTime?     @map("reviewed_at")
   reviewNote     String?       @map("review_note")
   createdAt      DateTime      @default(now()) @map("created_at")
+  invoiceId      String?       @map("invoice_id")
   invoice        Invoice?      @relation(fields: [invoiceId], references: [id])
   organization   Organization? @relation(fields: [organizationId], references: [id])
   transaction    Transaction?  @relation(fields: [transactionId], references: [id])
@@ -1021,7 +1023,7 @@ model Order {
   whtCertUrl         String?           @map("wht_cert_url")
   whtCertVerified    Boolean?          @map("wht_cert_verified")
   adminNote          String?           @map("admin_note")
-  rejectReason       String?           @db.VarChar(30) @map("reject_reason")
+  rejectReason       String?           @map("reject_reason") @db.VarChar(30)
   rejectMessage      String?           @map("reject_message")
   rejectedAt         DateTime?         @map("rejected_at")
   slipAttemptCount   Int               @default(0) @map("slip_attempt_count")
@@ -1055,7 +1057,6 @@ model OrderDocument {
   orderId            String            @map("order_id")
   type               OrderDocumentType
   documentNumber     String            @unique @map("document_number")
-  verificationCode   String            @unique @default(uuid()) @map("verification_code")
   issuedAt           DateTime          @default(now()) @map("issued_at")
   voidedAt           DateTime?         @map("voided_at")
   voidReason         String?           @map("void_reason")
@@ -1064,6 +1065,7 @@ model OrderDocument {
   deletedAt          DateTime?         @map("deleted_at")
   createdAt          DateTime          @default(now()) @map("created_at")
   updatedAt          DateTime          @updatedAt @map("updated_at")
+  verificationCode   String            @unique @default(uuid()) @map("verification_code")
   order              Order             @relation(fields: [orderId], references: [id])
   replacesDocument   OrderDocument?    @relation("OrderDocumentReplacement", fields: [replacesDocumentId], references: [id])
   replacementDocs    OrderDocument[]   @relation("OrderDocumentReplacement")
@@ -1230,13 +1232,13 @@ model NotificationPrefs {
   emailCreditLow     Boolean  @default(true) @map("email_credit_low")
   emailCampaignDone  Boolean  @default(true) @map("email_campaign_done")
   emailWeeklyReport  Boolean  @default(false) @map("email_weekly_report")
-  emailPackageExpiry Boolean  @default(true) @map("email_package_expiry")
-  emailInvoice       Boolean  @default(true) @map("email_invoice")
-  emailSecurity      Boolean  @default(true) @map("email_security")
   smsCreditLow       Boolean  @default(false) @map("sms_credit_low")
   smsCampaignDone    Boolean  @default(false) @map("sms_campaign_done")
   createdAt          DateTime @default(now()) @map("created_at")
   updatedAt          DateTime @updatedAt @map("updated_at")
+  emailInvoice       Boolean  @default(true) @map("email_invoice")
+  emailPackageExpiry Boolean  @default(true) @map("email_package_expiry")
+  emailSecurity      Boolean  @default(true) @map("email_security")
   user               User     @relation(fields: [userId], references: [id])
 
   @@map("notification_prefs")
@@ -1354,18 +1356,26 @@ model AuditLog {
 }
 
 model AdminUser {
-  id              String          @id @default(cuid())
-  email           String          @unique
-  name            String
-  password        String
-  role            AdminRole       @default(SUPPORT)
-  isActive        Boolean         @default(true) @map("is_active")
-  lastLogin       DateTime?       @map("last_login")
-  createdAt       DateTime        @default(now()) @map("created_at")
-  updatedAt       DateTime        @updatedAt @map("updated_at")
-  refunds         Refund[]
-  assignedTickets SupportTicket[] @relation("AssignedTickets")
-  ticketReplies   TicketReply[]
+  id                                                 String                 @id @default(cuid())
+  email                                              String                 @unique
+  name                                               String
+  password                                           String
+  role                                               AdminRole              @default(SUPPORT)
+  isActive                                           Boolean                @default(true) @map("is_active")
+  lastLogin                                          DateTime?              @map("last_login")
+  createdAt                                          DateTime               @default(now()) @map("created_at")
+  updatedAt                                          DateTime               @updatedAt @map("updated_at")
+  must_change_password                               Boolean                @default(false)
+  password_policy_version                            Int                    @default(1)
+  last_password_changed_at                           DateTime?
+  two_factor_enabled                                 Boolean                @default(false)
+  admin_roles_admin_roles_admin_user_idToadmin_users admin_roles[]          @relation("admin_roles_admin_user_idToadmin_users")
+  admin_roles_admin_roles_assigned_byToadmin_users   admin_roles[]          @relation("admin_roles_assigned_byToadmin_users")
+  admin_sessions                                     admin_sessions[]
+  admin_two_factor_auth                              admin_two_factor_auth?
+  refunds                                            Refund[]
+  assignedTickets                                    SupportTicket[]        @relation("AssignedTickets")
+  ticketReplies                                      TicketReply[]
 
   @@map("admin_users")
 }
@@ -1379,12 +1389,12 @@ model SupportTicket {
   description    String
   status         TicketStatus   @default(OPEN)
   priority       TicketPriority @default(MEDIUM)
-  category       TicketCategory @default(GENERAL)
   resolvedAt     DateTime?      @map("resolved_at")
   closedAt       DateTime?      @map("closed_at")
   firstReplyAt   DateTime?      @map("first_reply_at")
   createdAt      DateTime       @default(now()) @map("created_at")
   updatedAt      DateTime       @updatedAt @map("updated_at")
+  category       TicketCategory @default(GENERAL)
   assignee       AdminUser?     @relation("AssignedTickets", fields: [assigneeId], references: [id])
   replies        TicketReply[]
 
@@ -1435,13 +1445,13 @@ model KnowledgeBase {
   category        String    @default("general")
   slug            String    @unique
   published       Boolean   @default(false)
-  publishedAt     DateTime? @map("published_at")
   searchCount     Int       @default(0) @map("search_count")
-  viewCount       Int       @default(0) @map("view_count")
-  helpfulCount    Int       @default(0) @map("helpful_count")
-  notHelpfulCount Int       @default(0) @map("not_helpful_count")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
+  helpfulCount    Int       @default(0) @map("helpful_count")
+  notHelpfulCount Int       @default(0) @map("not_helpful_count")
+  publishedAt     DateTime? @map("published_at")
+  viewCount       Int       @default(0) @map("view_count")
 
   @@index([category])
   @@index([published])
@@ -1546,40 +1556,13 @@ model Payment {
   packageTierId    String?          @map("package_tier_id")
   amount           Int
   vatAmount        Int?             @map("vat_amount")
-  totalAmount      Int?             @map("total_amount")
   currency         String           @default("THB")
   method           String           @default("BANK_TRANSFER")
   status           String           @default("PENDING")
-  slipUrl          String?          @map("slip_url")
-  slipFileName     String?          @map("slip_file_name")
-  slipFileSize     Int?             @map("slip_file_size")
-  easyslipVerified Boolean?         @map("easyslip_verified")
-  easyslipResponse Json?            @map("easyslip_response")
-  easyslipAmount   Int?             @map("easyslip_amount")
-  easyslipBank     String?          @map("easyslip_bank")
-  easyslipDate     DateTime?        @map("easyslip_date")
-  adminNote        String?          @map("admin_note")
-  rejectReason     String?          @map("reject_reason")
-  reviewedBy       String?          @map("reviewed_by")
-  reviewedAt       DateTime?        @map("reviewed_at")
-  hasWht           Boolean          @default(false) @map("has_wht")
-  whtCertUrl       String?          @map("wht_cert_url")
-  whtCertVerified  Boolean?         @map("wht_cert_verified")
   taxProfileId     String?          @map("tax_profile_id")
-  netPayAmount     Int?             @map("net_pay_amount")
-  expiresAt        DateTime?        @map("expires_at")
-  invoiceNumber    String?          @map("invoice_number")
-  invoiceUrl       String?          @map("invoice_url")
-  preInvoiceNumber String?          @map("pre_invoice_number")
-  preInvoiceUrl    String?          @map("pre_invoice_url")
-  creditNoteNumber String?          @map("credit_note_number")
-  creditNoteUrl    String?          @map("credit_note_url")
-  refundAmount     Int?             @map("refund_amount")
-  refundedAt       DateTime?        @map("refunded_at")
   creditsAdded     Int?             @map("credits_added")
   transactionId    String?          @map("transaction_id")
   subscriptionId   String?          @map("subscription_id")
-  paidAt           DateTime?        @map("paid_at")
   chargeId         String?          @unique @map("omise_charge_id")
   paymentToken     String?          @map("omise_token")
   failureCode      String?          @map("failure_code")
@@ -1591,6 +1574,33 @@ model Payment {
   idempotencyKey   String?          @unique @map("idempotency_key")
   createdAt        DateTime         @default(now()) @map("created_at")
   updatedAt        DateTime         @updatedAt @map("updated_at")
+  adminNote        String?          @map("admin_note")
+  creditNoteNumber String?          @map("credit_note_number")
+  creditNoteUrl    String?          @map("credit_note_url")
+  easyslipAmount   Int?             @map("easyslip_amount")
+  easyslipBank     String?          @map("easyslip_bank")
+  easyslipDate     DateTime?        @map("easyslip_date")
+  easyslipResponse Json?            @map("easyslip_response")
+  easyslipVerified Boolean?         @map("easyslip_verified")
+  expiresAt        DateTime?        @map("expires_at")
+  hasWht           Boolean          @default(false) @map("has_wht")
+  invoiceNumber    String?          @map("invoice_number")
+  invoiceUrl       String?          @map("invoice_url")
+  netPayAmount     Int?             @map("net_pay_amount")
+  paidAt           DateTime?        @map("paid_at")
+  preInvoiceNumber String?          @map("pre_invoice_number")
+  preInvoiceUrl    String?          @map("pre_invoice_url")
+  refundAmount     Int?             @map("refund_amount")
+  refundedAt       DateTime?        @map("refunded_at")
+  rejectReason     String?          @map("reject_reason")
+  reviewedAt       DateTime?        @map("reviewed_at")
+  reviewedBy       String?          @map("reviewed_by")
+  slipFileName     String?          @map("slip_file_name")
+  slipFileSize     Int?             @map("slip_file_size")
+  slipUrl          String?          @map("slip_url")
+  totalAmount      Int?             @map("total_amount")
+  whtCertUrl       String?          @map("wht_cert_url")
+  whtCertVerified  Boolean?         @map("wht_cert_verified")
   history          PaymentHistory[]
   organization     Organization?    @relation(fields: [organizationId], references: [id])
   packageTier      PackageTier?     @relation(fields: [packageTierId], references: [id])
@@ -1643,9 +1653,9 @@ model TaxProfile {
 
 model SystemSetting {
   key       String   @id
+  updatedAt DateTime @updatedAt @map("updated_at")
   value     String
   createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("system_settings")
 }
@@ -1813,9 +1823,9 @@ model PdpaConsentLog {
   action      ConsentAction
   ipAddress   String?       @map("ip_address")
   userAgent   String?       @map("user_agent")
-  channel     String        @default("WEB") // WEB | SMS | API
   metadata    Json?
   recordedAt  DateTime      @default(now()) @map("recorded_at")
+  channel     String        @default("WEB")
   policy      PdpaPolicy    @relation(fields: [policyId], references: [id])
   user        User          @relation(fields: [userId], references: [id])
 
@@ -1853,6 +1863,48 @@ model BankAccount {
 
   @@index([userId])
   @@map("bank_accounts")
+}
+
+model admin_roles {
+  id                                                 String     @id
+  admin_user_id                                      String
+  role_id                                            String
+  assigned_by                                        String?
+  assigned_at                                        DateTime   @default(now())
+  admin_users_admin_roles_admin_user_idToadmin_users AdminUser  @relation("admin_roles_admin_user_idToadmin_users", fields: [admin_user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  admin_users_admin_roles_assigned_byToadmin_users   AdminUser? @relation("admin_roles_assigned_byToadmin_users", fields: [assigned_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  roles                                              Role       @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([admin_user_id, role_id])
+  @@index([role_id])
+}
+
+model admin_sessions {
+  id                 String    @id
+  admin_user_id      String
+  session_token_hash String    @unique
+  ip_address         String?
+  user_agent         String?
+  last_seen_at       DateTime  @default(now())
+  expires_at         DateTime
+  revoked_at         DateTime?
+  created_at         DateTime  @default(now())
+  admin_users        AdminUser @relation(fields: [admin_user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([admin_user_id, expires_at])
+  @@index([revoked_at])
+}
+
+model admin_two_factor_auth {
+  id             String    @id
+  admin_user_id  String    @unique
+  secret         String
+  recovery_codes String[]  @default([])
+  enabled        Boolean   @default(false)
+  verified_at    DateTime?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @default(now())
+  admin_users    AdminUser @relation(fields: [admin_user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 enum MessageType {

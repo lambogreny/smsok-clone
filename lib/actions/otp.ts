@@ -53,7 +53,8 @@ function hasSmsGatewayCredentials(): boolean {
 }
 
 function getDevOtpBypassCode(): string | null {
-  if (process.env.NODE_ENV === "production") {
+  // Only allow OTP bypass in local development — never in staging/test/production
+  if (process.env.NODE_ENV !== "development") {
     return null;
   }
 
@@ -218,8 +219,8 @@ export async function generateOtp_(
     creditUsed: delivery === "sms" ? OTP_CREDIT_COST : 0,
     smsRemaining: updatedQuota.totalRemaining,
     delivery,
-    // Include OTP code in non-production for testing (dev_bypass or dev with real gateway)
-    ...(process.env.NODE_ENV !== "production" ? { debugCode: code } : {}),
+    // Only expose OTP code when using dev bypass (no real SMS sent)
+    ...(delivery === "dev_bypass" ? { debugCode: code } : {}),
   };
 }
 

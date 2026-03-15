@@ -11,6 +11,7 @@ import {
 } from "../package/quota";
 import { checkSendingHours } from "../sending-hours";
 import { hasMarketingConsent } from "./consent";
+import { resolveOrganizationIdForUser, DEFAULT_ORGANIZATION_ID } from "../organizations/resolve";
 
 const MAX_SCHEDULE_DAYS_AHEAD = 30;
 
@@ -62,18 +63,20 @@ export async function createScheduledSms(
   // Check remaining quota
   await ensureSufficientQuota(userId, smsCount);
 
-  // Look up user's organization for quiet-hours enforcement
-  const userOrg = await prisma.membership.findFirst({
-    where: { userId },
-    select: { organizationId: true },
-  });
+  // Resolve user's organization deterministically (oldest membership)
+  let resolvedOrgId: string | null = null;
+  try {
+    resolvedOrgId = await resolveOrganizationIdForUser(userId, DEFAULT_ORGANIZATION_ID);
+  } catch {
+    // User may not have any org — proceed with null
+  }
 
   // HOLD: deduct quota now via FIFO
   const scheduled = await prisma.$transaction(async (tx) => {
     const record = await tx.scheduledSms.create({
       data: {
         userId,
-        organizationId: userOrg?.organizationId ?? null,
+        organizationId: resolvedOrgId,
         senderName: data.senderName,
         recipient: data.recipient,
         content: data.message,
@@ -152,12 +155,43 @@ export async function cancelScheduledSms(userId: string, id: string) {
 export async function processScheduledSms() {
   const now = new Date();
 
-  // Atomic claim: mark due rows as "processing" before reading them.
-  // This prevents double-send when two cron invocations overlap.
-  const { count: claimedCount } = await prisma.scheduledSms.updateMany({
+  const BATCH_SIZE = 50;
+  const STALE_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes
+
+  // Recovery: reset stuck "processing" rows back to "pending".
+  // If a previous cron crashed mid-processing, these rows would be stranded forever.
+  const staleThreshold = new Date(now.getTime() - STALE_THRESHOLD_MS);
+  await prisma.scheduledSms.updateMany({
+    where: {
+      status: "processing",
+      updatedAt: { lt: staleThreshold },
+    },
+    data: { status: "pending" },
+  });
+
+  // Atomic claim: find due IDs first, then claim only BATCH_SIZE rows.
+  // This prevents stranding messages in "processing" state forever.
+  const dueIds = await prisma.scheduledSms.findMany({
     where: {
       status: "pending",
       scheduledAt: { lte: now },
+    },
+    select: { id: true },
+    take: BATCH_SIZE,
+    orderBy: { scheduledAt: "asc" },
+  });
+
+  if (dueIds.length === 0) {
+    return { processed: 0, sent: 0, failed: 0, rescheduled: false };
+  }
+
+  const claimedIds = dueIds.map((r) => r.id);
+
+  // Atomically claim only the selected rows
+  const { count: claimedCount } = await prisma.scheduledSms.updateMany({
+    where: {
+      id: { in: claimedIds },
+      status: "pending", // re-check to prevent double-claim
     },
     data: { status: "processing" },
   });
@@ -166,12 +200,12 @@ export async function processScheduledSms() {
     return { processed: 0, sent: 0, failed: 0, rescheduled: false };
   }
 
-  // Now fetch the claimed rows — only this cron instance owns them
+  // Fetch only the rows we just claimed
   const dueMessages = await prisma.scheduledSms.findMany({
     where: {
+      id: { in: claimedIds },
       status: "processing",
     },
-    take: 50,
   });
 
   // Group by orgId to check sending hours per-org
@@ -222,12 +256,22 @@ export async function processScheduledSms() {
 
   for (const sms of allowedMessages) {
     try {
-      // PDPA: Skip if user lacks marketing consent
+      // PDPA: Skip if user lacks marketing consent — UNCONDITIONAL refund held quota
+      // (quota was deducted at schedule time; system blocked sending, not a delivery failure)
       const consented = await hasMarketingConsent(sms.userId);
       if (!consented) {
-        await prisma.scheduledSms.update({
-          where: { id: sms.id },
-          data: { status: "failed", errorCode: "PDPA_NO_MARKETING_CONSENT" },
+        const quota = await getRemainingQuota(sms.userId);
+        const firstPackage = quota.packages[0];
+
+        await prisma.$transaction(async (tx) => {
+          await tx.scheduledSms.update({
+            where: { id: sms.id },
+            data: { status: "failed", errorCode: "PDPA_NO_MARKETING_CONSENT" },
+          });
+
+          if (firstPackage) {
+            await refundQuota(tx, firstPackage.id, sms.creditCost);
+          }
         });
         results.skippedConsent++;
         continue;
