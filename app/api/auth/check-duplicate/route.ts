@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
 
     if (emailRaw) {
       const email = emailSchema.parse(emailRaw);
-      await prisma.user.findUnique({
+      const existing = await prisma.user.findUnique({
         where: { email },
         select: { id: true },
       });
@@ -43,13 +43,13 @@ export async function GET(req: NextRequest) {
       await waitForMinimumResponseTime(startedAt);
       return apiResponse({
         field: "email",
-        available: true,
+        available: !existing,
         message: GENERIC_CHECK_DUPLICATE_MESSAGE,
       });
     }
 
     const normalizedPhone = normalizePhone(phoneSchema.parse(phoneRaw));
-    await prisma.user.findUnique({
+    const existing = await prisma.user.findUnique({
       where: { phone: normalizedPhone },
       select: { id: true },
     });
@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
     await waitForMinimumResponseTime(startedAt);
     return apiResponse({
       field: "phone",
-      available: true,
+      available: !existing,
       message: GENERIC_CHECK_DUPLICATE_MESSAGE,
     });
   } catch (error) {
