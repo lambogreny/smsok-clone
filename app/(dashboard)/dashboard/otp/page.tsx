@@ -270,8 +270,8 @@ function QuickTestPanel() {
         }
 
         const otpData = data as { ref?: string; debugCode?: string };
-        setRefCode(otpData.ref || "REF-DEMO");
-        setOtpCode(otpData.debugCode || "123456");
+        setRefCode(otpData.ref || "");
+        setOtpCode(otpData.debugCode || "");
         setStep("sent");
         setCountdown(30);
       } catch (error) {

@@ -72,7 +72,7 @@ export default function RegisterPage() {
   const [countdown, setCountdown] = useState(OTP_EXPIRY);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [otpPending, setOtpPending] = useState(false);
-  const [debugCode, setDebugCode] = useState<string | null>(null);
+
   const [emailAvailability, setEmailAvailability] = useState<AvailabilityState>({ status: "idle", message: "" });
   const [phoneAvailability, setPhoneAvailability] = useState<AvailabilityState>({ status: "idle", message: "" });
 
@@ -198,9 +198,6 @@ export default function RegisterPage() {
       setResendCooldown(RESEND_COOLDOWN);
       setStep("otp");
       toast.success("ส่ง OTP สำเร็จ");
-      if (result.delivery === "debug") {
-        setDebugCode(result.debugCode ?? null);
-      }
     } catch (e) {
       const msg = safeErrorMessage(e) || "เกิดข้อผิดพลาด กรุณาลองใหม่";
       const rlSeconds = extractRateLimitSeconds(msg);
@@ -225,9 +222,6 @@ export default function RegisterPage() {
       setResendCooldown(RESEND_COOLDOWN);
       setOtpCode("");
       setOtpError("");
-      if (result.delivery === "debug") {
-        setDebugCode(result.debugCode ?? null);
-      }
     } catch (e) {
       setOtpError(safeErrorMessage(e));
     } finally {
@@ -726,12 +720,7 @@ export default function RegisterPage() {
               </CardHeader>
 
               <CardContent className="px-5 sm:px-8 pt-6 pb-2">
-                {debugCode && (
-                  <div className="mb-4 p-3 rounded-lg bg-[rgba(var(--warning-rgb),0.08)] border border-[rgba(var(--warning-rgb),0.2)] text-[var(--warning)] text-sm text-center">
-                    <span className="opacity-60 text-xs">DEV — OTP: </span>
-                    <span className="font-mono font-bold tracking-widest">{debugCode}</span>
-                  </div>
-                )}
+
                 {otpError && (
                   <div className="mb-4 p-3 rounded-lg bg-[rgba(var(--error-rgb),0.06)] border border-[rgba(var(--error-rgb),0.15)] text-[var(--error)] text-[13px] text-center">
                     {otpError}
