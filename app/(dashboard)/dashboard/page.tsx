@@ -26,7 +26,7 @@ export default async function DashboardPage() {
 
   try {
     [stats, quota, senderNames, contactsResult] = await Promise.all([
-      getDashboardStats(),
+      getDashboardStats().catch(() => null),
       getRemainingQuota(user.id).catch(() => ({
         packages: [] as Awaited<ReturnType<typeof getRemainingQuota>>["packages"],
         totalSms: 0,
@@ -39,9 +39,18 @@ export default async function DashboardPage() {
     ]);
   } catch {}
 
-  if (!stats || !quota) {
-    return <ErrorState type="SERVER_ERROR" />;
-  }
+  const defaultStats = {
+    user: { name: user.name ?? "ผู้ใช้ใหม่", email: user.email ?? "" },
+    today: { total: 0, delivered: 0, failed: 0, sent: 0, pending: 0 },
+    yesterday: { total: 0, delivered: 0, failed: 0, sent: 0, pending: 0 },
+    thisMonth: { total: 0, delivered: 0, failed: 0, sent: 0, pending: 0 },
+    recentMessages: [] as { id: string; recipient: string; status: string; senderName: string; creditCost: number; createdAt: Date }[],
+    last7Days: [] as { day: string; short: string; date: string; sms: number; delivered: number; failed: number }[],
+  };
+  const defaultQuota = { packages: [] as { id: string; smsTotal: number; smsUsed: number; expiresAt: Date; tier: { name: string; tierCode: string } }[], totalSms: 0, totalUsed: 0, totalRemaining: 0 };
+
+  if (!stats) stats = defaultStats as Awaited<ReturnType<typeof getDashboardStats>>;
+  if (!quota) quota = defaultQuota as Awaited<ReturnType<typeof getRemainingQuota>>;
 
   // Compute onboarding completed steps
   const completedSteps: string[] = [];
