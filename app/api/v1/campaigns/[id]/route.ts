@@ -112,8 +112,8 @@ async function updateCampaignRecord(userId: string, id: string, body: unknown) {
   const nextTemplateId = input.templateId === undefined ? campaign.templateId : input.templateId;
   const nextMessageBodyInput = input.messageBody === undefined ? campaign.messageBody : input.messageBody;
   const nextSenderName = input.senderName === undefined
-    ? (campaign.senderName ?? "EasySlip")
-    : (input.senderName ?? "EasySlip");
+    ? campaign.senderName
+    : input.senderName;
   const nextScheduledAt = input.scheduledAt === undefined ? campaign.scheduledAt : input.scheduledAt;
 
   let totalRecipients = campaign.totalRecipients;
@@ -146,7 +146,7 @@ async function updateCampaignRecord(userId: string, id: string, body: unknown) {
   const segmentCount = calculateSmsSegments(messageBody);
   const creditReserved = totalRecipients * segmentCount;
 
-  if (nextSenderName !== "EasySlip") {
+  if (nextSenderName) {
     const sender = await db.senderName.findFirst({
       where: { userId, name: nextSenderName, status: { in: ["APPROVED", "ACTIVE"] } },
       select: { id: true },
@@ -164,7 +164,7 @@ async function updateCampaignRecord(userId: string, id: string, body: unknown) {
       ...(input.templateId !== undefined ? { templateId: input.templateId } : {}),
       messageBody,
       segmentCount,
-      ...(input.senderName !== undefined ? { senderName: input.senderName ?? "EasySlip" } : {}),
+      ...(input.senderName !== undefined ? { senderName: input.senderName } : {}),
       ...(input.scheduledAt !== undefined
         ? {
             scheduledAt: input.scheduledAt,

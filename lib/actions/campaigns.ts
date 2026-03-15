@@ -133,7 +133,7 @@ export async function createCampaign(userIdOrData: string | unknown, maybeData?:
     messageBody: input.messageBody,
   });
 
-  if (input.senderName && input.senderName !== "EasySlip") {
+  if (input.senderName) {
     const sender = await db.senderName.findFirst({
       where: { userId, name: input.senderName, status: { in: ["APPROVED", "ACTIVE"] } },
       select: { id: true },
@@ -150,7 +150,7 @@ export async function createCampaign(userIdOrData: string | unknown, maybeData?:
       name: input.name,
       contactGroupId: input.contactGroupId,
       templateId: input.templateId,
-      senderName: input.senderName || "EasySlip",
+      senderName: input.senderName || null,
       messageBody,
       segmentCount,
       status: input.scheduledAt ? "scheduled" : "draft",
