@@ -3,6 +3,7 @@
  * Handles permission checking, Redis caching, system role provisioning.
  */
 
+import { randomBytes } from "crypto";
 import { Prisma } from "@prisma/client";
 import { prisma as db } from "./db";
 import { redis } from "./redis";
@@ -30,6 +31,7 @@ export const RBAC_ACTIONS = ["create", "read", "update", "delete", "manage"] as 
 
 export type RbacAction = (typeof RBAC_ACTIONS)[number];
 export type RbacResource = (typeof RBAC_RESOURCES)[number];
+type RbacDbClient = typeof db | Prisma.TransactionClient;
 
 // ── System Role Definitions ──────────────────────────────
 
@@ -106,15 +108,35 @@ function expandPatterns(patterns: string[]): Set<string> {
   return included;
 }
 
+function generateOrganizationSlug(name: string): string {
+  const base = name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 50);
+
+  return `${base || "org"}-${randomBytes(3).toString("hex")}`;
+}
+
+function buildWorkspaceName(user: { name: string; email: string }): string {
+  const label = user.name.trim() || user.email.split("@")[0] || "Workspace";
+  return `${label.slice(0, 80)} Workspace`;
+}
+
 // ── System Role Provisioning ─────────────────────────────
 
 /**
  * Create 5 system roles for a new organization.
  * Call this when an org is created. Idempotent.
  */
-export async function provisionSystemRoles(organizationId: string): Promise<void> {
+export async function provisionSystemRoles(
+  organizationId: string,
+  client: RbacDbClient = db,
+): Promise<void> {
   for (const def of SYSTEM_ROLES) {
-    const role = await db.role.upsert({
+    const role = await client.role.upsert({
       where: { organizationId_name: { organizationId, name: def.name } },
       update: { description: def.description },
       create: {
@@ -129,15 +151,15 @@ export async function provisionSystemRoles(organizationId: string): Promise<void
     const permIds: string[] = [];
     for (const key of expanded) {
       const [action, resource] = key.split(":");
-      const perm = await db.permission.findUnique({
+      const perm = await client.permission.findUnique({
         where: { action_resource: { action, resource } },
       });
       if (perm) permIds.push(perm.id);
     }
 
-    await db.rolePermission.deleteMany({ where: { roleId: role.id } });
+    await client.rolePermission.deleteMany({ where: { roleId: role.id } });
     if (permIds.length > 0) {
-      await db.rolePermission.createMany({
+      await client.rolePermission.createMany({
         data: permIds.map((permissionId) => ({ roleId: role.id, permissionId })),
         skipDuplicates: true,
       });
@@ -148,16 +170,83 @@ export async function provisionSystemRoles(organizationId: string): Promise<void
 /**
  * Assign the "Owner" system role to a user for an org.
  */
-export async function assignOwnerRole(userId: string, organizationId: string): Promise<void> {
-  const ownerRole = await db.role.findUnique({
+export async function assignOwnerRole(
+  userId: string,
+  organizationId: string,
+  client: RbacDbClient = db,
+): Promise<void> {
+  const ownerRole = await client.role.findUnique({
     where: { organizationId_name: { organizationId, name: "Owner" } },
   });
   if (!ownerRole) return;
 
-  await db.userRole.upsert({
+  await client.userRole.upsert({
     where: { userId_roleId_organizationId: { userId, roleId: ownerRole.id, organizationId } },
     update: {},
     create: { userId, roleId: ownerRole.id, organizationId },
+  });
+}
+
+export async function ensureUserWorkspace(
+  userId: string,
+): Promise<{ organizationId: string; role: string }> {
+  const membership = await db.membership.findFirst({
+    where: { userId },
+    select: { organizationId: true, role: true },
+    orderBy: { createdAt: "asc" },
+  });
+
+  if (membership) {
+    await ensureMembershipRoleAssignment(
+      userId,
+      membership.organizationId,
+      membership.role,
+    );
+
+    return membership;
+  }
+
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { name: true, email: true },
+  });
+  if (!user) {
+    throw new Error("ไม่พบผู้ใช้");
+  }
+
+  return db.$transaction(async (tx) => {
+    const existingMembership = await tx.membership.findFirst({
+      where: { userId },
+      select: { organizationId: true, role: true },
+      orderBy: { createdAt: "asc" },
+    });
+
+    if (existingMembership) {
+      return existingMembership;
+    }
+
+    const organization = await tx.organization.create({
+      data: {
+        name: buildWorkspaceName(user),
+        slug: generateOrganizationSlug(user.name || user.email),
+      },
+    });
+
+    await tx.membership.create({
+      data: {
+        userId,
+        organizationId: organization.id,
+        role: "OWNER",
+      },
+    });
+
+    await provisionSystemRoles(organization.id, tx);
+    await assignOwnerRole(userId, organization.id, tx);
+
+    return {
+      organizationId: organization.id,
+      role: "OWNER",
+    };
   });
 }
 
@@ -392,24 +481,7 @@ export async function requireApiPermission(
   action: RbacAction,
   resource: RbacResource,
 ): Promise<PermissionDeniedResponse | null> {
-  const membership = await db.membership.findFirst({
-    where: { userId },
-    select: { organizationId: true, role: true },
-    orderBy: { createdAt: "asc" },
-  });
-
-  if (!membership) {
-    return Response.json(
-      { error: "ไม่มีสิทธิ์ — ยังไม่ได้เป็นสมาชิกองค์กร" },
-      { status: 403 },
-    );
-  }
-
-  await ensureMembershipRoleAssignment(
-    userId,
-    membership.organizationId,
-    membership.role,
-  );
+  const membership = await ensureUserWorkspace(userId);
 
   return requirePermission(userId, membership.organizationId, action, resource);
 }

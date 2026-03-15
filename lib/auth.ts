@@ -97,32 +97,39 @@ function readTokenExpirySeconds(payload: SessionTokenPayload | null) {
 }
 
 async function loadSessionUser(userId: string): Promise<Omit<SessionUser, "sessionId"> | null> {
-  const [user, membership] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        securityVersion: true,
-      },
-    }),
-    prisma.membership.findFirst({
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      securityVersion: true,
+    },
+  });
+
+  if (!user) return null;
+
+  let organizationId: string | null = null;
+  try {
+    const { ensureUserWorkspace } = await import("./rbac");
+    const workspace = await ensureUserWorkspace(userId);
+    organizationId = workspace.organizationId;
+  } catch {
+    const membership = await prisma.membership.findFirst({
       where: { userId },
       orderBy: { createdAt: "asc" },
       select: { organizationId: true },
-    }),
-  ]);
-
-  if (!user) return null;
+    });
+    organizationId = membership?.organizationId ?? null;
+  }
 
   return {
     id: user.id,
     name: user.name,
     email: user.email,
     role: user.role,
-    organizationId: membership?.organizationId ?? null,
+    organizationId,
     securityVersion: user.securityVersion,
   };
 }
