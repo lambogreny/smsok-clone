@@ -54,6 +54,22 @@ async function resolveSeedUser() {
   });
 }
 
+async function ensureQaTestUser() {
+  const qaEmail = "qa-suite@smsok.test";
+  const existing = await prisma.user.findUnique({ where: { email: qaEmail } });
+  if (existing) return existing;
+
+  const password = await hashPassword("QATest123!");
+  return prisma.user.create({
+    data: {
+      email: qaEmail,
+      name: "QA Test User",
+      phone: "+66900000099",
+      password,
+    },
+  });
+}
+
 async function ensureSenderName(userId: string, name: string) {
   return prisma.senderName.upsert({
     where: {
@@ -740,6 +756,8 @@ async function main() {
   console.log("🌱 Seeding SMSOK Clone (Phase 1 + Backoffice + Packages + RBAC)...\n");
 
   const user = await resolveSeedUser();
+  await ensureQaTestUser();
+  console.log("  ✅ QA test user (qa-suite@smsok.test)");
   await seedDashboardData(user.id);
 
   console.log("\n📦 Phase 1: Multi-Tenant + PDPA...");
