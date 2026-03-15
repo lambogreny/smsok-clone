@@ -1,6 +1,19 @@
 import { NextRequest } from "next/server";
-import { authenticateRequest, apiResponse, apiError } from "@/lib/api-auth";
+import { authenticateRequest, apiResponse, apiError, ApiError } from "@/lib/api-auth";
 import { getMessages, getMessageStatus } from "@/lib/actions/sms";
+
+const validMessageStatuses = new Set(["pending", "sent", "delivered", "failed"]);
+
+function normalizeMessageStatusParam(status: string | null) {
+  if (!status) return undefined;
+
+  const normalized = status.toLowerCase();
+  if (!validMessageStatuses.has(normalized)) {
+    throw new ApiError(400, "status ไม่ถูกต้อง");
+  }
+
+  return normalized;
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -18,7 +31,7 @@ export async function GET(req: NextRequest) {
     const filters = {
       page: searchParams.get("page") || "1",
       limit: searchParams.get("limit") || "20",
-      status: searchParams.get("status") || undefined,
+      status: normalizeMessageStatusParam(searchParams.get("status")),
       type: searchParams.get("type") || undefined,
       channel: searchParams.get("channel") || undefined,
       senderName: searchParams.get("sender") || undefined,
