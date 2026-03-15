@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma as db } from "../db";
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import {
   sendSmsSchema,
@@ -9,6 +9,7 @@ import {
   normalizePhone,
   reportFilterSchema,
 } from "../validations";
+import { getSession } from "../auth";
 import { sendSingleSms, sendSmsBatch } from "../sms-gateway";
 import {
   deductQuota,
@@ -25,6 +26,40 @@ import { resolveActionUserId } from "../action-user";
 // Security: resolve userId from session (client calls) or trust explicit userId (API route calls)
 async function requireSessionUserId(): Promise<string> {
   return resolveActionUserId();
+}
+
+async function getDashboardMessageScope(userId: string): Promise<Prisma.MessageWhereInput> {
+  const sessionUser = await getSession().catch(() => null);
+  const organizationIds = new Set<string>();
+
+  if (sessionUser?.id === userId && sessionUser.organizationId) {
+    organizationIds.add(sessionUser.organizationId);
+  }
+
+  if (organizationIds.size === 0) {
+    const memberships = await db.membership.findMany({
+      where: { userId },
+      select: { organizationId: true },
+      orderBy: { createdAt: "asc" },
+    });
+
+    for (const membership of memberships) {
+      if (membership.organizationId) {
+        organizationIds.add(membership.organizationId);
+      }
+    }
+  }
+
+  if (organizationIds.size === 0) {
+    return { userId };
+  }
+
+  return {
+    OR: [
+      { userId },
+      { organizationId: { in: Array.from(organizationIds) } },
+    ],
+  };
 }
 
 // ==========================================
@@ -416,6 +451,7 @@ export async function getMessages(userIdOrFilters: string | unknown, maybeFilter
 
 export async function getDashboardStats(userId?: string) {
   const resolvedUserId = await resolveActionUserId(userId);
+  const messageScope = await getDashboardMessageScope(resolvedUserId);
   const now = new Date();
   const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -427,18 +463,18 @@ export async function getDashboardStats(userId?: string) {
     }),
     db.message.groupBy({
       by: ["status"],
-      where: { userId: resolvedUserId, createdAt: { gte: startOfDay } },
+      where: { ...messageScope, createdAt: { gte: startOfDay } },
       orderBy: { status: "asc" },
       _count: { _all: true },
     }),
     db.message.groupBy({
       by: ["status"],
-      where: { userId: resolvedUserId, createdAt: { gte: startOfMonth } },
+      where: { ...messageScope, createdAt: { gte: startOfMonth } },
       orderBy: { status: "asc" },
       _count: { _all: true },
     }),
     db.message.findMany({
-      where: { userId: resolvedUserId },
+      where: messageScope,
       orderBy: { createdAt: "desc" },
       take: 10,
       select: {
@@ -478,7 +514,7 @@ export async function getDashboardStats(userId?: string) {
 
     const dayStats = await db.message.groupBy({
       by: ["status"],
-      where: { userId: resolvedUserId, createdAt: { gte: dayStart, lt: dayEnd } },
+      where: { ...messageScope, createdAt: { gte: dayStart, lt: dayEnd } },
       _count: { _all: true },
     });
 
@@ -498,7 +534,7 @@ export async function getDashboardStats(userId?: string) {
   const yesterdayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const yesterdayStats = await db.message.groupBy({
     by: ["status"],
-    where: { userId: resolvedUserId, createdAt: { gte: yesterdayStart, lt: yesterdayEnd } },
+    where: { ...messageScope, createdAt: { gte: yesterdayStart, lt: yesterdayEnd } },
     _count: { _all: true },
   });
   const yesterday = sumCounts(yesterdayStats as unknown as StatRow[]);
