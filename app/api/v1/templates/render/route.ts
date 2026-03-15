@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
       missing: missingVars,
       charCount: metrics.charCount,
       encoding: metrics.encoding,
-      charsPerSegment: metrics.singleLimit,
+      charsPerSegment: metrics.segments > 1 ? metrics.multiLimit : metrics.singleLimit,
       smsCount: metrics.segments,
     });
   } catch (error) {

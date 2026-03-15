@@ -35,7 +35,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       rendered,
       encoding: metrics.encoding,
       charCount: metrics.charCount,
-      charsPerSegment: metrics.singleLimit,
+      charsPerSegment: metrics.segments > 1 ? metrics.multiLimit : metrics.singleLimit,
       segmentCount: metrics.segments,
     });
   } catch (error) {
