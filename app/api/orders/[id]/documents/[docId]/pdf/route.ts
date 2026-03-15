@@ -58,7 +58,7 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
 
     const pdfBuffer = await renderOrderAccountingDocumentPdf(document.order, {
       documentNumber: document.documentNumber,
-      verificationCode: document.verificationCode,
+      verificationCode: document.verificationCode ?? "",
       type: PDF_TYPE_BY_DOCUMENT[document.type],
       issuedAt: document.issuedAt,
     });

@@ -53,7 +53,7 @@ type OrderDocumentRecord = {
   id: string;
   type: OrderDocumentType;
   documentNumber: string;
-  verificationCode?: string;
+  verificationCode?: string | null;
   issuedAt: Date;
   voidedAt: Date | null;
   voidReason: string | null;
