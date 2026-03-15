@@ -328,7 +328,7 @@ export async function getDataRequests(
     const membership = await db.membership.findFirst({
       where: { userId },
       select: { organizationId: true },
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: "desc" },
     });
     if (membership) scopedOrgId = membership.organizationId;
   }

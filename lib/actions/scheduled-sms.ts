@@ -1,19 +1,20 @@
 
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { sendSingleSms } from "@/lib/sms-gateway";
 import {
   deductQuota,
   refundQuota,
   refundQuotaIfEligible,
-  getRemainingQuota,
   calculateSmsSegments,
   ensureSufficientQuota,
 } from "../package/quota";
 import { checkSendingHours } from "../sending-hours";
 import { hasMarketingConsent } from "./consent";
-import { resolveOrganizationIdForUser, DEFAULT_ORGANIZATION_ID } from "../organizations/resolve";
 
 const MAX_SCHEDULE_DAYS_AHEAD = 30;
+
+type QuotaDeduction = { purchaseId: string; amount: number };
 
 export async function createScheduledSms(
   userId: string,
@@ -22,6 +23,7 @@ export async function createScheduledSms(
     recipient: string;
     message: string;
     scheduledAt: string; // ISO 8601
+    organizationId?: string | null;
   }
 ) {
   const sender = await prisma.senderName.findFirst({
@@ -63,16 +65,13 @@ export async function createScheduledSms(
   // Check remaining quota
   await ensureSufficientQuota(userId, smsCount);
 
-  // Resolve user's organization deterministically (oldest membership)
-  let resolvedOrgId: string | null = null;
-  try {
-    resolvedOrgId = await resolveOrganizationIdForUser(userId, DEFAULT_ORGANIZATION_ID);
-  } catch {
-    // User may not have any org — proceed with null
-  }
+  // Use caller-provided organizationId (from session context) or null
+  const resolvedOrgId = data.organizationId ?? null;
 
-  // HOLD: deduct quota now via FIFO
+  // HOLD: deduct quota now via FIFO, store deduction details for accurate refund
   const scheduled = await prisma.$transaction(async (tx) => {
+    const quotaResult = await deductQuota(tx, userId, smsCount);
+
     const record = await tx.scheduledSms.create({
       data: {
         userId,
@@ -82,10 +81,9 @@ export async function createScheduledSms(
         content: data.message,
         scheduledAt,
         creditCost: smsCount,
+        deductions: quotaResult.deductions as unknown as Prisma.InputJsonValue,
       },
     });
-
-    await deductQuota(tx, userId, smsCount);
 
     return record;
   });
@@ -128,24 +126,84 @@ export async function cancelScheduledSms(userId: string, id: string) {
     throw new Error("ยกเลิกได้เฉพาะข้อความที่ยังไม่ได้ส่ง");
   }
 
-  // Cancel + REFUND quota to first active package
-  const quota = await getRemainingQuota(userId);
-  const firstPackage = quota.packages[0];
-
-  if (!firstPackage) {
-    throw new Error("ไม่พบ package สำหรับคืน quota");
-  }
-
+  // Cancel + REFUND quota using stored FIFO deductions
   await prisma.$transaction(async (tx) => {
     await tx.scheduledSms.update({
       where: { id },
       data: { status: "cancelled" },
     });
 
-    await refundQuota(tx, firstPackage.id, sms.creditCost);
+    await refundStoredDeductions(tx, sms.deductions, sms.creditCost, sms.userId);
   });
 
   return { success: true, creditsRefunded: sms.creditCost };
+}
+
+/**
+ * Refund using stored FIFO deductions (exact packages that were debited).
+ * Falls back to first active package if deductions are missing (legacy records).
+ */
+async function refundStoredDeductions(
+  tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
+  deductionsJson: Prisma.JsonValue | null,
+  creditCost: number,
+  userId: string,
+) {
+  const stored = parseDeductions(deductionsJson);
+  if (stored.length > 0) {
+    for (const d of stored) {
+      await refundQuota(tx, d.purchaseId, d.amount);
+    }
+    return;
+  }
+
+  // Legacy fallback: refund to first active package
+  const firstPackage = await tx.packagePurchase.findFirst({
+    where: { userId, isActive: true, expiresAt: { gt: new Date() } },
+    orderBy: { expiresAt: "asc" },
+    select: { id: true },
+  });
+  if (firstPackage) {
+    await refundQuota(tx, firstPackage.id, creditCost);
+  }
+}
+
+/**
+ * Tier-gated refund using stored FIFO deductions.
+ */
+async function refundStoredDeductionsIfEligible(
+  tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
+  deductionsJson: Prisma.JsonValue | null,
+  creditCost: number,
+  userId: string,
+) {
+  const stored = parseDeductions(deductionsJson);
+  if (stored.length > 0) {
+    for (const d of stored) {
+      await refundQuotaIfEligible(tx, d.purchaseId, d.amount);
+    }
+    return;
+  }
+
+  // Legacy fallback
+  const firstPackage = await tx.packagePurchase.findFirst({
+    where: { userId, isActive: true, expiresAt: { gt: new Date() } },
+    orderBy: { expiresAt: "asc" },
+    select: { id: true },
+  });
+  if (firstPackage) {
+    await refundQuotaIfEligible(tx, firstPackage.id, creditCost);
+  }
+}
+
+function parseDeductions(json: Prisma.JsonValue | null): QuotaDeduction[] {
+  if (!Array.isArray(json)) return [];
+  return json.filter(
+    (d): d is QuotaDeduction =>
+      typeof d === "object" && d !== null &&
+      typeof (d as Record<string, unknown>).purchaseId === "string" &&
+      typeof (d as Record<string, unknown>).amount === "number",
+  );
 }
 
 /**
@@ -169,43 +227,30 @@ export async function processScheduledSms() {
     data: { status: "pending" },
   });
 
-  // Atomic claim: find due IDs first, then claim only BATCH_SIZE rows.
-  // This prevents stranding messages in "processing" state forever.
-  const dueIds = await prisma.scheduledSms.findMany({
-    where: {
-      status: "pending",
-      scheduledAt: { lte: now },
-    },
-    select: { id: true },
-    take: BATCH_SIZE,
-    orderBy: { scheduledAt: "asc" },
-  });
+  // Atomic claim via raw SQL: UPDATE ... WHERE ... LIMIT ... RETURNING
+  // This is a single atomic operation — no race between SELECT and UPDATE.
+  const claimed = await prisma.$queryRaw<Array<{ id: string }>>`
+    UPDATE scheduled_sms
+    SET status = 'processing', updated_at = NOW()
+    WHERE id IN (
+      SELECT id FROM scheduled_sms
+      WHERE status = 'pending' AND scheduled_at <= ${now}
+      ORDER BY scheduled_at ASC
+      LIMIT ${BATCH_SIZE}
+      FOR UPDATE SKIP LOCKED
+    )
+    RETURNING id
+  `;
 
-  if (dueIds.length === 0) {
+  if (claimed.length === 0) {
     return { processed: 0, sent: 0, failed: 0, rescheduled: false };
   }
 
-  const claimedIds = dueIds.map((r) => r.id);
+  const claimedIds = claimed.map((r) => r.id);
 
-  // Atomically claim only the selected rows
-  const { count: claimedCount } = await prisma.scheduledSms.updateMany({
-    where: {
-      id: { in: claimedIds },
-      status: "pending", // re-check to prevent double-claim
-    },
-    data: { status: "processing" },
-  });
-
-  if (claimedCount === 0) {
-    return { processed: 0, sent: 0, failed: 0, rescheduled: false };
-  }
-
-  // Fetch only the rows we just claimed
+  // Fetch full records for claimed rows
   const dueMessages = await prisma.scheduledSms.findMany({
-    where: {
-      id: { in: claimedIds },
-      status: "processing",
-    },
+    where: { id: { in: claimedIds }, status: "processing" },
   });
 
   // Group by orgId to check sending hours per-org
@@ -260,19 +305,28 @@ export async function processScheduledSms() {
       // (quota was deducted at schedule time; system blocked sending, not a delivery failure)
       const consented = await hasMarketingConsent(sms.userId);
       if (!consented) {
-        const quota = await getRemainingQuota(sms.userId);
-        const firstPackage = quota.packages[0];
+        try {
+          await prisma.$transaction(async (tx) => {
+            await tx.scheduledSms.update({
+              where: { id: sms.id },
+              data: { status: "failed", errorCode: "PDPA_NO_MARKETING_CONSENT" },
+            });
 
-        await prisma.$transaction(async (tx) => {
-          await tx.scheduledSms.update({
-            where: { id: sms.id },
-            data: { status: "failed", errorCode: "PDPA_NO_MARKETING_CONSENT" },
+            await refundStoredDeductions(tx, sms.deductions, sms.creditCost, sms.userId);
           });
-
-          if (firstPackage) {
-            await refundQuota(tx, firstPackage.id, sms.creditCost);
-          }
-        });
+        } catch (refundErr) {
+          // Critical: refund failed — mark as failed but log for manual recovery
+          console.error("[scheduled-sms] PDPA consent refund failed, quota may be lost:", {
+            smsId: sms.id,
+            userId: sms.userId,
+            creditCost: sms.creditCost,
+            error: refundErr instanceof Error ? refundErr.message : String(refundErr),
+          });
+          await prisma.scheduledSms.update({
+            where: { id: sms.id },
+            data: { status: "failed", errorCode: "PDPA_REFUND_FAILED" },
+          }).catch(() => {});
+        }
         results.skippedConsent++;
         continue;
       }
@@ -289,10 +343,7 @@ export async function processScheduledSms() {
         });
         results.sent++;
       } else {
-        // REFUND on failure — tier D+ only
-        const quota = await getRemainingQuota(sms.userId);
-        const firstPackage = quota.packages[0];
-
+        // REFUND on failure — tier D+ only, using stored deductions
         await prisma.$transaction(async (tx) => {
           await tx.scheduledSms.update({
             where: { id: sms.id },
@@ -302,17 +353,12 @@ export async function processScheduledSms() {
             },
           });
 
-          if (firstPackage) {
-            await refundQuotaIfEligible(tx, firstPackage.id, sms.creditCost);
-          }
+          await refundStoredDeductionsIfEligible(tx, sms.deductions, sms.creditCost, sms.userId);
         });
         results.failed++;
       }
     } catch (err) {
-      // REFUND on exception — tier D+ only
-      const quota = await getRemainingQuota(sms.userId);
-      const firstPackage = quota.packages[0];
-
+      // REFUND on exception — tier D+ only, using stored deductions
       await prisma.$transaction(async (tx) => {
         await tx.scheduledSms.update({
           where: { id: sms.id },
@@ -322,9 +368,7 @@ export async function processScheduledSms() {
           },
         });
 
-        if (firstPackage) {
-          await refundQuotaIfEligible(tx, firstPackage.id, sms.creditCost);
-        }
+        await refundStoredDeductionsIfEligible(tx, sms.deductions, sms.creditCost, sms.userId);
       });
       results.failed++;
     }

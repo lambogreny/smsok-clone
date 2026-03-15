@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
     const membership = await db.membership.findFirst({
       where: { userId: user.id },
       select: { organizationId: true },
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: "desc" },
     });
 
     if (!membership) {

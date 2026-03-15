@@ -156,7 +156,7 @@ export function calculatePaymentAmounts(amountSatang: number, hasWht: boolean) {
 export async function getUserPrimaryOrganizationId(userId: string, client: DbClient = db) {
   const membership = await client.membership.findFirst({
     where: { userId },
-    orderBy: { createdAt: "asc" },
+    orderBy: { createdAt: "desc" },
     select: { organizationId: true },
   });
 

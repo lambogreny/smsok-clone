@@ -13,6 +13,7 @@ export async function GET(req: NextRequest) {
     const membership = await db.membership.findFirst({
       where: { userId: session.id },
       select: { organizationId: true, role: true },
+      orderBy: { createdAt: "desc" },
     });
     if (!membership) throw new ApiError(404, "ไม่พบองค์กร");
 
@@ -31,6 +32,7 @@ export async function PATCH(req: NextRequest) {
     const membership = await db.membership.findFirst({
       where: { userId: session.id },
       select: { organizationId: true },
+      orderBy: { createdAt: "desc" },
     });
     if (!membership) throw new ApiError(404, "ไม่พบองค์กร");
 

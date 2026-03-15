@@ -220,7 +220,7 @@ export async function ensureUserWorkspace(
   const membership = await db.membership.findFirst({
     where: { userId },
     select: { organizationId: true, role: true },
-    orderBy: { createdAt: "asc" },
+    orderBy: { createdAt: "desc" },
   });
 
   if (membership) {
@@ -247,7 +247,7 @@ export async function ensureUserWorkspace(
         const existingMembership = await tx.membership.findFirst({
           where: { userId },
           select: { organizationId: true, role: true },
-          orderBy: { createdAt: "asc" },
+          orderBy: { createdAt: "desc" },
         });
 
         if (existingMembership) {

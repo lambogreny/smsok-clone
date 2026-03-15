@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { authenticateRequest, apiResponse, apiError } from "@/lib/api-auth";
 import { requireApiPermission } from "@/lib/rbac";
+import { getSession } from "@/lib/auth";
 import {
   createScheduledSms,
   getScheduledSms,
@@ -40,13 +41,25 @@ export async function POST(req: NextRequest) {
       return apiResponse(result);
     }
 
-    // Create
+    // Create — pass organizationId for correct org context
     const input = scheduledSmsCreateSchema.parse(body);
+    const session = await getSession({ headers: req.headers });
+    let orgId = session?.organizationId ?? null;
+    // API-key requests have no session — resolve org from membership
+    if (!orgId) {
+      const { resolveOrganizationIdForUser, DEFAULT_ORGANIZATION_ID } = await import("@/lib/organizations/resolve");
+      try {
+        orgId = await resolveOrganizationIdForUser(user.id, DEFAULT_ORGANIZATION_ID);
+      } catch {
+        orgId = null;
+      }
+    }
     const result = await createScheduledSms(user.id, {
       senderName: input.sender,
       recipient: input.to,
       message: input.message,
       scheduledAt: input.scheduledAt,
+      organizationId: orgId,
     });
     return apiResponse(result, 201);
   } catch (error) {

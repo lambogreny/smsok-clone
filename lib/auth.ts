@@ -128,7 +128,7 @@ async function loadSessionUser(userId: string): Promise<Omit<SessionUser, "sessi
     });
     const membership = await prisma.membership.findFirst({
       where: { userId },
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: "desc" },
       select: { organizationId: true },
     });
     organizationId = membership?.organizationId ?? null;

@@ -14,7 +14,7 @@ export async function resolveOrganizationIdForUser(
   const membership = await db.membership.findFirst({
     where: { userId },
     select: { organizationId: true },
-    orderBy: { createdAt: "asc" },
+    orderBy: { createdAt: "desc" },
   });
 
   if (!membership) {

@@ -219,8 +219,8 @@ export async function generateOtp_(
     creditUsed: delivery === "sms" ? OTP_CREDIT_COST : 0,
     smsRemaining: updatedQuota.totalRemaining,
     delivery,
-    // Only expose OTP code when using dev bypass (no real SMS sent)
-    ...(delivery === "dev_bypass" ? { debugCode: code } : {}),
+    // Only expose OTP code when using dev bypass in development (no real SMS sent)
+    ...(delivery === "dev_bypass" && process.env.NODE_ENV === "development" ? { debugCode: code } : {}),
   };
 }
 

@@ -9,7 +9,7 @@ const MIME_EXTENSION_MAP: Record<string, string> = {
   "image/png": "png",
 };
 
-type StoredFileScope = "orders" | "payments";
+type StoredFileScope = "orders" | "payments" | "senders";
 type StoredFileKind = "slips" | "wht" | "documents";
 
 function inferExtension(fileName?: string | null, contentType?: string | null) {

@@ -11,7 +11,7 @@ import {
   uploadFileToR2,
 } from "@/lib/storage/r2";
 
-type StoredFileScope = "orders" | "payments";
+type StoredFileScope = "orders" | "payments" | "senders";
 type StoredFileKind = "slips" | "wht" | "documents";
 
 type StoreFileInput = {

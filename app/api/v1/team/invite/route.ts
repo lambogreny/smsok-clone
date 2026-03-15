@@ -13,6 +13,7 @@ export async function GET(req: NextRequest) {
     const membership = await db.membership.findFirst({
       where: { userId: session.id },
       select: { organizationId: true },
+      orderBy: { createdAt: "desc" },
     });
     if (!membership) return apiError(new Error("ไม่พบ organization"));
 
@@ -32,6 +33,7 @@ export async function POST(req: NextRequest) {
     const membership = await db.membership.findFirst({
       where: { userId: session.id },
       select: { organizationId: true },
+      orderBy: { createdAt: "desc" },
     });
     if (!membership) return apiError(new Error("ไม่พบ organization"));
 
