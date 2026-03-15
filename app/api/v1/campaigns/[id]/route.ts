@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { ApiError, apiError, apiResponse, authenticateRequest } from "@/lib/api-auth";
 import { prisma as db } from "@/lib/db";
 import { requireApiPermission } from "@/lib/rbac";
-import { ensureSufficientQuota } from "@/lib/package/quota";
+import { calculateSmsSegments, ensureSufficientQuota } from "@/lib/package/quota";
 import { updateCampaignSchema } from "@/lib/validations";
 
 type RouteContext = {
@@ -19,6 +19,7 @@ const campaignSelect = {
   templateId: true,
   senderName: true,
   messageBody: true,
+  segmentCount: true,
   scheduledAt: true,
   totalRecipients: true,
   validRecipients: true,
@@ -58,6 +59,7 @@ function normalizeCampaignPayload(body: unknown) {
     ...input,
     contactGroupId: input.contactGroupId ?? input.contact_group_id,
     templateId: input.templateId ?? input.template_id,
+    messageBody: input.messageBody ?? input.message_body,
     senderName: input.senderName ?? input.sender_name,
     scheduledAt: input.scheduledAt ?? input.scheduled_at,
   };
@@ -96,6 +98,7 @@ async function updateCampaignRecord(userId: string, id: string, body: unknown) {
       contactGroupId: true,
       templateId: true,
       senderName: true,
+      messageBody: true,
       scheduledAt: true,
       totalRecipients: true,
     },
@@ -107,6 +110,7 @@ async function updateCampaignRecord(userId: string, id: string, body: unknown) {
 
   const nextGroupId = input.contactGroupId === undefined ? campaign.contactGroupId : input.contactGroupId;
   const nextTemplateId = input.templateId === undefined ? campaign.templateId : input.templateId;
+  const nextMessageBodyInput = input.messageBody === undefined ? campaign.messageBody : input.messageBody;
   const nextSenderName = input.senderName === undefined
     ? (campaign.senderName ?? "EasySlip")
     : (input.senderName ?? "EasySlip");
@@ -124,13 +128,23 @@ async function updateCampaignRecord(userId: string, id: string, body: unknown) {
     totalRecipients = 0;
   }
 
+  let templateContent: string | null = null;
   if (nextTemplateId) {
     const template = await db.messageTemplate.findFirst({
       where: { id: nextTemplateId, userId },
-      select: { id: true },
+      select: { id: true, content: true },
     });
     if (!template) throw new ApiError(404, "ไม่พบเทมเพลตข้อความ");
+    templateContent = template.content;
   }
+
+  const messageBody = nextMessageBodyInput?.trim() || templateContent || null;
+  if (!messageBody) {
+    throw new ApiError(400, "แคมเปญต้องมีข้อความหรือเทมเพลต");
+  }
+
+  const segmentCount = calculateSmsSegments(messageBody);
+  const creditReserved = totalRecipients * segmentCount;
 
   if (nextSenderName !== "EasySlip") {
     const sender = await db.senderName.findFirst({
@@ -140,7 +154,7 @@ async function updateCampaignRecord(userId: string, id: string, body: unknown) {
     if (!sender) throw new ApiError(400, "ชื่อผู้ส่งยังไม่ได้รับอนุมัติ");
   }
 
-  await ensureSufficientQuota(userId, totalRecipients);
+  await ensureSufficientQuota(userId, creditReserved);
 
   return db.campaign.update({
     where: { id: campaign.id },
@@ -148,6 +162,8 @@ async function updateCampaignRecord(userId: string, id: string, body: unknown) {
       ...(input.name !== undefined ? { name: input.name } : {}),
       ...(input.contactGroupId !== undefined ? { contactGroupId: input.contactGroupId } : {}),
       ...(input.templateId !== undefined ? { templateId: input.templateId } : {}),
+      messageBody,
+      segmentCount,
       ...(input.senderName !== undefined ? { senderName: input.senderName ?? "EasySlip" } : {}),
       ...(input.scheduledAt !== undefined
         ? {
@@ -156,7 +172,7 @@ async function updateCampaignRecord(userId: string, id: string, body: unknown) {
           }
         : {}),
       totalRecipients,
-      creditReserved: totalRecipients,
+      creditReserved,
     },
     select: campaignSelect,
   });

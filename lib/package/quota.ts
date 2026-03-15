@@ -110,16 +110,43 @@ export async function deductQuota(
 }
 
 /**
+ * Calculate SMS segment metrics based on message content.
+ * Thai/Unicode content is charged as UCS-2, plain ASCII as GSM-7.
+ */
+export function getSmsSegmentMetrics(message: string) {
+  if (!message) {
+    return {
+      charCount: 0,
+      encoding: "GSM-7" as const,
+      singleLimit: 160,
+      multiLimit: 153,
+      segments: 0,
+    };
+  }
+
+  const hasThai = /[\u0E00-\u0E7F]/.test(message);
+  const hasUnicode = /[^\x00-\x7F]/.test(message);
+  const isUcs2 = hasThai || hasUnicode;
+  const singleLimit = isUcs2 ? 70 : 160;
+  const multiLimit = isUcs2 ? 67 : 153;
+  const charCount = message.length;
+
+  return {
+    charCount,
+    encoding: isUcs2 ? ("UCS-2" as const) : ("GSM-7" as const),
+    singleLimit,
+    multiLimit,
+    segments: charCount <= singleLimit ? 1 : Math.ceil(charCount / multiLimit),
+  };
+}
+
+/**
  * Calculate SMS segments based on message content
  * GSM-7 (English): 160 chars per segment (153 if multipart)
- * UCS-2 (Thai): 70 chars per segment (67 if multipart)
+ * UCS-2 (Thai/Unicode): 70 chars per segment (67 if multipart)
  */
 export function calculateSmsSegments(message: string): number {
-  const hasThai = /[\u0E00-\u0E7F]/.test(message);
-  if (hasThai) {
-    return message.length <= 70 ? 1 : Math.ceil(message.length / 67);
-  }
-  return message.length <= 160 ? 1 : Math.ceil(message.length / 153);
+  return getSmsSegmentMetrics(message).segments;
 }
 
 /**

@@ -36,6 +36,32 @@ type CampaignProgressResult = {
   creditUsed: number;
 };
 
+async function resolveCampaignMessageSnapshot(
+  userId: string,
+  input: { templateId?: string | null; messageBody?: string | null },
+) {
+  let templateContent: string | null = null;
+
+  if (input.templateId) {
+    const template = await db.messageTemplate.findFirst({
+      where: { id: input.templateId, userId },
+      select: { id: true, content: true },
+    });
+    if (!template) throw new Error("ไม่พบเทมเพลตข้อความ");
+    templateContent = template.content;
+  }
+
+  const messageBody = input.messageBody?.trim() || templateContent || null;
+  if (!messageBody) {
+    throw new Error("แคมเปญต้องมีข้อความหรือเทมเพลต");
+  }
+
+  return {
+    messageBody,
+    segmentCount: calculateSmsSegments(messageBody),
+  };
+}
+
 export async function getCampaigns(userId: string, filters?: unknown) {
   userId = await resolveActionUserId(userId);
   const pagination = filters
@@ -87,6 +113,7 @@ export async function createCampaign(userIdOrData: string | unknown, maybeData?:
     ...payload,
     contactGroupId: payload.contactGroupId || undefined,
     templateId: payload.templateId || undefined,
+    messageBody: payload.messageBody || payload.message_body || undefined,
     scheduledAt: payload.scheduledAt || undefined,
   });
 
@@ -101,13 +128,10 @@ export async function createCampaign(userIdOrData: string | unknown, maybeData?:
     totalRecipients = group._count.members;
   }
 
-  if (input.templateId) {
-    const template = await db.messageTemplate.findFirst({
-      where: { id: input.templateId, userId },
-      select: { id: true },
-    });
-    if (!template) throw new Error("ไม่พบเทมเพลตข้อความ");
-  }
+  const { messageBody, segmentCount } = await resolveCampaignMessageSnapshot(userId, {
+    templateId: input.templateId,
+    messageBody: input.messageBody,
+  });
 
   if (input.senderName && input.senderName !== "EasySlip") {
     const sender = await db.senderName.findFirst({
@@ -117,7 +141,8 @@ export async function createCampaign(userIdOrData: string | unknown, maybeData?:
     if (!sender) throw new Error("ชื่อผู้ส่งยังไม่ได้รับอนุมัติ");
   }
 
-  await ensureSufficientQuota(userId, totalRecipients);
+  const creditReserved = totalRecipients * segmentCount;
+  await ensureSufficientQuota(userId, creditReserved);
 
   const campaign = await db.campaign.create({
     data: {
@@ -126,10 +151,12 @@ export async function createCampaign(userIdOrData: string | unknown, maybeData?:
       contactGroupId: input.contactGroupId,
       templateId: input.templateId,
       senderName: input.senderName || "EasySlip",
+      messageBody,
+      segmentCount,
       status: input.scheduledAt ? "scheduled" : "draft",
       scheduledAt: input.scheduledAt,
       totalRecipients,
-      creditReserved: totalRecipients,
+      creditReserved,
     },
     include: {
       contactGroup: { select: { id: true, name: true } },
@@ -171,12 +198,12 @@ export async function executeCampaign(...args: [string, string?, string?]) {
     throw new Error("แคมเปญนี้ไม่อยู่ในสถานะที่สามารถส่งได้");
   }
   if (!campaign.contactGroup) throw new Error("แคมเปญนี้ไม่มีกลุ่มรายชื่อ");
-  if (!campaign.template) throw new Error("แคมเปญนี้ไม่มีเทมเพลตข้อความ");
 
   const phones = campaign.contactGroup.members.map((m) => m.contact.phone);
   if (phones.length === 0) throw new Error("กลุ่มรายชื่อไม่มีสมาชิก");
 
-  const rawMessage = campaign.template.content;
+  const rawMessage = campaign.messageBody ?? campaign.template?.content;
+  if (!rawMessage) throw new Error("แคมเปญนี้ไม่มีข้อความ");
   const senderName = campaign.senderName || "EasySlip";
 
   // Auto-shorten links + append UTM params

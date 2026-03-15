@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { apiResponse, apiError, authenticateRequest } from "@/lib/api-auth";
 import { prisma as db } from "@/lib/db";
+import { getSmsSegmentMetrics } from "@/lib/package/quota";
 import { z } from "zod";
 
 const validateSchema = z.object({
@@ -53,19 +54,18 @@ export async function POST(req: NextRequest) {
     }
 
     // 3. Segment info
-    const hasThai = /[\u0E00-\u0E7F]/.test(input.content);
-    const hasNonGsm = /[^\x00-\x7F]/.test(input.content);
-    const encoding = hasThai || hasNonGsm ? "UCS-2" : "GSM-7";
-    const charsPerSegment = encoding === "UCS-2" ? 70 : 160;
-    const segmentCount = Math.max(1, Math.ceil(input.content.length / charsPerSegment));
+    const metrics = getSmsSegmentMetrics(input.content);
+    const charsPerSegment = metrics.segments > 1 ? metrics.multiLimit : metrics.singleLimit;
 
     return apiResponse({
       valid: warnings.length === 0,
       warnings,
-      encoding,
-      charCount: input.content.length,
+      encoding: metrics.encoding,
+      charCount: metrics.charCount,
       charsPerSegment,
-      segmentCount,
+      singleCharLimit: metrics.singleLimit,
+      multiCharLimit: metrics.multiLimit,
+      segmentCount: metrics.segments,
     });
   } catch (error) {
     return apiError(error);

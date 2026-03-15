@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (emailRaw) {
-      const email = emailSchema.parse(emailRaw);
+      const email = emailSchema.parse(emailRaw).toLowerCase();
       const existing = await prisma.user.findUnique({
         where: { email },
         select: { id: true },

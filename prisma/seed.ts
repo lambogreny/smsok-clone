@@ -477,18 +477,19 @@ async function seedPlans() {
 
 async function seedPackageTiers() {
   const tiers = [
-    { tierCode: "TRIAL", name: "Trial", price: 0, smsQuota: 15, bonusPercent: 0, totalSms: 15, senderNameLimit: 1, expiryMonths: 1, isTrial: true, sortOrder: -1 },
-    { tierCode: "A", name: "Starter", price: 500, smsQuota: 500, bonusPercent: 0, totalSms: 500, senderNameLimit: 5, expiryMonths: 6, sortOrder: 1 },
-    { tierCode: "B", name: "Basic", price: 1000, smsQuota: 1000, bonusPercent: 10, totalSms: 1100, senderNameLimit: 10, expiryMonths: 12, sortOrder: 2 },
-    { tierCode: "C", name: "Growth", price: 10000, smsQuota: 10000, bonusPercent: 15, totalSms: 11500, senderNameLimit: 15, expiryMonths: 24, sortOrder: 3 },
-    { tierCode: "D", name: "Business", price: 50000, smsQuota: 50000, bonusPercent: 20, totalSms: 60000, senderNameLimit: 20, expiryMonths: 24, sortOrder: 4 },
-    { tierCode: "E", name: "Professional", price: 100000, smsQuota: 100000, bonusPercent: 25, totalSms: 125000, senderNameLimit: null, expiryMonths: 36, sortOrder: 5 },
-    { tierCode: "F", name: "Enterprise", price: 300000, smsQuota: 300000, bonusPercent: 30, totalSms: 390000, senderNameLimit: null, expiryMonths: 36, sortOrder: 6 },
-    { tierCode: "G", name: "Corporate", price: 500000, smsQuota: 500000, bonusPercent: 40, totalSms: 700000, senderNameLimit: null, expiryMonths: 36, sortOrder: 7 },
-    { tierCode: "H", name: "Unlimited", price: 1000000, smsQuota: 1000000, bonusPercent: 50, totalSms: 1500000, senderNameLimit: null, expiryMonths: 36, sortOrder: 8 },
+    { tierCode: "TRIAL", name: "Trial", price: 0, smsQuota: 15, bonusPercent: 0, senderNameLimit: 1, expiryMonths: 1, isTrial: true, sortOrder: 0 },
+    { tierCode: "A", name: "Tier A", price: 350, smsQuota: 500, bonusPercent: 0, senderNameLimit: 5, expiryMonths: 6, sortOrder: 1 },
+    { tierCode: "B", name: "Tier B", price: 650, smsQuota: 1000, bonusPercent: 5, senderNameLimit: 10, expiryMonths: 6, sortOrder: 2 },
+    { tierCode: "C", name: "Tier C", price: 2800, smsQuota: 5000, bonusPercent: 10, senderNameLimit: 15, expiryMonths: 12, sortOrder: 3 },
+    { tierCode: "D", name: "Tier D", price: 5000, smsQuota: 10000, bonusPercent: 15, senderNameLimit: 20, expiryMonths: 12, sortOrder: 4 },
+    { tierCode: "E", name: "Tier E", price: 22000, smsQuota: 50000, bonusPercent: 20, senderNameLimit: null, expiryMonths: 12, sortOrder: 5 },
+    { tierCode: "F", name: "Tier F", price: 40000, smsQuota: 100000, bonusPercent: 25, senderNameLimit: null, expiryMonths: 24, sortOrder: 6 },
+    { tierCode: "G", name: "Tier G", price: 180000, smsQuota: 500000, bonusPercent: 30, senderNameLimit: null, expiryMonths: 24, sortOrder: 7 },
+    { tierCode: "H", name: "Tier H", price: 320000, smsQuota: 1000000, bonusPercent: 35, senderNameLimit: null, expiryMonths: 24, sortOrder: 8 },
   ];
 
   for (const tier of tiers) {
+    const totalSms = tier.smsQuota + Math.floor((tier.smsQuota * tier.bonusPercent) / 100);
     await prisma.packageTier.upsert({
       where: { tierCode: tier.tierCode },
       update: {
@@ -496,17 +497,73 @@ async function seedPackageTiers() {
         price: tier.price,
         smsQuota: tier.smsQuota,
         bonusPercent: tier.bonusPercent,
-        totalSms: tier.totalSms,
+        totalSms,
         senderNameLimit: tier.senderNameLimit,
         expiryMonths: tier.expiryMonths,
         isTrial: tier.isTrial ?? false,
         isActive: true,
         sortOrder: tier.sortOrder,
       },
-      create: tier,
+      create: {
+        ...tier,
+        totalSms,
+      },
     });
   }
   console.log(`  ✅ Package tiers: ${tiers.length} upserted (TRIAL + A-H)`);
+}
+
+async function seedPdpaPolicies(createdBy?: string) {
+  const policies = [
+    {
+      type: "TERMS",
+      version: "1.0",
+      title: "ข้อตกลงการใช้บริการ",
+      summary: "ข้อกำหนดการใช้บริการสำหรับระบบ SMSOK",
+      content: "Placeholder policy content for Terms of Service.",
+    },
+    {
+      type: "PRIVACY",
+      version: "1.0",
+      title: "นโยบายความเป็นส่วนตัว",
+      summary: "แนวทางการเก็บ ใช้ และเปิดเผยข้อมูลส่วนบุคคล",
+      content: "Placeholder policy content for Privacy Policy.",
+    },
+    {
+      type: "MARKETING",
+      version: "1.0",
+      title: "ความยินยอมการตลาด",
+      summary: "ความยินยอมในการรับข่าวสาร โปรโมชั่น และข้อเสนอทางการตลาด",
+      content: "Placeholder policy content for Marketing Consent.",
+    },
+  ] as const;
+
+  for (const policy of policies) {
+    await prisma.pdpaPolicy.upsert({
+      where: {
+        type_version: {
+          type: policy.type,
+          version: policy.version,
+        },
+      },
+      update: {
+        title: policy.title,
+        summary: policy.summary,
+        content: policy.content,
+        requiresReconsent: false,
+        isActive: true,
+        createdBy: createdBy ?? null,
+      },
+      create: {
+        ...policy,
+        requiresReconsent: false,
+        isActive: true,
+        createdBy: createdBy ?? null,
+      },
+    });
+  }
+
+  console.log(`  ✅ PDPA policies: ${policies.length} upserted`);
 }
 
 // ══════════════════════════════════════════════════════════
@@ -686,6 +743,7 @@ async function main() {
   console.log("\n📦 Phase 1: Multi-Tenant + PDPA...");
   const org = await seedMultiTenant(user.id);
   await seedPDPA(user.id, org.id);
+  await seedPdpaPolicies(user.id);
 
   console.log("\n🔧 Backoffice: Admin + Providers...");
   await seedBackoffice();
@@ -720,12 +778,13 @@ async function main() {
 
   await seedAuditLog(user.id, org.id);
 
-  const [messageCount, contactCount, tagCount, campaignCount, packageTierCount, orgCount, adminCount, permCount, roleCount] = await Promise.all([
+  const [messageCount, contactCount, tagCount, campaignCount, packageTierCount, pdpaPolicyCount, orgCount, adminCount, permCount, roleCount] = await Promise.all([
     prisma.message.count({ where: { userId: user.id } }),
     prisma.contact.count({ where: { userId: user.id } }),
     prisma.tag.count({ where: { userId: user.id } }),
     prisma.campaign.count({ where: { userId: user.id } }),
     prisma.packageTier.count(),
+    prisma.pdpaPolicy.count({ where: { isActive: true } }),
     prisma.organization.count(),
     prisma.adminUser.count(),
     prisma.permission.count(),
@@ -738,6 +797,7 @@ async function main() {
     organization: { id: org.id, slug: org.slug },
     counts: {
       packageTiers: packageTierCount,
+      pdpaPolicies: pdpaPolicyCount,
       permissions: permCount,
       roles: roleCount,
       messages: messageCount,

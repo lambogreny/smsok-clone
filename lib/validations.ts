@@ -549,10 +549,13 @@ export const updateInvoiceStatusSchema = z.object({
   status: z.enum(["SENT", "PAID", "OVERDUE", "VOIDED"]),
 });
 
+const campaignMessageBodySchema = messageSchema(1, 1000, "กรุณากรอกข้อความ", "ข้อความต้องไม่เกิน 1,000 ตัวอักษร");
+
 export const createCampaignSchema = z.object({
   name: sanitizedNameSchema(1, 100, "กรุณากรอกชื่อแคมเปญ", "ชื่อแคมเปญต้องไม่เกิน 100 ตัวอักษร"),
   contactGroupId: z.string().cuid().optional(),
   templateId: z.string().cuid().optional(),
+  messageBody: campaignMessageBodySchema.optional(),
   senderName: z
     .string()
     .min(3, "ชื่อผู้ส่งต้องมีอย่างน้อย 3 ตัวอักษร")
@@ -560,12 +563,16 @@ export const createCampaignSchema = z.object({
     .regex(SENDER_NAME_REGEX, "ชื่อผู้ส่งต้องเป็นตัวอักษรภาษาอังกฤษและตัวเลขเท่านั้น")
     .optional(),
   scheduledAt: z.coerce.date().optional(),
-});
+}).refine(
+  (value) => Boolean(value.templateId) || Boolean(value.messageBody),
+  { path: ["messageBody"], message: "กรุณากรอกข้อความหรือเลือกเทมเพลต" },
+);
 
 export const updateCampaignSchema = z.object({
   name: sanitizedNameSchema(1, 100, "กรุณากรอกชื่อแคมเปญ", "ชื่อแคมเปญต้องไม่เกิน 100 ตัวอักษร").optional(),
   contactGroupId: z.string().cuid().nullable().optional(),
   templateId: z.string().cuid().nullable().optional(),
+  messageBody: z.union([campaignMessageBodySchema, z.null()]).optional(),
   senderName: z
     .string()
     .min(3, "ชื่อผู้ส่งต้องมีอย่างน้อย 3 ตัวอักษร")

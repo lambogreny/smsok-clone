@@ -15,6 +15,7 @@ function normalizeCampaignPayload(body: unknown) {
     ...input,
     contactGroupId: input.contactGroupId ?? input.contact_group_id,
     templateId: input.templateId ?? input.template_id,
+    messageBody: input.messageBody ?? input.message_body,
     senderName: input.senderName ?? input.sender_name,
     scheduledAt: input.scheduledAt ?? input.scheduled_at,
   };
