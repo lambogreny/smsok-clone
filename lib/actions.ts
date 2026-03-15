@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { loginSchema, registerSchema, normalizePhone } from "./validations";
 import { forgotPassword as forgotPasswordAction, resetPassword as resetPasswordAction } from "./actions/auth";
 import { resolveActionUserId } from "./action-user";
+import { logger } from "./logger";
 
 export async function register(formData: FormData) {
   const parsed = registerSchema.safeParse({
@@ -38,7 +39,9 @@ export async function register(formData: FormData) {
 
   // Create trial package for new user
   const { createTrialPackage } = await import("./package/quota");
-  await createTrialPackage(user.id).catch(() => {});
+  await createTrialPackage(user.id).catch((err) => {
+    logger.error("Failed to create trial package", { userId: user.id, error: err instanceof Error ? err.message : String(err) });
+  });
 
   await setSession(user.id);
   redirect("/dashboard");
@@ -187,7 +190,9 @@ export async function registerWithOtp(data: {
 
   // Create trial package for new user
   const { createTrialPackage } = await import("./package/quota");
-  await createTrialPackage(user.id).catch(() => {});
+  await createTrialPackage(user.id).catch((err) => {
+    logger.error("Failed to create trial package", { userId: user.id, error: err instanceof Error ? err.message : String(err) });
+  });
 
   await setSession(user.id);
 }
