@@ -22,6 +22,7 @@ import {
 import { toast } from "sonner";
 import { ArrowRight, Loader2, AlertTriangle, Send, FlaskConical, Upload, Calendar, X } from "lucide-react";
 import SendingHoursWarning, { checkSendingHours } from "@/components/blocks/SendingHoursWarning";
+import { TrialNotice } from "@/components/blocks/TrialBanner";
 
 type MsgType = "english" | "thai" | "unicode";
 
@@ -252,6 +253,9 @@ export default function SendSmsForm({ senderNames: rawNames = [] }: { senderName
     <div className="p-4 md:p-6 pb-20 md:pb-6 space-y-6">
       {/* Page Header */}
       <h1 className="text-2xl font-bold text-[var(--text-primary)]">ส่ง SMS</h1>
+
+      {/* Trial Limitation Notice */}
+      <TrialNotice variant="send-limit" />
 
       {/* No Approved Senders Warning */}
       {hasNoSenders && (

@@ -44,6 +44,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import OnboardingChecklist from "@/components/blocks/OnboardingChecklist";
+import TrialBanner from "@/components/blocks/TrialBanner";
 import { formatThaiDateOnly, formatThaiDateShort, formatThaiTime } from "@/lib/format-thai-date";
 
 /* ── Types ── */
@@ -108,6 +109,9 @@ type Props = {
   showOnboarding?: boolean;
   accountStatus?: AccountStatus;
   alerts?: SmartAlert[];
+  trialCreditsRemaining?: number;
+  trialCreditsTotal?: number;
+  trialDaysRemaining?: number;
 };
 
 /* ── Package Upgrade Banner ── */
@@ -976,8 +980,18 @@ export default function DashboardContent({
   showOnboarding = false,
   accountStatus,
   alerts = [],
+  trialCreditsRemaining,
+  trialCreditsTotal,
+  trialDaysRemaining,
 }: Props) {
   const sparklineData = stats?.last7Days?.map((d) => d.sms) ?? [];
+
+  // Determine trial status
+  const trialStatus = accountStatus === "trial"
+    ? (trialDaysRemaining !== undefined && trialDaysRemaining <= 0) || (trialCreditsRemaining !== undefined && trialCreditsRemaining <= 0)
+      ? "expired" as const
+      : "active" as const
+    : "none" as const;
 
   return (
     <div className="p-4 md:p-6 space-y-5">
@@ -996,6 +1010,14 @@ export default function DashboardContent({
           </Button>
         </Link>
       </div>
+
+      {/* ── Trial Banner (conditional) ── */}
+      <TrialBanner
+        status={trialStatus}
+        creditsRemaining={trialCreditsRemaining}
+        creditsTotal={trialCreditsTotal}
+        daysRemaining={trialDaysRemaining}
+      />
 
       {/* ── Package Upgrade Banner (conditional) ── */}
       <PackageUpgradeBanner quota={quota} />

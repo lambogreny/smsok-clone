@@ -8,6 +8,7 @@ import ReconsentModal from "@/components/reconsent-modal";
 import LanguageSwitcher from "@/components/language-switcher";
 import DashboardBreadcrumb from "@/components/DashboardBreadcrumb";
 import DashboardTour from "@/components/DashboardTour";
+import { SidebarUpgradeCta } from "@/components/blocks/TrialBanner";
 import { cn } from "@/lib/utils";
 
 // shadcn components
@@ -267,6 +268,9 @@ export default function DashboardShell({
             ))}
           </nav>
         </ScrollArea>
+
+        {/* Upgrade CTA */}
+        <SidebarUpgradeCta />
 
         {/* User section */}
         <div className="border-t border-[var(--border-default)] p-3">

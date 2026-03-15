@@ -22,31 +22,31 @@ const STEPS = [
     id: "sender",
     label: "ตั้งชื่อ Sender Name",
     icon: Type,
-    href: "/sender-names",
+    href: "/dashboard/senders",
   },
   {
     id: "contacts",
     label: "นำเข้ารายชื่อ",
     icon: Users,
-    href: "/contacts",
+    href: "/dashboard/contacts",
   },
   {
     id: "test-sms",
     label: "ทดสอบ SMS",
     icon: MessageSquare,
-    href: "/send",
+    href: "/dashboard/send",
   },
   {
     id: "packages",
     label: "ซื้อแพ็กเกจ",
     icon: Package,
-    href: "/packages",
+    href: "/dashboard/billing/packages",
   },
   {
     id: "campaign",
     label: "สร้าง Campaign แรก",
     icon: Send,
-    href: "/campaigns/new",
+    href: "/dashboard/campaigns",
   },
 ] as const;
 

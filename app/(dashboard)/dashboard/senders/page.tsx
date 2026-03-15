@@ -23,6 +23,7 @@ import {
 import { formatThaiDateOnly } from "@/lib/format-thai-date";
 import { Button } from "@/components/ui/button";
 import EmptyState from "@/components/EmptyState";
+import { TrialNotice } from "@/components/blocks/TrialBanner";
 import { Skeleton } from "@/components/skeletons/Skeleton";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -319,6 +320,11 @@ export default function SendersPage() {
   // ---- Render ----
   return (
     <div className="p-6 md:p-8 max-w-6xl">
+      {/* Trial Notice */}
+      <div className="mb-4">
+        <TrialNotice variant="sender-limit" />
+      </div>
+
       {/* ========== Page Header ========== */}
       <div className="flex items-start justify-between mb-6">
         <div>
