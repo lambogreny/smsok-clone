@@ -12,13 +12,6 @@ function asRecord(body: unknown): JsonRecord {
   return body && typeof body === "object" ? (body as JsonRecord) : {};
 }
 
-function shouldExposeDebugOtp(req: NextRequest): boolean {
-  return (
-    process.env.NODE_ENV !== "production" &&
-    req.headers.get("x-debug-otp") === "1"
-  );
-}
-
 function pickSendInput(body: unknown) {
   const input = asRecord(body);
   return sendOtpSchema.parse({
@@ -69,9 +62,7 @@ export async function handleSendOtp(req: NextRequest, body?: unknown) {
 
     const input = pickSendInput(await resolveRequestBody(req, body));
 
-    const result = await generateOtp_(user.id, input.phone, input.purpose, {
-      debug: shouldExposeDebugOtp(req),
-    }, "API", ip);
+    const result = await generateOtp_(user.id, input.phone, input.purpose, "API", ip);
 
     if (isInsufficientCreditsResult(result)) {
       throw new InsufficientCreditsError(

@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
 // DEV-ONLY endpoint — returns last OTP request metadata for QA testing
-// NOTE: `code` in DB is hashed — plaintext OTP is logged to server console and shown in UI (debugCode)
 export async function GET() {
   if (process.env.NODE_ENV !== "development") {
     return NextResponse.json({ error: "Not available in production" }, { status: 403 });
@@ -28,7 +27,7 @@ export async function GET() {
 
     return NextResponse.json({
       ...otp,
-      note: "Plaintext OTP is logged to server console (search '[DEV] OTP') and shown in register UI as debugCode",
+      note: "OTP plaintext is never returned here. Use DEV_OTP_BYPASS only for local dev fallback when SMS gateway is unavailable.",
       expired: otp.expiresAt < new Date(),
     });
   } catch (error) {

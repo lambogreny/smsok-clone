@@ -16,9 +16,7 @@ const MAX_OTP_PER_PHONE_PER_WINDOW = 3; // 3 per 10 min
 const OTP_RATE_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
 const OTP_CREDIT_COST = 1;
 
-type GenerateOtpOptions = {
-  debug?: boolean;
-};
+type OtpDelivery = "sms" | "dev_bypass";
 
 function getOtpHashSecret(): string {
   const secret = process.env.OTP_HASH_SECRET?.trim();
@@ -54,6 +52,32 @@ function hasSmsGatewayCredentials(): boolean {
   );
 }
 
+function getDevOtpBypassCode(): string | null {
+  if (process.env.NODE_ENV === "production") {
+    return null;
+  }
+
+  const code = process.env.DEV_OTP_BYPASS?.trim();
+  if (!code || !/^\d{6}$/.test(code)) {
+    return null;
+  }
+
+  return code;
+}
+
+function resolveOtpCodeAndDelivery(): { code: string; delivery: OtpDelivery } {
+  if (hasSmsGatewayCredentials()) {
+    return { code: generateOtp(), delivery: "sms" };
+  }
+
+  const bypassCode = getDevOtpBypassCode();
+  if (!bypassCode) {
+    throw new Error("ระบบ OTP ยังไม่พร้อมให้บริการ กรุณาติดต่อผู้ดูแล");
+  }
+
+  return { code: bypassCode, delivery: "dev_bypass" };
+}
+
 async function requireSessionUserId() {
   const user = await getSession();
   if (!user) {
@@ -66,7 +90,6 @@ export async function generateOtp_(
   userId: string,
   phone: string,
   purpose: string = "verify",
-  options: GenerateOtpOptions = {},
   channel: "WEB" | "API" = "WEB",
   ip: string = "unknown"
 ) {
@@ -76,7 +99,7 @@ export async function generateOtp_(
   }
   const input = parsed.data;
   const normalizedPhone = normalizePhone(input.phone);
-  const debugMode = options.debug === true && process.env.NODE_ENV !== "production";
+  const { code, delivery } = resolveOtpCodeAndDelivery();
 
   // DB-level fallback: max 3 OTPs per phone per 10 min
   const windowStart = new Date(Date.now() - OTP_RATE_WINDOW_MS);
@@ -88,15 +111,15 @@ export async function generateOtp_(
     throw new Error("ส่ง OTP มากเกินไป กรุณารอ 10 นาที");
   }
 
-  // Check package quota — return structured error (not throw) for server action boundary
-  try {
-    await ensureSufficientQuota(userId, OTP_CREDIT_COST);
-  } catch (err) {
-    if (err instanceof InsufficientCreditsError) return toInsufficientCreditsResult(err);
-    throw err;
+  if (delivery === "sms") {
+    try {
+      await ensureSufficientQuota(userId, OTP_CREDIT_COST);
+    } catch (err) {
+      if (err instanceof InsufficientCreditsError) return toInsufficientCreditsResult(err);
+      throw err;
+    }
   }
 
-  const code = generateOtp();
   const refCode = generateRefCode();
   const expiresAt = new Date(Date.now() + OTP_EXPIRY_MS);
   const codeHash = hashOtp(code, refCode);
@@ -125,8 +148,11 @@ export async function generateOtp_(
         },
       });
 
-      const quotaResult = await deductQuota(tx, userId, OTP_CREDIT_COST);
+      if (delivery !== "sms") {
+        return { otp, deductions: [] };
+      }
 
+      const quotaResult = await deductQuota(tx, userId, OTP_CREDIT_COST);
       return { otp, deductions: quotaResult.deductions };
     });
 
@@ -144,13 +170,9 @@ export async function generateOtp_(
 
   // Send OTP via SMS
   const smsText = `รหัส OTP ของคุณคือ ${code} (หมดอายุใน 5 นาที)`;
-  let delivery: "sms" | "debug" = "sms";
-  if (debugMode && !hasSmsGatewayCredentials()) {
-    // Localhost testing path: keep Prisma flow real, expose the OTP instead of requiring SMS infra.
-    delivery = "debug";
-  } else {
+  if (delivery === "sms") {
     try {
-      const result = await sendSingleSms(input.phone, smsText, "EasySlip");
+      const result = await sendSingleSms(normalizedPhone, smsText, "EasySlip");
       if (!result.success) {
         throw new Error(result.error || "ส่ง OTP ไม่สำเร็จ กรุณาลองใหม่");
       }
@@ -166,21 +188,22 @@ export async function generateOtp_(
     }
   }
 
-  // Log SMS history after confirmed send
-  const sentAt = new Date();
-  await prisma.message.create({
-    data: {
-      userId,
-      type: "OTP",
-      channel,
-      senderName: "EasySlip",
-      recipient: normalizedPhone,
-      content: "[OTP]",
-      status: "delivered",
-      creditCost: OTP_CREDIT_COST,
-      sentAt,
-    },
-  });
+  if (delivery === "sms") {
+    const sentAt = new Date();
+    await prisma.message.create({
+      data: {
+        userId,
+        type: "OTP",
+        channel,
+        senderName: "EasySlip",
+        recipient: normalizedPhone,
+        content: "[OTP]",
+        status: "delivered",
+        creditCost: OTP_CREDIT_COST,
+        sentAt,
+      },
+    });
+  }
 
   // Re-fetch remaining quota after deduction
   const updatedQuota = await getRemainingQuota(userId);
@@ -192,10 +215,9 @@ export async function generateOtp_(
     purpose: otpRecord.purpose,
     expiresAt: otpRecord.expiresAt.toISOString(),
     expiresIn: Math.floor(OTP_EXPIRY_MS / 1000),
-    creditUsed: OTP_CREDIT_COST,
+    creditUsed: delivery === "sms" ? OTP_CREDIT_COST : 0,
     smsRemaining: updatedQuota.totalRemaining,
     delivery,
-    ...(debugMode && { debugCode: code }),
   };
 }
 
@@ -241,21 +263,6 @@ export async function verifyOtp_(
 
   if (otp.attempts >= MAX_ATTEMPTS) {
     throw new Error("OTP ถูกล็อคแล้ว กรุณาขอรหัสใหม่");
-  }
-
-  // OTP bypass — dev/staging ONLY, blocked in production
-  const bypassCode = process.env.OTP_BYPASS_CODE?.trim();
-  if (
-    bypassCode &&
-    bypassCode.length === 6 &&
-    process.env.NODE_ENV !== "production" &&
-    timingSafeMatch(input.code, bypassCode)
-  ) {
-    await prisma.otpRequest.update({
-      where: { id: otp.id },
-      data: { verified: true, verifiedAt: new Date() },
-    });
-    return { valid: true, verified: true, ref: otp.refCode, phone: otp.phone, purpose: otp.purpose };
   }
 
   const isValid = timingSafeMatch(hashOtp(input.code, otp.refCode), otp.code);
@@ -315,6 +322,7 @@ export async function generateOtpForRegister(phone: string, ip: string = "unknow
     throw new Error(parsedOtp.error.issues[0]?.message || "เบอร์โทรไม่ถูกต้อง");
   }
   const normalizedPhone = normalizePhone(parsedOtp.data.phone);
+  const { code, delivery } = resolveOtpCodeAndDelivery();
 
   const existing = await prisma.user.findUnique({ where: { phone: normalizedPhone }, select: { id: true } });
   if (existing) throw new Error("เบอร์โทรนี้ถูกใช้งานแล้ว");
@@ -328,7 +336,6 @@ export async function generateOtpForRegister(phone: string, ip: string = "unknow
     throw new Error("ส่ง OTP บ่อยเกินไป กรุณารอ 10 นาที");
   }
 
-  const code = generateOtp();
   const refCode = generateRefCode();
   const expiresAt = new Date(Date.now() + OTP_EXPIRY_MS);
 
@@ -346,10 +353,7 @@ export async function generateOtpForRegister(phone: string, ip: string = "unknow
   });
 
   const message = `รหัส OTP สมัครสมาชิก SMSOK ของคุณคือ ${code} (หมดอายุใน 5 นาที)`;
-  let delivery: "sms" | "debug" = "sms";
-  if (!process.env.SMS_API_USERNAME?.trim()) {
-    delivery = "debug";
-  } else {
+  if (delivery === "sms") {
     const result = await sendSingleSms(normalizedPhone, message, "EasySlip");
     if (!result.success) throw new Error("ส่ง OTP ไม่สำเร็จ กรุณาลองใหม่");
   }
@@ -358,7 +362,6 @@ export async function generateOtpForRegister(phone: string, ip: string = "unknow
     ref: refCode,
     expiresIn: Math.floor(OTP_EXPIRY_MS / 1000),
     delivery,
-    ...(delivery === "debug" ? { debugCode: code } : {}),
   };
 }
 
@@ -379,21 +382,6 @@ export async function verifyOtpForRegister(ref: string, code: string) {
   if (otp.verified) throw new Error("OTP นี้ถูกใช้งานแล้ว");
   if (otp.expiresAt.getTime() < Date.now()) throw new Error("OTP หมดอายุแล้ว");
   if (otp.attempts >= MAX_ATTEMPTS) throw new Error("OTP ถูกล็อคแล้ว กรุณาขอรหัสใหม่");
-
-  // Bypass check — dev/staging ONLY, blocked in production
-  const bypassCode = process.env.OTP_BYPASS_CODE?.trim();
-  if (
-    bypassCode &&
-    bypassCode.length === 6 &&
-    process.env.NODE_ENV !== "production" &&
-    timingSafeMatch(input.code, bypassCode)
-  ) {
-    await prisma.otpRequest.update({
-      where: { id: otp.id },
-      data: { verified: true, verifiedAt: new Date() },
-    });
-    return { valid: true, phone: otp.phone };
-  }
 
   const isValid = timingSafeMatch(hashOtp(input.code, otp.refCode), otp.code);
   if (!isValid) {
