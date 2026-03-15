@@ -64,6 +64,7 @@ export function smsCounterText(message: string): string {
   const count = isUcs2
     ? (message.length <= 70 ? 1 : Math.ceil(message.length / 67))
     : (message.length <= 160 ? 1 : Math.ceil(message.length / 153));
-  const encoding = isUcs2 ? "UCS-2: 70/SMS" : "GSM-7: 160/SMS";
-  return `${message.length} chars • ${count} SMS (${encoding})`;
+  const limit = isUcs2 ? (count > 1 ? 67 : 70) : (count > 1 ? 153 : 160);
+  const encoding = isUcs2 ? "UCS-2" : "GSM-7";
+  return `${message.length} chars • ${count} SMS (${encoding}: ${limit}/SMS)`;
 }

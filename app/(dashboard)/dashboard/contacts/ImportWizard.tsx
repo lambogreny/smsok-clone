@@ -25,7 +25,7 @@ type DuplicateAction = "skip" | "update";
 
 type ImportResult = {
   total: number;
-  created: number;
+  imported: number;
   updated: number;
   skipped: number;
   errors: Array<{ row: number; phone: string; error: string }>;
@@ -118,11 +118,23 @@ export default function ImportWizard({
       return;
     }
 
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    if (file.size > MAX_FILE_SIZE) {
+      setError("ไฟล์ใหญ่เกินไป — สูงสุด 5MB");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
       const buffer = await file.arrayBuffer();
       const parsed = await parseExcelFile(buffer);
+
+      if (parsed.totalRows > 5000) {
+        setError(`ไฟล์มี ${parsed.totalRows.toLocaleString()} แถว — สูงสุด 5,000 แถว`);
+        setLoading(false);
+        return;
+      }
 
       setFileBuffer(buffer);
       setFileName(file.name);
@@ -323,7 +335,7 @@ export default function ImportWizard({
                 <Upload className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
                 <p className="text-sm font-medium mb-1">ลากไฟล์มาวางที่นี่</p>
                 <p className="text-xs text-muted-foreground mb-4">
-                  รองรับ .xlsx, .xls, .csv (สูงสุด 10,000 แถว)
+                  รองรับ .xlsx, .xls, .csv (สูงสุด 5MB, 5,000 แถว)
                 </p>
                 <label>
                   <Button variant="outline" size="sm" className="cursor-pointer" tabIndex={-1}>
@@ -551,7 +563,7 @@ export default function ImportWizard({
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <Card>
                 <CardContent className="p-4 text-center">
-                  <p className="text-2xl font-bold text-[var(--accent)]">{result.created}</p>
+                  <p className="text-2xl font-bold text-[var(--accent)]">{result.imported}</p>
                   <p className="text-xs text-muted-foreground">สร้างใหม่</p>
                 </CardContent>
               </Card>

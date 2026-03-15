@@ -179,11 +179,11 @@ async function handleCsvImport(
   }
 
   return apiResponse({
-    imported: totalCreated,
-    skipped: duplicates,
-    duplicates,
-    invalid,
     total: rows.length,
+    imported: totalCreated,
+    updated: 0,
+    skipped: duplicates + invalid,
+    errors: [],
   }, 201);
 }
 

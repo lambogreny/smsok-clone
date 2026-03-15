@@ -558,8 +558,8 @@ function CreateScheduledSmsDialog({
   const isGsm7 = /^[\x20-\x7E\n\r]*$/.test(message);
   const singleLimit = isGsm7 ? 160 : 70;
   const multiLimit = isGsm7 ? 153 : 67;
-  const charsPerSegment = singleLimit;
   const smsCount = charCount === 0 ? 0 : charCount <= singleLimit ? 1 : Math.ceil(charCount / multiLimit);
+  const charsPerSegment = smsCount > 1 ? multiLimit : singleLimit;
   const isValidPhone = phoneNumber.trim().length >= 9;
 
   async function handleCreate() {

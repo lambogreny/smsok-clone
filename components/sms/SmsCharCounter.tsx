@@ -67,6 +67,7 @@ export function SmsCharCounter({
     );
   }
 
+  const charsPerSegment = m.isMultipart ? m.multiLimit : m.singleLimit;
   const charProgress = Math.min((m.charCount / m.singleLimit) * 100, 100);
   const isOverLimit = m.charCount > m.singleLimit;
   const totalCost = m.segments * Math.max(recipientCount, 1);
@@ -77,7 +78,7 @@ export function SmsCharCounter({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-xs text-[var(--text-secondary)]">
-            {m.charCount}/{m.singleLimit} chars · {m.segments} SMS
+            {m.charCount}/{charsPerSegment} chars · {m.segments} SMS
           </span>
           <span
             className="text-[10px] px-1.5 py-0.5 rounded font-mono font-medium"

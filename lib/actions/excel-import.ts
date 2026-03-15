@@ -14,7 +14,7 @@ export type ColumnMapping = {
 
 export type ImportResult = {
   total: number;
-  created: number;
+  imported: number;
   updated: number;
   skipped: number;
   errors: Array<{ row: number; phone: string; error: string }>;
@@ -89,9 +89,9 @@ export async function importContactsFromExcel(
   const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
 
   if (rows.length === 0) throw new Error("ไฟล์ไม่มีข้อมูล");
-  if (rows.length > 10000) throw new Error("สูงสุด 10,000 รายการต่อครั้ง");
+  if (rows.length > 5000) throw new Error("สูงสุด 5,000 รายการต่อครั้ง");
 
-  const result: ImportResult = { total: rows.length, created: 0, updated: 0, skipped: 0, errors: [] };
+  const result: ImportResult = { total: rows.length, imported: 0, updated: 0, skipped: 0, errors: [] };
 
   // Process in batches of 100
   const BATCH_SIZE = 100;
@@ -145,7 +145,7 @@ export async function importContactsFromExcel(
             await tx.contact.create({
               data: { userId, name, phone, email, tags },
             });
-            result.created++;
+            result.imported++;
           }
         } catch (err) {
           result.errors.push({

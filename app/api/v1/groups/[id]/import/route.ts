@@ -122,11 +122,11 @@ export async function POST(
     }
 
     return apiResponse({
-      imported,
-      addedToGroup: createdIds.length,
-      duplicates,
-      invalid,
       total: rows.length,
+      imported,
+      updated: 0,
+      skipped: duplicates + invalid,
+      errors: [],
     }, 201);
   } catch (error) {
     return apiError(error);
