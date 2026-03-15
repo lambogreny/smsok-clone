@@ -183,6 +183,13 @@ export function apiError(error: unknown) {
     finishApiLog(error.status, body, body.code, error.message);
     return Response.json(body, { status: error.status });
   }
+  // Handle Prisma unique constraint violation (race condition fallback)
+  if (error instanceof Error && "code" in error && (error as { code: string }).code === "P2002") {
+    const body = { error: "ข้อมูลซ้ำ กรุณาตรวจสอบและลองใหม่", code: ERROR_CODES.BUSINESS };
+    finishApiLog(409, body, ERROR_CODES.BUSINESS, body.error);
+    return Response.json(body, { status: 409 });
+  }
+
   if (error instanceof Error) {
     if (process.env.NODE_ENV !== "production" || process.env.DEBUG_API_ERRORS === "1") {
       console.error("[apiError]", error.name, error.message, error.stack);
@@ -211,6 +218,7 @@ export function apiError(error: unknown) {
       msg.includes("ไม่สำเร็จ") ||
       msg.includes("ใช้งานแล้ว") ||
       msg.includes("มีอยู่แล้ว") ||
+      msg.includes("อยู่แล้ว") ||
       msg.includes("ถูกล็อค") ||
       msg.includes("หากเบอร์") ||
       msg.includes("ระบบยังไม่พร้อม") ||
@@ -224,8 +232,11 @@ export function apiError(error: unknown) {
       else code = ERROR_CODES.BUSINESS;
     }
 
+    const isDuplicate = msg.includes("อยู่แล้ว");
     const status =
-      isThaiValidation && code === ERROR_CODES.CREDITS ? 402 : isThaiValidation ? 400 : 500;
+      isThaiValidation && code === ERROR_CODES.CREDITS ? 402
+        : isThaiValidation && isDuplicate ? 409
+        : isThaiValidation ? 400 : 500;
     const body = {
       error: isThaiValidation ? msg : "เกิดข้อผิดพลาดภายในระบบ กรุณาลองใหม่",
       code,
