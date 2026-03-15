@@ -18,6 +18,7 @@ import {
   Zap,
 } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
+import { TrialNotice } from "@/components/blocks/TrialBanner";
 import { createApiKey, toggleApiKey, deleteApiKey, updateApiKeyName } from "@/lib/actions/api-keys";
 import { safeErrorMessage } from "@/lib/error-messages";
 import { Button } from "@/components/ui/button";
@@ -98,8 +99,10 @@ function parseIpWhitelist(input: string): string[] {
 
 export default function ApiKeysContent({
   apiKeys: initialKeys,
+  isTrial = false,
 }: {
   apiKeys: ApiKey[];
+  isTrial?: boolean;
 }) {
   const [apiKeys, setApiKeys] = useState(initialKeys);
 
@@ -267,6 +270,12 @@ export default function ApiKeysContent({
 
   return (
     <PageLayout>
+      {isTrial && (
+        <div className="mb-4">
+          <TrialNotice variant="api-limit" />
+        </div>
+      )}
+
       <PageHeader
         title="API Keys"
         description="จัดการ API keys สำหรับเชื่อมต่อระบบภายนอก"

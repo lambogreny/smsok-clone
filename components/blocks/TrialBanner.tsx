@@ -137,7 +137,7 @@ export default function TrialBanner({
 /* ─── Inline Trial Notice (for Send SMS / Senders pages) ─── */
 
 type TrialNoticeProps = {
-  variant: "send-limit" | "sender-limit";
+  variant: "send-limit" | "sender-limit" | "api-limit";
 };
 
 export function TrialNotice({ variant }: TrialNoticeProps) {
@@ -154,6 +154,13 @@ export function TrialNotice({ variant }: TrialNoticeProps) {
       color: "var(--warning)",
       rgb: "var(--warning-rgb, 245,158,11)",
       text: "ชื่อผู้ส่งแบบกำหนดเองใช้ได้เฉพาะแพ็กเกจที่ซื้อ",
+      cta: "ดูแพ็กเกจ",
+    },
+    "api-limit": {
+      icon: AlertTriangle,
+      color: "var(--warning)",
+      rgb: "var(--warning-rgb, 245,158,11)",
+      text: "API access ใช้ได้เฉพาะแพ็กเกจที่ซื้อ — ทดลองใช้งานไม่รองรับ API",
       cta: "ดูแพ็กเกจ",
     },
   };
@@ -200,6 +207,110 @@ export function SidebarUpgradeCta() {
         <span className="flex-1">อัพเกรดแพ็กเกจ</span>
         <ArrowRight className="w-3 h-3" />
       </Link>
+    </div>
+  );
+}
+
+/* ─── Trial Credit Widget (sidebar/header) ─── */
+
+type TrialCreditWidgetProps = {
+  credits: number;
+  maxCredits: number;
+  expiresAt?: string;
+  dailyUsed?: number;
+  dailyLimit?: number;
+};
+
+export function TrialCreditWidget({
+  credits,
+  maxCredits,
+  expiresAt,
+  dailyUsed = 0,
+  dailyLimit = 10,
+}: TrialCreditWidgetProps) {
+  const pct = maxCredits > 0 ? Math.round((credits / maxCredits) * 100) : 0;
+  const dailyPct = dailyLimit > 0 ? Math.round((dailyUsed / dailyLimit) * 100) : 0;
+  const isLow = credits <= 10;
+  const dailyFull = dailyUsed >= dailyLimit;
+
+  const expiryText = expiresAt
+    ? (() => {
+        try {
+          const days = Math.ceil(
+            (new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+          );
+          return days > 0 ? `หมดอายุใน ${days} วัน` : "หมดอายุแล้ว";
+        } catch {
+          return "";
+        }
+      })()
+    : "";
+
+  return (
+    <div
+      className="rounded-lg p-3.5"
+      style={{
+        background: "var(--bg-surface)",
+        border: "1px solid var(--border-default)",
+      }}
+    >
+      {/* Credits balance */}
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-[0.04em]">
+          เครดิต
+        </span>
+        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[rgba(var(--accent-purple-rgb),0.1)] text-[var(--accent-purple)] font-semibold">
+          Trial
+        </span>
+      </div>
+      <div className="flex items-baseline gap-1 mb-2">
+        <span className={`text-xl font-bold tabular-nums ${isLow ? "text-[var(--warning)]" : "text-[var(--text-primary)]"}`}>
+          {credits}
+        </span>
+        <span className="text-xs text-[var(--text-muted)]">/ {maxCredits}</span>
+      </div>
+      <div
+        className="w-full h-1.5 rounded-full overflow-hidden mb-2"
+        style={{ background: "rgba(var(--text-primary-rgb),0.08)" }}
+      >
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{
+            width: `${Math.min(pct, 100)}%`,
+            background: isLow
+              ? "var(--warning)"
+              : "linear-gradient(90deg, var(--accent-purple), var(--accent))",
+          }}
+        />
+      </div>
+
+      {/* Daily usage */}
+      <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)] mb-1">
+        <span>วันนี้: {dailyUsed}/{dailyLimit}</span>
+        {dailyFull && (
+          <span className="text-[var(--error)] font-medium">ครบลิมิตแล้ว</span>
+        )}
+      </div>
+      <div
+        className="w-full h-1 rounded-full overflow-hidden mb-2"
+        style={{ background: "rgba(var(--text-primary-rgb),0.06)" }}
+      >
+        <div
+          className="h-full rounded-full transition-all duration-300"
+          style={{
+            width: `${Math.min(dailyPct, 100)}%`,
+            background: dailyFull ? "var(--error)" : "var(--accent-secondary)",
+          }}
+        />
+      </div>
+
+      {/* Expiry */}
+      {expiryText && (
+        <p className="text-[10px] text-[var(--text-muted)] flex items-center gap-1">
+          <Clock className="w-3 h-3" />
+          {expiryText}
+        </p>
+      )}
     </div>
   );
 }
