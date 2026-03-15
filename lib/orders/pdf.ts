@@ -298,9 +298,14 @@ export async function renderOrderInvoicePdf(order: OrderPdfRecord) {
         where: { orderId: order.id, documentNumber: order.invoiceNumber!, deletedAt: null },
         select: { verificationCode: true },
       });
+
+      if (!doc?.verificationCode) {
+        throw new Error(`ไม่พบ verification code สำหรับเอกสาร ${order.invoiceNumber!}`);
+      }
+
       const data = await buildOrderInvoicePdfData(order, {
         documentNumber: order.invoiceNumber!,
-        verificationCode: doc?.verificationCode ?? order.invoiceNumber!,
+        verificationCode: doc.verificationCode,
         type: "TAX_INVOICE_RECEIPT",
         issuedAt: order.paidAt ?? order.createdAt,
       });
