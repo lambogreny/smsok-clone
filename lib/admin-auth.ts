@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 import { prisma as db } from "./db";
 import { ApiError } from "./api-auth";
 import jwt from "jsonwebtoken";
-import bcrypt from "bcryptjs";
+import { verifyAndMigratePassword } from "./auth";
 import { env } from "./env";
 import { hasValidCsrfOrigin } from "./csrf";
 import { redis } from "./redis";
@@ -166,16 +166,16 @@ export async function loginAdmin(email: string, password: string) {
     select: { id: true, email: true, name: true, password: true, role: true, isActive: true },
   });
   const passwordHash = admin?.isActive ? admin.password : DUMMY_HASH;
-  const valid = await bcrypt.compare(password, passwordHash);
+  const { valid, newHash } = await verifyAndMigratePassword(password, passwordHash);
 
   if (!admin || !admin.isActive || !valid) {
     throw new Error("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
   }
 
-  // Update last login
+  // Update last login + lazy migrate bcrypt → argon2id
   await db.adminUser.update({
     where: { id: admin.id },
-    data: { lastLogin: new Date() },
+    data: { lastLogin: new Date(), ...(newHash ? { password: newHash } : {}) },
   });
 
   const sessionId = await createAdminSession(admin.id);

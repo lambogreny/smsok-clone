@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "./db";
-import { hashPassword, verifyPassword, setSession, clearSession } from "./auth";
+import { hashPassword, verifyPassword, verifyAndMigratePassword, setSession, clearSession } from "./auth";
 import { redirect } from "next/navigation";
 import { loginSchema, registerSchema, normalizePhone } from "./validations";
 import { forgotPassword as forgotPasswordAction, resetPassword as resetPasswordAction } from "./actions/auth";
@@ -226,9 +226,17 @@ export async function login(formData: FormData) {
     return { error: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" };
   }
 
-  const valid = await verifyPassword(password, user.password);
+  const { valid, newHash } = await verifyAndMigratePassword(password, user.password);
   if (!valid) {
     return { error: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" };
+  }
+
+  // Lazy migrate bcrypt → argon2id on successful login
+  if (newHash) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { password: newHash },
+    }).catch(() => {}); // non-blocking — don't fail login if rehash fails
   }
 
   // If 2FA is enabled, return challenge token instead of session

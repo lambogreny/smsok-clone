@@ -80,7 +80,7 @@ const CONSENTS: ConsentConfig[] = [
     type: "third_party",
     icon: Share2,
     accentColor: "var(--accent-blue)",
-    accentRgb: "71,121,255",
+    accentRgb: "var(--accent-blue-rgb)",
     title: "ส่งข้อมูลให้ผู้ให้บริการภายนอก",
     description:
       "ยินยอมให้ส่งข้อมูลไปยัง SMS gateway, ระบบชำระเงิน และผู้ให้บริการอื่นที่จำเป็นสำหรับการส่ง SMS",
@@ -513,11 +513,21 @@ export default function PrivacySettingsPage() {
             marketing: true,
             cookie: true,
           };
+          const metaMapped: Record<ConsentType, ConsentMeta> = { ...EMPTY_CONSENT_META };
           for (const c of data.consents) {
-            const key = c.consentType?.toLowerCase() as ConsentType;
-            if (key in mapped) mapped[key] = c.status === "OPT_IN";
+            // API returns { type, status, acceptedAt, policyVersion } or { consentType, ... }
+            const rawType = (c.type ?? c.consentType ?? "").toLowerCase();
+            const key = rawType === "third_party" ? "third_party" : rawType as ConsentType;
+            if (key in mapped) {
+              mapped[key] = c.status === "OPT_IN";
+              metaMapped[key] = {
+                policyVersion: c.policyVersion ?? null,
+                acceptedDate: c.acceptedAt ? formatThaiDateOnly(c.acceptedAt) : null,
+              };
+            }
           }
           setConsents(mapped);
+          setConsentMeta(metaMapped);
         }
       })
       .catch(() => {})
@@ -529,11 +539,11 @@ export default function PrivacySettingsPage() {
       .then((data) => {
         if (data?.logs) {
           setHistory(
-            data.logs.slice(0, 20).map((l: { createdAt: string; consentType: string; action: string; }) => ({
-              date: formatThaiDateOnly(l.createdAt),
+            data.logs.slice(0, 20).map((l: { recordedAt?: string; createdAt?: string; consentType: string; action: string; policy?: { version?: string } }) => ({
+              date: formatThaiDateOnly(l.recordedAt ?? l.createdAt ?? ""),
               type: l.consentType,
               action: l.action === "OPT_IN" ? "ยินยอม" as const : "ถอนความยินยอม" as const,
-              version: "v1.0",
+              version: l.policy?.version ?? "v1.0",
             })),
           );
         }
@@ -552,11 +562,20 @@ export default function PrivacySettingsPage() {
   async function persistConsent(type: ConsentType, action: "OPT_IN" | "OPT_OUT") {
     const apiType = type.toUpperCase() as "SERVICE" | "MARKETING" | "THIRD_PARTY" | "COOKIE";
     try {
-      const res = await fetch("/api/v1/consent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ consents: [{ consentType: apiType, action }] }),
-      });
+      let res: Response;
+      if (action === "OPT_IN") {
+        res = await fetch("/api/v1/consent", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ consents: [{ consentType: apiType, action: "OPT_IN" }] }),
+        });
+      } else {
+        res = await fetch("/api/v1/consent/withdraw", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ consentType: apiType }),
+        });
+      }
       if (!res.ok) throw new Error("Failed");
     } catch {
       // Revert on failure

@@ -118,15 +118,15 @@ export default function ConsentSettingsPage() {
 
       // Parse consent logs
       const logsData = logsRes.ok ? await logsRes.json() : null;
-      const rawLogs: { id?: string; consentType?: string; action?: string; createdAt?: string; policyVersion?: string; ipAddress?: string }[] =
+      const rawLogs: { id?: string; consentType?: string; action?: string; recordedAt?: string; createdAt?: string; policyVersion?: string; policy?: { version?: string }; ipAddress?: string }[] =
         logsData?.logs ?? logsData?.data?.logs ?? [];
       setHistory(
         rawLogs.slice(0, 20).map((l, i) => ({
           id: l.id ?? `log-${i}`,
           type: (l.consentType?.toLowerCase() === "third_party" ? "thirdParty" : l.consentType?.toLowerCase() ?? "service") as ConsentType,
           action: l.action === "OPT_IN" ? "granted" as const : "revoked" as const,
-          date: l.createdAt ?? new Date().toISOString(),
-          policyVersion: l.policyVersion ?? POLICY_VERSION,
+          date: l.recordedAt ?? l.createdAt ?? new Date().toISOString(),
+          policyVersion: l.policy?.version ?? l.policyVersion ?? POLICY_VERSION,
           ipAddress: l.ipAddress ?? "—",
         }))
       );
@@ -171,13 +171,24 @@ export default function ConsentSettingsPage() {
     setSaving(type);
     try {
       const apiType = type === "thirdParty" ? "THIRD_PARTY" : type.toUpperCase();
-      const res = await fetch("/api/v1/consent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          consents: [{ consentType: apiType, action: newValue ? "OPT_IN" : "OPT_OUT" }],
-        }),
-      });
+      let res: Response;
+      if (newValue) {
+        // OPT_IN → POST /api/v1/consent
+        res = await fetch("/api/v1/consent", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            consents: [{ consentType: apiType, action: "OPT_IN" }],
+          }),
+        });
+      } else {
+        // OPT_OUT → POST /api/v1/consent/withdraw
+        res = await fetch("/api/v1/consent/withdraw", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ consentType: apiType }),
+        });
+      }
 
       if (!res.ok) throw new Error("Failed to update");
 

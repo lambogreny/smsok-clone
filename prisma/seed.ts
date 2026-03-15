@@ -1,5 +1,8 @@
-import bcrypt from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
+
+async function hashPassword(password: string) {
+  return Bun.password.hash(password, { algorithm: "argon2id", memoryCost: 19456, timeCost: 2 });
+}
 
 const prisma = new PrismaClient();
 
@@ -21,7 +24,7 @@ async function resolveSeedUser() {
       return existing;
     }
 
-    const password = await bcrypt.hash(process.env.SEED_PASSWORD || DEFAULT_SEED_PASSWORD, 12);
+    const password = await hashPassword(process.env.SEED_PASSWORD || DEFAULT_SEED_PASSWORD);
     return prisma.user.create({
       data: {
         email: requestedEmail,
@@ -40,7 +43,7 @@ async function resolveSeedUser() {
     return firstUser;
   }
 
-  const password = await bcrypt.hash(DEFAULT_SEED_PASSWORD, 12);
+  const password = await hashPassword(DEFAULT_SEED_PASSWORD);
   return prisma.user.create({
     data: {
       email: DEFAULT_SEED_EMAIL,
@@ -381,9 +384,8 @@ async function resolveAdminSeedPassword(allowDefaultPassword: boolean) {
 }
 
 async function seedAdminUsers(options: { allowDefaultPassword: boolean }) {
-  const adminPassword = await bcrypt.hash(
+  const adminPassword = await hashPassword(
     await resolveAdminSeedPassword(options.allowDefaultPassword),
-    12,
   );
 
   const admins = [

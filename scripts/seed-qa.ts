@@ -1,5 +1,4 @@
 import { randomUUID } from "node:crypto";
-import bcrypt from "bcryptjs";
 import { PrismaClient, type Prisma } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -91,7 +90,7 @@ export async function seedQaUser(
     throw new Error("QA_SEED_PASSWORD ต้องยาวอย่างน้อย 10 ตัวอักษร");
   }
 
-  const passwordHash = await bcrypt.hash(password, 12);
+  const passwordHash = await Bun.password.hash(password, { algorithm: "argon2id", memoryCost: 19456, timeCost: 2 });
   const acceptedTermsAt = new Date();
 
   return client.$transaction(async (tx) => {

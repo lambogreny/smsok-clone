@@ -1,5 +1,4 @@
 import { randomBytes } from "crypto";
-import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 import { prisma } from "./db";
@@ -392,11 +391,46 @@ async function writeAccessCookie(accessToken: string) {
 }
 
 export async function hashPassword(password: string) {
-  return bcrypt.hash(password, 12);
+  return Bun.password.hash(password, {
+    algorithm: "argon2id",
+    memoryCost: 19456, // 19 MiB (OWASP recommended)
+    timeCost: 2,
+  });
 }
 
+/**
+ * Verify password — supports both argon2id and legacy bcrypt hashes.
+ * Returns { valid, needsRehash } so callers can lazy-migrate.
+ */
 export async function verifyPassword(password: string, hash: string) {
-  return bcrypt.compare(password, hash);
+  const valid = await Bun.password.verify(password, hash);
+  return valid;
+}
+
+/**
+ * Check if a hash needs rehash (legacy bcrypt → argon2id migration).
+ */
+export function needsRehash(hash: string): boolean {
+  return !hash.startsWith("$argon2id$");
+}
+
+/**
+ * Verify + lazy-migrate: if password is valid but hash is bcrypt,
+ * returns the new argon2id hash for the caller to persist.
+ */
+export async function verifyAndMigratePassword(
+  password: string,
+  currentHash: string,
+): Promise<{ valid: boolean; newHash?: string }> {
+  const valid = await Bun.password.verify(password, currentHash);
+  if (!valid) return { valid: false };
+
+  if (needsRehash(currentHash)) {
+    const newHash = await hashPassword(password);
+    return { valid: true, newHash };
+  }
+
+  return { valid: true };
 }
 
 export async function setSession(userId: string, options: SessionIssueOptions = {}) {

@@ -254,8 +254,10 @@ export default function ScheduledSmsPage() {
     if (!cancelTarget) return;
     setCancelling(true);
     try {
-      const res = await fetch(`/api/v1/sms/scheduled/${cancelTarget.id}/cancel`, {
+      const res = await fetch("/api/v1/sms/scheduled", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "cancel", id: cancelTarget.id }),
       });
       if (!res.ok) throw new Error();
 
@@ -564,11 +566,10 @@ function CreateScheduledSmsDialog({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          sender: senderName.trim() || "SMSOK",
+          to: numbers.join(","),
           message: message.trim(),
           scheduledAt,
-          recipientType,
-          recipients: numbers,
-          senderName: senderName.trim() || undefined,
         }),
       });
 

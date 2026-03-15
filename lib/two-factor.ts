@@ -1,7 +1,6 @@
 import { createHmac, createCipheriv, createDecipheriv, randomBytes } from "crypto"
 import * as OTPAuth from "otpauth"
 import QRCode from "qrcode"
-import bcrypt from "bcryptjs"
 import { env } from "./env"
 
 const APP_NAME = "SMSOK"
@@ -102,7 +101,9 @@ export function generateRecoveryCodes(): string[] {
 }
 
 export async function hashRecoveryCodes(codes: string[]): Promise<string[]> {
-  return Promise.all(codes.map((code) => bcrypt.hash(code, 10)))
+  return Promise.all(codes.map((code) =>
+    Bun.password.hash(code, { algorithm: "argon2id", memoryCost: 19456, timeCost: 2 })
+  ))
 }
 
 export async function verifyRecoveryCode(
@@ -110,7 +111,7 @@ export async function verifyRecoveryCode(
   hashedCodes: string[]
 ): Promise<{ valid: boolean; index: number }> {
   for (let i = 0; i < hashedCodes.length; i++) {
-    const match = await bcrypt.compare(code, hashedCodes[i])
+    const match = await Bun.password.verify(code, hashedCodes[i])
     if (match) return { valid: true, index: i }
   }
   return { valid: false, index: -1 }
