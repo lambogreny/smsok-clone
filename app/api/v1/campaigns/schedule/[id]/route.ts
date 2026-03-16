@@ -6,6 +6,7 @@ import {
   reschedule,
   rescheduleCampaignInputSchema,
 } from "@/lib/actions/scheduling";
+import { readJsonOr400 } from "@/lib/read-json-or-400";
 
 // PATCH /api/v1/campaigns/schedule/:id — reschedule a campaign
 export async function PATCH(
@@ -19,7 +20,7 @@ export async function PATCH(
     if (denied) return denied;
 
     const { id } = await params;
-    const body = await req.json();
+    const body = await readJsonOr400(req);
     const parsed = rescheduleCampaignInputSchema.safeParse(body);
     if (!parsed.success) {
       throw new ApiError(400, parsed.error.issues[0]?.message || "ข้อมูลไม่ถูกต้อง");

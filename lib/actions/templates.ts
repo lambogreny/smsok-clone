@@ -1,5 +1,6 @@
 "use server";
 
+import { Prisma } from "@prisma/client";
 import { prisma as db } from "../db";
 import { revalidatePath } from "next/cache";
 import { templateSchema } from "../validations";
@@ -52,16 +53,24 @@ export async function createTemplate(userIdOrData: string | unknown, maybeData?:
   const variables = extractVariables(input.content);
   const segmentCount = calculateSmsSegments(input.content);
 
-  const template = await db.messageTemplate.create({
-    data: {
-      userId,
-      name: input.name,
-      content: input.content,
-      category: input.category,
-      variables,
-      segmentCount,
-    },
-  });
+  let template: Awaited<ReturnType<typeof db.messageTemplate.create>>;
+  try {
+    template = await db.messageTemplate.create({
+      data: {
+        userId,
+        name: input.name,
+        content: input.content,
+        category: input.category,
+        variables,
+        segmentCount,
+      },
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      throw new Error("มีเทมเพลตชื่อนี้อยู่แล้ว");
+    }
+    throw error;
+  }
 
   revalidatePath("/dashboard/templates");
   revalidatePath("/dashboard/send");
@@ -106,10 +115,18 @@ export async function updateTemplate(userIdOrTemplateId: string, templateIdOrDat
     updateData.segmentCount = calculateSmsSegments(newContent);
   }
 
-  const updated = await db.messageTemplate.update({
-    where: { id: templateId },
-    data: updateData,
-  });
+  let updated: Awaited<ReturnType<typeof db.messageTemplate.update>>;
+  try {
+    updated = await db.messageTemplate.update({
+      where: { id: templateId },
+      data: updateData,
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      throw new Error("มีเทมเพลตชื่อนี้อยู่แล้ว");
+    }
+    throw error;
+  }
 
   revalidatePath("/dashboard/templates");
   revalidatePath("/dashboard/send");

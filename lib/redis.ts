@@ -1,7 +1,7 @@
 import Redis from "ioredis";
 import { logger } from "@/lib/logger";
+import { getRedisUrl } from "@/lib/env";
 
-const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build";
 
 function createRedisClient(): Redis {
@@ -13,7 +13,8 @@ function createRedisClient(): Redis {
     return client;
   }
 
-  const client = new Redis(REDIS_URL, {
+  const redisUrl = getRedisUrl();
+  const client = new Redis(redisUrl, {
     maxRetriesPerRequest: 3,
     retryStrategy(times) {
       if (times > 10) return null; // stop retrying
@@ -27,7 +28,7 @@ function createRedisClient(): Redis {
   });
 
   client.on("connect", () => {
-    logger.info("Redis connected", { url: REDIS_URL.replace(/\/\/.*@/, "//***@") });
+    logger.info("Redis connected", { url: redisUrl.replace(/\/\/.*@/, "//***@") });
   });
 
   return client;

@@ -8,6 +8,17 @@ const WEAK_SECRETS = [
   "change-me",
 ];
 
+const DEV_REDIS_URL = "redis://localhost:6379";
+const DEV_COMPANY_INFO = {
+  name: "บริษัท เอสเอ็มเอสโอเค จำกัด",
+  taxId: "0105566000000",
+  branch: "สำนักงานใหญ่",
+  address: "123 อาคาร ABC ชั้น 10 ถ.สุขุมวิท แขวงคลองเตย เขตคลองเตย กรุงเทพฯ 10110",
+  phone: "LINE: @smsok",
+  email: "billing@smsok.com",
+};
+const DEV_DOCUMENT_VERIFY_BASE_URL = "https://smsok.9phum.me";
+
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
   JWT_SECRET: z.string()
@@ -22,7 +33,7 @@ const envSchema = z.object({
     ),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   PORT: z.coerce.number().default(3000),
-  REDIS_URL: z.string().optional(),
+  REDIS_URL: z.string().url().optional(),
   EASYTHUNDER_API_KEY: z.string().optional(),
   EASYTHUNDER_API_SECRET: z.string().optional(),
   EASYSLIP_API_KEY: z.string().optional(),
@@ -34,10 +45,59 @@ const envSchema = z.object({
   R2_BUCKET: z.string().min(1).optional(),
   R2_ACCESS_KEY_ID: z.string().min(1).optional(),
   R2_SECRET_ACCESS_KEY: z.string().min(1).optional(),
+  NEXT_PUBLIC_APP_URL: z.string().url().optional(),
+  DOCUMENT_VERIFY_BASE_URL: z.string().url().optional(),
+  NEXT_PUBLIC_DOCUMENT_VERIFY_BASE_URL: z.string().url().optional(),
+  COMPANY_NAME: z.string().min(1).optional(),
+  COMPANY_TAX_ID: z.string().min(1).optional(),
+  COMPANY_BRANCH: z.string().min(1).optional(),
+  COMPANY_ADDRESS: z.string().min(1).optional(),
+  COMPANY_PHONE: z.string().min(1).optional(),
+  COMPANY_EMAIL: z.string().email().optional(),
   COMMIT_SHA: z.string().default("dev"),
   TWO_FA_ENCRYPTION_KEY: z.string()
     .min(32, "TWO_FA_ENCRYPTION_KEY must be at least 32 characters")
     .optional(),
+}).superRefine((value, ctx) => {
+  const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build";
+  if (value.NODE_ENV !== "production" || isBuildPhase) return;
+
+  if (!value.REDIS_URL?.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["REDIS_URL"],
+      message: "REDIS_URL is required in production",
+    });
+  }
+
+  for (const key of [
+    "COMPANY_NAME",
+    "COMPANY_TAX_ID",
+    "COMPANY_BRANCH",
+    "COMPANY_ADDRESS",
+    "COMPANY_PHONE",
+    "COMPANY_EMAIL",
+  ] as const) {
+    if (!value[key]?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [key],
+        message: `${key} is required in production`,
+      });
+    }
+  }
+
+  if (
+    !value.DOCUMENT_VERIFY_BASE_URL?.trim() &&
+    !value.NEXT_PUBLIC_DOCUMENT_VERIFY_BASE_URL?.trim() &&
+    !value.NEXT_PUBLIC_APP_URL?.trim()
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["DOCUMENT_VERIFY_BASE_URL"],
+      message: "DOCUMENT_VERIFY_BASE_URL or NEXT_PUBLIC_DOCUMENT_VERIFY_BASE_URL or NEXT_PUBLIC_APP_URL is required in production",
+    });
+  }
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -73,3 +133,53 @@ export const env: Env = new Proxy({} as Env, {
     return getEnv()[prop as keyof Env];
   },
 });
+
+function isRuntimeProdStrict() {
+  return process.env.NODE_ENV === "production" && process.env.NEXT_PHASE !== "phase-production-build";
+}
+
+function resolveRuntimeStringEnv(
+  key: keyof Env,
+  developmentFallback?: string,
+) {
+  const value = getEnv()[key];
+  if (typeof value === "string" && value.trim()) {
+    return value.trim();
+  }
+  if (!isRuntimeProdStrict() && developmentFallback !== undefined) {
+    return developmentFallback;
+  }
+  throw new Error(`${String(key)} ไม่ได้ตั้งค่า`);
+}
+
+export function getRedisUrl() {
+  return resolveRuntimeStringEnv("REDIS_URL", DEV_REDIS_URL);
+}
+
+export function getCompanyInfo() {
+  return {
+    name: resolveRuntimeStringEnv("COMPANY_NAME", DEV_COMPANY_INFO.name),
+    taxId: resolveRuntimeStringEnv("COMPANY_TAX_ID", DEV_COMPANY_INFO.taxId),
+    branch: resolveRuntimeStringEnv("COMPANY_BRANCH", DEV_COMPANY_INFO.branch),
+    address: resolveRuntimeStringEnv("COMPANY_ADDRESS", DEV_COMPANY_INFO.address),
+    phone: resolveRuntimeStringEnv("COMPANY_PHONE", DEV_COMPANY_INFO.phone),
+    email: resolveRuntimeStringEnv("COMPANY_EMAIL", DEV_COMPANY_INFO.email),
+  };
+}
+
+export function getDocumentVerificationBaseUrl() {
+  const configuredBaseUrl =
+    getEnv().DOCUMENT_VERIFY_BASE_URL?.trim() ||
+    getEnv().NEXT_PUBLIC_DOCUMENT_VERIFY_BASE_URL?.trim() ||
+    getEnv().NEXT_PUBLIC_APP_URL?.trim();
+
+  if (configuredBaseUrl) {
+    return configuredBaseUrl.replace(/\/+$/, "");
+  }
+
+  if (!isRuntimeProdStrict()) {
+    return DEV_DOCUMENT_VERIFY_BASE_URL;
+  }
+
+  throw new Error("DOCUMENT_VERIFY_BASE_URL ไม่ได้ตั้งค่า");
+}

@@ -4,6 +4,7 @@ import { requireApiPermission } from "@/lib/rbac";
 import { prisma } from "@/lib/db";
 import { normalizePhone } from "@/lib/validations";
 import { z } from "zod";
+import { readJsonOr400 } from "@/lib/read-json-or-400";
 
 const MAX_TEXT_IMPORT_BYTES = 1024 * 1024;
 const MAX_IMPORT_ROWS = 5000;
@@ -57,7 +58,10 @@ export async function POST(
       }
       rows = parseCsv(await file.text());
     } else {
-      const body = await req.json();
+      const body = await readJsonOr400<{
+        data?: string;
+        contacts?: { name?: string; phone: string }[];
+      }>(req);
       if (typeof body.data === "string") {
         if (Buffer.byteLength(body.data, "utf8") > MAX_TEXT_IMPORT_BYTES) {
           throw new ApiError(400, "ข้อมูล CSV/TXT ต้องไม่เกิน 1MB");
@@ -76,10 +80,10 @@ export async function POST(
     if (rows.length === 0) throw new ApiError(400, "ไม่มีรายชื่อที่จะนำเข้า");
     if (rows.length > MAX_IMPORT_ROWS) throw new ApiError(400, "นำเข้าได้สูงสุด 5,000 รายชื่อต่อครั้ง");
 
-    let imported = 0;
+    const validRows: { name: string; phone: string }[] = [];
+    const seenPhones = new Set<string>();
     let duplicates = 0;
     let invalid = 0;
-    const createdIds: string[] = [];
 
     for (const row of rows) {
       const phone = normalizePhone(row.phone || "");
@@ -88,42 +92,62 @@ export async function POST(
         continue;
       }
 
-      try {
-        const contact = await prisma.contact.create({
-          data: {
-            userId: user.id,
-            name: row.name?.trim() || phone,
-            phone,
-          },
-        });
-        createdIds.push(contact.id);
-        imported++;
-      } catch {
-        // Duplicate phone — find existing and add to group
-        const existing = await prisma.contact.findUnique({
-          where: { userId_phone: { userId: user.id, phone } },
-          select: { id: true },
-        });
-        if (existing) {
-          createdIds.push(existing.id);
-          duplicates++;
-        } else {
-          duplicates++;
-        }
+      if (seenPhones.has(phone)) {
+        duplicates++;
+        continue;
       }
+
+      seenPhones.add(phone);
+      validRows.push({
+        name: row.name?.trim() || phone,
+        phone,
+      });
     }
 
-    // Add all (new + existing) to group
-    if (createdIds.length > 0) {
+    const existingContacts = validRows.length === 0
+      ? []
+      : await prisma.contact.findMany({
+        where: {
+          userId: user.id,
+          phone: { in: validRows.map((contact) => contact.phone) },
+        },
+        select: { id: true, phone: true },
+      });
+    const existingPhones = new Set(existingContacts.map((contact) => contact.phone));
+    duplicates += existingContacts.length;
+
+    const toCreate = validRows.filter((contact) => !existingPhones.has(contact.phone));
+    if (toCreate.length > 0) {
+      await prisma.contact.createMany({
+        data: toCreate.map((contact) => ({
+          userId: user.id,
+          name: contact.name,
+          phone: contact.phone,
+        })),
+        skipDuplicates: true,
+      });
+    }
+
+    const allContacts = validRows.length === 0
+      ? []
+      : await prisma.contact.findMany({
+        where: {
+          userId: user.id,
+          phone: { in: validRows.map((contact) => contact.phone) },
+        },
+        select: { id: true },
+      });
+
+    if (allContacts.length > 0) {
       await prisma.contactGroupMember.createMany({
-        data: createdIds.map((contactId) => ({ groupId, contactId })),
+        data: allContacts.map((contact) => ({ groupId, contactId: contact.id })),
         skipDuplicates: true,
       });
     }
 
     return apiResponse({
       total: rows.length,
-      imported,
+      imported: toCreate.length,
       updated: 0,
       skipped: duplicates + invalid,
       errors: [],

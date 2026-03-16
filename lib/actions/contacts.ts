@@ -45,6 +45,114 @@ type GroupsWithMembershipsResult = {
   groups: ContactGroupSummary[];
   contactGroups: Record<string, string[]>;
 };
+type TxClient = Parameters<Parameters<typeof db.$transaction>[0]>[0];
+type ContactTagAssignment = { contactId: string; tagName: string };
+
+function normalizeTagNames(tags: string | null | undefined) {
+  return [...new Set(
+    (tags ?? "")
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean),
+  )];
+}
+
+async function ensureTagsByName(client: TxClient | typeof db, userId: string, tagNames: string[]) {
+  if (tagNames.length === 0) return [];
+
+  const uniqueTagNames = [...new Set(tagNames)];
+  const existing = await client.tag.findMany({
+    where: { userId, name: { in: uniqueTagNames } },
+    select: { id: true, name: true },
+  });
+  const existingNames = new Set(existing.map((tag) => tag.name));
+  const missingNames = uniqueTagNames.filter((tagName) => !existingNames.has(tagName));
+
+  if (missingNames.length > 0) {
+    await client.tag.createMany({
+      data: missingNames.map((name) => ({ userId, name })),
+      skipDuplicates: true,
+    });
+  }
+
+  return client.tag.findMany({
+    where: { userId, name: { in: uniqueTagNames } },
+    select: { id: true, name: true },
+  });
+}
+
+async function createContactTagAssignments(
+  client: TxClient | typeof db,
+  userId: string,
+  assignments: ContactTagAssignment[],
+) {
+  if (assignments.length === 0) return;
+
+  const tags = await ensureTagsByName(
+    client,
+    userId,
+    assignments.map((assignment) => assignment.tagName),
+  );
+  const tagIdByName = new Map(tags.map((tag) => [tag.name, tag.id]));
+
+  await client.contactTag.createMany({
+    data: assignments.flatMap((assignment) => {
+      const tagId = tagIdByName.get(assignment.tagName);
+      return tagId ? [{ contactId: assignment.contactId, tagId }] : [];
+    }),
+    skipDuplicates: true,
+  });
+}
+
+async function replaceContactTags(
+  client: TxClient | typeof db,
+  userId: string,
+  contactId: string,
+  tags: string | null | undefined,
+) {
+  const tagNames = normalizeTagNames(tags);
+
+  if (tagNames.length === 0) {
+    await client.contactTag.deleteMany({ where: { contactId } });
+    return;
+  }
+
+  const tagRows = await ensureTagsByName(client, userId, tagNames);
+  const tagIds = tagRows.map((tag) => tag.id);
+
+  await client.contactTag.deleteMany({
+    where: {
+      contactId,
+      tagId: { notIn: tagIds },
+    },
+  });
+
+  await client.contactTag.createMany({
+    data: tagIds.map((tagId) => ({ contactId, tagId })),
+    skipDuplicates: true,
+  });
+}
+
+async function migrateLegacyTagsForContacts(
+  client: TxClient | typeof db,
+  userId: string,
+  contacts: { id: string; tags: string | null }[],
+) {
+  const assignments = contacts.flatMap((contact) =>
+    normalizeTagNames(contact.tags).map((tagName) => ({
+      contactId: contact.id,
+      tagName,
+    })),
+  );
+
+  if (assignments.length === 0) return;
+
+  await createContactTagAssignments(client, userId, assignments);
+  await client.contact.updateMany({
+    where: { id: { in: contacts.map((contact) => contact.id) } },
+    data: { tags: null },
+  });
+}
 
 // ==========================================
 // Get single contact by ID (for detail page)
@@ -256,15 +364,19 @@ export async function createContact(userIdOrData: string | unknown, maybeData?: 
           };
 
   try {
-    const contact = await db.contact.create({
-      data: {
-        userId,
-        name: input.name,
-        phone: input.phone,
-        email: input.email || null,
-        tags: input.tags || null,
-        ...consentData,
-      },
+    const contact = await db.$transaction(async (tx) => {
+      const created = await tx.contact.create({
+        data: {
+          userId,
+          name: input.name,
+          phone: input.phone,
+          email: input.email || null,
+          ...consentData,
+        },
+      });
+
+      await replaceContactTags(tx, userId, created.id, input.tags);
+      return created;
     });
 
     revalidatePath("/dashboard/contacts");
@@ -302,14 +414,22 @@ export async function updateContact(userIdOrContactId: string, contactIdOrData: 
     if (existing) throw new Error("เบอร์โทรนี้มีอยู่แล้ว");
   }
 
-  const updated = await db.contact.update({
-    where: { id: contactId },
-    data: {
-      ...(input.name !== undefined && { name: input.name }),
-      ...(input.phone !== undefined && { phone: input.phone }),
-      ...(input.email !== undefined && { email: input.email || null }),
-      ...(input.tags !== undefined && { tags: input.tags || null }),
-    },
+  const updated = await db.$transaction(async (tx) => {
+    const nextContact = await tx.contact.update({
+      where: { id: contactId },
+      data: {
+        ...(input.name !== undefined && { name: input.name }),
+        ...(input.phone !== undefined && { phone: input.phone }),
+        ...(input.email !== undefined && { email: input.email || null }),
+        ...(input.tags !== undefined && { tags: null }),
+      },
+    });
+
+    if (input.tags !== undefined) {
+      await replaceContactTags(tx, userId, contactId, input.tags);
+    }
+
+    return nextContact;
   });
 
   revalidatePath("/dashboard/contacts");
@@ -405,9 +525,28 @@ export async function importContacts(
         name: c.name,
         phone: c.phone,
         email: c.email || null,
-        tags: c.tags || null,
       })),
     });
+
+    const createdContacts = await db.contact.findMany({
+      where: {
+        userId,
+        phone: { in: toCreate.map((contact) => contact.phone) },
+      },
+      select: { id: true, phone: true },
+    });
+    const contactIdByPhone = new Map(createdContacts.map((contact) => [contact.phone, contact.id]));
+
+    await createContactTagAssignments(
+      db,
+      userId,
+      toCreate.flatMap((contact) =>
+        normalizeTagNames(contact.tags).map((tagName) => ({
+          contactId: contactIdByPhone.get(contact.phone) ?? "",
+          tagName,
+        })),
+      ).filter((assignment) => assignment.contactId),
+    );
   }
 
   revalidatePath("/dashboard/contacts");
@@ -546,26 +685,36 @@ export async function bulkUpdateTags(
 
   const trimmedTag = tag.trim();
 
-  await db.$transaction(
-    contacts.map((contact: { id: string; tags: string | null }) => {
-      const currentTags = contact.tags
-        ? contact.tags.split(",").map((t: string) => t.trim()).filter(Boolean)
-        : [];
+  await db.$transaction(async (tx) => {
+    await migrateLegacyTagsForContacts(tx, userId, contacts);
 
-      let newTags: string[];
-      if (action === "add") {
-        if (currentTags.includes(trimmedTag)) return db.contact.update({ where: { id: contact.id }, data: {} });
-        newTags = [...currentTags, trimmedTag];
-      } else {
-        newTags = currentTags.filter((t: string) => t !== trimmedTag);
-      }
+    if (action === "add") {
+      const [tagRecord] = await ensureTagsByName(tx, userId, [trimmedTag]);
+      if (!tagRecord) return;
 
-      return db.contact.update({
-        where: { id: contact.id },
-        data: { tags: newTags.length > 0 ? newTags.join(", ") : null },
+      await tx.contactTag.createMany({
+        data: contacts.map((contact) => ({
+          contactId: contact.id,
+          tagId: tagRecord.id,
+        })),
+        skipDuplicates: true,
       });
-    }),
-  );
+      return;
+    }
+
+    const existingTag = await tx.tag.findFirst({
+      where: { userId, name: trimmedTag },
+      select: { id: true },
+    });
+    if (!existingTag) return;
+
+    await tx.contactTag.deleteMany({
+      where: {
+        contactId: { in: contacts.map((contact) => contact.id) },
+        tagId: existingTag.id,
+      },
+    });
+  });
 
   revalidatePath("/dashboard/contacts");
   return { updated: contacts.length };

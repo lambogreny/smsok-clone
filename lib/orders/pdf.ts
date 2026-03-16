@@ -18,6 +18,7 @@ import {
 import { buildDocumentVerificationAssets } from "@/lib/accounting/pdf/document-verification";
 import { numberToThaiText } from "@/lib/accounting/thai-number";
 import { prisma as db } from "@/lib/db";
+import { getCompanyInfo } from "@/lib/env";
 
 type NumericLike = { toNumber(): number } | number;
 type PdfRenderable = Parameters<typeof renderToBuffer>[0];
@@ -50,19 +51,18 @@ type OrderPdfRecord = {
   } | null;
 };
 
+const companyInfo = getCompanyInfo();
 const QUOTATION_SELLER = {
-  name: process.env.COMPANY_NAME || "บริษัท เอสเอ็มเอสโอเค จำกัด",
-  taxId: process.env.COMPANY_TAX_ID || "0105566000000",
-  address:
-    process.env.COMPANY_ADDRESS ||
-    "123 อาคาร ABC ชั้น 10 ถ.สุขุมวิท แขวงคลองเตย เขตคลองเตย กรุงเทพฯ 10110",
-  phone: process.env.COMPANY_PHONE || "LINE: @smsok",
+  name: companyInfo.name,
+  taxId: companyInfo.taxId,
+  address: companyInfo.address,
+  phone: companyInfo.phone,
 };
 
 const INVOICE_SELLER = {
   ...QUOTATION_SELLER,
-  branch: process.env.COMPANY_BRANCH || "สำนักงานใหญ่",
-  email: process.env.COMPANY_EMAIL || "billing@smsok.com",
+  branch: companyInfo.branch,
+  email: companyInfo.email,
 };
 
 const fallbackStyles = StyleSheet.create({
@@ -296,16 +296,26 @@ export async function renderOrderInvoicePdf(order: OrderPdfRecord) {
     async () => {
       const doc = await db.orderDocument.findFirst({
         where: { orderId: order.id, documentNumber: order.invoiceNumber!, deletedAt: null },
-        select: { verificationCode: true },
+        select: { id: true, verificationCode: true },
       });
 
-      if (!doc?.verificationCode) {
-        throw new Error(`ไม่พบ verification code สำหรับเอกสาร ${order.invoiceNumber!}`);
+      if (!doc) {
+        throw new Error(`ไม่พบข้อมูลเอกสาร ${order.invoiceNumber!}`);
+      }
+
+      let verificationCode = doc.verificationCode;
+      if (!verificationCode) {
+        const { randomUUID } = await import("node:crypto");
+        verificationCode = randomUUID();
+        await db.orderDocument.update({
+          where: { id: doc.id },
+          data: { verificationCode },
+        });
       }
 
       const data = await buildOrderInvoicePdfData(order, {
         documentNumber: order.invoiceNumber!,
-        verificationCode: doc.verificationCode,
+        verificationCode,
         type: "TAX_INVOICE_RECEIPT",
         issuedAt: order.paidAt ?? order.createdAt,
       });

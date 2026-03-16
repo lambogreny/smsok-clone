@@ -294,6 +294,7 @@ model Contact {
   name              String
   phone             String
   email             String?
+  /// Deprecated legacy comma-separated tags. New writes must use Tag + ContactTag.
   tags              String?
   smsConsent        Boolean              @default(true) @map("sms_consent")
   consentStatus     String               @default("OPTED_IN") @map("consent_status")
@@ -497,7 +498,7 @@ model MessageTemplate {
   organization   Organization? @relation(fields: [organizationId], references: [id])
   user           User          @relation(fields: [userId], references: [id])
 
-  @@unique([userId, name, deletedAt])
+  @@index([userId, name])
   @@index([organizationId])
   @@index([isPublic])
   @@map("message_templates")

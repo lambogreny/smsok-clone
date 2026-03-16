@@ -5,6 +5,7 @@ import { updateContact, deleteContact } from "@/lib/actions/contacts";
 import { updateContactSchema } from "@/lib/validations";
 import { prisma } from "@/lib/db";
 import { logger } from "@/lib/logger";
+import { readJsonOr400 } from "@/lib/read-json-or-400";
 
 // Validate id format — reject XSS/injection attempts early
 const SAFE_ID = /^[a-zA-Z0-9_-]{1,64}$/;
@@ -64,7 +65,7 @@ export async function PUT(
 
     const { id } = await params;
     if (!SAFE_ID.test(id)) throw new ApiError(400, "รหัสรายชื่อไม่ถูกต้อง");
-    const body = await req.json();
+    const body = await readJsonOr400(req);
     const input = updateContactSchema.parse(body);
     const contact = await updateContact(user.id, id, input);
     return apiResponse(contact);
@@ -111,12 +112,7 @@ export async function PATCH(
     const { id } = await params;
     if (!SAFE_ID.test(id)) throw new ApiError(400, "รหัสรายชื่อไม่ถูกต้อง");
 
-    let body: Record<string, unknown>;
-    try {
-      body = await req.json() as Record<string, unknown>;
-    } catch {
-      throw new ApiError(400, "กรุณาส่งข้อมูล JSON");
-    }
+    const body = await readJsonOr400<Record<string, unknown>>(req);
 
     const { consentStatus, reason } = body;
     if (!consentStatus || !VALID_CONSENT.includes(consentStatus as typeof VALID_CONSENT[number])) {

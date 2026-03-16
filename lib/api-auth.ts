@@ -183,6 +183,16 @@ export function apiError(error: unknown) {
     finishApiLog(error.status, body, body.code, error.message);
     return Response.json(body, { status: error.status });
   }
+
+  if (
+    error instanceof SyntaxError &&
+    /json|unexpected token|unexpected end/i.test(error.message)
+  ) {
+    const body = { error: "รูปแบบ JSON ไม่ถูกต้อง", code: ERROR_CODES.BAD_REQUEST };
+    finishApiLog(400, body, ERROR_CODES.BAD_REQUEST, body.error, error.stack);
+    return Response.json(body, { status: 400 });
+  }
+
   // Handle Prisma unique constraint violation (race condition fallback)
   if (error instanceof Error && "code" in error && (error as { code: string }).code === "P2002") {
     const body = { error: "ข้อมูลซ้ำ กรุณาตรวจสอบและลองใหม่", code: ERROR_CODES.BUSINESS };

@@ -1,15 +1,8 @@
 import QRCode from "qrcode";
-
-const DEFAULT_VERIFY_BASE_URL =
-  process.env.NEXT_PUBLIC_APP_URL || "https://smsok.9phum.me";
+import { getDocumentVerificationBaseUrl } from "@/lib/env";
 
 function getVerifyBaseUrl() {
-  const baseUrl =
-    process.env.DOCUMENT_VERIFY_BASE_URL ||
-    process.env.NEXT_PUBLIC_DOCUMENT_VERIFY_BASE_URL ||
-    DEFAULT_VERIFY_BASE_URL;
-
-  return baseUrl.replace(/\/+$/, "");
+  return getDocumentVerificationBaseUrl();
 }
 
 export function buildDocumentVerificationUrl(verificationCode: string) {

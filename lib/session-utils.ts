@@ -52,6 +52,28 @@ export function parseUserAgent(ua: string | null): {
  * Get client IP from request headers
  */
 export function getClientIp(headers: Headers): string {
+  const normalizeIpCandidate = (value: string | null) => {
+    const trimmed = value?.trim();
+    if (!trimmed) return null;
+
+    const bracketedIpv6 = trimmed.match(/^\[([^[\]]+)\](?::\d+)?$/);
+    if (bracketedIpv6) return bracketedIpv6[1];
+
+    const ipv4WithPort = trimmed.match(/^(\d{1,3}(?:\.\d{1,3}){3}):\d+$/);
+    if (ipv4WithPort) return ipv4WithPort[1];
+
+    return trimmed;
+  };
+
+  const trustedProxyIp =
+    normalizeIpCandidate(headers.get("cf-connecting-ip")) ||
+    normalizeIpCandidate(headers.get("fly-client-ip")) ||
+    normalizeIpCandidate(headers.get("true-client-ip"));
+
+  if (trustedProxyIp) {
+    return trustedProxyIp;
+  }
+
   const forwardedFor = headers.get("x-forwarded-for");
   if (forwardedFor) {
     const forwardedChain = forwardedFor
@@ -60,15 +82,12 @@ export function getClientIp(headers: Headers): string {
       .filter(Boolean);
 
     if (forwardedChain.length > 0) {
-      return forwardedChain[forwardedChain.length - 1];
+      return normalizeIpCandidate(forwardedChain[0]) || "unknown";
     }
   }
 
   return (
-    headers.get("x-real-ip")?.trim() ||
-    headers.get("cf-connecting-ip")?.trim() ||
-    headers.get("fly-client-ip")?.trim() ||
-    headers.get("true-client-ip")?.trim() ||
+    normalizeIpCandidate(headers.get("x-real-ip")) ||
     "unknown"
   );
 }

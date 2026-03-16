@@ -4,6 +4,7 @@ import { prisma as db } from "@/lib/db";
 import { requireApiPermission } from "@/lib/rbac";
 import { calculateSmsSegments, ensureSufficientQuota } from "@/lib/package/quota";
 import { updateCampaignSchema } from "@/lib/validations";
+import { readJsonOr400 } from "@/lib/read-json-or-400";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -191,7 +192,7 @@ export async function PUT(req: NextRequest, ctx: RouteContext) {
     if (denied) return denied;
 
     const { id } = await ctx.params;
-    const campaign = await updateCampaignRecord(user.id, id, await req.json());
+    const campaign = await updateCampaignRecord(user.id, id, await readJsonOr400(req));
     return apiResponse({ campaign });
   } catch (error) {
     return apiError(error);

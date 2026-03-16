@@ -8,6 +8,7 @@ import { createElement } from "react";
 import { InvoicePdf, type InvoicePdfData } from "./invoice-pdf";
 import { buildDocumentVerificationAssets } from "./document-verification";
 import { prisma as db } from "@/lib/db";
+import { getCompanyInfo } from "@/lib/env";
 import { decryptSecret } from "@/lib/two-factor";
 import { z } from "zod";
 
@@ -27,14 +28,7 @@ const invoiceItemSchema = z.object({
 const invoiceItemsSchema = z.array(invoiceItemSchema);
 
 // Seller info — company operating SMSOK
-const SELLER_INFO = {
-  name: process.env.COMPANY_NAME || "บริษัท เอสเอ็มเอสโอเค จำกัด",
-  taxId: process.env.COMPANY_TAX_ID || "0105566000000",
-  branch: process.env.COMPANY_BRANCH || "สำนักงานใหญ่",
-  address: process.env.COMPANY_ADDRESS || "123 อาคาร ABC ชั้น 10 ถ.สุขุมวิท แขวงคลองเตย เขตคลองเตย กรุงเทพฯ 10110",
-  phone: process.env.COMPANY_PHONE || "LINE: @smsok",
-  email: process.env.COMPANY_EMAIL || "billing@smsok.com",
-};
+const SELLER_INFO = getCompanyInfo();
 
 /**
  * Generate PDF buffer for an invoice

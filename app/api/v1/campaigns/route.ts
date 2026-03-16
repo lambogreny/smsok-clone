@@ -4,6 +4,7 @@ import { authenticateRequest } from "@/lib/api-auth";
 import { requireApiPermission } from "@/lib/rbac";
 import { createCampaign, getCampaigns } from "@/lib/actions/campaigns";
 import { createCampaignSchema } from "@/lib/validations";
+import { readJsonOr400 } from "@/lib/read-json-or-400";
 
 function normalizeCampaignPayload(body: unknown) {
   if (!body || typeof body !== "object" || Array.isArray(body)) {
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
 
     const denied = await requireApiPermission(user.id, "create", "campaign");
     if (denied) return denied;
-    const body = normalizeCampaignPayload(await req.json());
+    const body = normalizeCampaignPayload(await readJsonOr400(req));
     const input = createCampaignSchema.parse(body);
     const campaign = await createCampaign(user.id, input);
     return apiResponse(campaign, 201);

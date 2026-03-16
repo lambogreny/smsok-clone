@@ -4,6 +4,7 @@ import { requireApiPermission } from "@/lib/rbac";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 import { normalizePhone } from "@/lib/validations";
+import { readJsonOr400 } from "@/lib/read-json-or-400";
 
 const bulkAddSchema = z.object({
   contacts: z
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
 
     const denied = await requireApiPermission(user.id, "create", "contact");
     if (denied) return denied;
-    const body = await req.json();
+    const body = await readJsonOr400(req);
     const input = bulkAddSchema.parse(body);
 
     // Verify group ownership if provided
@@ -40,10 +41,10 @@ export async function POST(req: NextRequest) {
       if (!group) throw new Error("ไม่พบกลุ่มรายชื่อ");
     }
 
-    let imported = 0;
+    const validRows: { name: string; phone: string }[] = [];
+    const seenPhones = new Set<string>();
     let duplicates = 0;
     let invalid = 0;
-    const createdIds: string[] = [];
 
     for (const c of input.contacts) {
       const phone = normalizePhone(c.phone);
@@ -52,36 +53,65 @@ export async function POST(req: NextRequest) {
         continue;
       }
 
-      try {
-        const contact = await prisma.contact.create({
-          data: {
-            userId: user.id,
-            name: c.name || phone,
-            phone,
-          },
-        });
-        createdIds.push(contact.id);
-        imported++;
-      } catch {
-        // Unique constraint violation = duplicate
+      if (seenPhones.has(phone)) {
         duplicates++;
+        continue;
       }
+
+      seenPhones.add(phone);
+      validRows.push({
+        name: c.name?.trim() || phone,
+        phone,
+      });
     }
 
-    // Add to group if specified
-    if (input.groupId && createdIds.length > 0) {
+    const existingContacts = validRows.length === 0
+      ? []
+      : await prisma.contact.findMany({
+        where: {
+          userId: user.id,
+          phone: { in: validRows.map((contact) => contact.phone) },
+        },
+        select: { id: true, phone: true },
+      });
+    const existingPhones = new Set(existingContacts.map((contact) => contact.phone));
+    duplicates += existingContacts.length;
+
+    const toCreate = validRows.filter((contact) => !existingPhones.has(contact.phone));
+    if (toCreate.length > 0) {
+      await prisma.contact.createMany({
+        data: toCreate.map((contact) => ({
+          userId: user.id,
+          name: contact.name,
+          phone: contact.phone,
+        })),
+        skipDuplicates: true,
+      });
+    }
+
+    const allValidContacts = validRows.length === 0
+      ? []
+      : await prisma.contact.findMany({
+        where: {
+          userId: user.id,
+          phone: { in: validRows.map((contact) => contact.phone) },
+        },
+        select: { id: true, phone: true },
+      });
+
+    if (input.groupId && allValidContacts.length > 0) {
       await prisma.contactGroupMember.createMany({
-        data: createdIds.map((contactId) => ({
+        data: allValidContacts.map((contact) => ({
           groupId: input.groupId!,
-          contactId,
+          contactId: contact.id,
         })),
         skipDuplicates: true,
       });
     }
 
     return apiResponse({
-      imported,
-      addedToGroup: input.groupId ? createdIds.length : 0,
+      imported: toCreate.length,
+      addedToGroup: input.groupId ? allValidContacts.length : 0,
       duplicates,
       invalid,
       total: input.contacts.length,
@@ -99,7 +129,7 @@ export async function DELETE(req: NextRequest) {
     const denied = await requireApiPermission(user.id, "delete", "contact");
     if (denied) return denied;
 
-    const body = await req.json();
+    const body = await readJsonOr400(req);
     const input = bulkDeleteSchema.parse(body);
 
     // Only delete contacts owned by user

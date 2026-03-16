@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { apiError, apiResponse, authenticateRequest } from "@/lib/api-auth";
 import { assignTagToContact, unassignTagFromContact } from "@/lib/actions/tags";
 import { assignContactTagSchema } from "@/lib/validations";
+import { readJsonOr400 } from "@/lib/read-json-or-400";
 
 export async function POST(
   req: NextRequest,
@@ -9,7 +10,7 @@ export async function POST(
 ) {
   try {
     const user = await authenticateRequest(req);
-    const body = await req.json();
+    const body = await readJsonOr400(req);
     const input = assignContactTagSchema.parse(body);
     const { id } = await params;
     const result = await assignTagToContact(user.id, id, input);
@@ -25,7 +26,7 @@ export async function DELETE(
 ) {
   try {
     const user = await authenticateRequest(req);
-    const body = await req.json();
+    const body = await readJsonOr400(req);
     const input = assignContactTagSchema.parse(body);
     const { id } = await params;
     const result = await unassignTagFromContact(user.id, id, input);

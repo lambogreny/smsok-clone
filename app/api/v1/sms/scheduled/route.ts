@@ -8,6 +8,7 @@ import {
   cancelScheduledSms,
 } from "@/lib/actions/scheduled-sms";
 import { scheduledSmsCancelSchema, scheduledSmsCreateSchema } from "@/lib/validations";
+import { readJsonOr400 } from "@/lib/read-json-or-400";
 
 // GET /api/v1/sms/scheduled — list scheduled messages
 export async function GET(req: NextRequest) {
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest) {
     const denied = await requireApiPermission(user.id, "create", "sms");
     if (denied) return denied;
 
-    const body = await req.json();
+    const body = await readJsonOr400<Record<string, unknown>>(req);
 
     // Cancel
     if (body.action === "cancel" && body.id) {

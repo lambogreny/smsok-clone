@@ -7,6 +7,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { createElement } from "react";
 import { QuotationPdf, type QuotationPdfData } from "./quotation-pdf";
 import { prisma as db } from "@/lib/db";
+import { getCompanyInfo } from "@/lib/env";
 import { z } from "zod";
 
 type PdfRenderable = Parameters<typeof renderToBuffer>[0];
@@ -22,11 +23,12 @@ const quotationItemSchema = z.object({
   amount: z.number(),
 });
 
+const companyInfo = getCompanyInfo();
 const SELLER_INFO = {
-  name: process.env.COMPANY_NAME || "บริษัท เอสเอ็มเอสโอเค จำกัด",
-  taxId: process.env.COMPANY_TAX_ID || "0105566000000",
-  address: process.env.COMPANY_ADDRESS || "123 อาคาร ABC ชั้น 10 ถ.สุขุมวิท แขวงคลองเตย เขตคลองเตย กรุงเทพฯ 10110",
-  phone: process.env.COMPANY_PHONE || "LINE: @smsok",
+  name: companyInfo.name,
+  taxId: companyInfo.taxId,
+  address: companyInfo.address,
+  phone: companyInfo.phone,
 };
 
 export async function generateQuotationPdf(quotationId: string): Promise<Buffer> {

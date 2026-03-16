@@ -4,6 +4,7 @@ import { createElement } from "react";
 import { prisma as db } from "@/lib/db";
 import { numberToThaiText } from "@/lib/accounting/thai-number";
 import { InvoicePdf, type InvoicePdfData } from "@/lib/accounting/pdf/invoice-pdf";
+import { getCompanyInfo } from "@/lib/env";
 
 type TxClient = Parameters<Parameters<typeof db.$transaction>[0]>[0];
 type DbClient = PrismaClient | TxClient;
@@ -50,16 +51,7 @@ export type PaymentDocumentRecord = {
   };
 };
 
-const SELLER_INFO = {
-  name: process.env.COMPANY_NAME || "บริษัท เอสเอ็มเอสโอเค จำกัด",
-  taxId: process.env.COMPANY_TAX_ID || "0105566000000",
-  branch: process.env.COMPANY_BRANCH || "สำนักงานใหญ่",
-  address:
-    process.env.COMPANY_ADDRESS ||
-    "123 อาคาร ABC ชั้น 10 ถ.สุขุมวิท แขวงคลองเตย เขตคลองเตย กรุงเทพฯ 10110",
-  phone: process.env.COMPANY_PHONE || "LINE: @smsok",
-  email: process.env.COMPANY_EMAIL || "billing@smsok.com",
-};
+const SELLER_INFO = getCompanyInfo();
 
 function nowYearMonth() {
   const now = new Date();

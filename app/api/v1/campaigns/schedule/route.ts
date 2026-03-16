@@ -6,6 +6,7 @@ import {
   scheduleCampaign,
   scheduleCampaignInputSchema,
 } from "@/lib/actions/scheduling";
+import { readJsonOr400 } from "@/lib/read-json-or-400";
 
 // GET /api/v1/campaigns/schedule — list scheduled campaigns
 export async function GET(req: NextRequest) {
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
     const denied = await requireApiPermission(session.id, "create", "campaign");
     if (denied) return denied;
 
-    const body = await req.json();
+    const body = await readJsonOr400(req);
     const parsed = scheduleCampaignInputSchema.safeParse(body);
     if (!parsed.success) {
       throw new ApiError(400, parsed.error.issues[0]?.message || "ข้อมูลไม่ถูกต้อง");

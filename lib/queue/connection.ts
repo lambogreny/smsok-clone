@@ -9,12 +9,14 @@
  * to avoid ioredis version mismatch issues.
  */
 
-const redisUrl = process.env.REDIS_URL ? new URL(process.env.REDIS_URL) : null
+import { getRedisUrl } from "@/lib/env"
 
-const REDIS_HOST = process.env.REDIS_HOST || redisUrl?.hostname || "localhost"
-const REDIS_PORT = Number(process.env.REDIS_PORT || redisUrl?.port || 6379)
+const redisUrl = new URL(getRedisUrl())
+
+const REDIS_HOST = process.env.REDIS_HOST || redisUrl.hostname || "localhost"
+const REDIS_PORT = Number(process.env.REDIS_PORT || redisUrl.port || 6379)
 const REDIS_PASSWORD =
-  process.env.REDIS_PASSWORD || (redisUrl?.password ? decodeURIComponent(redisUrl.password) : undefined)
+  process.env.REDIS_PASSWORD || (redisUrl.password ? decodeURIComponent(redisUrl.password) : undefined)
 
 /**
  * Producer connection options — used by Queue instances.
