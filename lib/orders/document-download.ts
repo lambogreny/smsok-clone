@@ -103,9 +103,20 @@ export async function buildOrderDocumentDownloadResponse(
       });
     }
 
+    // Ensure verificationCode is non-null for PDF generation
+    let verificationCode = document.verificationCode;
+    if (!verificationCode) {
+      const { randomUUID } = await import("node:crypto");
+      verificationCode = randomUUID();
+      await db.orderDocument.update({
+        where: { id: document.id },
+        data: { verificationCode },
+      });
+    }
+
     const pdfBuffer = await renderOrderAccountingDocumentPdf(order, {
       documentNumber: document.documentNumber,
-      verificationCode: document.verificationCode ?? "",
+      verificationCode,
       type: PDF_TYPE_BY_DOCUMENT[document.type],
       issuedAt: document.issuedAt,
     });

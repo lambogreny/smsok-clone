@@ -190,9 +190,20 @@ async function syncOrderDocumentPdfToR2(
     throw new Error("Order PDF source missing");
   }
 
+  // Ensure verificationCode is non-null for PDF generation
+  let verificationCode = document.verificationCode;
+  if (!verificationCode) {
+    const { randomUUID } = await import("node:crypto");
+    verificationCode = randomUUID();
+    await client.orderDocument.update({
+      where: { id: document.id },
+      data: { verificationCode },
+    });
+  }
+
   const pdfBuffer = await renderOrderAccountingDocumentPdf(orderForPdf, {
     documentNumber: document.documentNumber,
-    verificationCode: document.verificationCode ?? "",
+    verificationCode,
     type: document.type,
     issuedAt: document.issuedAt,
   });
