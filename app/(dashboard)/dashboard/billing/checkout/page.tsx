@@ -498,9 +498,10 @@ export default function CheckoutPage() {
         throw new Error(err.error || "ไม่สามารถสร้างคำสั่งซื้อได้");
       }
 
-      const data = await res.json();
+      const json = await res.json();
+      const order = json.data ?? json;
       toast.success("สร้างคำสั่งซื้อสำเร็จ");
-      const orderId = String(data.id ?? "");
+      const orderId = String(order.id ?? "");
       if (/^[a-zA-Z0-9_-]+$/.test(orderId)) {
         router.push(`/dashboard/billing/orders/${orderId}`);
       } else {

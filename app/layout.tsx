@@ -68,7 +68,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="th" className={cn("dark", "font-sans", ibmPlexSans.variable, ibmPlexSansThai.variable)}>
+    <html lang="th" className={cn("dark", "font-sans", ibmPlexSans.variable, ibmPlexSansThai.variable)} suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
         <link rel="icon" href="/icons/icon-192.png" type="image/png" />
@@ -81,7 +81,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="SMSOK" />
         {/* Fonts loaded via next/font/google — no CDN needed */}
       </head>
-      <body className="antialiased">
+      <body className="antialiased" suppressHydrationWarning>
         <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-[var(--accent)] focus:text-[var(--bg-base)] focus:text-sm focus:font-semibold">
           ข้ามไปยังเนื้อหาหลัก
         </a>

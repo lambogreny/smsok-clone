@@ -2402,7 +2402,9 @@ export default function OrderDetailPage() {
           credentials: "include",
         });
         if (!res.ok) throw new Error("Failed to fetch order");
-        const data = normalizeOrderPayload(await res.json());
+        const json = await res.json();
+        const payload = json.data ?? json;
+        const data = normalizeOrderPayload(payload);
         setOrder(data);
       } catch {
         setFetchError("ไม่สามารถโหลดข้อมูลคำสั่งซื้อได้ กรุณาลองใหม่อีกครั้ง");
