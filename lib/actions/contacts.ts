@@ -10,6 +10,7 @@ import {
   updateContactSchema,
   addContactsToGroupSchema,
   idSchema,
+  normalizePhone,
 } from "../validations";
 import { resolveActionUserId } from "../action-user";
 
@@ -338,9 +339,10 @@ export async function createContact(userIdOrData: string | unknown, maybeData?: 
     maybeData === undefined ? undefined : userIdOrData as string,
   );
   const input = createContactSchema.parse(maybeData === undefined ? userIdOrData : maybeData);
+  const normalizedPhone = normalizePhone(input.phone);
 
   const existing = await db.contact.findUnique({
-    where: { userId_phone: { userId, phone: input.phone } },
+    where: { userId_phone: { userId, phone: normalizedPhone } },
   });
   if (existing) throw new Error("เบอร์โทรนี้มีอยู่แล้ว");
 
@@ -369,7 +371,7 @@ export async function createContact(userIdOrData: string | unknown, maybeData?: 
         data: {
           userId,
           name: input.name,
-          phone: input.phone,
+          phone: normalizedPhone,
           email: input.email || null,
           ...consentData,
         },
@@ -407,9 +409,11 @@ export async function updateContact(userIdOrContactId: string, contactIdOrData: 
   });
   if (!contact) throw new ApiError(404, "ไม่พบรายชื่อ");
 
-  if (input.phone && input.phone !== contact.phone) {
+  const normalizedPhone = input.phone ? normalizePhone(input.phone) : undefined;
+
+  if (normalizedPhone && normalizedPhone !== contact.phone) {
     const existing = await db.contact.findUnique({
-      where: { userId_phone: { userId, phone: input.phone } },
+      where: { userId_phone: { userId, phone: normalizedPhone } },
     });
     if (existing) throw new Error("เบอร์โทรนี้มีอยู่แล้ว");
   }
@@ -419,7 +423,7 @@ export async function updateContact(userIdOrContactId: string, contactIdOrData: 
       where: { id: contactId },
       data: {
         ...(input.name !== undefined && { name: input.name }),
-        ...(input.phone !== undefined && { phone: input.phone }),
+        ...(normalizedPhone !== undefined && { phone: normalizedPhone }),
         ...(input.email !== undefined && { email: input.email || null }),
         ...(input.tags !== undefined && { tags: null }),
       },
@@ -494,12 +498,17 @@ export async function importContacts(
       });
       continue;
     }
-    if (seenPhones.has(result.data.phone)) {
+    const normalizedPhone = normalizePhone(result.data.phone);
+    if (seenPhones.has(normalizedPhone)) {
       invalidRows.push({ row: i + 1, error: "เบอร์ซ้ำในไฟล์" });
       continue;
     }
-    seenPhones.add(result.data.phone);
-    valid.push(result.data);
+
+    seenPhones.add(normalizedPhone);
+    valid.push({
+      ...result.data,
+      phone: normalizedPhone,
+    });
   }
 
   if (valid.length === 0) {

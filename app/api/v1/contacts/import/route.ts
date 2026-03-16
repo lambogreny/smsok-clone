@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { authenticateRequest, apiResponse, apiError, ApiError } from "@/lib/api-auth";
 import { requireApiPermission } from "@/lib/rbac";
 import { prisma } from "@/lib/db";
+import { readJsonOr400 } from "@/lib/read-json-or-400";
 import { normalizePhone } from "@/lib/validations";
 import { importContactsFromExcel, parseExcelFile } from "@/lib/actions/excel-import";
 import { z } from "zod";
@@ -93,11 +94,15 @@ export async function POST(req: NextRequest) {
       }
       const groupId = formData.get("groupId") as string | null;
       const text = await file.text();
-      return handleCsvImport(user.id, parseCsv(text), groupId);
+      return await handleCsvImport(user.id, parseCsv(text), groupId);
     }
 
     // JSON body — existing logic
-    const body = await req.json();
+    const body = await readJsonOr400<{
+      groupId?: string | null;
+      data?: string;
+      contacts?: Array<{ name?: string; phone: string }>;
+    }>(req);
     const groupId = body.groupId || null;
     let rows: { name?: string; phone: string }[];
 
@@ -107,6 +112,9 @@ export async function POST(req: NextRequest) {
       }
       rows = parseCsv(body.data);
     } else if (Array.isArray(body.contacts)) {
+      if (body.contacts.length === 0) {
+        throw new ApiError(400, "ไม่มีรายชื่อที่จะนำเข้า");
+      }
       if (body.contacts.length > MAX_IMPORT_ROWS) {
         throw new ApiError(400, "นำเข้าได้สูงสุด 5,000 รายชื่อต่อครั้ง");
       }
@@ -115,7 +123,7 @@ export async function POST(req: NextRequest) {
       throw new ApiError(400, "กรุณาส่ง contacts array หรือ data string");
     }
 
-    return handleCsvImport(user.id, rows, groupId);
+    return await handleCsvImport(user.id, rows, groupId);
   } catch (error) {
     return apiError(error);
   }

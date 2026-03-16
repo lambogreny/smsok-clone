@@ -15,6 +15,27 @@ function readJsonBody(req: NextRequest) {
   });
 }
 
+function normalizeCreateContactBody(body: unknown) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return body;
+  }
+
+  const input = body as Record<string, unknown>;
+  const explicitName = typeof input.name === "string" ? input.name.trim() : "";
+  const firstName = typeof input.firstName === "string" ? input.firstName.trim() : "";
+  const lastName = typeof input.lastName === "string" ? input.lastName.trim() : "";
+  const name = explicitName || [firstName, lastName].filter(Boolean).join(" ").trim();
+  const tags = Array.isArray(input.tags)
+    ? input.tags.filter((tag): tag is string => typeof tag === "string" && tag.trim().length > 0).join(", ")
+    : input.tags;
+
+  return {
+    ...input,
+    name,
+    tags,
+  };
+}
+
 // GET /api/v1/contacts?search=xxx&groupId=xxx&page=1&limit=20
 export async function GET(req: NextRequest) {
   try {
@@ -90,7 +111,7 @@ export async function POST(req: NextRequest) {
     const denied = await requireApiPermission(user.id, "create", "contact");
     if (denied) return denied;
 
-    const body = await readJsonBody(req);
+    const body = normalizeCreateContactBody(await readJsonBody(req));
     const input = createContactSchema.parse(body);
     const contact = await createContact(user.id, input);
     return apiResponse(contact, 201);
