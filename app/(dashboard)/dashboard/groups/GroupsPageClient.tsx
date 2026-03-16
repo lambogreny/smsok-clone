@@ -6,17 +6,93 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
-import {
-  createGroup,
-  updateGroup,
-  deleteGroup,
-  getGroupContacts,
-  addContactToGroup,
-  removeContactFromGroup,
-} from "@/lib/actions/groups";
-import { searchContactsBasic } from "@/lib/actions/contacts";
 import { safeErrorMessage } from "@/lib/error-messages";
 import type { GroupItem, GroupContactStub, GroupMember } from "@/lib/types/api-responses";
+
+// ── API helpers (canonical /api/v1/groups) ──
+
+async function apiCreateGroup(name: string): Promise<GroupItem> {
+  const res = await fetch("/api/v1/groups", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "สร้างกลุ่มไม่สำเร็จ");
+  }
+  const raw = await res.json();
+  return { id: raw.id, name: raw.name, createdAt: raw.createdAt, memberCount: 0 };
+}
+
+async function apiUpdateGroup(id: string, name: string) {
+  const res = await fetch(`/api/v1/groups/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "อัปเดตกลุ่มไม่สำเร็จ");
+  }
+  return res.json();
+}
+
+async function apiDeleteGroup(id: string) {
+  const res = await fetch(`/api/v1/groups/${id}`, { method: "DELETE" });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "ลบกลุ่มไม่สำเร็จ");
+  }
+}
+
+async function apiGetMembers(groupId: string, search?: string): Promise<GroupMember[]> {
+  const params = new URLSearchParams({ limit: "200" });
+  if (search) params.set("search", search);
+  const res = await fetch(`/api/v1/groups/${groupId}/members?${params}`);
+  if (!res.ok) throw new Error("โหลดสมาชิกไม่สำเร็จ");
+  const data = await res.json();
+  // API returns { members: Contact[] } — transform to GroupMember shape
+  return (data.members || []).map((c: GroupContactStub & { email?: string }) => ({
+    id: c.id,
+    groupId,
+    contactId: c.id,
+    contact: { id: c.id, name: c.name, phone: c.phone },
+  }));
+}
+
+async function apiSearchAvailableContacts(groupId: string, search: string): Promise<GroupContactStub[]> {
+  const params = new URLSearchParams({ limit: "50" });
+  if (search) params.set("search", search);
+  const res = await fetch(`/api/v1/groups/${groupId}/available-contacts?${params}`);
+  if (!res.ok) return [];
+  const data = await res.json();
+  return (data.contacts || []).map((c: GroupContactStub) => ({
+    id: c.id,
+    name: c.name,
+    phone: c.phone,
+  }));
+}
+
+async function apiAddMember(groupId: string, contactId: string): Promise<GroupMember> {
+  // Note: POST /api/v1/groups/:id/members not yet available — using server action fallback
+  const { addContactToGroup } = await import("@/lib/actions/groups");
+  const result = await addContactToGroup(groupId, contactId);
+  return result as GroupMember;
+}
+
+async function apiRemoveMember(groupId: string, contactId: string) {
+  // Use bulk-remove endpoint with single ID
+  const res = await fetch(`/api/v1/groups/${groupId}/members/bulk-remove`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ contactIds: [contactId] }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "ลบสมาชิกไม่สำเร็จ");
+  }
+}
 import { useToast } from "@/app/components/ui/Toast";
 import { formatThaiDateShort } from "@/lib/format-thai-date";
 
@@ -148,8 +224,8 @@ export default function GroupsPageClient({
     setContactsLoading(true);
     const timer = setTimeout(async () => {
       try {
-        const results = await searchContactsBasic(addSearch, 50);
-        setSearchedContacts(results as ContactStub[]);
+        const results = await apiSearchAvailableContacts(activeGroup.id, addSearch);
+        setSearchedContacts(results);
       } catch {
         // ignore search errors
       } finally {
@@ -205,23 +281,16 @@ export default function GroupsPageClient({
     startTransition(async () => {
       try {
         if (editingGroup) {
-          const updated = await updateGroup(editingGroup.id, {
-            name: data.name.trim(),
-          });
+          await apiUpdateGroup(editingGroup.id, data.name.trim());
           setGroups((prev) =>
             prev.map((g) =>
-              g.id === editingGroup.id ? { ...g, name: updated.name } : g,
+              g.id === editingGroup.id ? { ...g, name: data.name.trim() } : g,
             ),
           );
           toast("success", "อัปเดตกลุ่มสำเร็จ!");
         } else {
-          const created = await createGroup({
-            name: data.name.trim(),
-          });
-          setGroups((prev) => [
-            { ...created, _count: { members: 0 } },
-            ...prev,
-          ]);
+          const created = await apiCreateGroup(data.name.trim());
+          setGroups((prev) => [created, ...prev]);
           toast("success", "สร้างกลุ่มสำเร็จ!");
         }
         setShowDialog(false);
@@ -236,7 +305,7 @@ export default function GroupsPageClient({
     if (!deletingGroup) return;
     startTransition(async () => {
       try {
-        await deleteGroup(deletingGroup.id);
+        await apiDeleteGroup(deletingGroup.id);
         setGroups((prev) => prev.filter((g) => g.id !== deletingGroup.id));
         if (activeGroup?.id === deletingGroup.id) setActiveGroup(null);
         toast("success", "ลบกลุ่มสำเร็จ");
@@ -255,8 +324,8 @@ export default function GroupsPageClient({
     setAddSearch("");
     setMembersLoading(true);
     try {
-      const data = await getGroupContacts(g.id);
-      setMembers(data as Member[]);
+      const data = await apiGetMembers(g.id);
+      setMembers(data);
     } catch {
       toast("error", "โหลดสมาชิกไม่สำเร็จ");
     } finally {
@@ -276,19 +345,19 @@ export default function GroupsPageClient({
     setGroups((prev) =>
       prev.map((g) =>
         g.id === activeGroup.id
-          ? { ...g, _count: { members: g._count.members + 1 } }
+          ? { ...g, memberCount: g.memberCount + 1 }
           : g,
       ),
     );
     setActiveGroup((prev) =>
       prev
-        ? { ...prev, _count: { members: prev._count.members + 1 } }
+        ? { ...prev, memberCount: prev.memberCount + 1 }
         : prev,
     );
 
     startTransition(async () => {
       try {
-        const real = await addContactToGroup(activeGroup.id, contact.id);
+        const real = await apiAddMember(activeGroup.id, contact.id);
         setMembers((prev) =>
           prev.map((m) => (m.id === tempMember.id ? (real as Member) : m)),
         );
@@ -297,13 +366,13 @@ export default function GroupsPageClient({
         setGroups((prev) =>
           prev.map((g) =>
             g.id === activeGroup.id
-              ? { ...g, _count: { members: g._count.members - 1 } }
+              ? { ...g, memberCount: g.memberCount - 1 }
               : g,
           ),
         );
         setActiveGroup((prev) =>
           prev
-            ? { ...prev, _count: { members: prev._count.members - 1 } }
+            ? { ...prev, memberCount: prev.memberCount - 1 }
             : prev,
         );
         toast("error", safeErrorMessage(e));
@@ -317,37 +386,31 @@ export default function GroupsPageClient({
     setGroups((prev) =>
       prev.map((g) =>
         g.id === activeGroup.id
-          ? {
-              ...g,
-              _count: { members: Math.max(0, g._count.members - 1) },
-            }
+          ? { ...g, memberCount: Math.max(0, g.memberCount - 1) }
           : g,
       ),
     );
     setActiveGroup((prev) =>
       prev
-        ? {
-            ...prev,
-            _count: { members: Math.max(0, prev._count.members - 1) },
-          }
+        ? { ...prev, memberCount: Math.max(0, prev.memberCount - 1) }
         : prev,
     );
 
     startTransition(async () => {
       try {
-        await removeContactFromGroup(activeGroup.id, member.contactId);
+        await apiRemoveMember(activeGroup.id, member.contactId);
       } catch (e) {
         setMembers((prev) => [...prev, member]);
         setGroups((prev) =>
           prev.map((g) =>
             g.id === activeGroup.id
-              ? { ...g, _count: { members: g._count.members + 1 } }
+              ? { ...g, memberCount: g.memberCount + 1 }
               : g,
           ),
         );
         setActiveGroup((prev) =>
           prev
-            ? { ...prev, _count: { members: prev._count.members + 1 } }
+            ? { ...prev, memberCount: prev.memberCount + 1 }
             : prev,
         );
         toast("error", safeErrorMessage(e));
@@ -428,7 +491,7 @@ export default function GroupsPageClient({
                         variant="outline"
                         className="text-[12px] px-2 py-0.5 bg-[rgba(var(--accent-rgb),0.06)] text-[var(--accent)] border-[rgba(var(--accent-rgb),0.15)] font-medium rounded-full"
                       >
-                        {g._count.members}
+                        {g.memberCount}
                       </Badge>
                     </TableCell>
                     <TableCell className="py-3.5 text-xs text-[var(--text-muted)] hidden lg:table-cell">
@@ -492,7 +555,7 @@ export default function GroupsPageClient({
                       {g.name}
                     </Link>
                     <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                      {g._count.members} สมาชิก
+                      {g.memberCount} สมาชิก
                     </p>
                   </div>
                 </div>
@@ -657,7 +720,7 @@ export default function GroupsPageClient({
           <DialogHeader className="px-6 pt-6 pb-0">
             <DialogTitle className="text-[var(--text-primary)] text-lg">
               จัดการสมาชิก — กลุ่ม &ldquo;{activeGroup?.name}&rdquo; (
-              {activeGroup?._count.members || 0} คน)
+              {activeGroup?.memberCount || 0} คน)
             </DialogTitle>
             <DialogDescription className="text-[var(--text-muted)]">
               เพิ่มหรือลบสมาชิกจากกลุ่ม

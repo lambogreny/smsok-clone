@@ -18,8 +18,10 @@ export default async function GroupsPage() {
   }
 
   const serializedGroups = groups.map((group) => ({
-    ...group,
+    id: group.id,
+    name: group.name,
     createdAt: group.createdAt.toISOString(),
+    memberCount: group._count.members,
   }));
 
   return <GroupsPageClient initialGroups={serializedGroups} />;
