@@ -486,7 +486,7 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
-      className="absolute top-2 right-2 p-1.5 rounded-md bg-white/5 hover:bg-white/10 transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+      className="absolute top-2 right-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md bg-white/5 hover:bg-white/10 transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)]"
       title="Copy"
     >
       {copied ? (
@@ -652,8 +652,8 @@ function ResponseFieldsTable({ fields }: { fields: { name: string; type: string;
   return (
     <div>
       <p className="text-[10px] font-medium text-[var(--text-muted)] mb-2 uppercase tracking-wider">Response Fields</p>
-      <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg overflow-hidden">
-        <table className="w-full text-xs">
+      <div className="overflow-x-auto bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg">
+        <table className="w-full text-xs min-w-[400px]">
           <thead>
             <tr className="border-b border-[var(--border-default)]">
               <th className="text-left p-3 text-[var(--text-muted)] font-medium uppercase text-[10px] tracking-wider">Field</th>
@@ -779,8 +779,8 @@ function EndpointCard({ endpoint, isExpanded, onToggle, id }: { endpoint: Endpoi
                 {endpoint.errors && endpoint.errors.length > 0 && (
                   <div className="mb-5">
                     <p className="text-[10px] font-medium text-[var(--text-muted)] mb-2 uppercase tracking-wider">Error Codes</p>
-                    <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg overflow-hidden">
-                      <table className="w-full text-xs">
+                    <div className="overflow-x-auto bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg">
+                      <table className="w-full text-xs min-w-[300px]">
                         <tbody>
                           {endpoint.errors.map((err) => (
                             <tr key={err.code} className="border-b border-[var(--border-default)] last:border-0">

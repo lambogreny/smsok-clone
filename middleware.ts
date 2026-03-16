@@ -45,6 +45,7 @@ function shouldVerifySession(pathname: string, hasApiKeyAuth: boolean) {
   if (pathname.startsWith("/api/auth/")) return false;
   if (pathname.startsWith("/api/health")) return false;
   if (pathname.startsWith("/api/storage/")) return false;
+  if (pathname === "/dashboard/api-docs") return false;
   if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) return true;
   if (pathname.startsWith("/api/")) {
     if (pathname.startsWith("/api/v1/")) {
