@@ -192,6 +192,15 @@
 }
 
 /* ═══════════════════════════════════════════════
+   Base UI Dialog — inert backdrop fix
+   The internal backdrop (data-base-ui-inert) blocks pointer
+   events on the dialog popup. Let clicks pass through.
+   ═══════════════════════════════════════════════ */
+[data-base-ui-inert] {
+  pointer-events: none !important;
+}
+
+/* ═══════════════════════════════════════════════
    COMPONENT CLASSES — Nansen Flat + Elevated
    ═══════════════════════════════════════════════ */
 
