@@ -6,7 +6,7 @@ import { isObviouslyInternalUrl, safeFetch } from "@/lib/url-safety"
 import { encryptSecret, decryptSecret } from "@/lib/two-factor"
 import { randomBytes } from "crypto"
 
-const VALID_EVENTS: WebhookEvent[] = [
+export const VALID_EVENTS: WebhookEvent[] = [
   "sms.sent",
   "sms.delivered",
   "sms.failed",
@@ -19,6 +19,11 @@ const VALID_EVENTS: WebhookEvent[] = [
   "contact.opted_out",
   "credits.depleted",
 ]
+
+export const WEBHOOK_EVENT_REGISTRY = VALID_EVENTS.map((event) => {
+  const [category, action] = event.split(".")
+  return { event, category, action }
+})
 
 async function resolveWebhookUserId(apiUserId?: string) {
   return resolveActionUserId(apiUserId)
@@ -53,7 +58,17 @@ export async function listWebhooks(apiUserId?: string) {
     orderBy: { createdAt: "desc" },
   })
 
-  return webhooks
+  return webhooks.map((w) => ({
+    id: w.id,
+    url: w.url,
+    events: w.events,
+    status: w.active ? "active" : "disabled",
+    active: w.active,
+    failCount: w.failCount,
+    deliveryCount: w._count.logs,
+    createdAt: w.createdAt,
+    updatedAt: w.updatedAt,
+  }))
 }
 
 // ── Get webhook detail ──────────────────────────────────
@@ -323,7 +338,14 @@ export async function testWebhook(id: string, apiUserId?: string) {
     },
   })
 
-  return { success, statusCode, latency, response: responseBody }
+  return {
+    success,
+    statusCode,
+    latencyMs: latency,
+    url: webhook.url,
+    event: "test",
+    response: responseBody ? String(responseBody).slice(0, 1000) : null,
+  }
 }
 
 // ── Rotate webhook secret ───────────────────────────────
@@ -379,6 +401,8 @@ export async function getWebhookLogs(
       select: {
         id: true,
         event: true,
+        payload: true,
+        response: true,
         statusCode: true,
         latency: true,
         success: true,
