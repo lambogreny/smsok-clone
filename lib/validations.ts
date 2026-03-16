@@ -6,6 +6,7 @@ import {
 } from "./api-key-permissions";
 import { ALL_EVENT_IDS, type WebhookEventId } from "./webhook-events";
 import { SENDER_NAME_REGEX } from "./sender-name-validation";
+import { getSmsSegmentMetrics } from "./sms-segmentation";
 
 // Re-export password policy for frontend
 export { passwordSchema, getPasswordStrength, isCommonPassword, PASSWORD_RULES } from "./password-policy";
@@ -702,15 +703,7 @@ export const reportFilterSchema = z
  * Emoji and non-ASCII/non-Thai chars force UCS-2 encoding
  */
 export function calculateSmsCount(message: string): number {
-  if (!message) return 0;
-  const hasThai = /[\u0E00-\u0E7F]/.test(message);
-  const hasNonGsm = /[^\x00-\x7F]/.test(message);
-  const isUcs2 = hasThai || hasNonGsm;
-
-  if (isUcs2) {
-    return message.length <= 70 ? 1 : Math.ceil(message.length / 67);
-  }
-  return message.length <= 160 ? 1 : Math.ceil(message.length / 153);
+  return getSmsSegmentMetrics(message).segments;
 }
 
 /** Calculate credit cost for a message — alias for calculateSmsCount */

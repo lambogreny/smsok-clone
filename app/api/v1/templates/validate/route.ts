@@ -3,6 +3,7 @@ import { apiResponse, apiError, authenticateRequest } from "@/lib/api-auth";
 import { requireApiPermission } from "@/lib/rbac";
 import { prisma as db } from "@/lib/db";
 import { getSmsSegmentMetrics } from "@/lib/package/quota";
+import { buildTemplatePreview, extractVariables, findTemplateSyntaxWarnings } from "@/lib/template-utils";
 import { z } from "zod";
 
 const validateSchema = z.object({
@@ -61,16 +62,44 @@ export async function POST(req: NextRequest) {
     // 3. Segment info
     const metrics = getSmsSegmentMetrics(input.content);
     const charsPerSegment = metrics.segments > 1 ? metrics.multiLimit : metrics.singleLimit;
+    const syntaxWarnings = findTemplateSyntaxWarnings(input.content);
+    const preview = buildTemplatePreview(input.content);
+    const previewMetrics = getSmsSegmentMetrics(preview.rendered);
+    const worstCaseMetrics = getSmsSegmentMetrics(preview.worstCaseRendered);
+
+    for (const warning of syntaxWarnings) {
+      warnings.push({
+        type: "TEMPLATE_SYNTAX",
+        message: warning,
+      });
+    }
+
+    if (metrics.hasGsmExtendedChars) {
+      warnings.push({
+        type: "GSM_EXTENDED",
+        message: `GSM-7 extended characters detected (${metrics.extendedCharCount})`,
+      });
+    }
 
     return apiResponse({
       valid: warnings.length === 0,
       warnings,
+      variables: extractVariables(input.content),
       encoding: metrics.encoding,
       charCount: metrics.charCount,
+      rawCharCount: metrics.rawCharCount,
       charsPerSegment,
       singleCharLimit: metrics.singleLimit,
       multiCharLimit: metrics.multiLimit,
       segmentCount: metrics.segments,
+      extendedCharCount: metrics.extendedCharCount,
+      hasGsmExtendedChars: metrics.hasGsmExtendedChars,
+      previewText: preview.rendered,
+      previewVariables: preview.previewVariables,
+      previewCharCount: previewMetrics.charCount,
+      previewSegmentCount: previewMetrics.segments,
+      worstCaseCharCount: worstCaseMetrics.charCount,
+      worstCaseSegmentCount: worstCaseMetrics.segments,
     });
   } catch (error) {
     return apiError(error);

@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { authenticateRequest, apiResponse, apiError } from "@/lib/api-auth";
 import { requireApiPermission } from "@/lib/rbac";
-import { substituteVariables, extractVariables } from "@/lib/template-utils";
+import { buildTemplatePreview, substituteVariables, extractVariables, findTemplateSyntaxWarnings } from "@/lib/template-utils";
 import { prisma as db } from "@/lib/db";
 import { templateRenderSchema } from "@/lib/validations";
 import { getSmsSegmentMetrics } from "@/lib/package/quota";
@@ -38,18 +38,28 @@ export async function POST(req: NextRequest) {
     const variables = input.variables || {};
     const requiredVars = extractVariables(content);
     const rendered = substituteVariables(content, variables);
-    const missingVars = requiredVars.filter((v) => !(v in variables));
+    const missingVars = requiredVars.filter((v) => !Object.prototype.hasOwnProperty.call(variables, v));
+    const syntaxWarnings = findTemplateSyntaxWarnings(content);
+    const preview = buildTemplatePreview(content, variables);
 
     const metrics = getSmsSegmentMetrics(rendered);
+    const worstCaseMetrics = getSmsSegmentMetrics(preview.worstCaseRendered);
 
     return apiResponse({
       rendered,
       variables: requiredVars,
       missing: missingVars,
       charCount: metrics.charCount,
+      rawCharCount: metrics.rawCharCount,
       encoding: metrics.encoding,
       charsPerSegment: metrics.segments > 1 ? metrics.multiLimit : metrics.singleLimit,
+      extendedCharCount: metrics.extendedCharCount,
+      hasGsmExtendedChars: metrics.hasGsmExtendedChars,
       segmentCount: metrics.segments,
+      syntaxWarnings,
+      worstCaseCharCount: worstCaseMetrics.charCount,
+      worstCaseCharsPerSegment: worstCaseMetrics.segments > 1 ? worstCaseMetrics.multiLimit : worstCaseMetrics.singleLimit,
+      worstCaseSegmentCount: worstCaseMetrics.segments,
     });
   } catch (error) {
     return apiError(error);

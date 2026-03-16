@@ -21,11 +21,15 @@ import {
   Send,
   Smartphone,
   X,
+  AlertTriangle,
+  Calculator,
+  ShieldOff,
 } from "lucide-react";
 import { createCampaign } from "@/lib/actions/campaigns";
 import { useToast } from "@/app/components/ui/Toast";
 import { safeErrorMessage } from "@/lib/error-messages";
 import { getSmsMetrics, UnicodeWarning } from "@/components/sms/SmsCharCounter";
+import { PhonePreview } from "@/components/sms/PhonePreview";
 
 type ContactGroup = { id: string; name: string; count: number };
 type Template = { id: string; name: string; body: string };
@@ -46,15 +50,19 @@ const STEPS: { key: CampaignWizardStep; label: string; icon: React.ReactNode }[]
   { key: "review", label: "ตรวจสอบ", icon: <CheckCircle2 size={16} /> },
 ];
 
-// SMS segment calculation — uses getSmsMetrics() which detects Thai/UCS-2 encoding correctly
-
 // Template variable tokens
 const VARIABLES = [
   { token: "{ชื่อ}", label: "ชื่อผู้รับ" },
   { token: "{นามสกุล}", label: "นามสกุล" },
   { token: "{รหัส}", label: "รหัส OTP" },
   { token: "{เบอร์}", label: "เบอร์โทร" },
+  { token: "{บริษัท}", label: "บริษัท" },
 ];
+
+const STOP_CODE = "\nReply STOP to unsubscribe";
+
+// Price per SMS segment (THB)
+const PRICE_PER_SEGMENT = 0.35;
 
 export default function CampaignWizard({
   groups,
@@ -138,10 +146,17 @@ export default function CampaignWizard({
   const selectedTemplate = templates.find((t) => t.id === draft.templateId);
   const seg = getSmsMetrics(draft.message);
 
+  // Recipient count for cost calculation
+  const recipientCount = audienceMode === "group"
+    ? (selectedGroup?.count ?? 0)
+    : manualPhones.split(/[,\n]/).filter((p) => p.trim()).length;
+  const totalSms = seg.segments * recipientCount;
+  const estimatedCost = totalSms * PRICE_PER_SEGMENT;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
       <div
-        className="w-full max-w-[640px] max-h-[90vh] overflow-y-auto bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg shadow-2xl"
+        className="w-full max-w-[820px] max-h-[90vh] overflow-y-auto bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg shadow-2xl"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-default)]">
@@ -311,41 +326,83 @@ export default function CampaignWizard({
             </div>
           )}
 
-          {/* Step 3: Message */}
+          {/* Step 3: Message — Enhanced with side-by-side preview + cost calculator */}
           {currentStep === "message" && (
-            <div className="space-y-5">
-              <div>
-                <label className="block text-[12px] font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
-                  เทมเพลต (ไม่บังคับ)
-                </label>
-                <CustomSelect
-                  value={draft.templateId ?? ""}
-                  onChange={(v) => {
-                    updateDraft({ templateId: v || null });
-                    const tpl = templates.find((t) => t.id === v);
-                    if (tpl) updateDraft({ message: tpl.body });
-                  }}
-                  options={[
-                    { value: "", label: "— ไม่ใช้เทมเพลต —" },
-                    ...templates.map((t) => ({ value: t.id, label: t.name })),
-                  ]}
-                  placeholder="เลือกเทมเพลต..."
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-                    ข้อความ *
+            <div className="flex flex-col lg:flex-row gap-6">
+              {/* Left: Message Editor */}
+              <div className="flex-1 space-y-4">
+                <div>
+                  <label className="block text-[12px] font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
+                    เทมเพลต (ไม่บังคับ)
                   </label>
-                  {/* Variable insertion */}
-                  <div className="flex items-center gap-1">
+                  <CustomSelect
+                    value={draft.templateId ?? ""}
+                    onChange={(v) => {
+                      updateDraft({ templateId: v || null });
+                      const tpl = templates.find((t) => t.id === v);
+                      if (tpl) updateDraft({ message: tpl.body });
+                    }}
+                    options={[
+                      { value: "", label: "— ไม่ใช้เทมเพลต —" },
+                      ...templates.map((t) => ({ value: t.id, label: t.name })),
+                    ]}
+                    placeholder="เลือกเทมเพลต..."
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+                      ข้อความ *
+                    </label>
+                  </div>
+                  <textarea
+                    value={draft.message}
+                    onChange={(e) => updateDraft({ message: e.target.value })}
+                    rows={6}
+                    placeholder="พิมพ์ข้อความ SMS ที่นี่..."
+                    className={`${inputCls} resize-none w-full`}
+                  />
+
+                  {/* Segment info */}
+                  <div className="flex items-center justify-between mt-1.5">
+                    <p className="text-[11px]" style={{ color: seg.hasUnicodeWarning ? "var(--warning)" : "var(--text-muted)" }}>
+                      {seg.charCount} ตัวอักษร · {seg.segments} segment{seg.segments > 1 ? "s" : ""} · {seg.encoding}
+                    </p>
+                    <p className="text-[11px]" style={{ color: "var(--text-muted)" }}>
+                      limit: {seg.isMultipart ? seg.multiLimit : seg.singleLimit}/segment
+                    </p>
+                  </div>
+
+                  {/* Character limit warning */}
+                  {seg.segments > 1 && (
+                    <div
+                      className="flex items-start gap-2 mt-2 p-2.5 rounded-lg"
+                      style={{
+                        background: "rgba(var(--warning-rgb),0.06)",
+                        border: "1px solid rgba(var(--warning-rgb),0.15)",
+                      }}
+                    >
+                      <AlertTriangle size={14} className="shrink-0 mt-0.5" style={{ color: "var(--warning)" }} />
+                      <p className="text-[11px]" style={{ color: "var(--warning)" }}>
+                        ข้อความเกิน 1 segment — ค่าส่งจะคูณตามจำนวน segments ({seg.segments} segments)
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Variable insertion toolbar */}
+                <div>
+                  <p className="text-[11px] font-medium mb-1.5" style={{ color: "var(--text-muted)" }}>
+                    แทรกตัวแปร:
+                  </p>
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     {VARIABLES.map((v) => (
                       <button
                         key={v.token}
                         type="button"
                         onClick={() => updateDraft({ message: draft.message + v.token })}
-                        className="px-2 py-0.5 rounded text-[10px] font-mono transition-colors cursor-pointer"
+                        className="px-2 py-1 rounded text-[11px] font-mono transition-colors cursor-pointer"
                         style={{
                           color: "var(--accent)",
                           background: "rgba(var(--accent-rgb),0.08)",
@@ -356,67 +413,85 @@ export default function CampaignWizard({
                         {v.token}
                       </button>
                     ))}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!draft.message.includes("STOP")) {
+                          updateDraft({ message: draft.message + STOP_CODE });
+                        }
+                      }}
+                      className="px-2 py-1 rounded text-[11px] font-mono transition-colors cursor-pointer flex items-center gap-1"
+                      style={{
+                        color: "var(--error)",
+                        background: "rgba(var(--error-rgb,239,68,68),0.06)",
+                        border: "1px solid rgba(var(--error-rgb,239,68,68),0.15)",
+                      }}
+                      title="เพิ่ม STOP code (compliance)"
+                    >
+                      <ShieldOff size={11} />
+                      STOP code
+                    </button>
                   </div>
                 </div>
-                <textarea
-                  value={draft.message}
-                  onChange={(e) => updateDraft({ message: e.target.value })}
-                  rows={5}
-                  placeholder="พิมพ์ข้อความ SMS ที่นี่..."
-                  className={`${inputCls} resize-none`}
-                />
-                <div className="flex items-center justify-between mt-1.5">
-                  <p className="text-[11px]" style={{ color: seg.hasUnicodeWarning ? "var(--warning)" : "var(--text-muted)" }}>
-                    {seg.charCount} ตัวอักษร · {seg.segments} segment{seg.segments > 1 ? "s" : ""} · {seg.encoding}
-                  </p>
-                  <p className="text-[11px]" style={{ color: "var(--text-muted)" }}>
-                    limit: {seg.isMultipart ? seg.multiLimit : seg.singleLimit}/segment
-                  </p>
-                </div>
-              </div>
 
-              {/* Unicode encoding warning */}
-              <UnicodeWarning message={draft.message} />
+                {/* Unicode encoding warning */}
+                <UnicodeWarning message={draft.message} />
 
-              {/* SMS Preview */}
-              <div>
-                <label className="block text-[12px] font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
-                  ตัวอย่าง SMS
-                </label>
-                <div
-                  className="relative mx-auto w-[260px] rounded-[24px] p-3 pt-8"
-                  style={{
-                    background: "var(--bg-base)",
-                    border: "2px solid var(--border-default)",
-                  }}
-                >
-                  {/* Phone notch */}
+                {/* Cost Calculator */}
+                {recipientCount > 0 && draft.message.trim() && (
                   <div
-                    className="absolute top-2 left-1/2 -translate-x-1/2 w-16 h-1.5 rounded-full"
-                    style={{ background: "var(--border-default)" }}
-                  />
-                  {/* Sender */}
-                  <p className="text-[11px] font-semibold mb-1" style={{ color: "var(--text-muted)" }}>
-                    {draft.senderName || "SMSOK"}
-                  </p>
-                  {/* Message bubble */}
-                  <div
-                    className="rounded-lg p-3"
+                    className="p-3 rounded-lg"
                     style={{
-                      background: "var(--bg-surface)",
-                      border: "1px solid var(--border-default)",
+                      background: "rgba(var(--accent-rgb),0.04)",
+                      border: "1px solid rgba(var(--accent-rgb),0.12)",
                     }}
                   >
-                    <p className="text-[13px] whitespace-pre-wrap break-words" style={{ color: "var(--text-primary)" }}>
-                      {draft.message || "ข้อความจะแสดงที่นี่..."}
-                    </p>
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <Calculator size={13} style={{ color: "var(--accent)" }} />
+                      <span className="text-[12px] font-semibold" style={{ color: "var(--text-primary)" }}>
+                        ค่าใช้จ่ายโดยประมาณ
+                      </span>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[12px]">
+                        <span style={{ color: "var(--text-muted)" }}>ผู้รับ</span>
+                        <span style={{ color: "var(--text-secondary)" }}>{recipientCount.toLocaleString()} คน</span>
+                      </div>
+                      <div className="flex justify-between text-[12px]">
+                        <span style={{ color: "var(--text-muted)" }}>Segments/ข้อความ</span>
+                        <span style={{ color: "var(--text-secondary)" }}>{seg.segments}</span>
+                      </div>
+                      <div className="flex justify-between text-[12px]">
+                        <span style={{ color: "var(--text-muted)" }}>SMS ทั้งหมด</span>
+                        <span style={{ color: "var(--text-secondary)" }}>{totalSms.toLocaleString()}</span>
+                      </div>
+                      <div
+                        className="flex justify-between text-[13px] font-semibold pt-1.5 mt-1.5"
+                        style={{ borderTop: "1px solid rgba(var(--accent-rgb),0.12)" }}
+                      >
+                        <span style={{ color: "var(--text-primary)" }}>ค่าใช้จ่ายรวม</span>
+                        <span style={{ color: "var(--accent)" }}>
+                          ฿{estimatedCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                      <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>
+                        ({recipientCount.toLocaleString()} × {seg.segments} seg × ฿{PRICE_PER_SEGMENT}/seg)
+                      </p>
+                    </div>
                   </div>
-                  {/* Footer */}
-                  <p className="text-[10px] text-center mt-2" style={{ color: "var(--text-muted)" }}>
-                    <Smartphone size={10} className="inline mr-1" />
-                    SMS Preview
-                  </p>
-                </div>
+                )}
+              </div>
+
+              {/* Right: Phone Preview */}
+              <div className="lg:w-[280px] shrink-0">
+                <label className="block text-[12px] font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
+                  <Smartphone size={13} className="inline mr-1" />
+                  ตัวอย่าง SMS
+                </label>
+                <PhonePreview
+                  message={draft.message || "ข้อความจะแสดงที่นี่..."}
+                  senderName={draft.senderName || "SMSOK"}
+                />
               </div>
             </div>
           )}
@@ -501,16 +576,10 @@ export default function CampaignWizard({
                 { label: "เทมเพลต", value: selectedTemplate?.name ?? "ไม่ใช้เทมเพลต" },
                 { label: "ข้อความ", value: `${seg.charCount} ตัวอักษร · ${seg.segments} segment(s) · ${seg.encoding}` },
                 { label: "การส่ง", value: draft.scheduled ? `ตั้งเวลา: ${draft.scheduleDate}` : "ส่งทันที" },
-                (() => {
-                  const recipients = audienceMode === "group"
-                    ? (selectedGroup?.count ?? 0)
-                    : manualPhones.split(/[,\n]/).filter((p) => p.trim()).length;
-                  const totalSms = seg.segments * recipients;
-                  return {
-                    label: "ค่าใช้จ่ายโดยประมาณ",
-                    value: `${recipients} ผู้รับ × ${seg.segments} segment${seg.segments > 1 ? "s" : ""} = ${totalSms} ข้อความ`,
-                  };
-                })(),
+                {
+                  label: "ค่าใช้จ่ายโดยประมาณ",
+                  value: `${recipientCount.toLocaleString()} × ${seg.segments} seg = ${totalSms.toLocaleString()} SMS · ฿${estimatedCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
+                },
               ].map((item) => (
                 <div
                   key={item.label}

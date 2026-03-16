@@ -199,52 +199,14 @@ export default function RecurringCampaignPage() {
   const [formTime, setFormTime] = useState("09:00");
 
   // ─── Handlers ───────────────────────────────────────────────────────
-  const handleToggleStatus = (id: string, currentStatus: RecurringStatus) => {
-    const newStatus = currentStatus === "active" ? "paused" : "active";
-    setCampaigns((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, status: newStatus } : c)),
-    );
-    toast.success(newStatus === "active" ? "เปิดใช้งานแล้ว" : "หยุดชั่วคราวแล้ว");
+  // NOTE: Recurring campaigns API is not yet available.
+  // All actions are disabled with "Coming soon" messaging.
+  const handleToggleStatus = (_id: string, _currentStatus: RecurringStatus) => {
+    toast("ฟีเจอร์นี้กำลังพัฒนา — Coming soon", { icon: "🚧" });
   };
 
   const handleCreate = () => {
-    if (!formName.trim()) {
-      toast.error("กรุณากรอกชื่อแคมเปญ");
-      return;
-    }
-    if (!formMessage.trim()) {
-      toast.error("กรุณากรอกข้อความ");
-      return;
-    }
-
-    const newCampaign: RecurringCampaign = {
-      id: `rc_${Date.now()}`,
-      name: formName,
-      message: formMessage,
-      senderName: "SMSOK",
-      contactGroupId: "",
-      contactGroupName: "ทั้งหมด",
-      recipientCount: 0,
-      frequency: formFrequency,
-      dayOfWeek: formFrequency === "weekly" ? Number(formDayOfWeek) : undefined,
-      dayOfMonth: formFrequency === "monthly" ? Number(formDayOfMonth) : undefined,
-      time: formTime,
-      status: "draft",
-      totalRuns: 0,
-      totalSent: 0,
-      totalCreditsUsed: 0,
-      lastRunAt: null,
-      nextRunAt: null,
-      createdAt: new Date().toISOString(),
-    };
-
-    setCampaigns((prev) => [newCampaign, ...prev]);
-    setFormName("");
-    setFormMessage("");
-    setFormFrequency("weekly");
-    setFormTime("09:00");
-    setShowForm(false);
-    toast.success("สร้างแคมเปญซ้ำสำเร็จ");
+    toast("ฟีเจอร์นี้กำลังพัฒนา — Coming soon", { icon: "🚧" });
   };
 
   // Preview next 5 runs
@@ -278,10 +240,23 @@ export default function RecurringCampaignPage() {
   // ─── Render ─────────────────────────────────────────────────────────
   return (
     <PageLayout>
+      {/* Coming soon banner */}
+      <div
+        className="mb-4 rounded-lg px-4 py-3 text-[13px] flex items-center gap-2"
+        style={{
+          background: "rgba(var(--warning-rgb,245,158,11),0.06)",
+          border: "1px solid rgba(var(--warning-rgb,245,158,11),0.15)",
+          color: "var(--warning)",
+        }}
+      >
+        <span className="text-base">🚧</span>
+        <span>ฟีเจอร์แคมเปญซ้ำกำลังอยู่ระหว่างพัฒนา — ยังไม่สามารถสร้างหรือแก้ไขได้จริง</span>
+      </div>
+
       <PageHeader
         title="แคมเปญซ้ำ"
         count={campaigns.length}
-        description="ตั้งเวลาส่ง SMS อัตโนมัติแบบซ้ำตามรอบที่กำหนด"
+        description="ตั้งเวลาส่ง SMS อัตโนมัติแบบซ้ำตามรอบที่กำหนด (Coming soon)"
         actions={
           <Button
             onClick={() => setShowForm(!showForm)}
@@ -580,18 +555,27 @@ export default function RecurringCampaignPage() {
                           align="end"
                           className="bg-[var(--table-header)] border-[var(--table-border)] rounded-lg shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
                         >
-                          <DropdownMenuItem className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] focus:text-[var(--text-primary)] focus:bg-[rgba(255,255,255,0.04)] cursor-pointer">
+                          <DropdownMenuItem
+                            disabled
+                            className="text-[var(--text-muted)] opacity-50 cursor-not-allowed"
+                          >
                             <Pencil className="w-4 h-4 mr-2" />
-                            แก้ไข
+                            แก้ไข (Coming soon)
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] focus:text-[var(--text-primary)] focus:bg-[rgba(255,255,255,0.04)] cursor-pointer">
+                          <DropdownMenuItem
+                            disabled
+                            className="text-[var(--text-muted)] opacity-50 cursor-not-allowed"
+                          >
                             <Copy className="w-4 h-4 mr-2" />
-                            ทำซ้ำ
+                            ทำซ้ำ (Coming soon)
                           </DropdownMenuItem>
                           <DropdownMenuSeparator className="bg-[var(--table-border)]" />
-                          <DropdownMenuItem className="text-[var(--error)] hover:text-[var(--error)] focus:text-[var(--error)] focus:bg-[rgba(239,68,68,0.08)] cursor-pointer">
+                          <DropdownMenuItem
+                            disabled
+                            className="text-[var(--text-muted)] opacity-50 cursor-not-allowed"
+                          >
                             <Trash2 className="w-4 h-4 mr-2" />
-                            ลบ
+                            ลบ (Coming soon)
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
