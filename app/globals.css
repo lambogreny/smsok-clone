@@ -191,14 +191,8 @@
   }
 }
 
-/* ═══════════════════════════════════════════════
-   Base UI Dialog — inert backdrop fix
-   The internal backdrop (data-base-ui-inert) blocks pointer
-   events on the dialog popup. Let clicks pass through.
-   ═══════════════════════════════════════════════ */
-[data-base-ui-inert] {
-  pointer-events: none !important;
-}
+/* Base UI inert fix: handled structurally in dialog.tsx (modal={false})
+   and alert-dialog.tsx (useStripInert). No global CSS override needed. */
 
 /* ═══════════════════════════════════════════════
    COMPONENT CLASSES — Nansen Flat + Elevated
