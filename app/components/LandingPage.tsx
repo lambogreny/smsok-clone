@@ -217,11 +217,11 @@ export default function LandingPage() {
             transition={{ delay: 0.1 }}
             className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold leading-[1.1] mb-6 sm:mb-8"
           >
-            <span className="text-white">แพลตฟอร์มส่ง</span>
+            <span className="text-white">บริการส่ง</span>
             <br className="sm:hidden" />
-            <span className="gradient-text-mixed"> SMS</span>
+            <span className="gradient-text-mixed"> SMS Marketing</span>
             <br />
-            <span className="bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent">ที่ธุรกิจไว้วางใจ</span>
+            <span className="bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent">อันดับ 1 ในไทย</span>
           </motion.h1>
 
           {/* Subheading */}
