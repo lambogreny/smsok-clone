@@ -1798,7 +1798,7 @@ export default function ContactsClient({
                 />
               </div>
 
-              <DialogFooter className="gap-2 pt-2">
+              <div className="flex flex-col-reverse gap-2 pt-4 sm:flex-row sm:justify-end">
                 <Button
                   type="button"
                   variant="outline"
@@ -1808,8 +1808,9 @@ export default function ContactsClient({
                   ยกเลิก
                 </Button>
                 <Button
-                  type="submit"
+                  type="button"
                   disabled={isPending}
+                  onClick={contactForm.handleSubmit(handleContactSubmit)}
                   className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] font-semibold"
                 >
                   {isPending ? (
@@ -1823,7 +1824,7 @@ export default function ContactsClient({
                     "บันทึก"
                   )}
                 </Button>
-              </DialogFooter>
+              </div>
             </form>
           </Form>
         </DialogContent>

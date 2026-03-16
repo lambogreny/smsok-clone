@@ -7,8 +7,13 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
 
-function Dialog({ ...props }: DialogPrimitive.Root.Props) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />
+/**
+ * Dialog Root — uses modal={false} to avoid Base UI's inert behavior
+ * which blocks pointer events on the entire page including dialog content.
+ * We handle the backdrop overlay ourselves via DialogOverlay.
+ */
+function Dialog({ modal = false, ...props }: DialogPrimitive.Root.Props) {
+  return <DialogPrimitive.Root data-slot="dialog" modal={modal} {...props} />
 }
 
 function DialogTrigger({ ...props }: DialogPrimitive.Trigger.Props) {
@@ -25,18 +30,35 @@ function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
 
 function DialogOverlay({
   className,
+  onPointerDown,
   ...props
-}: DialogPrimitive.Backdrop.Props) {
+}: DialogPrimitive.Backdrop.Props & {
+  onPointerDown?: React.PointerEventHandler<HTMLDivElement>
+}) {
   return (
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 z-50 pointer-events-none bg-black/80 duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        "fixed inset-0 z-50 bg-black/80 duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
         className
       )}
       {...props}
     />
   )
+}
+
+/**
+ * Locks body scroll when dialog is open, restores on unmount.
+ */
+function useScrollLock(open: boolean) {
+  React.useEffect(() => {
+    if (!open) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [open])
 }
 
 function DialogContent({
@@ -47,6 +69,9 @@ function DialogContent({
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
 }) {
+  // Since modal={false}, we manually lock scroll when the dialog renders
+  useScrollLock(true)
+
   return (
     <DialogPortal>
       <DialogOverlay />
