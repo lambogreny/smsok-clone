@@ -38,6 +38,15 @@ export const singleQueue = new Queue<SmsJobData>(QUEUE_NAMES.SMS_SINGLE, {
   },
 })
 
+export const scheduledQueue = new Queue<SmsJobData>(QUEUE_NAMES.SMS_SCHEDULED, {
+  connection: producerConnectionOptions,
+  defaultJobOptions: {
+    ...RETRY_STRATEGIES.scheduled,
+    removeOnComplete: { count: 1000 },
+    removeOnFail: { count: 5000 },
+  },
+})
+
 export const batchQueue = new Queue<SmsJobData>(QUEUE_NAMES.SMS_BATCH, {
   connection: producerConnectionOptions,
   defaultJobOptions: {
@@ -96,6 +105,7 @@ export const dlqQueue = new Queue<DlqJobData>(QUEUE_NAMES.SMS_DLQ, {
 export const allQueues = [
   otpQueue,
   singleQueue,
+  scheduledQueue,
   batchQueue,
   campaignQueue,
   webhookQueue,

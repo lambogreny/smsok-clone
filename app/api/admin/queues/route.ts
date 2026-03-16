@@ -5,6 +5,7 @@ import { ExpressAdapter } from "@bull-board/express";
 import {
   otpQueue,
   singleQueue,
+  scheduledQueue,
   batchQueue,
   campaignQueue,
   webhookQueue,
@@ -20,6 +21,7 @@ createBullBoard({
   queues: [
     new BullMQAdapter(otpQueue),
     new BullMQAdapter(singleQueue),
+    new BullMQAdapter(scheduledQueue),
     new BullMQAdapter(batchQueue),
     new BullMQAdapter(campaignQueue),
     new BullMQAdapter(webhookQueue),

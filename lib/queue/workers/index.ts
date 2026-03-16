@@ -5,6 +5,7 @@
 
 export { createOtpWorker } from "./otp-worker"
 export { createSingleWorker } from "./single-worker"
+export { createScheduledSmsWorker } from "./scheduled-sms-worker"
 export { createBatchWorker } from "./batch-worker"
 export { createCampaignWorker } from "./campaign-worker"
 export { createWebhookWorker } from "./webhook-worker"

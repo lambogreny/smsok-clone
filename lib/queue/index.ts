@@ -10,6 +10,7 @@ export { producerConnectionOptions, workerConnectionOptions } from "./connection
 export {
   otpQueue,
   singleQueue,
+  scheduledQueue,
   batchQueue,
   campaignQueue,
   webhookQueue,
@@ -36,6 +37,7 @@ export {
 export {
   createOtpWorker,
   createSingleWorker,
+  createScheduledSmsWorker,
   createBatchWorker,
   createCampaignWorker,
   createWebhookWorker,

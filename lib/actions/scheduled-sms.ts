@@ -1,4 +1,5 @@
 
+import { randomUUID } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { sendSingleSms } from "@/lib/sms-gateway";
@@ -15,6 +16,61 @@ import { hasMarketingConsent } from "./consent";
 const MAX_SCHEDULE_DAYS_AHEAD = 30;
 
 type QuotaDeduction = { purchaseId: string; amount: number };
+
+function getScheduledSmsJobId(scheduledSmsId: string) {
+  return `scheduled-sms-${scheduledSmsId}`;
+}
+
+async function getScheduledSmsQueue() {
+  try {
+    const { scheduledQueue } = await import("@/lib/queue/queues");
+    return scheduledQueue;
+  } catch {
+    return null;
+  }
+}
+
+async function enqueueScheduledSmsJob(sms: {
+  id: string;
+  userId: string;
+  recipient: string;
+  content: string;
+  senderName: string;
+  scheduledAt: Date;
+}) {
+  const queue = await getScheduledSmsQueue();
+  if (!queue) return;
+
+  await queue.add(
+    "scheduled-sms",
+    {
+      id: randomUUID(),
+      correlationId: randomUUID(),
+      userId: sms.userId,
+      type: "scheduled",
+      recipients: [sms.recipient],
+      message: sms.content,
+      sender: sms.senderName,
+      messageType: "thai",
+      scheduledAt: sms.scheduledAt.toISOString(),
+      scheduledSmsId: sms.id,
+    },
+    {
+      jobId: getScheduledSmsJobId(sms.id),
+      delay: Math.max(0, sms.scheduledAt.getTime() - Date.now()),
+    },
+  );
+}
+
+async function removeScheduledSmsJob(scheduledSmsId: string) {
+  const queue = await getScheduledSmsQueue();
+  if (!queue) return;
+
+  const job = await queue.getJob(getScheduledSmsJobId(scheduledSmsId));
+  if (job) {
+    await job.remove();
+  }
+}
 
 export async function createScheduledSms(
   userId: string,
@@ -88,6 +144,8 @@ export async function createScheduledSms(
     return record;
   });
 
+  await enqueueScheduledSmsJob(scheduled).catch(() => {});
+
   return {
     id: scheduled.id,
     recipient: scheduled.recipient,
@@ -135,6 +193,8 @@ export async function cancelScheduledSms(userId: string, id: string) {
 
     await refundStoredDeductions(tx, sms.deductions, sms.creditCost, sms.userId);
   });
+
+  await removeScheduledSmsJob(id).catch(() => {});
 
   return { success: true, creditsRefunded: sms.creditCost };
 }
@@ -204,6 +264,94 @@ function parseDeductions(json: Prisma.JsonValue | null): QuotaDeduction[] {
       typeof (d as Record<string, unknown>).purchaseId === "string" &&
       typeof (d as Record<string, unknown>).amount === "number",
   );
+}
+
+export async function processScheduledSmsJob(scheduledSmsId: string) {
+  const sms = await prisma.scheduledSms.findUnique({
+    where: { id: scheduledSmsId },
+  });
+
+  if (!sms) {
+    throw new Error("ไม่พบข้อความ");
+  }
+
+  if (sms.status !== "pending") {
+    const status = sms.status === "sent" ? "sent" : sms.status === "failed" ? "failed" : "pending";
+    return { smsId: sms.id, status: status as "pending" | "sent" | "failed", creditCost: sms.creditCost };
+  }
+
+  if (sms.scheduledAt > new Date()) {
+    await enqueueScheduledSmsJob(sms).catch(() => {});
+    return { smsId: sms.id, status: "pending" as const, creditCost: sms.creditCost };
+  }
+
+  const sendingHours = await checkSendingHours(sms.organizationId ?? undefined);
+  if (!sendingHours.allowed) {
+    const nextAllowedAt = sendingHours.nextAllowedAt ? new Date(sendingHours.nextAllowedAt) : new Date(Date.now() + 60 * 60 * 1000);
+    await prisma.scheduledSms.update({
+      where: { id: sms.id },
+      data: { scheduledAt: nextAllowedAt, status: "pending" },
+    });
+    await enqueueScheduledSmsJob({ ...sms, scheduledAt: nextAllowedAt }).catch(() => {});
+    return { smsId: sms.id, status: "pending" as const, creditCost: sms.creditCost };
+  }
+
+  const consented = await hasMarketingConsent(sms.userId);
+  if (!consented) {
+    await prisma.$transaction(async (tx) => {
+      await tx.scheduledSms.update({
+        where: { id: sms.id },
+        data: { status: "failed", errorCode: "PDPA_NO_MARKETING_CONSENT" },
+      });
+
+      await refundStoredDeductions(tx, sms.deductions, sms.creditCost, sms.userId);
+    });
+
+    return { smsId: sms.id, status: "failed" as const, creditCost: 0 };
+  }
+
+  try {
+    const result = await sendSingleSms(sms.recipient, sms.content, sms.senderName);
+
+    if (result.success) {
+      await prisma.scheduledSms.update({
+        where: { id: sms.id },
+        data: {
+          status: "sent",
+          messageId: result.jobId || null,
+        },
+      });
+      return { smsId: sms.id, status: "sent" as const, creditCost: sms.creditCost };
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.scheduledSms.update({
+        where: { id: sms.id },
+        data: {
+          status: "failed",
+          errorCode: result.error?.slice(0, 100) || "unknown",
+        },
+      });
+
+      await refundStoredDeductionsIfEligible(tx, sms.deductions, sms.creditCost, sms.userId);
+    });
+
+    return { smsId: sms.id, status: "failed" as const, creditCost: 0 };
+  } catch (error) {
+    await prisma.$transaction(async (tx) => {
+      await tx.scheduledSms.update({
+        where: { id: sms.id },
+        data: {
+          status: "failed",
+          errorCode: error instanceof Error ? error.message.slice(0, 100) : "unknown",
+        },
+      });
+
+      await refundStoredDeductionsIfEligible(tx, sms.deductions, sms.creditCost, sms.userId);
+    });
+
+    return { smsId: sms.id, status: "failed" as const, creditCost: 0 };
+  }
 }
 
 /**

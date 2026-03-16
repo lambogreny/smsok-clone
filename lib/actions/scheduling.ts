@@ -16,8 +16,18 @@ export const scheduleCampaignInputSchema = z
     timezone: z.string().default("Asia/Bangkok"),
     recurring: z
       .object({
-        type: z.enum(["weekly", "monthly"]),
+        type: z.enum(["daily", "weekly", "monthly", "custom"]),
+        cron: z.string().trim().min(1).optional(),
         endAfter: z.number().int().positive().optional(),
+      })
+      .superRefine((value, ctx) => {
+        if (value.type === "custom" && !value.cron) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["cron"],
+            message: "custom recurrence ต้องระบุ cron pattern",
+          });
+        }
       })
       .optional(),
   })
@@ -42,9 +52,15 @@ function parseFutureDate(isoString: string): Date {
   return date;
 }
 
-function recurringToCron(type: "weekly" | "monthly", date: Date): string {
+function recurringToCron(type: "daily" | "weekly" | "monthly" | "custom", date: Date, cron?: string): string {
   const minute = date.getUTCMinutes();
   const hour = date.getUTCHours();
+  if (type === "custom" && cron) {
+    return cron;
+  }
+  if (type === "daily") {
+    return `${minute} ${hour} * * *`;
+  }
   if (type === "weekly") {
     const dayOfWeek = date.getUTCDay();
     return `${minute} ${hour} * * ${dayOfWeek}`;
@@ -129,7 +145,7 @@ export async function scheduleCampaign(userId: string, data: unknown) {
 
     if (input.recurring) {
       // Recurring: use BullMQ repeat with cron pattern
-      const cron = recurringToCron(input.recurring.type, scheduledAt);
+      const cron = recurringToCron(input.recurring.type, scheduledAt, input.recurring.cron);
       await queue.add("scheduled-campaign", jobData, {
         jobId,
         delay,

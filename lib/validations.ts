@@ -4,6 +4,7 @@ import {
   normalizeApiKeyPermission,
   normalizeApiKeyPermissions,
 } from "./api-key-permissions";
+import { ALL_EVENT_IDS, type WebhookEventId } from "./webhook-events";
 import { SENDER_NAME_REGEX } from "./sender-name-validation";
 
 // Re-export password policy for frontend
@@ -306,19 +307,10 @@ export const verifyOtpSchema = z.object({
 // Webhook Validations
 // ==========================================
 
-const webhookEventSchema = z.enum([
-  "sms.sent",
-  "sms.delivered",
-  "sms.failed",
-  "sms.clicked",
-  "otp.verified",
-  "credit.low",
-  "campaign.completed",
-  "campaign.started",
-  "campaign.failed",
-  "contact.opted_out",
-  "credits.depleted",
-])
+const webhookEventSchema = z.custom<WebhookEventId>(
+  (value) => typeof value === "string" && ALL_EVENT_IDS.includes(value as WebhookEventId),
+  "Event ไม่ถูกต้อง",
+)
 
 export const createWebhookSchema = z.object({
   url: z
@@ -479,6 +471,38 @@ export const scheduledSmsCancelSchema = z.object({
   action: z.literal("cancel"),
   id: z.string().cuid(),
 });
+
+const recurringConfigSchema = z.object({
+  type: z.enum(["daily", "weekly", "monthly", "custom"]),
+  cron: z.string().trim().min(1, "กรุณาระบุ cron pattern").optional(),
+  endAfter: z.coerce.number().int().positive().optional(),
+}).superRefine((value, ctx) => {
+  if (value.type === "custom" && !value.cron) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["cron"],
+      message: "custom recurrence ต้องระบุ cron pattern",
+    });
+  }
+});
+
+export const recurringSmsCreateSchema = z.object({
+  name: z.string().trim().min(1).max(200).optional(),
+  sender: senderNameSchema,
+  to: phoneSchema.optional(),
+  recipients: z.array(phoneSchema).min(1).optional(),
+  groupId: z.string().cuid().optional(),
+  message: messageSchema(1, 1000, "กรุณากรอกข้อความ", "ข้อความต้องไม่เกิน 1,000 ตัวอักษร"),
+  scheduledAt: z.string().trim().min(1, "กรุณาระบุเวลาที่ต้องการส่ง"),
+  timezone: z.string().trim().min(1).default("Asia/Bangkok"),
+  recurring: recurringConfigSchema,
+}).refine(
+  (value) => Boolean(value.to || value.groupId || value.recipients?.length),
+  {
+    message: "ต้องระบุ to, recipients หรือ groupId อย่างน้อยหนึ่งอย่าง",
+    path: ["to"],
+  },
+);
 
 // ==========================================
 // API Key Validations
