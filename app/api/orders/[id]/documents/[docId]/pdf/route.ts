@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { prisma as db } from "@/lib/db";
 import { renderOrderAccountingDocumentPdf } from "@/lib/orders/pdf";
 import { orderPdfSelect } from "@/lib/orders/api";
+import { ensureOrderDocumentVerificationCode } from "@/lib/orders/verification-code";
 import { readStoredFile } from "@/lib/storage/service";
 
 type RouteContext = {
@@ -56,9 +57,15 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
       });
     }
 
+    const verificationCode = await ensureOrderDocumentVerificationCode(
+      db,
+      document.id,
+      document.verificationCode,
+    );
+
     const pdfBuffer = await renderOrderAccountingDocumentPdf(document.order, {
       documentNumber: document.documentNumber,
-      verificationCode: document.verificationCode ?? "",
+      verificationCode,
       type: PDF_TYPE_BY_DOCUMENT[document.type],
       issuedAt: document.issuedAt,
     });

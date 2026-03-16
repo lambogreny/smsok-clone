@@ -11,6 +11,7 @@ const orderVerificationSource = readFileSync(resolve(ROOT, "lib/orders/verificat
 const orderPdfSource = readFileSync(resolve(ROOT, "lib/orders/pdf.ts"), "utf-8");
 const orderApiSource = readFileSync(resolve(ROOT, "lib/orders/api.ts"), "utf-8");
 const orderDownloadSource = readFileSync(resolve(ROOT, "lib/orders/document-download.ts"), "utf-8");
+const orderApiPdfRouteSource = readFileSync(resolve(ROOT, "app/api/orders/[id]/documents/[docId]/pdf/route.ts"), "utf-8");
 
 describe("Task #5695: reviewer fixes for scheduled and recurring SMS", () => {
   it("starts the scheduled sms worker with the rest of the BullMQ worker process", () => {
@@ -44,5 +45,6 @@ describe("Task #5695: atomic order verification code generation", () => {
     expect(orderPdfSource).toContain("ensureOrderDocumentVerificationCode");
     expect(orderApiSource).toContain("ensureOrderDocumentVerificationCode");
     expect(orderDownloadSource).toContain("ensureOrderDocumentVerificationCode");
+    expect(orderApiPdfRouteSource).toContain("ensureOrderDocumentVerificationCode");
   });
 });
