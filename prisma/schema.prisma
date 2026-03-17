@@ -314,6 +314,7 @@ model Contact {
 
   @@unique([userId, phone])
   @@index([userId])
+  @@index([userId, createdAt])
   @@index([organizationId])
   @@map("contacts")
 }
@@ -394,6 +395,7 @@ model ContactGroup {
   user           User                 @relation(fields: [userId], references: [id])
 
   @@unique([userId, name])
+  @@index([userId, createdAt])
   @@index([organizationId])
   @@map("contact_groups")
 }
@@ -433,6 +435,7 @@ model SenderName {
   user           User                 @relation(fields: [userId], references: [id])
 
   @@unique([userId, name])
+  @@index([userId, status])
   @@index([status])
   @@index([organizationId])
   @@map("sender_names")
@@ -500,6 +503,7 @@ model MessageTemplate {
   user           User          @relation(fields: [userId], references: [id])
 
   @@index([userId, name])
+  @@index([userId, deletedAt, updatedAt])
   @@index([organizationId])
   @@index([isPublic])
   @@map("message_templates")
@@ -1198,6 +1202,8 @@ model ShortLink {
   user           User          @relation(fields: [userId], references: [id])
 
   @@index([userId])
+  @@index([userId, createdAt])
+  @@index([userId, campaignId, createdAt])
   @@index([campaignId])
   @@index([shortCode])
   @@map("short_links")

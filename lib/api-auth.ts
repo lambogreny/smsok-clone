@@ -6,6 +6,7 @@ import { InsufficientCreditsError } from "./quota-errors";
 import { trustActionUserId } from "./action-user";
 import { hasValidCsrfOrigin } from "./csrf";
 import { getClientIp } from "./session-utils";
+import { logger } from "./logger";
 import {
   hasApiKeyPermission,
   normalizeApiKeyPermissions,
@@ -163,6 +164,17 @@ export function apiResponse(data: unknown, status = 200) {
   return Response.json(data, { status });
 }
 
+function buildErrorLogMeta(error: Error): Record<string, unknown> {
+  return {
+    errorName: error.name,
+    message: error.message,
+    ...(error.stack ? { stack: error.stack } : {}),
+    ...("code" in error && typeof (error as { code?: unknown }).code === "string"
+      ? { code: (error as { code: string }).code }
+      : {}),
+  };
+}
+
 export function apiError(error: unknown) {
   if (error instanceof InsufficientCreditsError) {
     const body = {
@@ -201,11 +213,7 @@ export function apiError(error: unknown) {
   }
 
   if (error instanceof Error) {
-    if (process.env.NODE_ENV !== "production" || process.env.DEBUG_API_ERRORS === "1") {
-      console.error("[apiError]", error.name, error.message, error.stack);
-    } else {
-      console.error("[apiError]", error.name, ":", error.message);
-    }
+    logger.error("Unhandled API error", buildErrorLogMeta(error));
 
     if (error.name === "ZodError") {
       const body = { error: "ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบและลองใหม่", code: ERROR_CODES.VALIDATION };
@@ -254,7 +262,10 @@ export function apiError(error: unknown) {
     finishApiLog(status, body, code, body.error, error.stack);
     return Response.json(body, { status });
   }
-  console.error("[apiError] unknown error type:", typeof error, error);
+  logger.error("Unhandled API error received non-Error value", {
+    valueType: typeof error,
+    value: error,
+  });
   const body = { error: "เกิดข้อผิดพลาดภายในระบบ กรุณาลองใหม่", code: ERROR_CODES.INTERNAL };
   finishApiLog(500, body, ERROR_CODES.INTERNAL, body.error);
   return Response.json(body, { status: 500 });

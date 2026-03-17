@@ -7,9 +7,32 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/api-auth", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/api-auth")>("@/lib/api-auth");
+  class TestApiError extends Error {
+    status: number;
+
+    constructor(status: number, message: string) {
+      super(message);
+      this.status = status;
+    }
+  }
+
   return {
-    ...actual,
+    ApiError: TestApiError,
+    apiResponse: (data: unknown, status = 200) => Response.json(data, { status }),
+    apiError: (error: unknown) => {
+      const status =
+        typeof error === "object" &&
+        error !== null &&
+        "status" in error &&
+        typeof error.status === "number"
+          ? error.status
+          : 500;
+
+      return Response.json(
+        { error: error instanceof Error ? error.message : "Internal Server Error" },
+        { status },
+      );
+    },
     authenticateRequest: mocks.authenticateRequest,
   };
 });
@@ -74,6 +97,16 @@ describe("Task #2701: import guards", () => {
           name: `Contact ${index + 1}`,
           phone: "0812345678",
         })),
+      }),
+    );
+
+    expect(response.status).toBe(400);
+  });
+
+  it("rejects empty contacts JSON arrays with a 400 instead of leaking a 500", async () => {
+    const response = await importContacts(
+      buildJsonRequest({
+        contacts: [],
       }),
     );
 

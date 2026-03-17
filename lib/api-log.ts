@@ -1,6 +1,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { NextRequest } from "next/server";
 import { prisma } from "./db";
+import { logger } from "./logger";
 
 // ==========================================
 // Error code mapping
@@ -198,7 +199,9 @@ export function finishApiLog(
       },
     })
     .catch((err) => {
-      console.error("[api-log] save failed:", err);
+      logger.error("API log persistence failed", {
+        error: err instanceof Error ? err.message : String(err),
+      });
     });
 }
 

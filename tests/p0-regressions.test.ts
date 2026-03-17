@@ -44,6 +44,10 @@ const orderInvoiceRoute = readFileSync(
   resolve(ROOT, "app/api/v1/orders/[id]/invoice/route.ts"),
   "utf-8",
 );
+const orderPdfLib = readFileSync(
+  resolve(ROOT, "lib/orders/pdf.ts"),
+  "utf-8",
+);
 const orderQuotationRoute = readFileSync(
   resolve(ROOT, "app/api/v1/orders/[id]/quotation/route.ts"),
   "utf-8",
@@ -105,6 +109,11 @@ describe("P0: order billing document routes", () => {
   it("invoice route renders PDF from the order snapshot", () => {
     expect(orderInvoiceRoute).toContain("renderOrderInvoicePdf");
     expect(orderInvoiceRoute).toContain("\"Content-Type\": \"application/pdf\"");
+  });
+
+  it("invoice PDF generation backfills a missing verification code", () => {
+    expect(orderPdfLib).toContain("ensureOrderDocumentVerificationCode");
+    expect(orderPdfLib).toContain("doc.verificationCode");
   });
 
   it("quotation route renders PDF from the order snapshot", () => {

@@ -30,6 +30,20 @@ describe("Task #5681 template backend helpers", () => {
     expect(preview.worstCaseRendered).toContain("Very Important Customer");
   });
 
+  it("keeps duplicate placeholders with per-occurrence defaults in rendered preview", () => {
+    const preview = buildTemplatePreview("{{name|ลูกค้า A}} / {{name|ลูกค้า B}}");
+
+    expect(preview.rendered).toBe("ลูกค้า A / ลูกค้า B");
+    expect(preview.worstCaseRendered).toBe("ลูกค้า A / ลูกค้า B");
+  });
+
+  it("does not mark default-backed variables as missing", () => {
+    const preview = buildTemplatePreview("OTP {{code|000000}} ถึง {{name|ลูกค้า}}");
+
+    expect(preview.missing).toEqual([]);
+    expect(preview.rendered).toBe("OTP 000000 ถึง ลูกค้า");
+  });
+
   it("reports syntax warnings for unmatched braces and empty variable names", () => {
     expect(findTemplateSyntaxWarnings("รหัส {{ }} และ {{name")).toEqual([
       "Unmatched template braces",
