@@ -88,6 +88,7 @@ model OrgInvite {
 model Role {
   id             String           @id @default(cuid())
   organizationId String           @map("organization_id")
+  key            String?
   name           String
   description    String?
   isSystemRole   Boolean          @default(false) @map("is_system_role")
@@ -101,25 +102,30 @@ model Role {
   childRoles     Role[]           @relation("RoleHierarchy")
   userRoles      UserRole[]
 
+  @@unique([organizationId, key])
   @@unique([organizationId, name])
-  @@index([organizationId])
+  @@index([organizationId, name])
   @@map("roles")
 }
 
 model Permission {
   id          String           @id @default(cuid())
+  key         String?          @unique
   action      String
   resource    String
   description String?
+  createdAt   DateTime         @default(now()) @map("created_at")
   roles       RolePermission[]
 
   @@unique([action, resource])
+  @@index([action, resource])
   @@map("permissions")
 }
 
 model RolePermission {
   roleId       String     @map("role_id")
   permissionId String     @map("permission_id")
+  createdAt    DateTime   @default(now()) @map("created_at")
   permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
   role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
@@ -532,7 +538,7 @@ model Campaign {
   id               String            @id @default(cuid())
   userId           String            @map("user_id")
   organizationId   String?           @map("organization_id")
-  name             String            @db.VarChar(100)
+  name             String
   contactGroupId   String?           @map("contact_group_id")
   templateId       String?           @map("template_id")
   senderName       String?           @map("sender_name")
@@ -666,7 +672,7 @@ model PackagePurchase {
   purchasedAt    DateTime      @default(now()) @map("purchased_at")
   expiresAt      DateTime      @map("expires_at")
   isActive       Boolean       @default(true) @map("is_active")
-  transactionId  String?       @unique @map("transaction_id")
+  transactionId  String?       @map("transaction_id")
   promotionId    String?       @map("promotion_id")
   couponId       String?       @map("coupon_id")
   autoRenew      Boolean       @default(false) @map("auto_renew")
@@ -1346,21 +1352,33 @@ model AuditLog {
   id             String        @id @default(cuid())
   organizationId String?       @map("organization_id")
   userId         String?       @map("user_id")
+  adminUserId    String?       @map("admin_user_id")
+  actorId        String?       @map("actor_id")
+  actorType      AuditActorType @default(ADMIN) @map("actor_type")
   action         String
   resource       String
+  resourceType   String?       @map("resource_type")
   resourceId     String?       @map("resource_id")
   metadata       Json?
+  oldValue       Json?         @map("old_value")
+  newValue       Json?         @map("new_value")
   ipAddress      String?       @map("ip_address")
   userAgent      String?       @map("user_agent")
+  requestId      String?       @map("request_id")
+  partitionMonth String?       @db.VarChar(7) @map("partition_month")
   result         String        @default("success")
   createdAt      DateTime      @default(now()) @map("created_at")
   organization   Organization? @relation(fields: [organizationId], references: [id])
   user           User?         @relation(fields: [userId], references: [id])
+  adminUser      AdminUser?    @relation("AdminAuditLogs", fields: [adminUserId], references: [id])
 
   @@index([organizationId, createdAt])
   @@index([userId, createdAt])
+  @@index([adminUserId, createdAt])
+  @@index([actorId, createdAt])
   @@index([action])
   @@index([resource, resourceId])
+  @@index([partitionMonth, createdAt])
   @@map("audit_logs")
 }
 
@@ -1385,6 +1403,7 @@ model AdminUser {
   refunds                                            Refund[]
   assignedTickets                                    SupportTicket[]        @relation("AssignedTickets")
   ticketReplies                                      TicketReply[]
+  auditLogs                                          AuditLog[]             @relation("AdminAuditLogs")
 
   @@map("admin_users")
 }
@@ -1403,7 +1422,7 @@ model SupportTicket {
   firstReplyAt   DateTime?      @map("first_reply_at")
   createdAt      DateTime       @default(now()) @map("created_at")
   updatedAt      DateTime       @updatedAt @map("updated_at")
-  category       TicketCategory @default(GENERAL)
+  category       String         @default("general")
   assignee       AdminUser?     @relation("AssignedTickets", fields: [assigneeId], references: [id])
   replies        TicketReply[]
 
@@ -2129,6 +2148,13 @@ enum RecipientSource {
   GROUP
   CSV
   MANUAL
+}
+
+enum AuditActorType {
+  ADMIN
+  USER
+  SYSTEM
+  API_KEY
 }
 
 enum CampaignMessageStatus {

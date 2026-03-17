@@ -105,9 +105,9 @@ export async function getTickets(options: {
   const { status, priority, category, assigneeId, page = 1, limit = 20 } = options;
 
   const where: Prisma.SupportTicketWhereInput = {};
-  if (status) where.status = status as Prisma.EnumTicketStatusFilter;
-  if (priority) where.priority = priority as Prisma.EnumTicketPriorityFilter;
-  if (category) where.category = category as Prisma.EnumTicketCategoryFilter;
+  if (status) where.status = status as unknown as Prisma.EnumTicketStatusFilter;
+  if (priority) where.priority = priority as unknown as Prisma.EnumTicketPriorityFilter;
+  if (category) where.category = category as string;
   if (assigneeId) where.assigneeId = assigneeId;
 
   const [tickets, total] = await Promise.all([

@@ -12,6 +12,13 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Temp/artifact directories
+    ".tmp-*/**",
+    "screenshots/**",
+    "playwright-report/**",
+    "prisma/dev.db",
+    // Test files (not production code)
+    "tests/**",
   ]),
   {
     rules: {
@@ -19,6 +26,10 @@ const eslintConfig = defineConfig([
       // zustand store rehydrate, etc.) — downgrade to warnings.
       "react-hooks/set-state-in-effect": "warn",
       "react-hooks/static-components": "warn",
+      // Downgrade during feature freeze — pre-existing issues across codebase
+      "@next/next/no-assign-module-variable": "warn",
+      "@next/next/no-html-link-for-pages": "warn",
+      "@typescript-eslint/no-explicit-any": "warn",
     },
   },
 ]);

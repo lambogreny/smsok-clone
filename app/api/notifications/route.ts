@@ -2,19 +2,46 @@ import { NextRequest } from "next/server";
 import { apiResponse, apiError } from "@/lib/api-auth";
 import { authenticateRequestUser } from "@/lib/request-auth";
 import { prisma } from "@/lib/db";
+import { logger } from "@/lib/logger";
+import {
+  getPaymentTableColumns,
+  prunePaymentSelectForAvailableColumns,
+} from "@/lib/payments/db-compat";
 
 export async function GET(req: NextRequest) {
   try {
     const user = await authenticateRequestUser(req);
+    const fallbackPaymentSelect = {
+      id: true,
+      amount: true,
+      createdAt: true,
+      packageTier: {
+        select: {
+          name: true,
+        },
+      },
+    };
+    let paymentSelect: Record<string, unknown> = fallbackPaymentSelect;
 
-    const recentMessages = await prisma.message.findMany({
-      where: { userId: user.id },
-      orderBy: { createdAt: "desc" },
-      take: 5,
-      select: { id: true, recipient: true, status: true, createdAt: true, content: true },
-    });
+    try {
+      const paymentColumns = await getPaymentTableColumns();
+      paymentSelect = prunePaymentSelectForAvailableColumns({
+        ...fallbackPaymentSelect,
+        totalAmount: true,
+      }, paymentColumns as Set<string>);
+    } catch (error) {
+      logger.warn("Notifications route falling back to basic payment select", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
 
-    const [userDataResult, recentPackagePurchasesResult] = await Promise.allSettled([
+    const [recentMessagesResult, userDataResult, recentPackagePurchasesResult] = await Promise.allSettled([
+      prisma.message.findMany({
+        where: { userId: user.id },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+        select: { id: true, recipient: true, status: true, createdAt: true, content: true },
+      }),
       prisma.user.findUnique({
         where: { id: user.id },
         select: { notificationsReadAt: true },
@@ -23,19 +50,14 @@ export async function GET(req: NextRequest) {
         where: { userId: user.id, status: "COMPLETED" },
         orderBy: { createdAt: "desc" },
         take: 5,
-        select: {
-          id: true,
-          totalAmount: true,
-          createdAt: true,
-          packageTier: {
-            select: {
-              name: true,
-            },
-          },
-        },
-      }),
+        select: paymentSelect,
+      }) as Promise<Array<Record<string, any>>>,
     ]);
 
+    const recentMessages =
+      recentMessagesResult.status === "fulfilled"
+        ? recentMessagesResult.value
+        : [];
     const readAt =
       userDataResult.status === "fulfilled"
         ? userDataResult.value?.notificationsReadAt ?? null
@@ -44,6 +66,33 @@ export async function GET(req: NextRequest) {
       recentPackagePurchasesResult.status === "fulfilled"
         ? recentPackagePurchasesResult.value
         : [];
+
+    if (recentMessagesResult.status === "rejected") {
+      logger.warn("Notifications route failed to load recent messages", {
+        userId: user.id,
+        error: recentMessagesResult.reason instanceof Error
+          ? recentMessagesResult.reason.message
+          : String(recentMessagesResult.reason),
+      });
+    }
+
+    if (userDataResult.status === "rejected") {
+      logger.warn("Notifications route failed to load notification read marker", {
+        userId: user.id,
+        error: userDataResult.reason instanceof Error
+          ? userDataResult.reason.message
+          : String(userDataResult.reason),
+      });
+    }
+
+    if (recentPackagePurchasesResult.status === "rejected") {
+      logger.warn("Notifications route failed to load package purchases", {
+        userId: user.id,
+        error: recentPackagePurchasesResult.reason instanceof Error
+          ? recentPackagePurchasesResult.reason.message
+          : String(recentPackagePurchasesResult.reason),
+      });
+    }
 
     const items = [
       ...recentMessages.map((m) => ({
@@ -61,7 +110,7 @@ export async function GET(req: NextRequest) {
       ...recentPackagePurchases.map((purchase) => ({
         id: `payment_${purchase.id}`,
         type: "package_purchase",
-        message: `ซื้อแพ็กเกจ SMS${purchase.packageTier?.name ? ` ${purchase.packageTier.name}` : ""} สำเร็จ (฿${((purchase.totalAmount ?? 0) / 100).toLocaleString()})`,
+        message: `ซื้อแพ็กเกจ SMS${purchase.packageTier?.name ? ` ${purchase.packageTier.name}` : ""} สำเร็จ (฿${(((purchase.totalAmount ?? purchase.amount) ?? 0) / 100).toLocaleString()})`,
         createdAt: purchase.createdAt.toISOString(),
         read: readAt ? purchase.createdAt <= readAt : false,
       })),
