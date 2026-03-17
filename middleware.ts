@@ -4,6 +4,7 @@ import { ACCESS_COOKIE_NAME, REFRESH_COOKIE_NAME, verifySessionJwt } from "@/lib
 import { getAllowedOrigins, hasValidCsrfOrigin } from "@/lib/csrf";
 const PUBLIC_API_ANON_PATHS = new Set([
   "/api/v1/docs",
+  "/api/v1/docs/openapi.json",
   "/api/v1/packages",
   "/api/v1/payments/packages",
   "/api/v1/payments/bank-accounts",
@@ -34,7 +35,7 @@ function applyApiHeaders(response: NextResponse, origin: string | null) {
     response.headers.set("Access-Control-Allow-Origin", origin);
   }
 
-  response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  response.headers.set("Access-Control-Allow-Methods", "GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS");
   response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-API-Key");
   response.headers.set("Access-Control-Max-Age", "86400");
   response.headers.set("Vary", "Origin, Authorization, X-API-Key");

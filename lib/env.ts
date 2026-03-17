@@ -57,6 +57,7 @@ const envSchema = z.object({
   R2_ACCESS_KEY_ID: z.string().min(1).optional(),
   R2_SECRET_ACCESS_KEY: z.string().min(1).optional(),
   NEXT_PUBLIC_APP_URL: z.string().url().optional(),
+  BACKOFFICE_APP_URL: z.string().url().optional(),
   DOCUMENT_VERIFY_BASE_URL: z.string().url().optional(),
   NEXT_PUBLIC_DOCUMENT_VERIFY_BASE_URL: z.string().url().optional(),
   COMPANY_NAME: z.string().min(1).optional(),
@@ -93,6 +94,44 @@ const envSchema = z.object({
       path: ["ADMIN_JWT_SECRET"],
       message: "ADMIN_JWT_SECRET must be different from JWT_SECRET in production",
     });
+  }
+
+  if (!value.NEXT_PUBLIC_APP_URL?.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["NEXT_PUBLIC_APP_URL"],
+      message: "NEXT_PUBLIC_APP_URL is required in production",
+    });
+  }
+
+  if (!value.BACKOFFICE_APP_URL?.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["BACKOFFICE_APP_URL"],
+      message: "BACKOFFICE_APP_URL is required in production",
+    });
+  }
+
+  if (/^postgres(ql)?:\/\//i.test(value.DATABASE_URL)) {
+    try {
+      const databaseUrl = new URL(value.DATABASE_URL);
+      const rawConnectionLimit = databaseUrl.searchParams.get("connection_limit");
+      const connectionLimit = rawConnectionLimit ? Number(rawConnectionLimit) : Number.NaN;
+
+      if (!Number.isInteger(connectionLimit) || connectionLimit < 1 || connectionLimit > 20) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["DATABASE_URL"],
+          message: "DATABASE_URL must include connection_limit=1..20 in production",
+        });
+      }
+    } catch {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["DATABASE_URL"],
+        message: "DATABASE_URL must be a valid PostgreSQL URL",
+      });
+    }
   }
 
   for (const key of [

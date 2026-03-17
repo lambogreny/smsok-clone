@@ -270,3 +270,45 @@ export function apiError(error: unknown) {
   finishApiLog(500, body, ERROR_CODES.INTERNAL, body.error);
   return Response.json(body, { status: 500 });
 }
+
+export function apiSensitiveError(
+  error: unknown,
+  fallbackMessage = "เกิดข้อผิดพลาดภายในระบบ กรุณาลองใหม่",
+  status = 500,
+) {
+  if (
+    error instanceof InsufficientCreditsError ||
+    error instanceof ApiError ||
+    (error instanceof SyntaxError && /json|unexpected token|unexpected end/i.test(error.message))
+  ) {
+    return apiError(error);
+  }
+
+  if (error instanceof Error) {
+    logger.error("Sensitive API error", buildErrorLogMeta(error));
+  } else {
+    logger.error("Sensitive API error received non-Error value", {
+      valueType: typeof error,
+      value: error,
+    });
+  }
+
+  const body = {
+    error: process.env.NODE_ENV === "production"
+      ? fallbackMessage
+      : error instanceof Error
+        ? error.message
+        : fallbackMessage,
+    code: ERROR_CODES.INTERNAL,
+  };
+
+  finishApiLog(
+    status,
+    body,
+    ERROR_CODES.INTERNAL,
+    fallbackMessage,
+    error instanceof Error ? error.stack : undefined,
+  );
+
+  return Response.json(body, { status });
+}
