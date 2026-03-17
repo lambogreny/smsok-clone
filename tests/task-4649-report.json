@@ -1,0 +1,128 @@
+{
+  "task": 4649,
+  "total": 24,
+  "passed": 14,
+  "failed": 10,
+  "results": [
+    {
+      "name": "Login QA user",
+      "status": "PASS",
+      "detail": "Got session cookies"
+    },
+    {
+      "name": "Dashboard data access (transactions)",
+      "status": "PASS",
+      "detail": "HTTP 200"
+    },
+    {
+      "name": "Dashboard data access (messages)",
+      "status": "PASS",
+      "detail": "HTTP 200, keys: ['messages', 'pagination', 'stats']"
+    },
+    {
+      "name": "Create contact",
+      "status": "PASS",
+      "detail": "HTTP 201"
+    },
+    {
+      "name": "Contact ID returned",
+      "status": "PASS",
+      "detail": "ID: cmmrkvnx1001784dehchvivfk"
+    },
+    {
+      "name": "Read single contact",
+      "status": "PASS",
+      "detail": "HTTP 200"
+    },
+    {
+      "name": "Update contact",
+      "status": "PASS",
+      "detail": "HTTP 200"
+    },
+    {
+      "name": "List contacts",
+      "status": "PASS",
+      "detail": "HTTP 200, has data: True"
+    },
+    {
+      "name": "Delete contact",
+      "status": "PASS",
+      "detail": "HTTP 200"
+    },
+    {
+      "name": "Create contact empty fields → reject",
+      "status": "PASS",
+      "detail": "HTTP 400"
+    },
+    {
+      "name": "Duplicate phone → reject",
+      "status": "PASS",
+      "detail": "HTTP 409"
+    },
+    {
+      "name": "XSS in name → rejected",
+      "status": "PASS",
+      "detail": "HTTP 400"
+    },
+    {
+      "name": "Create group",
+      "status": "FAIL",
+      "detail": "HTTP 405"
+    },
+    {
+      "name": "Group ID returned",
+      "status": "FAIL",
+      "detail": "ID: None"
+    },
+    {
+      "name": "List groups",
+      "status": "PASS",
+      "detail": "HTTP 200"
+    },
+    {
+      "name": "List tags",
+      "status": "PASS",
+      "detail": "HTTP 200"
+    },
+    {
+      "name": "Create tag",
+      "status": "FAIL",
+      "detail": "HTTP 405"
+    },
+    {
+      "name": "Delete tag",
+      "status": "FAIL",
+      "detail": "No tag ID to delete"
+    },
+    {
+      "name": "Register new user",
+      "status": "FAIL",
+      "detail": "HTTP 400 — {\"error\": \"ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบและลองใหม่\", \"code\": \"1001\"}"
+    },
+    {
+      "name": "Login new user",
+      "status": "FAIL",
+      "detail": "No cookies"
+    },
+    {
+      "name": "New user → contacts access",
+      "status": "FAIL",
+      "detail": "Cannot login"
+    },
+    {
+      "name": "New user → groups access",
+      "status": "FAIL",
+      "detail": "Cannot login"
+    },
+    {
+      "name": "New user → create contact",
+      "status": "FAIL",
+      "detail": "Cannot login"
+    },
+    {
+      "name": "New user → messages access",
+      "status": "FAIL",
+      "detail": "Cannot login"
+    }
+  ]
+}

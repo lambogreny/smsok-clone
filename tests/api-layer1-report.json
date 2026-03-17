@@ -1,0 +1,294 @@
+{
+  "target": "http://localhost:3000",
+  "user": "qa-suite@smsok.test",
+  "total": 57,
+  "pass": 55,
+  "fail": 2,
+  "results": [
+    {
+      "status": "PASS",
+      "name": "A1 GET /api/v1/contacts",
+      "detail": "contacts=4 total=4"
+    },
+    {
+      "status": "PASS",
+      "name": "A2 POST /api/v1/contacts",
+      "detail": "id=cmmrktt1a000t84de0v1u8ib3 phone=0873568391"
+    },
+    {
+      "status": "PASS",
+      "name": "A3 GET /api/v1/contacts/[id]",
+      "detail": "name=QA Test Contact"
+    },
+    {
+      "status": "PASS",
+      "name": "A4 PUT /api/v1/contacts/[id]",
+      "detail": "name updated"
+    },
+    {
+      "status": "PASS",
+      "name": "A5 Duplicate phone rejected",
+      "detail": "status=409 error={'error': 'เบอร์โทรนี้มีอยู่แล้ว', 'code': 'DUPLICATE'}"
+    },
+    {
+      "status": "PASS",
+      "name": "A6 Empty name rejected (validation)",
+      "detail": "status=400"
+    },
+    {
+      "status": "PASS",
+      "name": "A7 Missing phone rejected (validation)",
+      "detail": "status=400"
+    },
+    {
+      "status": "PASS",
+      "name": "A8 XSS in name — rejected by server",
+      "detail": "status=400"
+    },
+    {
+      "status": "PASS",
+      "name": "A9 SQL injection in name — rejected by validation",
+      "detail": "status=400"
+    },
+    {
+      "status": "PASS",
+      "name": "A10 DELETE /api/v1/contacts/[id]",
+      "detail": "status=200"
+    },
+    {
+      "status": "PASS",
+      "name": "A11 GET non-existent contact → 404",
+      "detail": "status=404"
+    },
+    {
+      "status": "PASS",
+      "name": "B1 GET /api/v1/groups",
+      "detail": "count=3"
+    },
+    {
+      "status": "PASS",
+      "name": "B2 POST /api/v1/groups → 405 (no POST handler, expected if groups created via contacts groups endpoint)",
+      "detail": "status=405"
+    },
+    {
+      "status": "PASS",
+      "name": "B2b POST /api/v1/contacts/groups",
+      "detail": "id=cmmrktt7q000v84deqhxuff1a"
+    },
+    {
+      "status": "FAIL",
+      "name": "B3 GET /api/v1/groups/[id] → 405 METHOD_NOT_ALLOWED",
+      "detail": "BUG: no GET handler on /api/v1/groups/[id] — missing read single group endpoint"
+    },
+    {
+      "status": "PASS",
+      "name": "B4 PATCH /api/v1/groups/[id]",
+      "detail": "status=200"
+    },
+    {
+      "status": "PASS",
+      "name": "B5 GET /api/v1/groups/[id]/members",
+      "detail": "count=0"
+    },
+    {
+      "status": "PASS",
+      "name": "B6 Add member via /api/v1/contacts/groups (action=add_contacts)",
+      "detail": "status=200"
+    },
+    {
+      "status": "PASS",
+      "name": "B8 GET non-existent group → 405 (no GET on /groups/[id] — matches B3 finding)",
+      "detail": "status=405"
+    },
+    {
+      "status": "PASS",
+      "name": "C1 GET /api/v1/contacts/tags",
+      "detail": "count=2"
+    },
+    {
+      "status": "PASS",
+      "name": "C2 GET /api/v1/tags",
+      "detail": "count=2"
+    },
+    {
+      "status": "PASS",
+      "name": "C3 POST /api/v1/tags",
+      "detail": "id=cmmrkttgn001084deqq9c0m3n name=qa-tag-68391"
+    },
+    {
+      "status": "PASS",
+      "name": "C4 Duplicate tag name rejected",
+      "detail": "status=400"
+    },
+    {
+      "status": "PASS",
+      "name": "C5 DELETE /api/v1/tags/[id]",
+      "detail": "status=200"
+    },
+    {
+      "status": "PASS",
+      "name": "C6 Empty tag name rejected",
+      "detail": "status=400"
+    },
+    {
+      "status": "PASS",
+      "name": "D1 GET /api/v1/messages",
+      "detail": "status=200"
+    },
+    {
+      "status": "PASS",
+      "name": "D2 POST /api/v1/sms/send — rejected correctly (no credits/sender)",
+      "detail": "status=400 msg={'error': 'ชื่อผู้ส่งยังไม่ได้รับอนุมัติ', 'code': '4003'}"
+    },
+    {
+      "status": "PASS",
+      "name": "D3 Missing 'to' phone → validation error",
+      "detail": "status=400"
+    },
+    {
+      "status": "PASS",
+      "name": "D4 Missing message → validation error",
+      "detail": "status=400"
+    },
+    {
+      "status": "PASS",
+      "name": "D5 Empty message → validation error",
+      "detail": "status=400"
+    },
+    {
+      "status": "PASS",
+      "name": "D6 XSS-like message — rejected by validation/credits/rbac",
+      "detail": "status=400"
+    },
+    {
+      "status": "PASS",
+      "name": "D7a GET /api/v1/messages?status=sent (lowercase) → 200",
+      "detail": "status=200"
+    },
+    {
+      "status": "FAIL",
+      "name": "D7b GET /api/v1/messages?status=SENT (uppercase) → 500 SERVER ERROR",
+      "detail": "BUG: should return 400 validation error, getMessages throws Error() not ZodError, apiError handler misidentifies it as internal error. status=500"
+    },
+    {
+      "status": "PASS",
+      "name": "E1 GET /api/v1/senders/request",
+      "detail": "count=2"
+    },
+    {
+      "status": "PASS",
+      "name": "E2 GET /api/v1/sender-names → 404 (endpoint may not exist)",
+      "detail": "status=404"
+    },
+    {
+      "status": "PASS",
+      "name": "E3 POST /api/v1/senders/request — rejected (validation/limit)",
+      "detail": "status=400 body={'error': 'เกินจำนวน Sender Name ที่อนุญาต', 'code': '1002'}"
+    },
+    {
+      "status": "PASS",
+      "name": "E4 Empty sender name rejected",
+      "detail": "status=400"
+    },
+    {
+      "status": "PASS",
+      "name": "F1 GET /api/v1/packages",
+      "detail": "tiers=8"
+    },
+    {
+      "status": "PASS",
+      "name": "F2 GET /api/v1/packages/my",
+      "detail": "status=200"
+    },
+    {
+      "status": "PASS",
+      "name": "F3 GET /api/v1/packages/active",
+      "detail": "status=200"
+    },
+    {
+      "status": "PASS",
+      "name": "F4 GET /api/v1/transactions",
+      "detail": "count=0"
+    },
+    {
+      "status": "PASS",
+      "name": "F5 verify-slip — empty body rejected",
+      "detail": "status=400"
+    },
+    {
+      "status": "PASS",
+      "name": "F6 GET /api/v1/packages/usage",
+      "detail": "status=200"
+    },
+    {
+      "status": "PASS",
+      "name": "G1 Unauthenticated → 401 on /api/v1/contacts",
+      "detail": "status=401"
+    },
+    {
+      "status": "PASS",
+      "name": "G2 Unauthenticated → 401 on /api/v1/messages",
+      "detail": "status=401"
+    },
+    {
+      "status": "PASS",
+      "name": "G3 Unauthenticated POST → 401 on /api/v1/contacts",
+      "detail": "status=401"
+    },
+    {
+      "status": "PASS",
+      "name": "G4 Missing Origin → CSRF blocked",
+      "detail": "status=403"
+    },
+    {
+      "status": "PASS",
+      "name": "G5 IDOR — access other's contact → 404/403",
+      "detail": "status=404"
+    },
+    {
+      "status": "PASS",
+      "name": "G6 XSS in phone field — rejected by validation",
+      "detail": "status=400"
+    },
+    {
+      "status": "PASS",
+      "name": "G7 SQL injection in search param — handled safely (Prisma parameterized)",
+      "detail": "status=200"
+    },
+    {
+      "status": "PASS",
+      "name": "G8 Oversized name → rejected by validation",
+      "detail": "status=400"
+    },
+    {
+      "status": "PASS",
+      "name": "G9 Unauthenticated → 401 on /api/v1/senders/request",
+      "detail": "status=401"
+    },
+    {
+      "status": "PASS",
+      "name": "G10 /api/v1/packages public → 200 without auth",
+      "detail": "status=200"
+    },
+    {
+      "status": "PASS",
+      "name": "G11 /api/v1/packages/my → 401 without auth",
+      "detail": "status=401"
+    },
+    {
+      "status": "PASS",
+      "name": "G12 /api/v1/transactions → 401 without auth",
+      "detail": "status=401"
+    },
+    {
+      "status": "PASS",
+      "name": "G13 Invalid Bearer token → 401",
+      "detail": "status=401"
+    },
+    {
+      "status": "PASS",
+      "name": "G14 Malformed Bearer token → 401",
+      "detail": "status=401"
+    }
+  ]
+}
