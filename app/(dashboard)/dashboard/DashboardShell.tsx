@@ -278,12 +278,12 @@ export default function DashboardShell({
             <DropdownMenuTrigger className="flex items-center gap-2.5 px-2 py-2 w-full rounded-lg hover:bg-white/[0.04] transition-colors duration-200 cursor-pointer">
               <Avatar className="w-9 h-9 rounded-full">
                 <AvatarFallback className="bg-[var(--accent)] text-[var(--bg-base)] text-xs font-bold rounded-full">
-                  {user.name.charAt(0)}
+                  {user.name?.charAt(0)?.toUpperCase() || "?"}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0 text-left">
-                <div className="text-sm text-[var(--text-secondary)] font-medium truncate">{user.name}</div>
-                <div className="text-[11px] text-[var(--text-muted)] truncate">{user.email}</div>
+                <div className="text-sm text-[var(--text-secondary)] font-medium truncate">{user.name || "ผู้ใช้"}</div>
+                <div className="text-[11px] text-[var(--text-muted)] truncate">{user.email || "—"}</div>
               </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent side="top" align="start" className="w-48 bg-[var(--bg-surface)] border-[var(--border-default)]">
@@ -423,7 +423,7 @@ export default function DashboardShell({
             {user ? (
               <Avatar className="w-11 h-11 rounded-lg md:hidden">
                 <AvatarFallback className="bg-[rgba(var(--accent-rgb),0.1)] border border-[rgba(var(--accent-rgb),0.15)] text-[var(--accent)] text-xs font-semibold rounded-lg">
-                  {user.name.charAt(0)}
+                  {user.name?.charAt(0)?.toUpperCase() || "?"}
                 </AvatarFallback>
               </Avatar>
             ) : (
@@ -562,7 +562,7 @@ export default function DashboardShell({
               .filter((i) => !["/dashboard", "/dashboard/send", "/dashboard/messages"].includes(i.href))
               .map((item) => {
                 const Icon = item.icon;
-                const isActive = pathname === item.href;
+                const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
                 return (
                   <Link
                     key={item.href}
@@ -612,7 +612,7 @@ export default function DashboardShell({
           { href: "/dashboard/analytics", icon: BarChart3, label: "รายงาน" },
         ].map((item) => {
           const Icon = item.icon;
-          const isActive = pathname === item.href;
+          const isActive = item.href === "/dashboard" ? pathname === "/dashboard" : pathname === item.href || pathname.startsWith(item.href + "/");
           return (
             <Link
               key={item.href}

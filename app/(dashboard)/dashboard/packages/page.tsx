@@ -656,8 +656,10 @@ export default function PricingPage() {
     useState<PackageTier | null>(null);
   const [packageTiers, setPackageTiers] = useState<PackageTier[]>([]);
   const [tiersLoading, setTiersLoading] = useState(true);
+  const [tiersError, setTiersError] = useState(false);
 
   useEffect(() => {
+    setTiersError(false);
     fetch("/api/v1/packages")
       .then((res) => (res.ok ? res.json() : Promise.reject()))
       .then((data) => {
@@ -692,7 +694,7 @@ export default function PricingPage() {
         });
         setPackageTiers(mapped);
       })
-      .catch(() => setPackageTiers([]))
+      .catch(() => { setPackageTiers([]); setTiersError(true); })
       .finally(() => setTiersLoading(false));
   }, []);
 
@@ -739,9 +741,26 @@ export default function PricingPage() {
   if (packageTiers.length === 0) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-16 text-center">
-        <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-          ไม่พบแพ็กเกจ กรุณาลองใหม่อีกครั้ง
-        </p>
+        {tiersError ? (
+          <>
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full mb-4" style={{ background: "var(--danger-bg)" }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--error)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+            </div>
+            <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+              ไม่สามารถโหลดแพ็กเกจได้
+            </p>
+            <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+              เกิดข้อผิดพลาดจากเซิร์ฟเวอร์ กรุณาลองใหม่อีกครั้ง
+            </p>
+          </>
+        ) : (
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+            ไม่พบแพ็กเกจ
+          </p>
+        )}
         <button
           className="mt-4 text-sm font-medium"
           style={{ color: "var(--accent)" }}

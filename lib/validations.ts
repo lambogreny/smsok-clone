@@ -13,6 +13,7 @@ export { passwordSchema, getPasswordStrength, isCommonPassword, PASSWORD_RULES }
 
 const CONTROL_CHAR_REGEX = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g;
 const INVALID_NAME_CHAR_REGEX = /[<>&"']/;
+const INVALID_HTML_TAG_CHAR_REGEX = /[<>]/;
 const INVALID_WEBHOOK_URL_CHAR_REGEX = /[<>]/;
 const SANITIZED_PHONE_REGEX = /^(0[0-9]{9}|\+66[0-9]{9})$/;
 
@@ -71,6 +72,14 @@ function messageSchema(min: number, max: number, requiredMessage: string, maxMes
     .string()
     .transform(sanitizeTextInput)
     .pipe(z.string().min(min, requiredMessage).max(max, maxMessage));
+}
+
+export function sanitizedTextBlockSchema(min: number, max: number, requiredMessage: string, maxMessage: string) {
+  return z
+    .string()
+    .transform(sanitizeTextInput)
+    .pipe(z.string().min(min, requiredMessage).max(max, maxMessage))
+    .refine((value) => !INVALID_HTML_TAG_CHAR_REGEX.test(value), "ข้อความมีอักขระ HTML ที่ไม่อนุญาต");
 }
 
 function sanitizedNameSchema(min: number, max: number, requiredMessage: string, maxMessage: string) {

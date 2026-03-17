@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 import { ACCESS_COOKIE_NAME, REFRESH_COOKIE_NAME, verifySessionJwt } from "@/lib/session-jwt";
 import { getAllowedOrigins, hasValidCsrfOrigin } from "@/lib/csrf";
+
+const ADMIN_SESSION_COOKIE_NAME = "admin_session";
+
 const PUBLIC_API_ANON_PATHS = new Set([
   "/api/v1/docs",
   "/api/v1/docs/openapi.json",
@@ -46,6 +49,7 @@ function shouldVerifySession(pathname: string, hasApiKeyAuth: boolean) {
   if (pathname.startsWith("/api/auth/")) return false;
   if (pathname.startsWith("/api/health")) return false;
   if (pathname.startsWith("/api/storage/")) return false;
+  if (pathname.startsWith("/api/v1/admin/")) return false;
   if (pathname === "/dashboard/api-docs") return false;
   if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) return true;
   if (pathname.startsWith("/api/")) {
@@ -132,7 +136,8 @@ export async function middleware(req: NextRequest) {
   const hasApiKeyAuth = Boolean(authHeader || apiKey);
   const accessToken = req.cookies.get(ACCESS_COOKIE_NAME)?.value;
   const refreshToken = req.cookies.get(REFRESH_COOKIE_NAME)?.value;
-  const hasSessionCookies = Boolean(accessToken || refreshToken);
+  const adminSessionToken = req.cookies.get(ADMIN_SESSION_COOKIE_NAME)?.value;
+  const hasSessionCookies = Boolean(accessToken || refreshToken || adminSessionToken);
 
   // Forward pathname to server components (for conditional auth in layout)
   requestHeaders.set("x-pathname", pathname);
@@ -235,9 +240,8 @@ export async function middleware(req: NextRequest) {
 
   // --- Admin page protection: require admin_session cookie ---
   if (shouldVerifyAdminSession(pathname)) {
-    const adminToken = req.cookies.get("admin_session")?.value;
-    const hasValidAdminToken = adminToken
-      ? await verifyAdminSessionToken(adminToken)
+    const hasValidAdminToken = adminSessionToken
+      ? await verifyAdminSessionToken(adminSessionToken)
       : false;
 
     if (!hasValidAdminToken) {
@@ -245,7 +249,7 @@ export async function middleware(req: NextRequest) {
       const redirect = NextResponse.redirect(target);
       applySecurityHeaders(redirect, target.pathname);
       redirect.headers.set("X-Request-Id", requestId);
-      redirect.cookies.delete("admin_session");
+      redirect.cookies.delete(ADMIN_SESSION_COOKIE_NAME);
       return redirect;
     }
   }

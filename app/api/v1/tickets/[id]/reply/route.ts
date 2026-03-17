@@ -2,10 +2,11 @@ import { NextRequest } from "next/server";
 import { ApiError, apiResponse, apiError, authenticateRequest } from "@/lib/api-auth";
 import { prisma as db } from "@/lib/db";
 import { enforceSupportTicketRateLimit } from "@/lib/tickets/rate-limit";
+import { sanitizedTextBlockSchema } from "@/lib/validations";
 import { z } from "zod";
 
 const replySchema = z.object({
-  content: z.string().min(1).max(5000),
+  content: sanitizedTextBlockSchema(1, 5000, "กรุณากรอกข้อความ", "ข้อความต้องไม่เกิน 5000 ตัวอักษร"),
 });
 
 type Ctx = { params: Promise<{ id: string }> };

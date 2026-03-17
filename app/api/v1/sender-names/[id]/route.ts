@@ -2,6 +2,8 @@ import { NextRequest } from "next/server";
 import { authenticateRequest, apiResponse, apiError, ApiError } from "@/lib/api-auth";
 import { prisma as db } from "@/lib/db";
 
+export { GET } from "@/app/api/v1/senders/name/[id]/route";
+
 type Params = { params: Promise<{ id: string }> };
 
 export async function DELETE(req: NextRequest, { params }: Params) {

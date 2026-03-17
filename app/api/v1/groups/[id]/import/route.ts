@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { authenticateRequest, apiResponse, apiError, ApiError } from "@/lib/api-auth";
 import { requireApiPermission } from "@/lib/rbac";
 import { prisma } from "@/lib/db";
-import { normalizePhone } from "@/lib/validations";
+import { createContactSchema, normalizePhone } from "@/lib/validations";
 import { z } from "zod";
 import { readJsonOr400 } from "@/lib/read-json-or-400";
 
@@ -20,6 +20,8 @@ const contactsArraySchema = z.array(
     phone: z.string(),
   }),
 );
+
+const importedContactNameSchema = createContactSchema.shape.name;
 
 function isCsvTextFile(file: File) {
   return file.name.match(/\.(csv|txt)$/i) || CSV_TEXT_MIME_TYPES.has(file.type);
@@ -98,8 +100,19 @@ export async function POST(
       }
 
       seenPhones.add(phone);
+
+      let name = phone;
+      if (typeof row.name === "string" && row.name.trim() !== "") {
+        const parsedName = importedContactNameSchema.safeParse(row.name);
+        if (!parsedName.success) {
+          invalid++;
+          continue;
+        }
+        name = parsedName.data;
+      }
+
       validRows.push({
-        name: row.name?.trim() || phone,
+        name,
         phone,
       });
     }

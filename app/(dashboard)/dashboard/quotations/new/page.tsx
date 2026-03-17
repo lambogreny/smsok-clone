@@ -18,8 +18,9 @@ type LineItem = {
 
 /* ─── Helpers ─── */
 
+let idCounter = 0;
 function generateId() {
-  return Math.random().toString(36).substring(2, 10);
+  return `item-${++idCounter}`;
 }
 
 function createEmptyItem(): LineItem {

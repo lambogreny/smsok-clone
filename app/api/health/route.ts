@@ -6,6 +6,7 @@ import { allQueues } from "@/lib/queue/queues";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function GET() {
   const start = Date.now();
@@ -53,12 +54,16 @@ export async function GET() {
     heapTotal: Math.round(mem.heapTotal / 1024 / 1024),
   };
 
-  const allHealthy = Object.values(checks).every((c) => c.status === "ok");
+  const ready = checks.app.status === "ok" && checks.database?.status === "ok";
+  const dependenciesHealthy = [checks.redis, checks.queues].every((check) => check?.status === "ok");
+  const status = ready
+    ? dependenciesHealthy ? "healthy" : "degraded"
+    : "degraded";
 
   return NextResponse.json(
     {
-      status: allHealthy ? "healthy" : "degraded",
-      ready: allHealthy,
+      status,
+      ready,
       uptime: Math.round(process.uptime()),
       timestamp: new Date().toISOString(),
       latency: Date.now() - start,
@@ -67,7 +72,7 @@ export async function GET() {
       version: env.COMMIT_SHA,
     },
     {
-      status: allHealthy ? 200 : 503,
+      status: ready ? 200 : 503,
       headers: {
         "Cache-Control": "no-store, max-age=0",
       },

@@ -2,14 +2,15 @@
 import { prisma as db } from "../db";
 import { Prisma, TicketCategory } from "@prisma/client";
 import { z } from "zod";
+import { sanitizedTextBlockSchema } from "../validations";
 
 // ── Schemas ────────────────────────────────────────────
 
 const createTicketSchema = z.object({
   userId: z.string().optional(),
   organizationId: z.string().optional(),
-  subject: z.string().min(1, "กรุณากรอกหัวข้อ").max(200),
-  description: z.string().min(1, "กรุณากรอกรายละเอียด"),
+  subject: sanitizedTextBlockSchema(1, 200, "กรุณากรอกหัวข้อ", "หัวข้อต้องไม่เกิน 200 ตัวอักษร"),
+  description: sanitizedTextBlockSchema(1, 5000, "กรุณากรอกรายละเอียด", "รายละเอียดต้องไม่เกิน 5000 ตัวอักษร"),
   priority: z.enum(["URGENT", "HIGH", "MEDIUM", "LOW"]).optional(),
   category: z.string().optional(),
 });
@@ -22,7 +23,7 @@ const updateTicketSchema = z.object({
 });
 
 const replySchema = z.object({
-  content: z.string().min(1, "กรุณากรอกข้อความ"),
+  content: sanitizedTextBlockSchema(1, 5000, "กรุณากรอกข้อความ", "ข้อความต้องไม่เกิน 5000 ตัวอักษร"),
   isInternal: z.boolean().optional(),
 });
 

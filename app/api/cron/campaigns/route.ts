@@ -37,7 +37,6 @@ export async function GET(req: NextRequest) {
         const result = await executeCampaign(campaign.userId, campaign.id, undefined);
         results.push({ id: campaign.id, name: campaign.name, status: result.status });
       } catch (error) {
-        const msg = error instanceof Error ? error.message : "Unknown error";
         // Mark as failed so it doesn't retry endlessly
         await db.campaign.update({
           where: { id: campaign.id },
@@ -47,7 +46,7 @@ export async function GET(req: NextRequest) {
           id: campaign.id,
           name: campaign.name,
           status: "failed",
-          error: process.env.NODE_ENV === "production" ? "Campaign execution failed" : msg,
+          error: "Campaign execution failed",
         });
       }
     }

@@ -201,7 +201,7 @@ export async function updateWorkspaceSettings(userIdOrData: string | unknown, ma
 // Notification preferences
 // ==========================================
 
-export async function getNotificationPrefs(): Promise<Awaited<ReturnType<typeof db.notificationPrefs.findUnique>> | {
+type NotificationPrefsCompat = {
   emailCreditLow: boolean;
   emailCampaignDone: boolean;
   emailWeeklyReport: boolean;
@@ -210,17 +210,21 @@ export async function getNotificationPrefs(): Promise<Awaited<ReturnType<typeof 
   emailSecurity: boolean;
   smsCreditLow: boolean;
   smsCampaignDone: boolean;
-}>;
-export async function getNotificationPrefs(userId: string): Promise<Awaited<ReturnType<typeof db.notificationPrefs.findUnique>> | {
-  emailCreditLow: boolean;
-  emailCampaignDone: boolean;
-  emailWeeklyReport: boolean;
-  emailPackageExpiry: boolean;
-  emailInvoice: boolean;
-  emailSecurity: boolean;
-  smsCreditLow: boolean;
-  smsCampaignDone: boolean;
-}>;
+};
+
+const DEFAULT_NOTIFICATION_PREFS: NotificationPrefsCompat = {
+  emailCreditLow: true,
+  emailCampaignDone: true,
+  emailWeeklyReport: false,
+  emailPackageExpiry: true,
+  emailInvoice: true,
+  emailSecurity: true,
+  smsCreditLow: false,
+  smsCampaignDone: false,
+};
+
+export async function getNotificationPrefs(): Promise<NotificationPrefsCompat>;
+export async function getNotificationPrefs(userId: string): Promise<NotificationPrefsCompat>;
 export async function getNotificationPrefs(userId?: string) {
   userId = await resolveActionUserId(userId);
   const prefs = await db.notificationPrefs.findUnique({
@@ -229,53 +233,54 @@ export async function getNotificationPrefs(userId?: string) {
       emailCreditLow: true,
       emailCampaignDone: true,
       emailWeeklyReport: true,
-      emailPackageExpiry: true,
-      emailInvoice: true,
-      emailSecurity: true,
       smsCreditLow: true,
       smsCampaignDone: true,
     },
   });
 
-  return prefs || {
-    emailCreditLow: true,
-    emailCampaignDone: true,
-    emailWeeklyReport: false,
-    emailPackageExpiry: true,
-    emailInvoice: true,
-    emailSecurity: true,
-    smsCreditLow: false,
-    smsCampaignDone: false,
-  };
+  return prefs
+    ? {
+        ...prefs,
+        emailInvoice: DEFAULT_NOTIFICATION_PREFS.emailInvoice,
+        emailSecurity: DEFAULT_NOTIFICATION_PREFS.emailSecurity,
+        emailPackageExpiry: DEFAULT_NOTIFICATION_PREFS.emailPackageExpiry,
+      }
+    : { ...DEFAULT_NOTIFICATION_PREFS };
 }
 
-export async function updateNotificationPrefs(data: unknown): Promise<Awaited<ReturnType<typeof db.notificationPrefs.upsert>>>;
-export async function updateNotificationPrefs(userId: string, data: unknown): Promise<Awaited<ReturnType<typeof db.notificationPrefs.upsert>>>;
+export async function updateNotificationPrefs(data: unknown): Promise<NotificationPrefsCompat>;
+export async function updateNotificationPrefs(userId: string, data: unknown): Promise<NotificationPrefsCompat>;
 export async function updateNotificationPrefs(userIdOrData: string | unknown, maybeData?: unknown) {
   const userId = await resolveActionUserId(
     maybeData === undefined ? undefined : userIdOrData as string,
   );
   const input = updateNotificationPrefsSchema.parse(maybeData === undefined ? userIdOrData : maybeData);
+  const { emailInvoice, emailSecurity, emailPackageExpiry, ...persistedInput } = input;
+  const effectiveEmailInvoice = emailInvoice ?? DEFAULT_NOTIFICATION_PREFS.emailInvoice;
+  const effectiveEmailSecurity = emailSecurity ?? DEFAULT_NOTIFICATION_PREFS.emailSecurity;
+  const effectiveEmailPackageExpiry = emailPackageExpiry ?? DEFAULT_NOTIFICATION_PREFS.emailPackageExpiry;
 
   const prefs = await db.notificationPrefs.upsert({
     where: { userId },
     create: {
       userId,
-      ...input,
+      ...persistedInput,
     },
-    update: input,
+    update: persistedInput,
     select: {
       emailCreditLow: true,
       emailCampaignDone: true,
       emailWeeklyReport: true,
-      emailPackageExpiry: true,
-      emailInvoice: true,
-      emailSecurity: true,
       smsCreditLow: true,
       smsCampaignDone: true,
     },
   });
 
   revalidatePath("/dashboard/settings");
-  return prefs;
+  return {
+    ...prefs,
+    emailInvoice: effectiveEmailInvoice,
+    emailSecurity: effectiveEmailSecurity,
+    emailPackageExpiry: effectiveEmailPackageExpiry,
+  };
 }

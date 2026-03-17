@@ -81,7 +81,7 @@ check "Status page" "$BASE/status"
 # --- 2. API Health ---
 echo ""
 echo "--- API Health ---"
-check "API health" "$BASE/api/health"
+check "API readiness" "$BASE/api/health/ready"
 check_json "API health JSON" "$BASE/api/health" "status"
 
 # --- 3. Auth Endpoints ---

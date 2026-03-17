@@ -4,6 +4,7 @@ import { ApiError, apiResponse, apiError, authenticateRequest } from "@/lib/api-
 import { prisma as db } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { enforceSupportTicketRateLimit } from "@/lib/tickets/rate-limit";
+import { sanitizedTextBlockSchema } from "@/lib/validations";
 import { z } from "zod";
 
 const TICKET_STATUSES = ["OPEN", "IN_PROGRESS", "AWAITING_RESPONSE", "RESOLVED", "CLOSED"] as const;
@@ -43,8 +44,8 @@ const listSchema = z.object({
 });
 
 const createSchema = z.object({
-  subject: z.string().min(1).max(200),
-  description: z.string().min(1).max(5000),
+  subject: sanitizedTextBlockSchema(1, 200, "กรุณากรอกหัวข้อ", "หัวข้อต้องไม่เกิน 200 ตัวอักษร"),
+  description: sanitizedTextBlockSchema(1, 5000, "กรุณากรอกรายละเอียด", "รายละเอียดต้องไม่เกิน 5000 ตัวอักษร"),
   category: z.enum(TICKET_CATEGORIES),
   priority: z.enum(TICKET_PRIORITIES).default("MEDIUM"),
   pdpaConsent: z.boolean().refine((v) => v === true, { message: "กรุณายินยอมข้อกำหนด PDPA" }),

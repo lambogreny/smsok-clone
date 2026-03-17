@@ -1,6 +1,7 @@
 import { prisma as db } from "../db";
 import { revalidatePath } from "next/cache";
 import { idSchema } from "../validations";
+import { ApiError } from "../api-auth";
 
 // ==========================================
 // Get active package tiers from DB (for pricing page)
@@ -30,10 +31,13 @@ export async function adminVerifyTransaction(
   void rejectNote;
   idSchema.parse({ id: transactionId });
 
-  const admin = await db.user.findFirst({
-    where: { id: adminUserId, role: "admin" },
+  const admin = await db.adminUser.findUnique({
+    where: { id: adminUserId },
+    select: { id: true, isActive: true },
   });
-  if (!admin) throw new Error("ไม่มีสิทธิ์ผู้ดูแลระบบ");
+  if (!admin?.isActive) {
+    throw new ApiError(403, "ไม่มีสิทธิ์ผู้ดูแลระบบ", "ADMIN_FORBIDDEN");
+  }
 
   const transaction = await db.transaction.findUnique({
     where: { id: transactionId },

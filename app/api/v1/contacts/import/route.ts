@@ -3,7 +3,7 @@ import { authenticateRequest, apiResponse, apiError, ApiError } from "@/lib/api-
 import { requireApiPermission } from "@/lib/rbac";
 import { prisma } from "@/lib/db";
 import { readJsonOr400 } from "@/lib/read-json-or-400";
-import { normalizePhone } from "@/lib/validations";
+import { createContactSchema, normalizePhone } from "@/lib/validations";
 import { importContactsFromExcel, parseExcelFile } from "@/lib/actions/excel-import";
 import { z } from "zod";
 
@@ -25,6 +25,8 @@ const contactsArraySchema = z.array(
     phone: z.string(),
   }),
 );
+
+const importedContactNameSchema = createContactSchema.shape.name;
 
 function isExcelFile(file: File) {
   return file.name.match(/\.(xlsx|xls)$/i) || EXCEL_MIME_TYPES.has(file.type);
@@ -156,7 +158,18 @@ async function handleCsvImport(
       invalid++;
       continue;
     }
-    validRows.push({ name: row.name?.trim() || phone, phone });
+
+    let name = phone;
+    if (typeof row.name === "string" && row.name.trim() !== "") {
+      const parsedName = importedContactNameSchema.safeParse(row.name);
+      if (!parsedName.success) {
+        invalid++;
+        continue;
+      }
+      name = parsedName.data;
+    }
+
+    validRows.push({ name, phone });
   }
 
   // Batch insert with skipDuplicates (N+1 fix)

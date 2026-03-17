@@ -371,7 +371,8 @@ describe("adminVerifyTransaction logic", () => {
   );
 
   it("checks admin role", () => {
-    expect(block).toContain('role: "admin"');
+    expect(block).toContain("db.adminUser.findUnique");
+    expect(block).toContain("ADMIN_FORBIDDEN");
     expect(block).toContain("ไม่มีสิทธิ์ผู้ดูแลระบบ");
   });
 

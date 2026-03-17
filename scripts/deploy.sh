@@ -35,7 +35,7 @@ echo "[2/2] smsok-backoffice deployed!"
 echo ""
 echo "--- Post-deploy verification ---"
 sleep 3
-CLONE_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/health || echo "FAIL")
+CLONE_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/health/ready || echo "FAIL")
 echo "smsok-clone health: $CLONE_STATUS"
 BACKOFFICE_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/login || echo "FAIL")
 echo "smsok-backoffice: $BACKOFFICE_STATUS"

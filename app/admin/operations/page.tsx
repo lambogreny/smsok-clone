@@ -99,15 +99,17 @@ const COST_PER_SMS = 0.32;
 const PROVIDER_OK = "3/3";
 const QUEUE_BACKLOG = 23;
 
-// Provider delivery chart — generated client-side to avoid hydration mismatch
-function generateProviderChartData() {
-  return Array.from({ length: 24 }, (_, i) => ({
-    hour: `${String(i).padStart(2, "0")}:00`,
-    Twilio: 97 + Math.random() * 3,
-    ThaiBulk: 96 + Math.random() * 3,
-    Backup: 94 + Math.random() * 4,
-  }));
+/** Deterministic pseudo-random [0, 1) — no Math.random() → no SSR hydration mismatch */
+function seed(i: number, salt = 0): number {
+  return (((i * 2654435761 + salt) >>> 0) / 4294967296);
 }
+
+const PROVIDER_CHART_DATA = Array.from({ length: 24 }, (_, i) => ({
+  hour: `${String(i).padStart(2, "0")}:00`,
+  Twilio: 97 + seed(i, 0) * 3,
+  ThaiBulk: 96 + seed(i, 1) * 3,
+  Backup: 94 + seed(i, 2) * 4,
+}));
 
 // Carrier bar chart
 const CARRIER_CHART_DATA = [
@@ -118,13 +120,10 @@ const CARRIER_CHART_DATA = [
 ];
 const CARRIER_COLORS = ["var(--accent)", "var(--info)", "var(--warning)", "var(--text-muted)"];
 
-// Cost trend — generated client-side to avoid hydration mismatch
-function generateCostTrendData() {
-  return Array.from({ length: 30 }, (_, i) => ({
-    day: `${i + 1}`,
-    cost: 0.28 + Math.random() * 0.08,
-  }));
-}
+const COST_TREND_DATA = Array.from({ length: 30 }, (_, i) => ({
+  day: `${i + 1}`,
+  cost: 0.28 + seed(i, 3) * 0.08,
+}));
 
 // Failure pie
 const FAILURE_PIE_DATA = [
@@ -267,13 +266,8 @@ export default function OperationsPage() {
   const [providerFilter, setProviderFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
-  const [providerChartData, setProviderChartData] = useState<Array<{ hour: string; Twilio: number; ThaiBulk: number; Backup: number }>>([]);
-  const [costTrendData, setCostTrendData] = useState<Array<{ day: string; cost: number }>>([]);
-
-  useEffect(() => {
-    setProviderChartData(generateProviderChartData());
-    setCostTrendData(generateCostTrendData());
-  }, []);
+  const providerChartData = PROVIDER_CHART_DATA;
+  const costTrendData = COST_TREND_DATA;
 
   function handleRefresh() {
     setIsRefreshing(true);

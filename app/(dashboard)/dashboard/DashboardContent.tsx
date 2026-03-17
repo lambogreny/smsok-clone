@@ -316,8 +316,8 @@ function QuickActionsBar() {
 function Sparkline({ data, color = ACCENT }: { data: number[]; color?: string }) {
   const chartData = data.map((v, i) => ({ v, i }));
   return (
-    <div className="h-6 w-full" aria-hidden="true">
-      <ResponsiveContainer width="100%" height="100%">
+    <div className="h-6 w-full min-w-0" aria-hidden="true">
+      <ResponsiveContainer width="100%" height={24} minWidth={0}>
         <LineChart data={chartData} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
           <Line
             type="monotone"

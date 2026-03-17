@@ -25,7 +25,6 @@ export async function GET(req: NextRequest) {
       needsReconsent,
     });
   } catch (error) {
-    console.error("[consent/status GET]", error instanceof Error ? error.stack : error);
     return apiError(error);
   }
 }
