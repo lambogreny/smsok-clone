@@ -22,7 +22,7 @@ async function getSessionCookie(): Promise<string> {
     headers: { "Content-Type": "application/json", Origin: BASE },
     body: JSON.stringify({
       email: "qa-suite@smsok.test",
-      password: "QATest123!",
+      password: process.env.E2E_USER_PASSWORD!,
     }),
   });
   return res.headers.getSetCookie().map((c) => c.split(";")[0]).join("; ");
@@ -218,7 +218,7 @@ test.describe("ชั้น 2: Browser — Payment Pages Retest", () => {
     const passField = page.locator('input[type="password"]').first();
 
     await emailField.fill("qa-suite@smsok.test");
-    await passField.fill("QATest123!");
+    await passField.fill(process.env.E2E_USER_PASSWORD!);
     await page.screenshot({ path: `${SCREENSHOT_DIR}/B00-login.png` });
 
     await page.locator('button[type="submit"]').first().click();
@@ -421,7 +421,7 @@ test.describe("ชั้น 2: Browser — Payment Pages Retest", () => {
     const emailField = mobilePage.locator('input[type="email"], input[name="email"]').first();
     const passField = mobilePage.locator('input[type="password"]').first();
     await emailField.fill("qa-suite@smsok.test");
-    await passField.fill("QATest123!");
+    await passField.fill(process.env.E2E_USER_PASSWORD!);
     await mobilePage.locator('button[type="submit"]').first().click();
     await mobilePage.waitForURL("**/dashboard**", { timeout: 10000 }).catch(() => {});
 

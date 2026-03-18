@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 const DEFAULT_QA_EMAIL = "qa-suite@smsok.test";
 const DEFAULT_QA_PHONE = "+66900000099";
-const DEFAULT_QA_PASSWORD = "QATest123!";
+// QA password must be set via env var or passed as option — no hardcoded default
 const DEFAULT_QA_NAME = "QA Suite";
 const DEFAULT_QA_ORG_NAME = "QA Suite";
 const DEFAULT_QA_ORG_SLUG_BASE = "qa-suite-org";
@@ -75,7 +75,8 @@ export async function seedQaUser(
 
   const email = options.email ?? process.env.QA_SEED_EMAIL?.trim() ?? DEFAULT_QA_EMAIL;
   const phone = options.phone ?? process.env.QA_SEED_PHONE?.trim() ?? DEFAULT_QA_PHONE;
-  const password = options.password ?? process.env.QA_SEED_PASSWORD?.trim() ?? DEFAULT_QA_PASSWORD;
+  const password = options.password ?? process.env.QA_SEED_PASSWORD?.trim();
+  if (!password) throw new Error("QA_SEED_PASSWORD env var or options.password required");
   const name = options.name ?? process.env.QA_SEED_NAME?.trim() ?? DEFAULT_QA_NAME;
   const organizationName =
     options.organizationName ??

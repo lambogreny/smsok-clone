@@ -12,7 +12,7 @@ import path from "path";
 const BASE = "http://localhost:3000";
 const DIR = "screenshots/route-audit-5909";
 const QA_EMAIL = "qa-suite@smsok.test";
-const QA_PASS = "QATest123!";
+const QA_PASS = process.env.E2E_USER_PASSWORD!;
 
 test.beforeAll(() => { fs.mkdirSync(DIR, { recursive: true }); });
 

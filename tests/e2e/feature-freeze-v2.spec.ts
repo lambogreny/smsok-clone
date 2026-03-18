@@ -3,7 +3,7 @@ import { test, expect, type Page, type BrowserContext } from "@playwright/test";
 const BASE = "http://localhost:3000";
 const QA_USER = {
   email: "qa-suite@smsok.test",
-  password: "QATest123!",
+  password: process.env.E2E_USER_PASSWORD!,
 };
 
 async function dismissCookies(page: Page) {

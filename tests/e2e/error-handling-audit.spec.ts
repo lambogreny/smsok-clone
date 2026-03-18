@@ -1,7 +1,7 @@
 import { test, expect, type Page, type BrowserContext } from "@playwright/test";
 
 const BASE = "http://localhost:3000";
-const QA_USER = { email: "qa-suite@smsok.test", password: "QATest123!" };
+const QA_USER = { email: "qa-suite@smsok.test", password: process.env.E2E_USER_PASSWORD! };
 
 async function dismissCookies(page: Page) {
   for (const text of ["ยอมรับทั้งหมด", "ยอมรับ", "Accept All"]) {
@@ -163,7 +163,7 @@ test.describe("Error Handling: Invalid Input", () => {
     // Password mismatch
     const pw2 = page.locator('input[type="password"]').nth(1);
     if (await pw2.isVisible().catch(() => false)) {
-      await page.locator('input[type="password"]').first().fill("Password123!");
+      await page.locator('input[type="password"]').first().fill(process.env.SEED_PASSWORD!);
       await pw2.fill("DifferentPass!");
       await pw2.blur();
       await page.waitForTimeout(500);

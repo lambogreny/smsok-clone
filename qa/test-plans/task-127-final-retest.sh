@@ -60,7 +60,7 @@ echo ""
 echo "=== H3: X-Request-Id in responses ==="
 curl -s -c /tmp/qa-final.txt http://localhost:3000/api/auth/login -X POST \
   -H "Content-Type: application/json" \
-  -d '{"email":"qa-suite@smsok.test","password":"QATest123!"}' > /dev/null 2>&1
+  -d '{"email":"qa-suite@smsok.test","password":"$E2E_USER_PASSWORD"}' > /dev/null 2>&1
 
 REQID=$(curl -s -D - http://localhost:3000/api/v1/tos \
   -H "Authorization: Bearer sk_live_qa_test_live_key_abcdef1234567890" 2>&1 | grep -i "x-request-id")

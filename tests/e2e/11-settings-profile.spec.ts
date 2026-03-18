@@ -63,7 +63,7 @@ test.describe("Settings & Profile", () => {
     const confirmPwd = page.locator('input[name*="confirm"]').first();
 
     if (await currentPwd.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await currentPwd.fill("WrongPassword123!");
+      await currentPwd.fill("Wrong" + process.env.E2E_USER_PASSWORD!);
       if (await newPwd.isVisible().catch(() => false)) await newPwd.fill("NewTestPass2026!");
       if (await confirmPwd.isVisible().catch(() => false)) await confirmPwd.fill("NewTestPass2026!");
 

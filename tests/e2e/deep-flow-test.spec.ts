@@ -88,13 +88,13 @@ test.describe("Deep Flow Testing — Register, Login, Dashboard, SMS, Billing, S
     }
 
     if (await passwordInput.isVisible().catch(() => false)) {
-      await passwordInput.fill("QATest123!");
+      await passwordInput.fill(process.env.E2E_USER_PASSWORD!);
     }
 
     // Confirm password
     const confirmPw = page.locator('input[name="confirmPassword"], input[name="passwordConfirm"]').first();
     if (await confirmPw.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await confirmPw.fill("QATest123!");
+      await confirmPw.fill(process.env.E2E_USER_PASSWORD!);
     }
 
     await page.screenshot({ path: path.join(SCREENSHOTS, "reg-05-filled-form.png"), fullPage: true });
@@ -138,8 +138,8 @@ test.describe("Deep Flow Testing — Register, Login, Dashboard, SMS, Billing, S
     }
     if (await nameInput.isVisible().catch(() => false)) await nameInput.fill("Duplicate");
     if (await phoneInput.isVisible().catch(() => false)) await phoneInput.fill("0891234568");
-    if (await passwordInput.isVisible().catch(() => false)) await passwordInput.fill("QATest123!");
-    if (await confirmPw.isVisible().catch(() => false)) await confirmPw.fill("QATest123!");
+    if (await passwordInput.isVisible().catch(() => false)) await passwordInput.fill(process.env.E2E_USER_PASSWORD!);
+    if (await confirmPw.isVisible().catch(() => false)) await confirmPw.fill(process.env.E2E_USER_PASSWORD!);
     if (await termsCheck.isVisible().catch(() => false)) await termsCheck.check();
     if (await submitRegBtn.isEnabled().catch(() => false)) {
       await submitRegBtn.click();
@@ -216,7 +216,7 @@ test.describe("Deep Flow Testing — Register, Login, Dashboard, SMS, Billing, S
 
     // Test 2d: Valid login
     await emailInput.fill("qa-suite@smsok.test");
-    await pwInput.fill("QATest123!");
+    await pwInput.fill(process.env.E2E_USER_PASSWORD!);
     await loginBtn.click();
     await page.waitForTimeout(3000);
     await page.screenshot({ path: path.join(SCREENSHOTS, "login-05-success.png"), fullPage: true });

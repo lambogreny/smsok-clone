@@ -2,7 +2,7 @@
 """
 QA Layer 1 — API Test Suite
 smsok-clone http://localhost:3000
-Credentials: qa-suite@smsok.test / QATest123!
+Credentials: qa-suite@smsok.test / (set E2E_USER_PASSWORD env var)
 
 Tests: Contacts, Groups, Tags, Messages, Senders, Packages, Security
 """
@@ -18,7 +18,7 @@ from typing import Any
 
 BASE = "http://localhost:3000"
 EMAIL = "qa-suite@smsok.test"
-PASSWORD = "QATest123!"
+PASSWORD = os.environ.get("E2E_USER_PASSWORD", "")
 ORIGIN = "http://localhost:3000"
 
 # ─── helpers ──────────────────────────────────────────────────────────────────

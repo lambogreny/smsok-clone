@@ -17,7 +17,7 @@ test.describe("Edge Case: Form Validation", () => {
     // 1a. Duplicate email
     const dupResp = await request.post("/api/auth/register", {
       headers: { ...CSRF, "Content-Type": "application/json" },
-      data: { name: "Dup Test", email: "qa-suite@smsok.test", phone: "0899999999", password: "Test1234!", confirmPassword: "Test1234!" },
+      data: { name: "Dup Test", email: "qa-suite@smsok.test", phone: "0899999999", password: process.env.E2E_USER_PASSWORD!, confirmPassword: process.env.E2E_USER_PASSWORD! },
     });
     console.log(`📊 Duplicate email → ${dupResp.status()}`);
     expect(dupResp.status()).not.toBe(500);
@@ -39,7 +39,7 @@ test.describe("Edge Case: Form Validation", () => {
     // 1c. Password mismatch
     const mismatchResp = await request.post("/api/auth/register", {
       headers: { ...CSRF, "Content-Type": "application/json" },
-      data: { name: "Mismatch", email: "mismatch@test.com", phone: "0822222222", password: "Test1234!", confirmPassword: "Different1!" },
+      data: { name: "Mismatch", email: "mismatch@test.com", phone: "0822222222", password: process.env.E2E_USER_PASSWORD!, confirmPassword: "Different1!" },
     });
     console.log(`📊 Password mismatch → ${mismatchResp.status()}`);
     expect(mismatchResp.status()).not.toBe(500);
@@ -47,7 +47,7 @@ test.describe("Edge Case: Form Validation", () => {
     // 1d. Empty name
     const emptyNameResp = await request.post("/api/auth/register", {
       headers: { ...CSRF, "Content-Type": "application/json" },
-      data: { name: "", email: "empty@test.com", phone: "0833333333", password: "Test1234!", confirmPassword: "Test1234!" },
+      data: { name: "", email: "empty@test.com", phone: "0833333333", password: process.env.E2E_USER_PASSWORD!, confirmPassword: process.env.E2E_USER_PASSWORD! },
     });
     console.log(`📊 Empty name → ${emptyNameResp.status()}`);
     expect(emptyNameResp.status()).not.toBe(500);
@@ -55,7 +55,7 @@ test.describe("Edge Case: Form Validation", () => {
     // 1e. Invalid email format
     const badEmailResp = await request.post("/api/auth/register", {
       headers: { ...CSRF, "Content-Type": "application/json" },
-      data: { name: "Bad Email", email: "notanemail", phone: "0844444444", password: "Test1234!", confirmPassword: "Test1234!" },
+      data: { name: "Bad Email", email: "notanemail", phone: "0844444444", password: process.env.E2E_USER_PASSWORD!, confirmPassword: process.env.E2E_USER_PASSWORD! },
     });
     console.log(`📊 Invalid email → ${badEmailResp.status()}`);
     expect(badEmailResp.status()).not.toBe(500);
@@ -63,7 +63,7 @@ test.describe("Edge Case: Form Validation", () => {
     // 1f. Invalid phone
     const badPhoneResp = await request.post("/api/auth/register", {
       headers: { ...CSRF, "Content-Type": "application/json" },
-      data: { name: "Bad Phone", email: "badphone@test.com", phone: "abc", password: "Test1234!", confirmPassword: "Test1234!" },
+      data: { name: "Bad Phone", email: "badphone@test.com", phone: "abc", password: process.env.E2E_USER_PASSWORD!, confirmPassword: process.env.E2E_USER_PASSWORD! },
     });
     console.log(`📊 Invalid phone → ${badPhoneResp.status()}`);
     expect(badPhoneResp.status()).not.toBe(500);
@@ -71,7 +71,7 @@ test.describe("Edge Case: Form Validation", () => {
     // 1g. XSS in name
     const xssResp = await request.post("/api/auth/register", {
       headers: { ...CSRF, "Content-Type": "application/json" },
-      data: { name: '<script>alert(1)</script>', email: "xss@test.com", phone: "0855555555", password: "Test1234!", confirmPassword: "Test1234!" },
+      data: { name: '<script>alert(1)</script>', email: "xss@test.com", phone: "0855555555", password: process.env.E2E_USER_PASSWORD!, confirmPassword: process.env.E2E_USER_PASSWORD! },
     });
     console.log(`📊 XSS in name → ${xssResp.status()}`);
     expect(xssResp.status()).not.toBe(500);
@@ -79,7 +79,7 @@ test.describe("Edge Case: Form Validation", () => {
     // 1h. SQL injection
     const sqlResp = await request.post("/api/auth/register", {
       headers: { ...CSRF, "Content-Type": "application/json" },
-      data: { name: "'; DROP TABLE users; --", email: "sql@test.com", phone: "0866666666", password: "Test1234!", confirmPassword: "Test1234!" },
+      data: { name: "'; DROP TABLE users; --", email: "sql@test.com", phone: "0866666666", password: process.env.E2E_USER_PASSWORD!, confirmPassword: process.env.E2E_USER_PASSWORD! },
     });
     console.log(`📊 SQL injection → ${sqlResp.status()}`);
     expect(sqlResp.status()).not.toBe(500);
@@ -102,7 +102,7 @@ test.describe("Edge Case: Form Validation", () => {
     // 2b. Non-existent email
     const noUserResp = await request.post("/api/auth/login", {
       headers: { ...CSRF, "Content-Type": "application/json" },
-      data: { email: "nonexistent@nobody.com", password: "Test1234!" },
+      data: { email: "nonexistent@nobody.com", password: process.env.E2E_USER_PASSWORD! },
     });
     console.log(`📊 Non-existent email → ${noUserResp.status()}`);
     expect([400, 401, 403]).toContain(noUserResp.status());

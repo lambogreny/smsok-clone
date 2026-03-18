@@ -45,7 +45,7 @@ test.describe("API: Auth Endpoints", () => {
 
   test("AUTH-API-07: POST /api/auth/login — nonexistent user returns 401", async ({ request }) => {
     const res = await request.post(`${BASE}/api/auth/login`, {
-      data: { email: "doesnotexist@smsok.test", password: "Test1234!" },
+      data: { email: "doesnotexist@smsok.test", password: process.env.E2E_USER_PASSWORD! },
     });
     expect(res.status()).toBe(401);
     const body = await res.json();
@@ -160,7 +160,7 @@ test.describe("API: Auth Endpoints", () => {
   test("AUTH-API-19: very long email is handled", async ({ request }) => {
     const longEmail = "a".repeat(500) + "@test.com";
     const res = await request.post(`${BASE}/api/auth/login`, {
-      data: { email: longEmail, password: "Test1234!" },
+      data: { email: longEmail, password: process.env.E2E_USER_PASSWORD! },
     });
     expect([400, 401, 422]).toContain(res.status());
   });

@@ -3,7 +3,7 @@
 ## Test Environment
 - Customer App: https://smsok.9phum.me (prod) / http://localhost:3000 (local)
 - Backoffice: https://admin.smsok.9phum.me (prod) / http://localhost:3001 (local)
-- Test Account: qa-suite@smsok.test / QATest123!
+- Test Account: qa-suite@smsok.test / (set E2E_USER_PASSWORD env var)
 
 ---
 

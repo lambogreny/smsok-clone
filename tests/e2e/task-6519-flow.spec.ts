@@ -44,14 +44,14 @@ test.describe("Register → Login → Dashboard Flow", () => {
       console.log(`✅ Phone filled: ${testPhone}`);
     }
     if (await passwordInput.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await passwordInput.fill("QATest123!");
+      await passwordInput.fill(process.env.E2E_USER_PASSWORD!);
       console.log("✅ Password filled");
     }
 
     // Fill confirm password if exists
     const confirmPw = page.locator('input[type="password"]').nth(1);
     if (await confirmPw.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await confirmPw.fill("QATest123!");
+      await confirmPw.fill(process.env.E2E_USER_PASSWORD!);
       console.log("✅ Confirm password filled");
     }
 

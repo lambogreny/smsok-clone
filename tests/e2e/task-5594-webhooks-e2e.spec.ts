@@ -11,7 +11,7 @@ import path from "path";
 const SCREENSHOTS_DIR = "/Users/lambogreny/oracles/qa/screenshots/task-5594";
 const BASE = "http://localhost:3000";
 const LOGIN_EMAIL = "qa-suite@smsok.test";
-const LOGIN_PASS = "QATest123!";
+const LOGIN_PASS = process.env.E2E_USER_PASSWORD!;
 
 test.beforeAll(() => {
   fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });

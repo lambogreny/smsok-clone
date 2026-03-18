@@ -1,7 +1,7 @@
 import { test, expect, type Page, devices } from "@playwright/test";
 
 // ─── Helpers ───────────────────────────────────────────────
-const TEST_USER = { email: "demo@smsok.local", password: "Password123!" };
+const TEST_USER = { email: "demo@smsok.local", password: process.env.SEED_PASSWORD! };
 
 async function dismissCookieConsent(page: Page) {
   const btn = page.getByText("ยอมรับทั้งหมด");

@@ -113,6 +113,6 @@ The QA seed script creates or updates this user unless overridden by `QA_SEED_*`
 
 - Email: `qa-suite@smsok.test`
 - Phone: `+66900000099`
-- Password: `QATest123!`
+- Password: `(set E2E_USER_PASSWORD env var)`
 
 The QA script is disabled when `NODE_ENV=production`.

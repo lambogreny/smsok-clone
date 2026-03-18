@@ -16,7 +16,7 @@
 
 | ID | Description | Steps | Expected | Severity |
 |----|-------------|-------|----------|----------|
-| TC-001 | Login with valid credentials | 1. Go to /login 2. Enter demo@smsok.local / Password123! 3. Click submit | Redirect to /dashboard | Critical |
+| TC-001 | Login with valid credentials | 1. Go to /login 2. Enter demo@smsok.local / (set SEED_PASSWORD env var) 3. Click submit | Redirect to /dashboard | Critical |
 | TC-002 | Login with invalid password | 1. Go to /login 2. Enter demo@smsok.local / wrong 3. Click submit | Show error message, stay on /login | Critical |
 | TC-003 | Login with empty fields | 1. Go to /login 2. Leave fields empty | Submit button disabled | Major |
 | TC-004 | Register new account | 1. Go to /register 2. Fill all fields 3. Submit | Show OTP verification step (same URL, different UI) | Critical |

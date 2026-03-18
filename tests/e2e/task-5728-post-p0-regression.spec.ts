@@ -12,7 +12,7 @@ import path from "path";
 const DIR = "/Users/lambogreny/oracles/qa/screenshots/task-5728";
 const BASE = "http://localhost:3000";
 const QA_EMAIL = "qa-suite@smsok.test";
-const QA_PASS = "QATest123!";
+const QA_PASS = process.env.E2E_USER_PASSWORD!;
 
 test.beforeAll(() => { fs.mkdirSync(DIR, { recursive: true }); });
 

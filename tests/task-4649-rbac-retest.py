@@ -52,7 +52,7 @@ print("=" * 60)
 
 # ── Test 1: Login existing user ──
 print("\n📋 Test 1: Login existing user → dashboard access")
-cookies = login("qa-suite@smsok.test", "QATest123!")
+cookies = login("qa-suite@smsok.test", os.environ.get("E2E_USER_PASSWORD", ""))
 test("Login QA user", cookies is not None, "Got session cookies" if cookies else "Login failed")
 
 if not cookies:

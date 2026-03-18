@@ -10,7 +10,7 @@ import path from "path";
 const DIR = "/Users/lambogreny/oracles/qa/screenshots/regression-pre-prod";
 const BASE = "http://localhost:3000";
 const QA_EMAIL = "qa-suite@smsok.test";
-const QA_PASS = "QATest123!";
+const QA_PASS = process.env.E2E_USER_PASSWORD!;
 
 test.beforeAll(() => { fs.mkdirSync(DIR, { recursive: true }); });
 
@@ -75,7 +75,7 @@ test.describe("Layer 1 — API Pre-Prod", () => {
       method: "POST",
       headers: { "Content-Type": "application/json", Origin: BASE },
       body: JSON.stringify({
-        email: `qa-preprod-${Date.now()}@test.com`, password: "Test123456!",
+        email: `qa-preprod-${Date.now()}@test.com`, password: process.env.E2E_USER_PASSWORD!,
         phone: `08${Math.floor(10000000 + Math.random() * 90000000)}`,
         firstName: "QA", lastName: "PreProd",
       }),

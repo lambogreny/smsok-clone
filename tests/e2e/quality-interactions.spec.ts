@@ -606,7 +606,7 @@ test.describe("9. Auth Flows", () => {
       expect(isDisabledPartial).toBeTruthy();
 
       // Fill password too — should enable
-      await page.locator('input[type="password"]').fill("Password123!");
+      await page.locator('input[type="password"]').fill(process.env.SEED_PASSWORD!);
       await page.waitForFunction(
         () => !(document.querySelector('button[type="submit"]') as HTMLButtonElement)?.disabled,
         { timeout: 10000 }

@@ -11,7 +11,7 @@ const path = require('path');
 
 const BASE = process.argv[2] || 'http://localhost:3000';
 const TEST_EMAIL = 'qa-suite@smsok.test';
-const TEST_PASS = 'QATest123!';
+const TEST_PASS = process.env.E2E_USER_PASSWORD;
 const SCREENSHOT_DIR = path.join(__dirname, '..', 'screenshots', 'regression');
 const RESULTS = [];
 

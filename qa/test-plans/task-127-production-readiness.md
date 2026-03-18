@@ -105,7 +105,7 @@ done
 # Dashboard pages (need session cookie)
 curl -s -c /tmp/qa-prod.txt http://localhost:3000/api/auth/login -X POST \
   -H "Content-Type: application/json" \
-  -d '{"email":"qa-suite@smsok.test","password":"QATest123!"}' > /dev/null
+  -d '{"email":"qa-suite@smsok.test","password":"$E2E_USER_PASSWORD"}' > /dev/null
 
 for path in /dashboard /dashboard/send /dashboard/messages /dashboard/contacts \
   /dashboard/groups /dashboard/templates /dashboard/campaigns /dashboard/scheduled \
@@ -147,7 +147,7 @@ done
 # OTP cooldown states
 curl -s -c /tmp/qa-otp.txt http://localhost:3000/api/auth/login -X POST \
   -H "Content-Type: application/json" \
-  -d '{"email":"qa-suite@smsok.test","password":"QATest123!"}' > /dev/null
+  -d '{"email":"qa-suite@smsok.test","password":"$E2E_USER_PASSWORD"}' > /dev/null
 # Generate OTP and check cooldownState in response
 ```
 

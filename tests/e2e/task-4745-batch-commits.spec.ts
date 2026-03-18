@@ -2,7 +2,7 @@ import { test, expect, Page } from "@playwright/test";
 
 const BASE = "http://localhost:3000";
 const DEMO_EMAIL = "demo@smsok.local";
-const DEMO_PASS = "Password123!";
+const DEMO_PASS = process.env.SEED_PASSWORD!;
 
 async function login(page: Page) {
   await page.goto(`${BASE}/login`);

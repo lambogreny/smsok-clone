@@ -14,13 +14,13 @@ const BASE = "http://localhost:3000";
 // Unique user for this test run
 const TS = Date.now().toString().slice(-6);
 const REG_EMAIL = `qa-reg-${TS}@smsok.test`;
-const REG_PASS = "QATest123!";
+const REG_PASS = process.env.E2E_USER_PASSWORD!;
 const REG_PHONE = `09${TS}00`;
 const REG_NAME = `QA Tester ${TS}`;
 
 // Fallback to known QA account
 const QA_EMAIL = "qa-suite@smsok.test";
-const QA_PASS = "QATest123!";
+const QA_PASS = process.env.E2E_USER_PASSWORD!;
 
 test.beforeAll(() => {
   fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });

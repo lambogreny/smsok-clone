@@ -13,7 +13,7 @@ import path from "path";
 const BASE = "http://localhost:3000";
 const DIR = "/Users/lambogreny/oracles/qa/screenshots/clone-regression";
 const QA_EMAIL = "qa-suite@smsok.test";
-const QA_PASS = "QATest123!";
+const QA_PASS = process.env.E2E_USER_PASSWORD!;
 
 test.beforeAll(() => { fs.mkdirSync(DIR, { recursive: true }); });
 
@@ -81,7 +81,7 @@ test.describe("ชั้น 1: API — Full Regression", () => {
       method: "POST",
       headers: { "Content-Type": "application/json", Origin: BASE },
       body: JSON.stringify({
-        email: `qa-reg-${Date.now()}@test.com`, password: "Test123456!",
+        email: `qa-reg-${Date.now()}@test.com`, password: process.env.E2E_USER_PASSWORD!,
         phone: `08${Math.floor(10000000 + Math.random() * 90000000)}`,
         firstName: "QA", lastName: "Reg",
       }),

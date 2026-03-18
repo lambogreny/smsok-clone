@@ -20,7 +20,7 @@ test.describe('Security Tests - Browser Layer', () => {
     
     // Fill login form
     await page.fill('input[type="email"]', 'qa-suite@smsok.test');
-    await page.fill('input[type="password"]', 'QATest123!');
+    await page.fill('input[type="password"]', process.env.E2E_USER_PASSWORD!);
     
     // Click login button
     const loginButton = page.locator('button:has-text("Login"), button:has-text("Sign In"), button:has-text("เข้าสู่ระบบ")');
@@ -43,7 +43,7 @@ test.describe('Security Tests - Browser Layer', () => {
     // Login first
     await page.goto('http://localhost:3000/login', { waitUntil: 'load' });
     await page.fill('input[type="email"]', 'qa-suite@smsok.test');
-    await page.fill('input[type="password"]', 'QATest123!');
+    await page.fill('input[type="password"]', process.env.E2E_USER_PASSWORD!);
     
     const loginButton = page.locator('button:has-text("Login"), button:has-text("Sign In"), button:has-text("เข้าสู่ระบบ")');
     await loginButton.click();
@@ -93,7 +93,7 @@ test.describe('Security Tests - Browser Layer', () => {
     // Login
     await page.goto('http://localhost:3000/login', { waitUntil: 'load' });
     await page.fill('input[type="email"]', 'qa-suite@smsok.test');
-    await page.fill('input[type="password"]', 'QATest123!');
+    await page.fill('input[type="password"]', process.env.E2E_USER_PASSWORD!);
     
     const loginButton = page.locator('button:has-text("Login"), button:has-text("Sign In"), button:has-text("เข้าสู่ระบบ")');
     await loginButton.click();
@@ -153,7 +153,7 @@ test.describe('Security Tests - Browser Layer', () => {
     
     if (await emailField.isVisible()) {
       await emailField.fill('qa-suite@smsok.test');
-      await passwordField.fill('QATest123!');
+      await passwordField.fill(process.env.E2E_USER_PASSWORD!);
       
       const loginButton = page.locator('button:has-text("Login"), button:has-text("Sign In"), button:has-text("เข้าสู่ระบบ")');
       await expect(loginButton).toBeInViewport();
@@ -166,7 +166,7 @@ test.describe('Security Tests - Browser Layer', () => {
     // Login
     await page.goto('http://localhost:3000/login', { waitUntil: 'load' });
     await page.fill('input[type="email"]', 'qa-suite@smsok.test');
-    await page.fill('input[type="password"]', 'QATest123!');
+    await page.fill('input[type="password"]', process.env.E2E_USER_PASSWORD!);
     
     const loginButton = page.locator('button:has-text("Login"), button:has-text("Sign In"), button:has-text("เข้าสู่ระบบ")');
     await loginButton.click();

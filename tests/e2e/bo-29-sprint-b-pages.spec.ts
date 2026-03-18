@@ -10,7 +10,7 @@ import { test, expect, Page } from "@playwright/test";
 
 const BASE = "http://localhost:3000";
 const USER_EMAIL = "demo@smsok.local";
-const USER_PASSWORD = "Password123!";
+const USER_PASSWORD = process.env.SEED_PASSWORD!;
 
 // Helper: wait for server to be ready
 async function waitForServer(page: Page, maxRetries = 5) {

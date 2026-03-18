@@ -15,7 +15,7 @@ import { test, expect, type Page } from "@playwright/test";
 
 const BASE = "http://localhost:3000";
 const QA_EMAIL = "qa-suite@smsok.test";
-const QA_PASS = "QATest123!";
+const QA_PASS = process.env.E2E_USER_PASSWORD!;
 
 // UTM test params
 const UTM_PARAMS = "utm_source=google&utm_medium=cpc&utm_campaign=spring2026&utm_term=sms+api&utm_content=hero-banner";
@@ -67,7 +67,7 @@ test.describe("UTM Tracking — Prep Tests", () => {
       headers: { "Content-Type": "application/json", Origin: BASE },
       body: JSON.stringify({
         email: uniqueEmail,
-        password: "Test123456!",
+        password: process.env.E2E_USER_PASSWORD!,
         phone: `08${Math.floor(10000000 + Math.random() * 90000000)}`,
         firstName: "UTM", lastName: "Test",
       }),

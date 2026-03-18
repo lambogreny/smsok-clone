@@ -2,7 +2,7 @@ import { test, expect, Page } from "@playwright/test";
 
 const BASE = "http://localhost:3000";
 const DEMO_EMAIL = process.env.QA_EMAIL || "qa-suite@smsok.test";
-const DEMO_PASS = process.env.QA_PASS || "QATest123!";
+const DEMO_PASS = process.env.QA_PASS || process.env.E2E_USER_PASSWORD!;
 
 async function dismissCookieConsent(page: Page) {
   const btn = page.getByText("ยอมรับทั้งหมด");

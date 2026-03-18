@@ -10,7 +10,7 @@ import path from "path";
 const DIR = "/Users/lambogreny/oracles/qa/screenshots/regression-2026-03-16";
 const BASE = "http://localhost:3000";
 const LOGIN_EMAIL = "qa-suite@smsok.test";
-const LOGIN_PASS = "QATest123!";
+const LOGIN_PASS = process.env.E2E_USER_PASSWORD!;
 
 test.beforeAll(() => {
   fs.mkdirSync(DIR, { recursive: true });

@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 
 const BASE = "http://localhost:3000";
-const CREDS = { email: "qa-suite@smsok.test", password: "QATest123!" };
+const CREDS = { email: "qa-suite@smsok.test", password: process.env.E2E_USER_PASSWORD! };
 
 async function login(page: Page) {
   await page.goto(`${BASE}/login`, { waitUntil: "domcontentloaded" });

@@ -11,7 +11,7 @@ import path from "path";
 const DIR = "/Users/lambogreny/oracles/qa/screenshots/task-5791";
 const BASE = "http://localhost:3000";
 const QA_EMAIL = "qa-suite@smsok.test";
-const QA_PASS = "QATest123!";
+const QA_PASS = process.env.E2E_USER_PASSWORD!;
 
 test.beforeAll(() => {
   fs.mkdirSync(DIR, { recursive: true });
@@ -85,7 +85,7 @@ test.describe("Layer 1 — API Regression", () => {
       headers: { "Content-Type": "application/json", Origin: BASE },
       body: JSON.stringify({
         email: `qa-reg-${Date.now()}@test.com`,
-        password: "Test123456!",
+        password: process.env.E2E_USER_PASSWORD!,
         phone: `08${Math.floor(10000000 + Math.random() * 90000000)}`,
         firstName: "QA",
         lastName: "Reg",

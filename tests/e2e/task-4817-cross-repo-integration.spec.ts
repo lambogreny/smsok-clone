@@ -3,9 +3,9 @@ import { test, expect, Page, Browser } from "@playwright/test";
 const CLONE_BASE = "http://localhost:3000";
 const BACKOFFICE_BASE = "http://localhost:3001";
 const CUSTOMER_EMAIL = process.env.QA_EMAIL || "demo@smsok.local";
-const CUSTOMER_PASS = process.env.QA_PASS || "Password123!";
+const CUSTOMER_PASS = process.env.QA_PASS || process.env.SEED_PASSWORD!;
 const ADMIN_EMAIL = "admin@smsok.com";
-const ADMIN_PASS = "admin1234";
+const ADMIN_PASS = process.env.ADMIN_SEED_PASSWORD!;
 
 async function dismissCookieConsent(page: Page) {
   const btn = page.getByText("ยอมรับทั้งหมด");

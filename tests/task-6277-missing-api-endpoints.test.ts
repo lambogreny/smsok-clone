@@ -26,7 +26,7 @@ describe("Task #6277: missing API endpoints audit", () => {
 
   it("adds session aliases for api keys, senders, and settings", () => {
     expect(userApiKeysRoute).toContain('export { GET, POST } from "@/app/api/v1/api-keys/route"');
-    expect(userApiKeyDetailRoute).toContain('export { PATCH, PUT, DELETE } from "@/app/api/v1/api-keys/[id]/route"');
+    expect(userApiKeyDetailRoute).toContain('export { GET, PATCH, PUT, DELETE } from "@/app/api/v1/api-keys/[id]/route"');
     expect(userSendersRoute).toContain('export { GET, POST } from "@/app/api/v1/senders/route"');
     expect(userSenderDetailRoute).toContain('export { GET } from "@/app/api/v1/senders/name/[id]/route"');
     expect(userSenderDetailRoute).toContain('export { DELETE } from "@/app/api/v1/senders/[id]/route"');

@@ -39,7 +39,7 @@ test.describe("Login & Logout", () => {
 
   test("LOGIN-05: invalid password shows error", async ({ page }) => {
     await page.locator('input[type="email"]').fill(TEST_USER.email);
-    await page.locator('input[type="password"]').fill("WrongPassword123!");
+    await page.locator('input[type="password"]').fill("Wrong" + process.env.E2E_USER_PASSWORD!);
     await page.locator('button[type="submit"]').click();
     await page.waitForTimeout(3000);
     const body = await page.textContent("body");

@@ -12,7 +12,7 @@ import { test, expect, type Page } from "@playwright/test";
 
 const BASE = "http://localhost:3000";
 const LOGIN_EMAIL = "qa-suite@smsok.test";
-const LOGIN_PASS = "QATest123!";
+const LOGIN_PASS = process.env.E2E_USER_PASSWORD!;
 
 // Helper: login and get session cookie
 async function getSessionCookie(): Promise<string> {

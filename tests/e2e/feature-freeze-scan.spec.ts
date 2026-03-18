@@ -10,7 +10,7 @@ const NEW_USER = {
 };
 const QA_USER = {
   email: "qa-suite@smsok.test",
-  password: "QATest123!",
+  password: process.env.E2E_USER_PASSWORD!,
 };
 
 // Helper: dismiss cookie consent if visible

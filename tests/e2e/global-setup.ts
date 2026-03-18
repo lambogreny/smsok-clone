@@ -3,8 +3,8 @@ import path from "path";
 import fs from "fs";
 
 const TEST_USER = {
-  email: "qa-suite@smsok.test",
-  password: "QATest123!",
+  email: process.env.E2E_USER_EMAIL || "qa-suite@smsok.test",
+  password: process.env.E2E_USER_PASSWORD || (() => { throw new Error("E2E_USER_PASSWORD env var required for global-setup"); })(),
 };
 
 async function globalSetup(config: FullConfig) {

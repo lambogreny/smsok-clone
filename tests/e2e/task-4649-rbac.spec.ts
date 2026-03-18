@@ -7,7 +7,7 @@ test.describe("Task #4649 — RBAC Permissions Browser Test", () => {
     // Login
     await page.goto(`${BASE}/login`);
     await page.fill('input[name="email"], input[type="email"]', "qa-suite@smsok.test");
-    await page.fill('input[name="password"], input[type="password"]', "QATest123!");
+    await page.fill('input[name="password"], input[type="password"]', process.env.E2E_USER_PASSWORD!);
     await page.click('button[type="submit"]');
     await page.waitForURL("**/dashboard**", { timeout: 15000 });
   });
