@@ -1,10 +1,25 @@
 import { NextRequest } from "next/server";
 import { apiResponse, apiError, ApiError, authenticateRequest } from "@/lib/api-auth";
 import {
+  getApiKeyForUser,
   deleteApiKeyForUser,
   toggleApiKeyForUser,
   updateApiKeyNameForUser,
 } from "@/lib/api-keys/service";
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const user = await authenticateRequest(req);
+    const { id } = await params;
+    const result = await getApiKeyForUser(user.id, id);
+    return apiResponse(result);
+  } catch (error) {
+    return apiError(error);
+  }
+}
 
 async function readJsonBody(req: NextRequest, required: boolean) {
   const rawBody = await req.text();

@@ -82,6 +82,42 @@ export async function listApiKeysForUser(userId: string) {
   }));
 }
 
+export async function getApiKeyForUser(userId: string, keyId: string) {
+  idSchema.parse({ id: keyId });
+
+  const apiKey = await db.apiKey.findFirst({
+    where: { id: keyId, userId },
+    select: {
+      id: true,
+      name: true,
+      keyPrefix: true,
+      permissions: true,
+      rateLimit: true,
+      ipWhitelist: true,
+      isActive: true,
+      lastUsed: true,
+      revokedAt: true,
+      createdAt: true,
+    },
+  });
+  if (!apiKey) {
+    throw new Error("ไม่พบ API Key");
+  }
+
+  return {
+    id: apiKey.id,
+    name: apiKey.name,
+    key: apiKey.keyPrefix || "sk_live_****...****",
+    permissions: apiKey.permissions,
+    rateLimit: apiKey.rateLimit,
+    ipWhitelist: apiKey.ipWhitelist,
+    isActive: apiKey.isActive,
+    lastUsed: apiKey.lastUsed,
+    revokedAt: apiKey.revokedAt,
+    createdAt: apiKey.createdAt,
+  };
+}
+
 export async function toggleApiKeyForUser(userId: string, keyId: string) {
   idSchema.parse({ id: keyId });
 
