@@ -17,7 +17,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY package.json bun.lock* ./
 
 # Copy config files (rarely change → cached)
-COPY next.config.ts tsconfig.json next-env.d.ts postcss.config.mjs ./
+COPY next.config.ts tsconfig.json postcss.config.mjs ./
 
 # Copy prisma schema (generate client)
 COPY prisma ./prisma
