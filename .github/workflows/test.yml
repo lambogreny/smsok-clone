@@ -48,6 +48,8 @@ jobs:
       DATABASE_URL: postgresql://smsok:ci-test-password-ephemeral@localhost:5432/smsok_test
       REDIS_URL: redis://localhost:6379
       JWT_SECRET: ci-test-jwt-secret-at-least-32-characters-long
+      ADMIN_JWT_SECRET: ci-test-admin-jwt-secret-32-chars-long!!
+      OTP_HASH_SECRET: ci-test-otp-hash-secret-32-characters!
       TWO_FA_ENCRYPTION_KEY: ci-test-2fa-key-at-least-32-characters-long!!
       NODE_ENV: test
     steps:
@@ -99,6 +101,8 @@ jobs:
       DATABASE_URL: postgresql://smsok:ci-test-password-ephemeral@localhost:5432/smsok_test
       REDIS_URL: redis://localhost:6379
       JWT_SECRET: ci-test-jwt-secret-at-least-32-characters-long
+      ADMIN_JWT_SECRET: ci-test-admin-jwt-secret-32-chars-long!!
+      OTP_HASH_SECRET: ci-test-otp-hash-secret-32-characters!
       TWO_FA_ENCRYPTION_KEY: ci-test-2fa-key-at-least-32-characters-long!!
       NODE_ENV: test
       CI: true
