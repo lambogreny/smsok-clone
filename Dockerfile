@@ -18,6 +18,7 @@ COPY package.json bun.lock* ./
 
 # Copy config files (rarely change → cached)
 COPY next.config.ts tsconfig.json postcss.config.mjs ./
+RUN printf '/// <reference types="next" />\n/// <reference types="next/image-types/global" />\n' > next-env.d.ts
 
 # Copy prisma schema (generate client)
 COPY prisma ./prisma

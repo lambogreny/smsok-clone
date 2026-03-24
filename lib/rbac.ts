@@ -128,19 +128,17 @@ function buildWorkspaceName(user: { name: string; email: string }): string {
 }
 
 async function ensurePermissionCatalog(client: RbacDbClient = db): Promise<void> {
+  const allPerms: { action: string; resource: string; description: string }[] = [];
   for (const action of RBAC_ACTIONS) {
     for (const resource of RBAC_RESOURCES) {
-      await client.permission.upsert({
-        where: { action_resource: { action, resource } },
-        update: {},
-        create: {
-          action,
-          resource,
-          description: `${action} ${resource}`,
-        },
-      });
+      allPerms.push({ action, resource, description: `${action} ${resource}` });
     }
   }
+
+  await client.permission.createMany({
+    data: allPerms,
+    skipDuplicates: true,
+  });
 }
 
 function isUniqueConstraintError(error: unknown): error is Prisma.PrismaClientKnownRequestError {
@@ -162,6 +160,14 @@ export async function provisionSystemRoles(
 ): Promise<void> {
   await ensurePermissionCatalog(client);
 
+  // Fetch all permissions once instead of querying per-pattern
+  const allPermissions = await client.permission.findMany({
+    select: { id: true, action: true, resource: true },
+  });
+  const permMap = new Map(
+    allPermissions.map((p) => [`${p.action}:${p.resource}`, p.id]),
+  );
+
   for (const def of SYSTEM_ROLES) {
     const role = await client.role.upsert({
       where: { organizationId_name: { organizationId, name: def.name } },
@@ -177,11 +183,8 @@ export async function provisionSystemRoles(
     const expanded = expandPatterns(def.patterns);
     const permIds: string[] = [];
     for (const key of expanded) {
-      const [action, resource] = key.split(":");
-      const perm = await client.permission.findUnique({
-        where: { action_resource: { action, resource } },
-      });
-      if (perm) permIds.push(perm.id);
+      const id = permMap.get(key);
+      if (id) permIds.push(id);
     }
 
     await client.rolePermission.deleteMany({ where: { roleId: role.id } });
@@ -276,7 +279,7 @@ export async function ensureUserWorkspace(
           organizationId: organization.id,
           role: "OWNER",
         };
-      });
+      }, { timeout: 30000 });
 
       await ensureMembershipRoleAssignment(
         userId,
