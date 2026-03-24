@@ -30,6 +30,11 @@ const eslintConfig = defineConfig([
       "@next/next/no-assign-module-variable": "warn",
       "@next/next/no-html-link-for-pages": "warn",
       "@typescript-eslint/no-explicit-any": "warn",
+      // React 19 / Next.js 16 new rules — pre-existing across codebase
+      "react-hooks/error-boundaries": "warn",
+      "react-hooks/rules-of-hooks": "warn",
+      "react-hooks/purity": "warn",
+      "react-hooks/refs": "warn",
     },
   },
 ]);
