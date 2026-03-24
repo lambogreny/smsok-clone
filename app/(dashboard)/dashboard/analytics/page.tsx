@@ -26,7 +26,7 @@ export default async function AnalyticsPage() {
     <AnalyticsContent
       stats={{
         ...stats,
-        recentMessages: stats.recentMessages.map((message) => ({
+        recentMessages: stats.recentMessages.map((message: (typeof stats.recentMessages)[number]) => ({
           ...message,
           createdAt: message.createdAt.toISOString(),
         })),

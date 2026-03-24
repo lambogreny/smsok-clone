@@ -145,7 +145,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
 
       return apiResponse({
         senderNameId: id,
-        documents: documents.map((doc, idx) => ({
+        documents: documents.map((doc: (typeof documents)[number], idx: number) => ({
           ...doc,
           fileUrl: resolveStoredFileUrl(uploadedDocs[idx]?.ref ?? null),
         })),
@@ -195,7 +195,7 @@ export async function GET(req: NextRequest, ctx: Ctx) {
 
     return apiResponse({
       senderNameId: id,
-      documents: documents.map((doc) => ({
+      documents: documents.map((doc: (typeof documents)[number]) => ({
         ...doc,
         fileUrl: resolveStoredFileUrl(doc.fileUrl),
       })),

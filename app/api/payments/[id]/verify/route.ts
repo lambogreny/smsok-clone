@@ -1,4 +1,3 @@
-import { Prisma } from "@prisma/client";
 import { NextRequest } from "next/server";
 import { ApiError, apiError, apiResponse } from "@/lib/api-auth";
 import { getSession } from "@/lib/auth";
@@ -14,6 +13,7 @@ type ReceiverAccountError =
   | "receiver_verification_unavailable"
   | "receiver_mismatch";
 
+import { Prisma } from "@prisma/client";
 import { COMPANY_ACCOUNT_DIGITS } from "@/lib/constants/bank-account";
 
 const RECEIVER_ACCOUNTS = [
@@ -109,7 +109,7 @@ async function rollbackProcessingPayment(paymentId: string, note: string) {
 }
 
 async function claimPendingPaymentForVerification(paymentId: string, userId: string) {
-  return db.$transaction(async (tx) => {
+  return db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
     const claimedPayment = await tx.payment.updateMany({
       where: { id: paymentId, userId, status: "PENDING" },
       data: { status: "PROCESSING" },
@@ -228,7 +228,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       const verificationSource = await resolveStoredFileVerificationUrl(payment.slipUrl);
       const result = await verifySlipByUrl(verificationSource);
 
-      const easyslipData: Prisma.PaymentUpdateInput = {
+      const easyslipData = {
         easyslipVerified: result.success,
         easyslipResponse: result as unknown as Prisma.InputJsonValue,
         easyslipAmount: result.data ? Math.round(result.data.amount * 100) : null,
@@ -290,7 +290,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
         }
 
         if (amountMatch && receiverCheck.matches) {
-          const updated = await db.$transaction(async (tx) => {
+          const updated = await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
             const invoiceNumber =
               payment.invoiceNumber ?? (await ensurePaymentDocumentNumber(id, "invoice", tx));
             const invoiceUrl = `/api/payments/${id}/invoice?download=1`;

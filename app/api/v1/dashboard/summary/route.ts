@@ -34,7 +34,7 @@ export async function GET() {
         total: quota.totalSms,
         used: quota.totalUsed,
         remaining: quota.totalRemaining,
-        packages: quota.packages.map((pkg) => ({
+        packages: quota.packages.map((pkg: (typeof quota.packages)[number]) => ({
           id: pkg.id,
           tierCode: pkg.tier.tierCode,
           name: pkg.tier.name,

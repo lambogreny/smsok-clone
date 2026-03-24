@@ -98,7 +98,7 @@ export async function scheduleCampaign(userId: string, data: unknown) {
       },
     });
     if (!group) throw new Error("ไม่พบกลุ่มรายชื่อ");
-    recipients = group.members.map((m) => m.contact.phone);
+    recipients = group.members.map((m: (typeof group.members)[number]) => m.contact.phone);
     if (recipients.length === 0) throw new Error("กลุ่มรายชื่อไม่มีสมาชิก");
   }
 

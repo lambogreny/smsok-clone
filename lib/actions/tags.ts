@@ -1,14 +1,12 @@
 "use server";
 
-import { Prisma } from "@prisma/client";
+
 import { revalidatePath } from "next/cache";
 import { prisma as db } from "../db";
 import { assignContactTagSchema, createTagSchema, idSchema, updateTagSchema } from "../validations";
 import { resolveActionUserId, type InternalActionUserToken } from "../action-user";
 
-type TagWithCount = Prisma.TagGetPayload<{
-  include: { _count: { select: { contactTags: true } } };
-}>;
+type TagWithCount = NonNullable<Awaited<ReturnType<typeof db.tag.findFirst<{ include: { _count: { select: { contactTags: true } } } }>>>>;
 
 export async function getTags(): Promise<TagWithCount[]>;
 export async function getTags(userId: string): Promise<TagWithCount[]>;
@@ -48,7 +46,7 @@ export async function createTag(userIdOrData: string | unknown, maybeData?: unkn
     revalidatePath("/dashboard/contacts");
     return tag;
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+    if (error && typeof error === "object" && "code" in error && (error as { code: string }).code === "P2002") {
       throw new Error("ชื่อแท็กนี้มีอยู่แล้ว");
     }
     throw error;
@@ -82,7 +80,7 @@ export async function updateTag(userIdOrTagId: string, tagIdOrData: string | unk
     revalidatePath("/dashboard/contacts");
     return updated;
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+    if (error && typeof error === "object" && "code" in error && (error as { code: string }).code === "P2002") {
       throw new Error("ชื่อแท็กนี้มีอยู่แล้ว");
     }
     throw error;

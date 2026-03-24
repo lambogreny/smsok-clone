@@ -73,11 +73,11 @@ async function getWebhookLogStats(webhookIds: string[]) {
   ])
 
   return {
-    successCountByWebhookId: new Map(
-      successCounts.map((row) => [row.webhookId, row._count._all]),
+    successCountByWebhookId: new Map<string, number>(
+      successCounts.map((row: (typeof successCounts)[number]) => [row.webhookId, row._count._all] as [string, number]),
     ),
-    lastDeliveryAtByWebhookId: new Map(
-      lastDeliveries.map((row) => [row.webhookId, row._max.createdAt ?? null]),
+    lastDeliveryAtByWebhookId: new Map<string, Date | null>(
+      lastDeliveries.map((row: (typeof lastDeliveries)[number]) => [row.webhookId, row._max.createdAt ?? null] as [string, Date | null]),
     ),
   }
 }
@@ -128,10 +128,10 @@ export async function listWebhooks(apiUserId?: string) {
   })
 
   const { successCountByWebhookId, lastDeliveryAtByWebhookId } = await getWebhookLogStats(
-    webhooks.map((webhook) => webhook.id),
+    webhooks.map((webhook: (typeof webhooks)[number]) => webhook.id),
   )
 
-  return webhooks.map((webhook) =>
+  return webhooks.map((webhook: (typeof webhooks)[number]) =>
     buildWebhookSummary(webhook, successCountByWebhookId, lastDeliveryAtByWebhookId),
   )
 }
@@ -473,7 +473,7 @@ export async function getWebhookLogs(
   ])
 
   return {
-    logs: logs.map((log) => {
+    logs: logs.map((log: (typeof logs)[number]) => {
       const responseRecord =
         log.response && typeof log.response === "object" && !Array.isArray(log.response)
           ? log.response as Record<string, unknown>

@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma as db } from "../db";
-import type { Prisma, PrismaClient } from "@prisma/client";
+type TxClient = Parameters<Parameters<typeof db.$transaction>[0]>[0];
 import { revalidatePath } from "next/cache";
 import {
   sendSmsSchema,
@@ -29,7 +29,7 @@ async function requireSessionUserId(): Promise<string> {
   return resolveActionUserId();
 }
 
-async function getDashboardMessageScope(userId: string): Promise<Prisma.MessageWhereInput> {
+async function getDashboardMessageScope(userId: string): Promise<NonNullable<NonNullable<Parameters<typeof db.message.findMany>[0]>["where"]>> {
   const sessionUser = await getSession().catch(() => null);
   const organizationIds = new Set<string>();
 
@@ -122,7 +122,7 @@ export async function sendSms(dataOrUserId: unknown, maybeData?: unknown, channe
   }
 
   // Create message + deduct package quota in transaction
-  const { message, deductions } = await db.$transaction(async (tx: Omit<PrismaClient, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">) => {
+  const { message, deductions } = await db.$transaction(async (tx: TxClient) => {
     const createdMessage = await tx.message.create({
       data: {
         userId,
@@ -166,7 +166,7 @@ export async function sendSms(dataOrUserId: unknown, maybeData?: unknown, channe
       });
     } else {
       // Gateway returned failure — REFUND package quota
-      await db.$transaction(async (tx) => {
+      await db.$transaction(async (tx: TxClient) => {
         await tx.message.update({
           where: { id: message.id },
           data: { status: "failed", errorCode: result.error?.slice(0, 100) || null },
@@ -183,7 +183,7 @@ export async function sendSms(dataOrUserId: unknown, maybeData?: unknown, channe
     if (!gatewaySent) {
       const isAlreadyHandled = gatewayError instanceof Error && gatewayError.message.includes("ส่ง SMS ไม่สำเร็จ");
       if (!isAlreadyHandled) {
-        await db.$transaction(async (tx) => {
+        await db.$transaction(async (tx: TxClient) => {
           await tx.message.update({
             where: { id: message.id },
             data: { status: "failed" },
@@ -249,7 +249,7 @@ export async function sendBatchSms(dataOrUserId: unknown, maybeData?: unknown, c
   }
 
   // Create messages + deduct package quota
-  const { result, batchDeductions } = await db.$transaction(async (tx: Omit<PrismaClient, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">) => {
+  const { result, batchDeductions } = await db.$transaction(async (tx: TxClient) => {
     const created = await tx.message.createMany({
       data: input.recipients.map((phone) => ({
         userId,
@@ -317,7 +317,7 @@ export async function sendBatchSms(dataOrUserId: unknown, maybeData?: unknown, c
   if (failedCount > 0) {
     const refundSms = smsCount * failedCount;
     let toRefund = refundSms;
-    await db.$transaction(async (tx) => {
+    await db.$transaction(async (tx: TxClient) => {
       for (let i = batchDeductions.length - 1; i >= 0 && toRefund > 0; i--) {
         const d = batchDeductions[i];
         const refundAmount = Math.min(d.amount, toRefund);

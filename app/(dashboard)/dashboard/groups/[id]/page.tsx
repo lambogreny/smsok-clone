@@ -46,7 +46,7 @@ export default async function GroupDetailPage({
     email: m.contact?.email ?? "",
   }));
 
-  const serializedAvailable = availableContacts.map((c) => ({
+  const serializedAvailable = availableContacts.map((c: (typeof availableContacts)[number]) => ({
     id: c.id,
     name: c.name,
     phone: c.phone,

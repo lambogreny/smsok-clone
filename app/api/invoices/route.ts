@@ -1,5 +1,4 @@
 import { NextRequest } from "next/server";
-import { Prisma } from "@prisma/client";
 import { ApiError, apiError, apiResponse } from "@/lib/api-auth";
 import { getSession } from "@/lib/auth";
 import { prisma as db } from "@/lib/db";
@@ -13,7 +12,7 @@ export async function GET(req: NextRequest) {
     const page = Math.max(1, Number.parseInt(searchParams.get("page") || "1", 10));
     const limit = Math.min(100, Math.max(1, Number.parseInt(searchParams.get("limit") || "20", 10)));
 
-    const where: Prisma.PaymentWhereInput = {
+    const where: NonNullable<Parameters<typeof db.payment.findMany>[0]>["where"] = {
       userId: session.id,
       status: { in: ["COMPLETED", "REFUNDED"] },
     };

@@ -198,7 +198,7 @@ export function finishApiLog(
         stackTrace: stackTrace ? truncate(stackTrace) : null,
       },
     })
-    .catch((err) => {
+    .catch((err: unknown) => {
       logger.error("API log persistence failed", {
         error: err instanceof Error ? err.message : String(err),
       });

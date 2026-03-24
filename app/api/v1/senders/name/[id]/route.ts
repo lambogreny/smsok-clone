@@ -178,7 +178,7 @@ async function updateSenderName(
       }
     }
 
-    const updatedSenderName = await db.$transaction(async (tx) => {
+    const updatedSenderName = await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
       await tx.senderName.update({
         where: { id: senderName.id },
         data: {

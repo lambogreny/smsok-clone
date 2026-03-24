@@ -128,7 +128,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
       }
     }
 
-    const document = await db.$transaction(async (tx) => {
+    const document = await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
       switch (input.type) {
         case "invoice":
           return ensureOrderDocument(tx, order, "INVOICE");

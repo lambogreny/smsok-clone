@@ -32,7 +32,7 @@ export async function GET(
       where: { groupId },
       select: { contactId: true },
     });
-    const excludeIds = membersInGroup.map((m) => m.contactId);
+    const excludeIds = membersInGroup.map((m: (typeof membersInGroup)[number]) => m.contactId);
 
     // Build where
     const where: Record<string, unknown> = {
@@ -88,12 +88,12 @@ export async function GET(
       prisma.contact.count({ where }),
     ]);
 
-    const result = contacts.map((c) => ({
+    const result = contacts.map((c: (typeof contacts)[number]) => ({
       id: c.id,
       name: c.name,
       phone: c.phone,
       email: c.email,
-      tags: c.contactTags.map((ct) => ct.tag),
+      tags: c.contactTags.map((ct: (typeof c.contactTags)[number]) => ct.tag),
     }));
 
     return apiResponse({

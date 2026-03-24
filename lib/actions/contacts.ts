@@ -1,7 +1,7 @@
 "use server";
 
 import { ApiError } from "../api-auth";
-import type { Prisma } from "@prisma/client";
+
 import { prisma as db } from "../db";
 import { revalidatePath } from "next/cache";
 import {
@@ -26,8 +26,8 @@ const contactDetailInclude = {
   },
 } as const;
 
-type ContactListItem = Prisma.ContactGetPayload<{ include: typeof contactInclude }>;
-type ContactDetailItem = Prisma.ContactGetPayload<{ include: typeof contactDetailInclude }>;
+type ContactListItem = NonNullable<Awaited<ReturnType<typeof db.contact.findFirst<{ include: typeof contactInclude }>>>>;
+type ContactDetailItem = NonNullable<Awaited<ReturnType<typeof db.contact.findFirst<{ include: typeof contactDetailInclude }>>>>;
 type ContactsResult = {
   contacts: ContactListItem[];
   pagination: { page: number; limit: number; total: number; totalPages: number };
@@ -66,7 +66,7 @@ async function ensureTagsByName(client: TxClient | typeof db, userId: string, ta
     where: { userId, name: { in: uniqueTagNames } },
     select: { id: true, name: true },
   });
-  const existingNames = new Set(existing.map((tag) => tag.name));
+  const existingNames = new Set(existing.map((tag: (typeof existing)[number]) => tag.name));
   const missingNames = uniqueTagNames.filter((tagName) => !existingNames.has(tagName));
 
   if (missingNames.length > 0) {
@@ -94,7 +94,7 @@ async function createContactTagAssignments(
     userId,
     assignments.map((assignment) => assignment.tagName),
   );
-  const tagIdByName = new Map(tags.map((tag) => [tag.name, tag.id]));
+  const tagIdByName = new Map<string, string>(tags.map((tag: { name: string; id: string }) => [tag.name, tag.id] as [string, string]));
 
   await client.contactTag.createMany({
     data: assignments.flatMap((assignment) => {
@@ -119,7 +119,7 @@ async function replaceContactTags(
   }
 
   const tagRows = await ensureTagsByName(client, userId, tagNames);
-  const tagIds = tagRows.map((tag) => tag.id);
+  const tagIds = tagRows.map((tag: { name: string; id: string }) => tag.id);
 
   await client.contactTag.deleteMany({
     where: {
@@ -129,7 +129,7 @@ async function replaceContactTags(
   });
 
   await client.contactTag.createMany({
-    data: tagIds.map((tagId) => ({ contactId, tagId })),
+    data: tagIds.map((tagId: string) => ({ contactId, tagId })),
     skipDuplicates: true,
   });
 }
@@ -366,7 +366,7 @@ export async function createContact(userIdOrData: string | unknown, maybeData?: 
           };
 
   try {
-    const contact = await db.$transaction(async (tx) => {
+    const contact = await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
       const created = await tx.contact.create({
         data: {
           userId,
@@ -418,7 +418,7 @@ export async function updateContact(userIdOrContactId: string, contactIdOrData: 
     if (existing) throw new Error("เบอร์โทรนี้มีอยู่แล้ว");
   }
 
-  const updated = await db.$transaction(async (tx) => {
+  const updated = await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
     const nextContact = await tx.contact.update({
       where: { id: contactId },
       data: {
@@ -521,7 +521,7 @@ export async function importContacts(
     where: { userId, phone: { in: phones } },
     select: { phone: true },
   });
-  const existingPhones = new Set(existing.map((c) => c.phone));
+  const existingPhones = new Set(existing.map((c: (typeof existing)[number]) => c.phone));
 
   const toCreate = valid.filter((c) => !existingPhones.has(c.phone));
   const skipped = valid.length - toCreate.length + invalidRows.length;
@@ -544,7 +544,7 @@ export async function importContacts(
       },
       select: { id: true, phone: true },
     });
-    const contactIdByPhone = new Map(createdContacts.map((contact) => [contact.phone, contact.id]));
+    const contactIdByPhone = new Map<string, string>(createdContacts.map((contact: (typeof createdContacts)[number]) => [contact.phone, contact.id] as [string, string]));
 
     await createContactTagAssignments(
       db,
@@ -694,7 +694,7 @@ export async function bulkUpdateTags(
 
   const trimmedTag = tag.trim();
 
-  await db.$transaction(async (tx) => {
+  await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
     await migrateLegacyTagsForContacts(tx, userId, contacts);
 
     if (action === "add") {
@@ -702,7 +702,7 @@ export async function bulkUpdateTags(
       if (!tagRecord) return;
 
       await tx.contactTag.createMany({
-        data: contacts.map((contact) => ({
+        data: contacts.map((contact: (typeof contacts)[number]) => ({
           contactId: contact.id,
           tagId: tagRecord.id,
         })),
@@ -719,7 +719,7 @@ export async function bulkUpdateTags(
 
     await tx.contactTag.deleteMany({
       where: {
-        contactId: { in: contacts.map((contact) => contact.id) },
+        contactId: { in: contacts.map((contact: (typeof contacts)[number]) => contact.id) },
         tagId: existingTag.id,
       },
     });

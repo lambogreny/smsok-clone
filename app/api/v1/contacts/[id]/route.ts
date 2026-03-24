@@ -43,9 +43,9 @@ export async function GET(
       name: contact.name,
       phone: contact.phone,
       email: contact.email,
-      tags: contact.contactTags.map((ct) => ct.tag),
+      tags: contact.contactTags.map((ct: (typeof contact.contactTags)[number]) => ct.tag),
       smsConsent: contact.smsConsent,
-      groups: contact.groups.map((g) => ({ id: g.group.id, name: g.group.name })),
+      groups: contact.groups.map((g: (typeof contact.groups)[number]) => ({ id: g.group.id, name: g.group.name })),
       createdAt: contact.createdAt,
     });
   } catch (error) {

@@ -1,6 +1,7 @@
 
 import { prisma as db } from "../db";
-import { Prisma } from "@prisma/client";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const Prisma: any = { JsonNull: null };
 import { z } from "zod";
 
 // ── Schemas ────────────────────────────────────────────
@@ -79,7 +80,7 @@ export async function getCTOMetrics() {
     activeConnections,
     queueDepth,
     activeAlerts,
-    providers: providers.map((p) => ({
+    providers: providers.map((p: (typeof providers)[number]) => ({
       id: p.id,
       name: p.name,
       displayName: p.displayName,
@@ -163,7 +164,7 @@ export async function getActiveApiKeys(page = 1, limit = 50) {
   ]);
 
   return {
-    data: apiKeys.map((k) => ({
+    data: apiKeys.map((k: (typeof apiKeys)[number]) => ({
       id: k.id,
       name: k.name,
       keyPrefix: k.keyPrefix,
@@ -214,14 +215,14 @@ export async function getAlerts(options: {
   active?: boolean;
   severity?: string;
 } = {}) {
-  const where: Prisma.AlertWhereInput = {};
+  const where: Record<string, unknown> = {};
 
   if (options.active !== undefined) {
     where.isActive = options.active;
   }
 
   if (options.severity) {
-    where.severity = options.severity as Prisma.EnumAlertSeverityFilter;
+    where.severity = options.severity;
   }
 
   return db.alert.findMany({
@@ -262,7 +263,7 @@ export async function updateAlert(alertId: string, data: unknown) {
     throw new Error("ไม่พบ Alert นี้");
   }
 
-  const updateData: Prisma.AlertUpdateInput = {};
+  const updateData: Record<string, unknown> = {};
   if (parsed.data.isActive !== undefined) updateData.isActive = parsed.data.isActive;
   if (parsed.data.resolvedAt) updateData.resolvedAt = new Date(parsed.data.resolvedAt);
   if (parsed.data.resolvedBy) updateData.resolvedBy = parsed.data.resolvedBy;
@@ -326,7 +327,7 @@ export async function getSystemHealth() {
     },
   });
 
-  return providers.map((p) => ({
+  return providers.map((p: (typeof providers)[number]) => ({
     name: p.displayName || p.name,
     status: p.status,
     balance: p.balance ? Number(p.balance) : null,

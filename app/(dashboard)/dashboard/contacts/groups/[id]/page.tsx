@@ -41,7 +41,7 @@ export default async function GroupDetailPage({
       return <ErrorState type="NOT_FOUND" />;
     }
 
-    const serializedMembers = group.members.map((m) => ({
+    const serializedMembers = group.members.map((m: (typeof group.members)[number]) => ({
       id: m.contact.id,
       name: m.contact.name,
       phone: m.contact.phone,

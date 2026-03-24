@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     let paymentSelect: Record<string, unknown> = fallbackPaymentSelect;
 
     try {
-      const paymentColumns = await getPaymentTableColumns();
+      const paymentColumns = await getPaymentTableColumns() as Set<string>;
       paymentSelect = prunePaymentSelectForAvailableColumns({
         ...fallbackPaymentSelect,
         totalAmount: true,
@@ -95,7 +95,7 @@ export async function GET(req: NextRequest) {
     }
 
     const items = [
-      ...recentMessages.map((m) => ({
+      ...recentMessages.map((m: (typeof recentMessages)[number]) => ({
         id: `msg_${m.id}`,
         type: m.status === "sent" || m.status === "delivered" ? "sms_success" : m.status === "failed" ? "sms_failed" : "sms_pending",
         message:

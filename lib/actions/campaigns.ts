@@ -202,7 +202,7 @@ export async function executeCampaign(...args: [string, string?, string?]) {
   }
   if (!campaign.contactGroup) throw new Error("แคมเปญนี้ไม่มีกลุ่มรายชื่อ");
 
-  const phones = campaign.contactGroup.members.map((m) => m.contact.phone);
+  const phones = campaign.contactGroup.members.map((m: (typeof campaign.contactGroup.members)[number]) => m.contact.phone);
   if (phones.length === 0) throw new Error("กลุ่มรายชื่อไม่มีสมาชิก");
 
   const rawMessage = campaign.messageBody ?? campaign.template?.content;
@@ -226,7 +226,7 @@ export async function executeCampaign(...args: [string, string?, string?]) {
 
   // 3. Mark as running + deduct quota + create messages
   let deductions: Array<{ purchaseId: string; amount: number }> = [];
-  await db.$transaction(async (tx) => {
+  await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
     await tx.campaign.update({
       where: { id: campaignId },
       data: { status: "running", startedAt: new Date() },
@@ -236,7 +236,7 @@ export async function executeCampaign(...args: [string, string?, string?]) {
     deductions = result.deductions;
 
     await tx.message.createMany({
-      data: phones.map((phone) => ({
+      data: phones.map((phone: (typeof phones)[number]) => ({
         userId,
         campaignId,
         recipient: normalizePhone(phone),
@@ -304,7 +304,7 @@ export async function executeCampaign(...args: [string, string?, string?]) {
   if (failedCount > 0 && refundCredits > 0) {
     // Refund in reverse FIFO order (last deducted first) — tier D+ only
     let remainingRefund = refundCredits;
-    await db.$transaction(async (tx) => {
+    await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
       for (let i = deductions.length - 1; i >= 0 && remainingRefund > 0; i--) {
         const d = deductions[i];
         const refundAmount = Math.min(d.amount, remainingRefund);

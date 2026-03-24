@@ -2,7 +2,8 @@ import { NextRequest } from "next/server";
 import { apiResponse, apiError, authenticateRequest } from "@/lib/api-auth";
 import { authenticateAdmin } from "@/lib/admin-auth";
 import { getConsentLogs } from "@/lib/actions/consent";
-import type { ConsentType, ConsentAction } from "@prisma/client";
+type ConsentType = "SERVICE" | "MARKETING" | "THIRD_PARTY" | "COOKIE";
+type ConsentAction = "OPT_IN" | "OPT_OUT";
 
 // GET /api/v1/consent/logs — admin: list all logs, user: list own logs
 export async function GET(req: NextRequest) {

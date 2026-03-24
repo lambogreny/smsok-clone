@@ -51,7 +51,7 @@ export async function createOrganization(userId: string, data: unknown) {
 
   const slug = generateSlug(parsed.data.name);
 
-  const org = await db.$transaction(async (tx) => {
+  const org = await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
     const organization = await tx.organization.create({
       data: {
         name: parsed.data.name,
@@ -101,7 +101,7 @@ export async function getUserOrganizations(userId: string) {
     orderBy: { createdAt: "asc" },
   });
 
-  return memberships.map((m) => ({
+  return memberships.map((m: (typeof memberships)[number]) => ({
     ...m.organization,
     role: m.role,
     memberCount: m.organization._count.memberships,

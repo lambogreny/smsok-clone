@@ -205,7 +205,7 @@ async function resolveTier(input: PackagePurchaseInput): Promise<TierRecord | nu
     });
 
     const postedTotalSatang = Math.round(input.amount * 100);
-    const matched = tiers.find((tier) => {
+    const matched = tiers.find((tier: (typeof tiers)[number]) => {
       const priceSatang = Math.round(toBahtNumber(tier.price) * 100);
       const totals = calculatePaymentAmounts(priceSatang, false);
       return Math.abs(totals.totalAmount - postedTotalSatang) <= 100;
@@ -309,7 +309,7 @@ export async function POST(req: NextRequest) {
                 ? receiverCheck.note ?? "Receiver account verification failed"
                 : `Amount mismatch: expected ${totals.totalAmount}, got ${detectedSatang}`
               : `EasySlip: ${verification.error ?? "verification pending manual review"}`;
-      payment = await db.$transaction(async (tx) => {
+      payment = await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
         const created = await tx.payment.create({
           data: {
             userId: session.id,

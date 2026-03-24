@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
       throw new Error("ไม่พบรายชื่อบางรายการ");
     }
 
-    const contactIds = contacts.map((c) => c.id);
+    const contactIds = contacts.map((c: (typeof contacts)[number]) => c.id);
 
     const [removed, added] = await prisma.$transaction([
       // Remove from old group
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       }),
       // Add to new group
       prisma.contactGroupMember.createMany({
-        data: contactIds.map((contactId) => ({
+        data: contactIds.map((contactId: (typeof contactIds)[number]) => ({
           groupId: input.toGroupId,
           contactId,
         })),

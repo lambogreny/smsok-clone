@@ -16,7 +16,7 @@ export default async function TemplatesPage() {
   }
 
   // Serialize dates for client component
-  const serializedTemplates = templates.map((t) => ({
+  const serializedTemplates = templates.map((t: (typeof templates)[number]) => ({
     id: t.id,
     userId: t.userId,
     name: t.name,

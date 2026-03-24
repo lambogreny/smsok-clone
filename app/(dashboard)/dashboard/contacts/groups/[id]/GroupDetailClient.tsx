@@ -147,7 +147,7 @@ export default function GroupDetailClient({
       try {
         const contacts = await getContactsNotInGroup(groupId, query || undefined);
         setAvailableContacts(
-          contacts.map((c) => ({
+          contacts.map((c: (typeof contacts)[number]) => ({
             id: c.id,
             name: c.name,
             phone: c.phone,

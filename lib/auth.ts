@@ -291,7 +291,7 @@ async function persistSessionRecord(record: SessionRecord) {
 
   if (sessionsToPrune.length > 0) {
     await Promise.all(
-      sessionsToPrune.map((session) => deleteSessionRecord(record.userId, session.id)),
+      sessionsToPrune.map((session: (typeof sessionsToPrune)[number]) => deleteSessionRecord(record.userId, session.id)),
     );
   }
 }

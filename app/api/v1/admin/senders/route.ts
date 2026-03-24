@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     const input = approveSenderNameSchema.parse(body);
 
     // All reads + checks + writes inside $transaction to prevent TOCTOU
-    await db.$transaction(async (tx) => {
+    await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
       const senderName = await tx.senderName.findUnique({
         where: { id: input.id },
       });

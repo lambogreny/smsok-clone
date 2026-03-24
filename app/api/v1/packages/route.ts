@@ -22,7 +22,7 @@ export async function GET() {
     });
 
     // Serialize Decimal → number + add VAT breakdown
-    const result = tiers.map((t) => {
+    const result = tiers.map((t: (typeof tiers)[number]) => {
       const price = Number(t.price);
       const vat = calculateVat(price);
       return {

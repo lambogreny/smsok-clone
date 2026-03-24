@@ -1,7 +1,9 @@
 
-import { Prisma } from "@prisma/client";
+
 import { NextRequest } from "next/server";
 import { prisma as db } from "../db";
+
+type AuditLogWhere = NonNullable<NonNullable<Parameters<typeof db.auditLog.findMany>[0]>["where"]>;
 import { toCsvCell } from "../csv";
 
 // ── Audit Log Helper (append-only) ─────────────────────
@@ -27,7 +29,7 @@ export async function createAuditLog(params: AuditLogParams) {
         action: params.action,
         resource: params.resource,
         resourceId: params.resourceId,
-        metadata: params.metadata ? (params.metadata as Prisma.InputJsonValue) : undefined,
+        metadata: params.metadata ? (params.metadata as import("@prisma/client").Prisma.InputJsonValue) : undefined,
         ipAddress: params.ipAddress,
         userAgent: params.userAgent,
         result: params.result ?? "success",
@@ -95,7 +97,7 @@ type SearchAuditLogsOptions = {
 export async function searchAuditLogs(options: SearchAuditLogsOptions = {}) {
   const { organizationId, userId, action, resource, dateFrom, dateTo, search, page = 1, limit = 50 } = options;
 
-  const where: Prisma.AuditLogWhereInput = {};
+  const where: AuditLogWhere = {};
 
   if (organizationId) where.organizationId = organizationId;
   if (userId) where.userId = userId;
@@ -152,7 +154,7 @@ export async function exportAuditLogs(
 ) {
   const { organizationId, userId, action, resource, dateFrom, dateTo, search } = options;
 
-  const where: Prisma.AuditLogWhereInput = {};
+  const where: AuditLogWhere = {};
 
   if (organizationId) where.organizationId = organizationId;
   if (userId) where.userId = userId;
@@ -202,8 +204,8 @@ export async function exportAuditLogs(
     "resourceId",
     "result",
     "ipAddress",
-  ].map(toCsvCell).join(",");
-  const csvRows = logs.map((log) => {
+  ].map((h: string) => toCsvCell(h)).join(",");
+  const csvRows = logs.map((log: (typeof logs)[number]) => {
     const userName = log.user?.name ?? "";
     return [
       toCsvCell(log.createdAt.toISOString()),

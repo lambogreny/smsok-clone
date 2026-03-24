@@ -23,8 +23,8 @@ export async function GET(req: NextRequest) {
 
     // Parse stored JSON values
     const bankAccounts = settings
-      .filter((s) => s.key.startsWith("bank_account_"))
-      .map((s) => {
+      .filter((s: (typeof settings)[number]) => s.key.startsWith("bank_account_"))
+      .map((s: (typeof settings)[number]) => {
         try {
           return { id: s.key, ...JSON.parse(s.value), updatedAt: s.updatedAt };
         } catch {

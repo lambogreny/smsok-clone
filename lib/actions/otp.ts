@@ -5,7 +5,6 @@ import { getSession } from "@/lib/auth";
 import { sendSingleSms } from "@/lib/sms-gateway";
 import { normalizePhone, sendOtpSchema, verifyOtpSchema } from "@/lib/validations";
 import crypto from "crypto";
-import { Prisma } from "@prisma/client";
 import { deductQuota, refundQuota, getRemainingQuota, ensureSufficientQuota } from "../package/quota";
 import { InsufficientCreditsError, toInsufficientCreditsResult } from "../quota-errors";
 import type { InsufficientCreditsResult } from "../quota-errors";
@@ -130,7 +129,7 @@ export async function generateOtp_(
   let deductions: Array<{ purchaseId: string; amount: number }>;
 
   try {
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
       const otp = await tx.otpRequest.create({
         data: {
           userId,
@@ -161,8 +160,7 @@ export async function generateOtp_(
     deductions = result.deductions;
   } catch (error) {
     if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2002"
+      error && typeof error === "object" && "code" in error && (error as { code: string }).code === "P2002"
     ) {
       throw new Error("สร้าง OTP ไม่สำเร็จ กรุณาลองใหม่");
     }
@@ -179,7 +177,7 @@ export async function generateOtp_(
       }
     } catch {
       // Refund package quota on send failure
-      await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
         await tx.otpRequest.delete({ where: { id: otpRecord.id } });
         for (const d of deductions) {
           await refundQuota(tx, d.purchaseId, d.amount);

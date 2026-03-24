@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
 
     return apiResponse({
       articles,
-      categories: categories.map((c) => ({ category: c.category, count: c._count._all })),
+      categories: categories.map((c: (typeof categories)[number]) => ({ category: c.category, count: c._count._all })),
       pagination: {
         page: input.page,
         limit: input.limit,

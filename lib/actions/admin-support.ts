@@ -1,6 +1,6 @@
 
 import { prisma as db } from "../db";
-import { Prisma, TicketCategory } from "@prisma/client";
+type TicketCategory = string;
 import { z } from "zod";
 import { sanitizedTextBlockSchema } from "../validations";
 
@@ -105,10 +105,10 @@ export async function getTickets(options: {
 } = {}) {
   const { status, priority, category, assigneeId, page = 1, limit = 20 } = options;
 
-  const where: Prisma.SupportTicketWhereInput = {};
-  if (status) where.status = status as unknown as Prisma.EnumTicketStatusFilter;
-  if (priority) where.priority = priority as unknown as Prisma.EnumTicketPriorityFilter;
-  if (category) where.category = category as string;
+  const where: Record<string, unknown> = {};
+  if (status) where.status = status;
+  if (priority) where.priority = priority;
+  if (category) where.category = category;
   if (assigneeId) where.assigneeId = assigneeId;
 
   const [tickets, total] = await Promise.all([
@@ -213,7 +213,7 @@ export async function escalateTicket(adminId: string, ticketId: string) {
   const ticket = await db.supportTicket.findUnique({ where: { id: ticketId } });
   if (!ticket) throw new Error("ไม่พบ ticket");
 
-  const result = await db.$transaction(async (tx) => {
+  const result = await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
     const escalated = await tx.supportTicket.update({
       where: { id: ticketId },
       data: { priority: "URGENT", category: "TECHNICAL" },
@@ -238,7 +238,7 @@ export async function escalateTicket(adminId: string, ticketId: string) {
 
 export async function getKBArticles(options: { category?: string; published?: boolean; page?: number; limit?: number } = {}) {
   const { category, published, page = 1, limit = 20 } = options;
-  const where: Prisma.KnowledgeBaseWhereInput = {};
+  const where: Record<string, unknown> = {};
   if (category) where.category = category;
   if (published !== undefined) where.published = published;
 

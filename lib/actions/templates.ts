@@ -1,6 +1,6 @@
 "use server";
 
-import { Prisma } from "@prisma/client";
+
 import { prisma as db } from "../db";
 import { revalidatePath } from "next/cache";
 import { templateSchema } from "../validations";
@@ -66,7 +66,7 @@ export async function createTemplate(userIdOrData: string | unknown, maybeData?:
       },
     });
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+    if (error && typeof error === "object" && "code" in error && (error as { code: string }).code === "P2002") {
       throw new Error("มีเทมเพลตชื่อนี้อยู่แล้ว");
     }
     throw error;
@@ -122,7 +122,7 @@ export async function updateTemplate(userIdOrTemplateId: string, templateIdOrDat
       data: updateData,
     });
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+    if (error && typeof error === "object" && "code" in error && (error as { code: string }).code === "P2002") {
       throw new Error("มีเทมเพลตชื่อนี้อยู่แล้ว");
     }
     throw error;

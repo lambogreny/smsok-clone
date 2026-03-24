@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     });
 
     return apiResponse({
-      groups: groups.map((group) => ({
+      groups: groups.map((group: (typeof groups)[number]) => ({
         id: group.id,
         name: group.name,
         createdAt: group.createdAt,

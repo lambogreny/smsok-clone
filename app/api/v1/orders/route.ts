@@ -186,7 +186,7 @@ export async function POST(req: NextRequest) {
     const totals = calculateOrderAmounts(Number(tier.price), hasWht);
     const expiresAt = getOrderExpirationDate(input.payment_method);
 
-    const order = await db.$transaction(async (tx) => {
+    const order = await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
       const orderNumber = await generateOrderDocumentNumber("order", tx);
       const quotationNumber = await generateOrderDocumentNumber("quotation", tx);
 

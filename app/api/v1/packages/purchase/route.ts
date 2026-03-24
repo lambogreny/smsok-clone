@@ -35,7 +35,7 @@ async function _DISABLED_POST(req: NextRequest) {
     expiresAt.setMonth(expiresAt.getMonth() + tier.expiryMonths);
 
     // ALL coupon validation + purchase creation inside $transaction (TOCTOU fix)
-    const result = await db.$transaction(async (tx) => {
+    const result = await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
       let extraSms = 0;
       let priceDiscount = 0;
       let couponId: string | null = null;

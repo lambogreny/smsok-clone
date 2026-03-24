@@ -83,14 +83,14 @@ export async function GET(req: NextRequest) {
       prisma.contact.count({ where }),
     ]);
 
-    const result = contacts.map((c) => ({
+    const result = contacts.map((c: (typeof contacts)[number]) => ({
       id: c.id,
       name: c.name,
       phone: c.phone,
       email: c.email,
-      tags: c.contactTags.map((ct) => ct.tag),
+      tags: c.contactTags.map((ct: (typeof c.contactTags)[number]) => ct.tag),
       smsConsent: c.smsConsent,
-      groups: c.groups.map((g) => ({ id: g.group.id, name: g.group.name })),
+      groups: c.groups.map((g: (typeof c.groups)[number]) => ({ id: g.group.id, name: g.group.name })),
       createdAt: c.createdAt,
     }));
 

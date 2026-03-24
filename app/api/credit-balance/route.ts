@@ -20,8 +20,8 @@ export async function GET(req: NextRequest) {
       orderBy: { expiresAt: "asc" },
     });
 
-    const totalCredits = activePackages.reduce((sum, p) => sum + p.smsTotal, 0);
-    const usedCredits = activePackages.reduce((sum, p) => sum + p.smsUsed, 0);
+    const totalCredits = activePackages.reduce((sum: number, p: (typeof activePackages)[number]) => sum + p.smsTotal, 0);
+    const usedCredits = activePackages.reduce((sum: number, p: (typeof activePackages)[number]) => sum + p.smsUsed, 0);
     const remainingCredits = totalCredits - usedCredits;
     const percentage = totalCredits > 0 ? Math.round((remainingCredits / totalCredits) * 100) : 0;
 

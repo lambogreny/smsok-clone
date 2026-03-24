@@ -201,13 +201,13 @@ export async function getInactiveUsers(days = 30, limit = 50) {
     take: limit,
   });
 
-  return users.map((u) => ({
+  return users.map((u: (typeof users)[number]) => ({
     id: u.id,
     name: u.name,
     email: u.email,
     lastActive: u.updatedAt,
     lastMessageDate: u.messages[0]?.createdAt ?? null,
-    totalSpend: u.transactions.reduce((sum, t) => sum + t.amount, 0),
+    totalSpend: u.transactions.reduce((sum: number, t: (typeof u.transactions)[number]) => sum + t.amount, 0),
   }));
 }
 
@@ -223,15 +223,15 @@ export async function getPowerUsers(limit = 20) {
     take: limit,
   });
 
-  const userIds = results.map((r) => r.userId);
+  const userIds = results.map((r: (typeof results)[number]) => r.userId);
   const users = await db.user.findMany({
     where: { id: { in: userIds } },
     select: { id: true, name: true, email: true },
   });
 
-  const userMap = new Map(users.map((u) => [u.id, u]));
+  const userMap = new Map<string, (typeof users)[number]>(users.map((u: (typeof users)[number]) => [u.id, u] as [string, (typeof users)[number]]));
 
-  return results.map((r) => ({
+  return results.map((r: (typeof results)[number]) => ({
     userId: r.userId,
     name: userMap.get(r.userId)?.name ?? "",
     email: userMap.get(r.userId)?.email ?? "",
@@ -282,7 +282,7 @@ const createPromoCodeSchema = z.object({
 export async function createPromoCode(data: unknown) {
   const result = createPromoCodeSchema.safeParse(data);
   if (!result.success) {
-    throw new Error("ข้อมูลไม่ถูกต้อง: " + result.error.issues.map((i) => i.message).join(", "));
+    throw new Error("ข้อมูลไม่ถูกต้อง: " + result.error.issues.map((i: (typeof result.error.issues)[number]) => i.message).join(", "));
   }
 
   const { code, discountType, discountValue, maxUses, expiresAt } = result.data;
@@ -351,7 +351,7 @@ export async function sendPromoSms(
 ) {
   const parsed = sendPromoSmsSchema.safeParse({ userId, amount, reason });
   if (!parsed.success) {
-    throw new Error("ข้อมูลไม่ถูกต้อง: " + parsed.error.issues.map((i) => i.message).join(", "));
+    throw new Error("ข้อมูลไม่ถูกต้อง: " + parsed.error.issues.map((i: (typeof parsed.error.issues)[number]) => i.message).join(", "));
   }
 
   // Add SMS to user's first active package

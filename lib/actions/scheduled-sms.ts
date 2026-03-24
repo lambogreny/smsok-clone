@@ -1,6 +1,6 @@
 
 import { randomUUID } from "node:crypto";
-import { Prisma } from "@prisma/client";
+
 import { prisma } from "@/lib/db";
 import { sendSingleSms } from "@/lib/sms-gateway";
 import {
@@ -125,7 +125,7 @@ export async function createScheduledSms(
   const resolvedOrgId = data.organizationId ?? null;
 
   // HOLD: deduct quota now via FIFO, store deduction details for accurate refund
-  const scheduled = await prisma.$transaction(async (tx) => {
+  const scheduled = await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
     const quotaResult = await deductQuota(tx, userId, smsCount);
 
     const record = await tx.scheduledSms.create({
@@ -137,7 +137,7 @@ export async function createScheduledSms(
         content: data.message,
         scheduledAt,
         creditCost: smsCount,
-        deductions: quotaResult.deductions as unknown as Prisma.InputJsonValue,
+        deductions: quotaResult.deductions,
       },
     });
 
@@ -185,7 +185,7 @@ export async function cancelScheduledSms(userId: string, id: string) {
   }
 
   // Cancel + REFUND quota using stored FIFO deductions
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
     await tx.scheduledSms.update({
       where: { id },
       data: { status: "cancelled" },
@@ -205,7 +205,7 @@ export async function cancelScheduledSms(userId: string, id: string) {
  */
 async function refundStoredDeductions(
   tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
-  deductionsJson: Prisma.JsonValue | null,
+  deductionsJson: unknown,
   creditCost: number,
   userId: string,
 ) {
@@ -233,7 +233,7 @@ async function refundStoredDeductions(
  */
 async function refundStoredDeductionsIfEligible(
   tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
-  deductionsJson: Prisma.JsonValue | null,
+  deductionsJson: unknown,
   creditCost: number,
   userId: string,
 ) {
@@ -256,7 +256,7 @@ async function refundStoredDeductionsIfEligible(
   }
 }
 
-function parseDeductions(json: Prisma.JsonValue | null): QuotaDeduction[] {
+function parseDeductions(json: unknown): QuotaDeduction[] {
   if (!Array.isArray(json)) return [];
   return json.filter(
     (d): d is QuotaDeduction =>
@@ -298,7 +298,7 @@ export async function processScheduledSmsJob(scheduledSmsId: string) {
 
   const consented = await hasMarketingConsent(sms.userId);
   if (!consented) {
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
       await tx.scheduledSms.update({
         where: { id: sms.id },
         data: { status: "failed", errorCode: "PDPA_NO_MARKETING_CONSENT" },
@@ -324,7 +324,7 @@ export async function processScheduledSmsJob(scheduledSmsId: string) {
       return { smsId: sms.id, status: "sent" as const, creditCost: sms.creditCost };
     }
 
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
       await tx.scheduledSms.update({
         where: { id: sms.id },
         data: {
@@ -338,7 +338,7 @@ export async function processScheduledSmsJob(scheduledSmsId: string) {
 
     return { smsId: sms.id, status: "failed" as const, creditCost: 0 };
   } catch (error) {
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
       await tx.scheduledSms.update({
         where: { id: sms.id },
         data: {
@@ -394,7 +394,7 @@ export async function processScheduledSms() {
     return { processed: 0, sent: 0, failed: 0, rescheduled: false };
   }
 
-  const claimedIds = claimed.map((r) => r.id);
+  const claimedIds = claimed.map((r: { id: string }) => r.id);
 
   // Fetch full records for claimed rows
   const dueMessages = await prisma.scheduledSms.findMany({
@@ -402,7 +402,7 @@ export async function processScheduledSms() {
   });
 
   // Group by orgId to check sending hours per-org
-  const orgIds = [...new Set(dueMessages.map((m) => m.organizationId).filter(Boolean))] as string[];
+  const orgIds = [...new Set(dueMessages.map((m: (typeof dueMessages)[number]) => m.organizationId).filter(Boolean))] as string[];
   const blockedOrgs = new Set<string | null>();
 
   // Check default (no org) sending hours
@@ -416,7 +416,7 @@ export async function processScheduledSms() {
   }
 
   // Reschedule blocked messages — per-org nextAllowedAt, not one shared default
-  const blockedMessages = dueMessages.filter((m) => blockedOrgs.has(m.organizationId));
+  const blockedMessages = dueMessages.filter((m: (typeof dueMessages)[number]) => blockedOrgs.has(m.organizationId));
   if (blockedMessages.length > 0) {
     // Build per-org nextAllowedAt map
     const orgNextAllowed = new Map<string | null, Date | null>();
@@ -430,7 +430,7 @@ export async function processScheduledSms() {
     // Reschedule each group by their org's next allowed time
     for (const [orgId, nextTime] of orgNextAllowed) {
       if (!nextTime) continue;
-      const ids = blockedMessages.filter((m) => m.organizationId === orgId).map((m) => m.id);
+      const ids = blockedMessages.filter((m: (typeof blockedMessages)[number]) => m.organizationId === orgId).map((m: (typeof blockedMessages)[number]) => m.id);
       if (ids.length === 0) continue;
       await prisma.scheduledSms.updateMany({
         where: { id: { in: ids } },
@@ -440,7 +440,7 @@ export async function processScheduledSms() {
   }
 
   // Only process messages from non-blocked orgs
-  const allowedMessages = dueMessages.filter((m) => !blockedOrgs.has(m.organizationId));
+  const allowedMessages = dueMessages.filter((m: (typeof dueMessages)[number]) => !blockedOrgs.has(m.organizationId));
   if (allowedMessages.length === 0) {
     return { processed: 0, sent: 0, failed: 0, rescheduled: blockedMessages.length > 0, nextAllowedAt: defaultHours.nextAllowedAt };
   }
@@ -454,7 +454,7 @@ export async function processScheduledSms() {
       const consented = await hasMarketingConsent(sms.userId);
       if (!consented) {
         try {
-          await prisma.$transaction(async (tx) => {
+          await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
             await tx.scheduledSms.update({
               where: { id: sms.id },
               data: { status: "failed", errorCode: "PDPA_NO_MARKETING_CONSENT" },
@@ -519,7 +519,7 @@ export async function processScheduledSms() {
         results.sent++;
       } else {
         // REFUND on failure — tier D+ only, using stored deductions
-        await prisma.$transaction(async (tx) => {
+        await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
           await tx.scheduledSms.update({
             where: { id: sms.id },
             data: {
@@ -534,7 +534,7 @@ export async function processScheduledSms() {
       }
     } catch (err) {
       // REFUND on exception — tier D+ only, using stored deductions
-      await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
         await tx.scheduledSms.update({
           where: { id: sms.id },
           data: {

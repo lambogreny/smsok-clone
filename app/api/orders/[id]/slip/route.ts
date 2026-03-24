@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { Prisma } from "@prisma/client";
 import { ApiError, apiError, apiResponse } from "@/lib/api-auth";
 import { getSession } from "@/lib/auth";
+import { Prisma } from "@prisma/client";
 import { prisma as db } from "@/lib/db";
 import { orderSummarySelect } from "@/lib/orders/api";
 import {
@@ -137,7 +137,7 @@ export async function POST(req: Request, ctx: RouteContext) {
     const orderSlipId = randomUUID();
     let queueQueued = false;
 
-    const result = await db.$transaction(async (tx) => {
+    const result = await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
       const createdSlip = await tx.orderSlip.create({
         data: {
           id: orderSlipId,
@@ -202,7 +202,7 @@ export async function POST(req: Request, ctx: RouteContext) {
       queueQueued = true;
     } catch (error) {
       console.error("[Slip Route] Failed to enqueue slip verification job:", error);
-      await db.$transaction(async (tx) => {
+      await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
         await tx.orderSlip.update({
           where: { id: orderSlipId },
           data: { deletedAt: new Date() },
@@ -218,7 +218,7 @@ export async function POST(req: Request, ctx: RouteContext) {
             whtCertUrl: order.whtCertUrl,
             whtCertVerified: order.whtCertVerified,
             easyslipVerified: order.easyslipVerified,
-            easyslipResponse: order.easyslipResponse ? (order.easyslipResponse as Prisma.InputJsonValue) : Prisma.JsonNull,
+            easyslipResponse: order.easyslipResponse ? order.easyslipResponse : Prisma.JsonNull,
             adminNote: order.adminNote,
             rejectReason: order.rejectReason,
             rejectMessage: order.rejectMessage,
@@ -227,7 +227,7 @@ export async function POST(req: Request, ctx: RouteContext) {
             completedAt: order.completedAt,
           },
         });
-      }).catch((rollbackError) => {
+      }).catch((rollbackError: unknown) => {
         console.error("[Slip Route] Failed to rollback after queue enqueue error:", rollbackError);
       });
 
@@ -236,7 +236,7 @@ export async function POST(req: Request, ctx: RouteContext) {
     }
 
     try {
-      await db.$transaction(async (tx) => {
+      await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
         await createOrderHistory(tx, order.id, "VERIFYING", {
           fromStatus: order.status,
           changedBy: session.id,

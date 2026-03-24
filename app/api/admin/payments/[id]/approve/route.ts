@@ -38,7 +38,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     }
 
     // Transaction: update payment + create history + activate package
-    const result = await db.$transaction(async (tx) => {
+    const result = await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
       const updated = await tx.payment.update({
         where: { id },
         data: {

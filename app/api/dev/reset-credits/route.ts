@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
       orderBy: { expiresAt: "asc" },
     });
 
-    const totalCapacity = activePackages.reduce((sum, pkg) => sum + pkg.smsTotal, 0);
+    const totalCapacity = activePackages.reduce((sum: number, pkg: (typeof activePackages)[number]) => sum + pkg.smsTotal, 0);
 
     if (input.credits > totalCapacity) {
       return NextResponse.json(
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
 
     let remainingToAllocate = input.credits;
     await db.$transaction(
-      activePackages.map((pkg) => {
+      activePackages.map((pkg: (typeof activePackages)[number]) => {
         const allocated = Math.min(pkg.smsTotal, remainingToAllocate);
         remainingToAllocate -= allocated;
 

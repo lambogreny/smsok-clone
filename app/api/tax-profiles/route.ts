@@ -31,7 +31,7 @@ async function getAccessibleOrgIds(userId: string) {
     select: { organizationId: true },
   });
 
-  return memberships.map((membership) => membership.organizationId);
+  return memberships.map((membership: (typeof memberships)[number]) => membership.organizationId);
 }
 
 // GET /api/tax-profiles — list accessible tax profiles

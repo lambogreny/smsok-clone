@@ -148,7 +148,7 @@ export async function GET(req: NextRequest) {
     const avgVerifyTime =
       verifiedForAverage.length > 0
         ? Math.round(
-            verifiedForAverage.reduce((sum, otp) => {
+            verifiedForAverage.reduce((sum: number, otp: (typeof verifiedForAverage)[number]) => {
               if (!otp.verifiedAt) return sum;
               return sum + Math.max(0, (otp.verifiedAt.getTime() - otp.createdAt.getTime()) / 1000);
             }, 0) / verifiedForAverage.length
@@ -183,7 +183,7 @@ export async function GET(req: NextRequest) {
       ...stats,
     }));
 
-    const recentOtps = recentRows.map((otp, index) => ({
+    const recentOtps = recentRows.map((otp: (typeof recentRows)[number], index: number) => ({
       id: index + 1,
       phone: otp.phone,
       ref: otp.refCode,
@@ -191,7 +191,7 @@ export async function GET(req: NextRequest) {
       time: formatClock(otp.createdAt),
     }));
 
-    const history = historyRows.map((otp, index) => ({
+    const history = historyRows.map((otp: (typeof historyRows)[number], index: number) => ({
       id: index + 1,
       phone: otp.phone,
       ref: otp.refCode,

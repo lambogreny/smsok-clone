@@ -66,7 +66,7 @@ export async function requestSenderName(userIdOrData: string | unknown, maybeDat
 
   let senderName;
   try {
-    senderName = await db.$transaction(async (tx) => {
+    senderName = await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
       const created = await tx.senderName.create({
         data: {
           userId,
@@ -145,7 +145,7 @@ export async function adminApproveSenderName(adminUserId: string, data: unknown)
   const input = approveSenderNameSchema.parse(data);
 
   // All reads + checks + writes inside $transaction to prevent TOCTOU
-  await db.$transaction(async (tx) => {
+  await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
     const senderName = await tx.senderName.findUnique({
       where: { id: input.id },
     });

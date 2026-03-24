@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
     }
 
     return apiResponse({
-      packages: packages.map((pkg, i) => {
+      packages: packages.map((pkg: (typeof packages)[number], i: number) => {
         const daysLeft = Math.max(
           0,
           Math.ceil((pkg.expiresAt.getTime() - now.getTime()) / 86400000),

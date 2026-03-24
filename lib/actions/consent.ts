@@ -1,6 +1,7 @@
 import { prisma as db } from "../db";
-import type { ConsentType, ConsentAction, PolicyDocType } from "@prisma/client";
-import type { Prisma } from "@prisma/client";
+type ConsentType = "SERVICE" | "MARKETING" | "THIRD_PARTY" | "COOKIE";
+type ConsentAction = "OPT_IN" | "OPT_OUT";
+type PolicyDocType = "PRIVACY" | "TERMS" | "MARKETING" | "COOKIE";
 
 const CONSENT_TO_POLICY_TYPE: Record<ConsentType, PolicyDocType> = {
   SERVICE: "TERMS",
@@ -50,7 +51,7 @@ export async function logConsent(opts: {
         ipAddress: opts.ipAddress,
         userAgent: opts.userAgent,
         channel: opts.channel ?? "WEB",
-        metadata: opts.metadata as Prisma.InputJsonValue ?? undefined,
+        metadata: opts.metadata ?? undefined,
       },
     }),
     // Upsert materialized ConsentStatus for fast lookups
@@ -94,7 +95,7 @@ export async function logRegistrationConsent(opts: {
     select: { id: true, type: true, version: true },
   });
 
-  const policyMap = new Map(policies.map((p) => [p.type as string, { id: p.id, version: p.version }]));
+  const policyMap = new Map<string, { id: string; version: string }>(policies.map((p: (typeof policies)[number]) => [p.type as string, { id: p.id, version: p.version }] as [string, { id: string; version: string }]));
 
   let logged = 0;
   for (const c of opts.consents) {
@@ -123,7 +124,7 @@ export async function getUserConsentStatus(userId: string) {
   const consentTypes: ConsentType[] = ["SERVICE", "MARKETING", "THIRD_PARTY", "COOKIE"];
 
   const results = await Promise.all(
-    consentTypes.map(async (type) => {
+    consentTypes.map(async (type: ConsentType) => {
       const latest = await db.pdpaConsentLog.findFirst({
         where: { userId, consentType: type },
         orderBy: { recordedAt: "desc" },
@@ -329,7 +330,7 @@ export async function processSmsReplyOptOut(opts: {
   if (!policy) return { processed: false, userIds: [] };
 
   // Log opt-out for each contact owner (the user who sent SMS to this phone)
-  const uniqueUserIds = [...new Set(contacts.map((c) => c.userId))];
+  const uniqueUserIds: string[] = Array.from(new Set(contacts.map((c: (typeof contacts)[number]) => c.userId)));
   for (const userId of uniqueUserIds) {
     await logConsent({
       userId,

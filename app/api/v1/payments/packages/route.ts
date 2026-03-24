@@ -8,7 +8,7 @@ export async function GET() {
       orderBy: { sortOrder: "asc" },
     });
 
-    const packages = tiers.map((tier, index) => ({
+    const packages = tiers.map((tier: (typeof tiers)[number], index: number) => ({
       id: tier.id,
       packageId: tier.id,
       tierCode: tier.tierCode,

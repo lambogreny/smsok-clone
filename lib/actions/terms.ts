@@ -51,7 +51,7 @@ export async function acceptTerms(options?: {
   }
 
   // Append-only: create new record, also update User.acceptedTermsAt for quick checks
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
     await tx.termsAcceptance.create({
       data: {
         userId: user.id,

@@ -1,7 +1,6 @@
 
 import { prisma as db } from "../db";
 import { z } from "zod";
-import { Prisma } from "@prisma/client";
 
 // ── Schemas ────────────────────────────────────────────
 
@@ -61,7 +60,7 @@ export async function createProvider(adminId: string, data: unknown) {
       name: parsed.data.name,
       displayName: parsed.data.displayName,
       apiUrl: parsed.data.apiUrl,
-      credentials: parsed.data.credentials as Prisma.InputJsonValue,
+      credentials: parsed.data.credentials,
       costPerSms: parsed.data.costPerSms,
       priority: parsed.data.priority ?? 0,
       dailyLimit: parsed.data.dailyLimit,
@@ -82,7 +81,7 @@ export async function updateProvider(providerId: string, data: unknown) {
   const updateData: Record<string, unknown> = {};
   if (parsed.data.displayName) updateData.displayName = parsed.data.displayName;
   if (parsed.data.apiUrl) updateData.apiUrl = parsed.data.apiUrl;
-  if (parsed.data.credentials) updateData.credentials = parsed.data.credentials as Prisma.InputJsonValue;
+  if (parsed.data.credentials) updateData.credentials = parsed.data.credentials;
   if (parsed.data.status) updateData.status = parsed.data.status;
   if (parsed.data.priority !== undefined) updateData.priority = parsed.data.priority;
   if (parsed.data.costPerSms) updateData.costPerSms = parsed.data.costPerSms;

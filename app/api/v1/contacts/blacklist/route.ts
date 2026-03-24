@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
     });
 
     return apiResponse({
-      entries: entries.map((entry) => ({
+      entries: entries.map((entry: (typeof entries)[number]) => ({
         id: entry.id,
         phone: entry.phone,
         reason: entry.reason,

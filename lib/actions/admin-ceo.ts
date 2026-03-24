@@ -236,15 +236,15 @@ export async function getTopCustomers(limit = 10) {
     take: limit,
   });
 
-  const userIds = customers.map((c) => c.userId);
+  const userIds = customers.map((c: (typeof customers)[number]) => c.userId);
   const users = await db.user.findMany({
     where: { id: { in: userIds } },
     select: { id: true, name: true, email: true },
   });
 
-  const userMap = new Map(users.map((u) => [u.id, u]));
+  const userMap = new Map<string, (typeof users)[number]>(users.map((u: (typeof users)[number]) => [u.id, u] as [string, (typeof users)[number]]));
 
-  return customers.map((c) => ({
+  return customers.map((c: (typeof customers)[number]) => ({
     userId: c.userId,
     name: userMap.get(c.userId)?.name ?? "Unknown",
     email: userMap.get(c.userId)?.email ?? "",
@@ -271,7 +271,7 @@ export async function getRecentSignups(days = 7) {
   });
 
   // Get first message or transaction for each user
-  const userIds = users.map((u) => u.id);
+  const userIds = users.map((u: (typeof users)[number]) => u.id);
 
   const [firstMessages, firstTransactions] = await Promise.all([
     db.message.findMany({
@@ -288,10 +288,10 @@ export async function getRecentSignups(days = 7) {
     }),
   ]);
 
-  const msgMap = new Map(firstMessages.map((m) => [m.userId, m]));
-  const txMap = new Map(firstTransactions.map((t) => [t.userId, t]));
+  const msgMap = new Map<string, (typeof firstMessages)[number]>(firstMessages.map((m: (typeof firstMessages)[number]) => [m.userId, m] as [string, (typeof firstMessages)[number]]));
+  const txMap = new Map<string, (typeof firstTransactions)[number]>(firstTransactions.map((t: (typeof firstTransactions)[number]) => [t.userId, t] as [string, (typeof firstTransactions)[number]]));
 
-  return users.map((u) => {
+  return users.map((u: (typeof users)[number]) => {
     const firstMsg = msgMap.get(u.id);
     const firstTx = txMap.get(u.id);
 
@@ -338,7 +338,7 @@ export async function getChurnedUsers(limit = 20) {
     take: limit,
   });
 
-  return users.map((u) => ({
+  return users.map((u: (typeof users)[number]) => ({
     id: u.id,
     name: u.name,
     email: u.email,
@@ -373,12 +373,12 @@ export async function getRevenueByPlan() {
   });
 
   return {
-    byMethod: byMethod.map((m) => ({
+    byMethod: byMethod.map((m: (typeof byMethod)[number]) => ({
       method: m.method,
       revenue: m._sum.amount ?? 0,
       count: m._count,
     })),
-    byPackageTier: byPackageTier.map((p) => ({
+    byPackageTier: byPackageTier.map((p: (typeof byPackageTier)[number]) => ({
       tierId: p.tierId,
       totalSms: p._sum.smsTotal ?? 0,
       count: p._count,

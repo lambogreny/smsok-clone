@@ -1,5 +1,7 @@
 import { NextRequest } from "next/server";
-import { Prisma } from "@prisma/client";
+import { sqltag as _prisma_sql, join as _prisma_join, empty as _prisma_empty, type Sql as PrismaSql } from "@prisma/client/runtime/client";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const Prisma: any = { sql: _prisma_sql, join: _prisma_join, empty: _prisma_empty };
 import { ApiError, apiResponse, apiError, authenticateRequest } from "@/lib/api-auth";
 import { prisma as db } from "@/lib/db";
 import { logger } from "@/lib/logger";
@@ -83,7 +85,7 @@ export async function GET(req: NextRequest) {
     const params = Object.fromEntries(new URL(req.url).searchParams);
     const input = listSchema.parse(params);
 
-    const filters: Prisma.Sql[] = [Prisma.sql`st.user_id = ${session.id}`];
+    const filters: PrismaSql[] = [Prisma.sql`st.user_id = ${session.id}`];
     if (input.status) {
       filters.push(Prisma.sql`UPPER(st.status::text) = ${input.status}`);
     }
@@ -96,7 +98,7 @@ export async function GET(req: NextRequest) {
         Prisma.sql`(st.subject ILIKE ${query} OR st.description ILIKE ${query})`,
       );
     }
-    const whereCondition = filters.reduce<Prisma.Sql | null>((acc, filter) => {
+    const whereCondition = filters.reduce<PrismaSql | null>((acc, filter) => {
       if (!acc) return filter;
       return Prisma.sql`${acc} AND ${filter}`;
     }, null);
@@ -137,11 +139,11 @@ export async function GET(req: NextRequest) {
             tr.ticket_id AS "ticketId",
             COUNT(*)::int AS replies
           FROM ticket_replies tr
-          WHERE tr.ticket_id IN (${Prisma.join(tickets.map((ticket) => ticket.id))})
+          WHERE tr.ticket_id IN (${Prisma.join(tickets.map((ticket: (typeof tickets)[number]) => ticket.id))})
           GROUP BY tr.ticket_id
         `);
         replyCounts = new Map(
-          replyRows.map((row) => [row.ticketId, row.replies]),
+          replyRows.map((row: (typeof replyRows)[number]) => [row.ticketId, row.replies]),
         );
       } catch (error) {
         logger.warn("Support ticket reply counts unavailable", {
@@ -152,7 +154,7 @@ export async function GET(req: NextRequest) {
     }
 
     return apiResponse({
-      tickets: tickets.map((ticket) => ({
+      tickets: tickets.map((ticket: (typeof tickets)[number]) => ({
         id: ticket.id,
         subject: ticket.subject,
         description: ticket.description,

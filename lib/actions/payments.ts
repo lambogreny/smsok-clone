@@ -46,7 +46,7 @@ export async function adminVerifyTransaction(
   if (transaction.status !== "pending") throw new Error("รายการนี้ดำเนินการแล้ว");
 
   if (action === "verify") {
-    await db.$transaction(async (tx) => {
+    await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
       await tx.transaction.update({
         where: { id: transactionId },
         data: {

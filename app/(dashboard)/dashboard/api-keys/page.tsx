@@ -15,7 +15,7 @@ export default async function ApiKeysPage() {
   }
 
   // Serialize dates to ISO strings for RSC → client boundary
-  const serialized = apiKeys.map((k) => ({
+  const serialized = apiKeys.map((k: (typeof apiKeys)[number]) => ({
     ...k,
     lastUsed: k.lastUsed ? new Date(k.lastUsed).toISOString() : null,
     revokedAt: k.revokedAt ? new Date(k.revokedAt).toISOString() : null,

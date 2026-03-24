@@ -4,7 +4,7 @@ import { getSession } from "@/lib/auth"
 import { encryptSecret, decryptSecret } from "@/lib/two-factor"
 import { z } from "zod"
 import { randomUUID } from "crypto"
-import type { DocumentType } from "@prisma/client"
+type DocumentType = "ORDER" | "TAX_INVOICE" | "RECEIPT" | "TAX_INVOICE_RECEIPT" | "INVOICE" | "DEBIT_NOTE" | "CREDIT_NOTE" | "QUOTATION"
 
 // ── Thai Citizen ID Checksum ────────────────────────────
 

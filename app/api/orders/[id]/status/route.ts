@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { type OrderStatus } from "@prisma/client";
+type OrderStatus = "DRAFT" | "PENDING_PAYMENT" | "VERIFYING" | "PAID" | "EXPIRED" | "CANCELLED";
 import { z } from "zod";
 import { ApiError, apiError, apiResponse } from "@/lib/api-auth";
 import { authenticateAdmin } from "@/lib/admin-auth";
@@ -92,14 +92,14 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
     if (isAdmin && !ADMIN_ALLOWED_TARGETS.has(input.status)) {
       throw new ApiError(403, "สถานะนี้ไม่อนุญาตสำหรับ admin");
     }
-    if (!ALLOWED_TRANSITIONS[order.status].has(nextStatus)) {
+    if (!ALLOWED_TRANSITIONS[order.status as OrderStatus].has(nextStatus)) {
       throw new ApiError(400, "ไม่สามารถเปลี่ยนสถานะตามลำดับนี้ได้");
     }
 
     const actorId = admin?.id ?? session!.id;
     const note = input.note?.trim() || null;
 
-    const updated = await db.$transaction(async (tx) => {
+    const updated = await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
       const next = await tx.order.update({
         where: { id: order.id },
         data: {

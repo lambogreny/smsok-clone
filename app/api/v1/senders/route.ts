@@ -1,5 +1,4 @@
 import { NextRequest } from "next/server";
-import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { authenticateRequest, apiResponse, apiError, ApiError } from "@/lib/api-auth";
 import { prisma as db } from "@/lib/db";
@@ -82,15 +81,15 @@ export async function GET(req: NextRequest) {
       by: ["senderName"],
       where: {
         userId: user.id,
-        senderName: { in: senderNames.map((sender) => sender.name) },
+        senderName: { in: senderNames.map((sender: (typeof senderNames)[number]) => sender.name) },
       },
       _count: { _all: true },
     });
     const smsCountMap = new Map(
-      smsCounts.map((row) => [row.senderName, row._count._all])
+      smsCounts.map((row: (typeof smsCounts)[number]) => [row.senderName, row._count._all])
     );
 
-    let senders = senderNames.map((sender) => ({
+    let senders = senderNames.map((sender: (typeof senderNames)[number]) => ({
       id: sender.id,
       name: sender.name,
       type: normalizeSenderType(undefined),
@@ -104,15 +103,15 @@ export async function GET(req: NextRequest) {
 
     if (query.search) {
       const q = query.search.toLowerCase();
-      senders = senders.filter((sender) => sender.name.toLowerCase().includes(q));
+      senders = senders.filter((sender: (typeof senders)[number]) => sender.name.toLowerCase().includes(q));
     }
     if (query.status) {
       const normalizedStatus = query.status.toUpperCase();
-      senders = senders.filter((sender) => sender.status === normalizedStatus);
+      senders = senders.filter((sender: (typeof senders)[number]) => sender.status === normalizedStatus);
     }
 
     const quotaInfo = await getRemainingQuota(user.id);
-    const used = senderNames.filter((sender) =>
+    const used = senderNames.filter((sender: (typeof senderNames)[number]) =>
       QUOTA_COUNT_STATUSES.includes(sender.status as (typeof QUOTA_COUNT_STATUSES)[number])
     ).length;
     const activePkg = quotaInfo.packages[0];
@@ -174,7 +173,7 @@ export async function POST(req: NextRequest) {
 
     let sender;
     try {
-      sender = await db.$transaction(async (tx) => {
+      sender = await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
         const created = await tx.senderName.create({
           data: {
             userId: user.id,
@@ -208,7 +207,7 @@ export async function POST(req: NextRequest) {
         return created;
       });
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      if (error && typeof error === "object" && "code" in error && (error as { code: string }).code === "P2002") {
         throw new ApiError(409, "ชื่อผู้ส่งนี้มีอยู่แล้ว", "DUPLICATE");
       }
       throw error;

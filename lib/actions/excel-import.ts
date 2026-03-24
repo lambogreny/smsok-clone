@@ -98,7 +98,7 @@ export async function importContactsFromExcel(
   for (let i = 0; i < rows.length; i += BATCH_SIZE) {
     const batch = rows.slice(i, i + BATCH_SIZE);
 
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
       for (let j = 0; j < batch.length; j++) {
         const row = batch[j]!;
         const rowNum = i + j + 2; // +2 for 1-indexed + header row

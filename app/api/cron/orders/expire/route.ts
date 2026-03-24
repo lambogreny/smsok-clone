@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
     }
 
     const cancelledAt = new Date();
-    const cancelledIds = await db.$transaction(async (tx) => {
+    const cancelledIds = await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
       const processed: string[] = [];
 
       for (const order of staleOrders) {

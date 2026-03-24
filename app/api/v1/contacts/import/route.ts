@@ -194,7 +194,7 @@ async function handleCsvImport(
       select: { id: true },
     });
     await prisma.contactGroupMember.createMany({
-      data: created.map((c) => ({ groupId: groupId!, contactId: c.id })),
+      data: created.map((c: (typeof created)[number]) => ({ groupId: groupId!, contactId: c.id })),
       skipDuplicates: true,
     });
   }

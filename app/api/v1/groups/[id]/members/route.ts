@@ -57,7 +57,7 @@ export async function GET(
     ]);
 
     return apiResponse({
-      members: members.map((m) => m.contact),
+      members: members.map((m: (typeof members)[number]) => m.contact),
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     });
   } catch (error) {
@@ -91,7 +91,7 @@ export async function POST(
       where: { id: { in: input.contactIds }, userId: user.id },
       select: { id: true },
     });
-    const ownedIds = new Set(ownedContacts.map((c) => c.id));
+    const ownedIds = new Set(ownedContacts.map((c: (typeof ownedContacts)[number]) => c.id));
     const validIds = input.contactIds.filter((id) => ownedIds.has(id));
 
     if (validIds.length === 0) {

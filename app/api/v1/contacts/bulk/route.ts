@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
         },
         select: { id: true, phone: true },
       });
-    const existingPhones = new Set(existingContacts.map((contact) => contact.phone));
+    const existingPhones = new Set(existingContacts.map((contact: (typeof existingContacts)[number]) => contact.phone));
     duplicates += existingContacts.length;
 
     const toCreate = validRows.filter((contact) => !existingPhones.has(contact.phone));
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
 
     if (input.groupId && allValidContacts.length > 0) {
       await prisma.contactGroupMember.createMany({
-        data: allValidContacts.map((contact) => ({
+        data: allValidContacts.map((contact: (typeof allValidContacts)[number]) => ({
           groupId: input.groupId!,
           contactId: contact.id,
         })),

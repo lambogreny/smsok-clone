@@ -29,7 +29,7 @@ type PaymentDbColumn = (typeof PAYMENT_FIELD_TO_DB_COLUMN)[keyof typeof PAYMENT_
 
 let paymentColumnsCache: { expiresAt: number; columns: Set<string> } | null = null;
 
-export async function getPaymentTableColumns() {
+export async function getPaymentTableColumns(): Promise<Set<string>> {
   const now = Date.now();
   if (paymentColumnsCache && paymentColumnsCache.expiresAt > now) {
     return paymentColumnsCache.columns;
@@ -41,7 +41,7 @@ export async function getPaymentTableColumns() {
     WHERE table_name = 'payments'
   `);
 
-  const columns = new Set(rows.map((row) => row.column_name));
+  const columns = new Set(rows.map((row: { column_name: string }) => row.column_name));
   paymentColumnsCache = {
     expiresAt: now + 60_000,
     columns,

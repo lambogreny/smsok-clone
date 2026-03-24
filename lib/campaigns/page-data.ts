@@ -167,19 +167,19 @@ export async function loadCampaignsPageData(userId: string): Promise<CampaignPag
   if (metadataResult.status === "fulfilled") {
     const [rawGroups, rawTemplates, approvedSenders] = metadataResult.value;
 
-    groups = rawGroups.map((group) => ({
+    groups = rawGroups.map((group: (typeof rawGroups)[number]) => ({
       id: group.id,
       name: group.name,
       count: group._count.members,
     }));
 
-    templates = rawTemplates.map((template) => ({
+    templates = rawTemplates.map((template: (typeof rawTemplates)[number]) => ({
       id: template.id,
       name: template.name,
       body: template.content,
     }));
 
-    senderNames = approvedSenders.map((sender) => sender.name);
+    senderNames = approvedSenders.map((sender: (typeof approvedSenders)[number]) => sender.name);
   } else {
     if (!isRecoverableCampaignsPageError(metadataResult.reason)) {
       throw metadataResult.reason;

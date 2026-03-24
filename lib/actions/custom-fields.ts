@@ -142,7 +142,7 @@ export async function setCustomFieldValues(
 
   // Validate select-type values against options
   for (const val of values) {
-    const field = fields.find((f) => f.id === val.fieldId);
+    const field = fields.find((f: (typeof fields)[number]) => f.id === val.fieldId);
     if (field?.type === "select" && field.options) {
       const opts: string[] = JSON.parse(field.options);
       if (!opts.includes(val.value)) {

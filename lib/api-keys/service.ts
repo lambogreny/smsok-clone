@@ -68,7 +68,7 @@ export async function listApiKeysForUser(userId: string) {
     orderBy: { createdAt: "desc" },
   });
 
-  return keys.map((key) => ({
+  return keys.map((key: (typeof keys)[number]) => ({
     id: key.id,
     name: key.name,
     key: key.keyPrefix || "sk_live_****...****",

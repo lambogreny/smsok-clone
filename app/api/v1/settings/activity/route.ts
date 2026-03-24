@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
     ]);
 
     return apiResponse({
-      activities: activities.map((a) => ({
+      activities: activities.map((a: (typeof activities)[number]) => ({
         id: a.id,
         action: a.action,
         details: `${a.action} ${a.resource}${a.resourceId ? ` #${a.resourceId}` : ""}`,

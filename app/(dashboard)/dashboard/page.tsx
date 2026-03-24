@@ -74,7 +74,7 @@ export default async function DashboardPage() {
 
   const statsWithQuota = {
     ...stats,
-    recentMessages: stats.recentMessages.map((message) => ({
+    recentMessages: stats.recentMessages.map((message: (typeof stats.recentMessages)[number]) => ({
       ...message,
       createdAt: message.createdAt.toISOString(),
     })),

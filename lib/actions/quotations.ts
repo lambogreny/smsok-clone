@@ -54,7 +54,7 @@ export async function createQuotation(userId: string, data: unknown) {
   const validUntil = new Date();
   validUntil.setDate(validUntil.getDate() + input.validDays);
 
-  const quotation = await db.$transaction(async (tx) => {
+  const quotation = await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
     const quotationNumber = await generateInvoiceNumber("QUOTATION", tx);
 
     return tx.quotation.create({

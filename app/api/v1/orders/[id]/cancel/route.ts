@@ -30,7 +30,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         ? body.reason.trim()
         : "Customer cancelled order";
 
-    const updated = await db.$transaction(async (tx) => {
+    const updated = await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
       const next = await tx.order.update({
         where: { id: order.id },
         data: {

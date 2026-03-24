@@ -105,7 +105,7 @@ export async function checkAndAutoTopup(userId: string): Promise<{
   const expiresAt = new Date();
   expiresAt.setMonth(expiresAt.getMonth() + setting.tier.expiryMonths);
 
-  const purchase = await db.$transaction(async (tx) => {
+  const purchase = await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
     // Package NOT active yet — needs payment verification first
     const pkg = await tx.packagePurchase.create({
       data: {

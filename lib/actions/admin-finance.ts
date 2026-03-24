@@ -1,6 +1,6 @@
 
 import { prisma as db } from "../db";
-import { Prisma } from "@prisma/client";
+
 import { z } from "zod";
 
 // ── Schemas ────────────────────────────────────────────
@@ -134,7 +134,7 @@ export async function processRefund(adminId: string, refundId: string, data: unk
 
   if (parsed.data.status === "APPROVED") {
     // Process: restore SMS quota + update refund status
-    await db.$transaction(async (tx) => {
+    await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
       await tx.refund.update({
         where: { id: refundId },
         data: {
@@ -240,7 +240,7 @@ export async function generateTaxReport(adminId: string, type: string, period: s
     select: { amount: true, credits: true, method: true, createdAt: true },
   });
 
-  const totalRevenue = transactions.reduce((sum, t) => sum + t.amount, 0);
+  const totalRevenue = transactions.reduce((sum: number, t: (typeof transactions)[number]) => sum + t.amount, 0);
   const vatRate = 0.07;
   const revenueBeforeVat = totalRevenue / (1 + vatRate);
   const totalVat = totalRevenue - revenueBeforeVat;
@@ -264,7 +264,7 @@ export async function generateTaxReport(adminId: string, type: string, period: s
       totalWht,
       netAmount: totalRevenue - totalWht,
       transactionCount: transactions.length,
-      data: { transactions: transactions.length, methods: {} } as Prisma.InputJsonValue,
+      data: { transactions: transactions.length, methods: {} },
       generatedBy: adminId,
     },
     create: {
@@ -275,7 +275,7 @@ export async function generateTaxReport(adminId: string, type: string, period: s
       totalWht,
       netAmount: totalRevenue - totalWht,
       transactionCount: transactions.length,
-      data: { transactions: transactions.length, methods: {} } as Prisma.InputJsonValue,
+      data: { transactions: transactions.length, methods: {} },
       generatedBy: adminId,
     },
   });

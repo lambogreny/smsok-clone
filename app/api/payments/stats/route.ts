@@ -12,7 +12,7 @@ export async function GET() {
     const session = await getSession();
     if (!session?.id) throw new ApiError(401, "กรุณาเข้าสู่ระบบ");
 
-    const paymentColumns = await getPaymentTableColumns();
+    const paymentColumns = await getPaymentTableColumns() as Set<string>;
     const totalPaidSumField = pickPaymentAmountSumField(paymentColumns);
 
     if (totalPaidSumField === "totalAmount") {

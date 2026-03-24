@@ -40,7 +40,7 @@ export async function GET(_req: Request, ctx: RouteContext) {
       ...serializeOrderV2(order),
       documents: order.documents.map(serializeOrderDocument),
       slips: order.slips.map(serializeOrderSlip),
-      history: order.history.map((item) => ({
+      history: order.history.map((item: (typeof order.history)[number]) => ({
         id: item.id,
         from_status: item.fromStatus ? serializeOrderStatus(item.fromStatus) : null,
         to_status: serializeOrderStatus(item.toStatus),

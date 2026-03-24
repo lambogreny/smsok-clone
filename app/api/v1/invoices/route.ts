@@ -1,5 +1,4 @@
 import { NextRequest } from "next/server";
-import { Prisma } from "@prisma/client";
 import { apiResponse, apiError, authenticateRequest } from "@/lib/api-auth";
 import { prisma as db } from "@/lib/db";
 import { ensurePaymentDocumentNumber } from "@/lib/payments/documents";
@@ -16,7 +15,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const input = createInvoiceSchema.parse(body);
 
-    const invoice = await db.$transaction(async (tx) => {
+    const invoice = await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
       const invoiceNumber = await generateInvoiceNumber(input.type, tx);
 
       const calc = input.applyWht
@@ -72,7 +71,7 @@ export async function GET(req: NextRequest) {
     const page = Math.max(1, Number.parseInt(searchParams.get("page") || "1", 10));
     const limit = Math.min(100, Math.max(1, Number.parseInt(searchParams.get("limit") || "20", 10)));
 
-    const where: Prisma.PaymentWhereInput = {
+    const where: NonNullable<Parameters<typeof db.payment.findMany>[0]>["where"] = {
       userId: user.id,
       status: { in: ["COMPLETED", "REFUNDED"] },
     };

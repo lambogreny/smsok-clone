@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
     // Create sender name + URLs in transaction
     let senderName;
     try {
-      senderName = await db.$transaction(async (tx) => {
+      senderName = await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
         const sn = await tx.senderName.create({
           data: {
             userId: user.id,

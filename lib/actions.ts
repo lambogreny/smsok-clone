@@ -30,7 +30,7 @@ export async function register(formData: FormData) {
   }
 
   const hashed = await hashPassword(password);
-  const user = await prisma.$transaction(async (tx) => {
+  const user = await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
     const newUser = await tx.user.create({
       data: { name, email, phone, password: hashed },
     });
@@ -120,7 +120,7 @@ export async function registerWithOtp(data: {
 
   const hashed = await hashPassword(password);
   const acceptedTermsAt = new Date();
-  const user = await prisma.$transaction(async (tx) => {
+  const user = await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
     const newUser = await tx.user.create({
       data: {
         name,
@@ -151,7 +151,7 @@ export async function registerWithOtp(data: {
         type: true,
       },
     });
-    const policyMap = new Map(activePolicies.map((policy) => [policy.type, policy.id]));
+    const policyMap = new Map(activePolicies.map((policy: (typeof activePolicies)[number]) => [policy.type, policy.id]));
     const consentLogs = [
       {
         policyId: policyMap.get("TERMS"),

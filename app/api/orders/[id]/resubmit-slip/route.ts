@@ -1,6 +1,6 @@
-import { Prisma } from "@prisma/client";
 import { ApiError, apiError, apiResponse } from "@/lib/api-auth";
 import { getSession } from "@/lib/auth";
+import { Prisma } from "@prisma/client";
 import { prisma as db } from "@/lib/db";
 import { orderSummarySelect } from "@/lib/orders/api";
 import { MAX_SLIP_ATTEMPTS } from "@/lib/orders/rejected-slip";
@@ -46,7 +46,7 @@ export async function POST(_req: Request, ctx: RouteContext) {
       throw new ApiError(429, "คุณส่งสลิปผิดเกินจำนวนครั้งที่กำหนดแล้ว กรุณาติดต่อเจ้าหน้าที่");
     }
 
-    const updated = await db.$transaction(async (tx) => {
+    const updated = await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
       const result = await tx.order.updateMany({
         where: {
           id: order.id,

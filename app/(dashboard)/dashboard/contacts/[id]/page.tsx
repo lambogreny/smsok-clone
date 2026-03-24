@@ -36,16 +36,16 @@ export default async function ContactDetailPage({
       optOutAt: contact.optOutAt?.toISOString() ?? null,
       optOutReason: contact.optOutReason,
       createdAt: contact.createdAt.toISOString(),
-      groups: contact.groups.map((g) => ({
+      groups: contact.groups.map((g: (typeof contact.groups)[number]) => ({
         id: g.group.id,
         name: g.group.name,
       })),
-      contactTags: contact.contactTags.map((ct) => ({
+      contactTags: contact.contactTags.map((ct: (typeof contact.contactTags)[number]) => ({
         id: ct.tag.id,
         name: ct.tag.name,
         color: ct.tag.color,
       })),
-      customFieldValues: contact.customFieldValues.map((cfv) => ({
+      customFieldValues: contact.customFieldValues.map((cfv: (typeof contact.customFieldValues)[number]) => ({
         id: cfv.id,
         fieldId: cfv.fieldId,
         value: cfv.value,
@@ -53,7 +53,7 @@ export default async function ContactDetailPage({
       })),
     };
 
-    const serializedFields = customFields.map((f) => ({
+    const serializedFields = customFields.map((f: (typeof customFields)[number]) => ({
       id: f.id,
       name: f.name,
       type: f.type,

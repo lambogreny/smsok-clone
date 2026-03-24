@@ -30,14 +30,14 @@ export async function GET(req: NextRequest) {
     await db.$transaction([
       db.payment.updateMany({
         where: {
-          id: { in: expiredPayments.map((payment) => payment.id) },
+          id: { in: expiredPayments.map((payment: (typeof expiredPayments)[number]) => payment.id) },
         },
         data: {
           status: "EXPIRED",
         },
       }),
       db.paymentHistory.createMany({
-        data: expiredPayments.map((payment) => ({
+        data: expiredPayments.map((payment: (typeof expiredPayments)[number]) => ({
           paymentId: payment.id,
           fromStatus: "PENDING",
           toStatus: "EXPIRED",
@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
 
     return Response.json({
       processed: expiredPayments.length,
-      ids: expiredPayments.map((payment) => payment.id),
+      ids: expiredPayments.map((payment: (typeof expiredPayments)[number]) => payment.id),
     });
   } catch (error) {
     return apiSensitiveError(error);

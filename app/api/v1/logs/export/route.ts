@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
 
     // Build CSV
     const headers = ["id", "timestamp", "method", "endpoint", "url", "status", "latency_ms", "ip_address", "source", "error_code", "error_message"];
-    const rows = logs.map((log) => [
+    const rows = logs.map((log: (typeof logs)[number]) => [
       toCsvCell(log.id),
       toCsvCell(log.createdAt.toISOString()),
       toCsvCell(log.method),
@@ -70,7 +70,7 @@ export async function GET(req: NextRequest) {
       toCsvCell(log.errorMsg),
     ]);
 
-    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const csv = [headers.join(","), ...rows.map((r: (typeof rows)[number]) => r.join(","))].join("\n");
 
     const filename = `api-logs-${from || "all"}-${to || "now"}.csv`;
 

@@ -99,7 +99,7 @@ export async function completeOnboarding(userId: string) {
   }
 
   // Award bonus SMS via adding to first active package
-  await db.$transaction(async (tx) => {
+  await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
     const activePackage = await tx.packagePurchase.findFirst({
       where: { userId, isActive: true, expiresAt: { gt: new Date() } },
       orderBy: { expiresAt: "asc" },

@@ -44,15 +44,15 @@ export async function GET(req: NextRequest) {
       ORDER BY day ASC
     `;
 
-    const rowMap = new Map(
-      rows.map((row) => [
+    const rowMap = new Map<string, { sent: number; delivered: number; failed: number }>(
+      rows.map((row: DailyRow) => [
         new Date(row.day).toISOString().slice(0, 10),
         {
           sent: toCount(row.sent),
           delivered: toCount(row.delivered),
           failed: toCount(row.failed),
         },
-      ]),
+      ] as [string, { sent: number; delivered: number; failed: number }]),
     );
 
     return apiResponse({

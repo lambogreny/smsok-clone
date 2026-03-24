@@ -33,7 +33,7 @@ export async function PATCH(_req: Request, ctx: RouteContext) {
       throw new ApiError(400, "คำสั่งซื้อยังไม่หมดอายุ");
     }
 
-    const updated = await db.$transaction(async (tx) => {
+    const updated = await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
       const next = await tx.order.update({
         where: { id: order.id },
         data: { status: "EXPIRED" },

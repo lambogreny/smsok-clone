@@ -220,7 +220,7 @@ export async function DELETE(req: NextRequest, ctx: RouteContext) {
       throw new ApiError(400, "ลบได้เฉพาะแคมเปญที่ยังไม่เริ่มส่ง");
     }
 
-    await db.$transaction(async (tx) => {
+    await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
       await tx.campaignMessage.deleteMany({ where: { campaignId: campaign.id } });
       await tx.message.updateMany({
         where: { campaignId: campaign.id },

@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     });
 
     const result = await prisma.contactGroupMember.createMany({
-      data: contacts.map((c) => ({
+      data: contacts.map((c: (typeof contacts)[number]) => ({
         groupId: input.groupId,
         contactId: c.id,
       })),

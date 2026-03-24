@@ -36,8 +36,8 @@ export async function GET() {
       }),
     ]);
 
-    const totalCredits = activePackages.reduce((sum, pkg) => sum + pkg.smsTotal, 0);
-    const usedCredits = activePackages.reduce((sum, pkg) => sum + pkg.smsUsed, 0);
+    const totalCredits = activePackages.reduce((sum: number, pkg: (typeof activePackages)[number]) => sum + pkg.smsTotal, 0);
+    const usedCredits = activePackages.reduce((sum: number, pkg: (typeof activePackages)[number]) => sum + pkg.smsUsed, 0);
     const remainingCredits = totalCredits - usedCredits;
     const percentage =
       totalCredits > 0 ? Math.round((remainingCredits / totalCredits) * 100) : 0;
@@ -70,7 +70,7 @@ export async function GET() {
         percentage,
         threshold,
       },
-      history: packageHistory.map((pkg) => ({
+      history: packageHistory.map((pkg: (typeof packageHistory)[number]) => ({
         id: pkg.id,
         packageName: pkg.tier.name,
         tierCode: pkg.tier.tierCode,

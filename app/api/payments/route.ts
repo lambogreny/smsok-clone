@@ -1,5 +1,8 @@
 import { randomBytes } from "crypto";
-import { Prisma } from "@prisma/client";
+import { sqltag as _prisma_sql, join as _prisma_join, raw as _prisma_raw, type Sql as PrismaSql } from "@prisma/client/runtime/client";
+// Shimmed Prisma namespace since @prisma/client is not generated
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const Prisma = { sql: _prisma_sql, join: _prisma_join, raw: _prisma_raw } as any;
 import { NextRequest } from "next/server";
 import { ApiError, apiResponse, apiError } from "@/lib/api-auth";
 import { getSession } from "@/lib/auth";
@@ -57,7 +60,7 @@ export async function GET(req: NextRequest) {
       if (input.dateTo) (where.createdAt as Record<string, unknown>).lte = new Date(input.dateTo);
     }
 
-    const paymentColumns = await getPaymentTableColumns();
+    const paymentColumns = await getPaymentTableColumns() as Set<string>;
     const paymentSelect = prunePaymentSelectForAvailableColumns({
       id: true,
       packageTierId: true,
@@ -88,7 +91,7 @@ export async function GET(req: NextRequest) {
           expiryMonths: true,
         },
       },
-    }, paymentColumns) as Prisma.PaymentSelect;
+    }, paymentColumns);
 
     const [payments, total] = await Promise.all([
       db.payment.findMany({
@@ -102,7 +105,7 @@ export async function GET(req: NextRequest) {
     ]);
 
     return apiResponse({
-      payments: payments.map((payment) => ({
+      payments: payments.map((payment: (typeof payments)[number]) => ({
         id: payment.id,
         packageTierId: payment.packageTierId ?? null,
         amount: payment.amount,
@@ -192,9 +195,9 @@ export async function POST(req: NextRequest) {
     const amountSatang = Math.round(Number(tier.price) * 100);
     const totals = calculatePaymentAmounts(amountSatang, input.hasWht);
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    const paymentColumns = await getPaymentTableColumns();
+    const paymentColumns = await getPaymentTableColumns() as Set<string>;
 
-    const payment = await db.$transaction(async (tx) => {
+    const payment = await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
       const canPersistPreInvoiceNumber = hasPaymentColumn(paymentColumns, "pre_invoice_number");
       const canPersistPreInvoiceUrl = hasPaymentColumn(paymentColumns, "pre_invoice_url");
       const needsLegacyCreateFallback = !hasPaymentColumn(paymentColumns, "has_wht");
@@ -206,7 +209,7 @@ export async function POST(req: NextRequest) {
         ? await (async () => {
             const paymentId = `c${randomBytes(12).toString("hex")}`;
             const now = new Date();
-            const rawInsertEntries: Array<[string, Prisma.Sql]> = [
+            const rawInsertEntries: Array<[string, PrismaSql]> = [
               ["id", Prisma.sql`${paymentId}`],
               ["user_id", Prisma.sql`${session.id}`],
               ["organization_id", Prisma.sql`${organizationId}`],
@@ -254,7 +257,7 @@ export async function POST(req: NextRequest) {
               status: "PENDING",
               expiresAt,
               preInvoiceNumber: persistedPreInvoiceNumber,
-            }, paymentColumns) as Prisma.PaymentUncheckedCreateInput;
+            }, paymentColumns);
 
             const createSelect = prunePaymentSelectForAvailableColumns({
               id: true,
@@ -268,7 +271,7 @@ export async function POST(req: NextRequest) {
               preInvoiceNumber: true,
               createdAt: true,
               expiresAt: true,
-            }, paymentColumns) as Prisma.PaymentSelect;
+            }, paymentColumns);
 
             return tx.payment.create({
               data: createData,
@@ -283,7 +286,7 @@ export async function POST(req: NextRequest) {
           where: { id: created.id },
           data: prunePaymentWriteDataForAvailableColumns({
             preInvoiceUrl,
-          }, paymentColumns) as Prisma.PaymentUncheckedUpdateInput,
+          }, paymentColumns),
         });
       }
 

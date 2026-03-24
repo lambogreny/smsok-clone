@@ -1,4 +1,3 @@
-import { Prisma } from "@prisma/client";
 import { NextRequest } from "next/server";
 import { ApiError, apiResponse, apiError } from "@/lib/api-auth";
 import { getSession } from "@/lib/auth";
@@ -38,7 +37,7 @@ export async function GET(req: NextRequest) {
       ...(status ? { status } : {}),
     };
 
-    const paymentColumns = await getPaymentTableColumns();
+    const paymentColumns = await getPaymentTableColumns() as Set<string>;
     const paymentSelect = prunePaymentSelectForAvailableColumns({
       id: true,
       amount: true,
@@ -59,7 +58,7 @@ export async function GET(req: NextRequest) {
           totalSms: true,
         },
       },
-    }, paymentColumns) as Prisma.PaymentSelect;
+    }, paymentColumns);
 
     const [payments, total] = await Promise.all([
       db.payment.findMany({
@@ -72,7 +71,7 @@ export async function GET(req: NextRequest) {
       db.payment.count({ where }),
     ]);
 
-    const items = payments.map((payment) => ({
+    const items = payments.map((payment: (typeof payments)[number]) => ({
       smsAdded: payment.creditsAdded ?? payment.packageTier?.totalSms ?? 0,
       smsQuota: payment.creditsAdded ?? payment.packageTier?.totalSms ?? 0,
       id: payment.id,

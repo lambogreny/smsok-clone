@@ -1,7 +1,7 @@
 "use server";
 
 import { ApiError } from "../api-auth";
-import type { Prisma } from "@prisma/client";
+
 import { revalidatePath } from "next/cache";
 import { prisma as db } from "../db";
 import { z } from "zod";
@@ -18,9 +18,7 @@ const importContactSchema = z.object({
 });
 
 const MAX_IMPORT_BATCH = 200;
-type GroupWithCount = Prisma.ContactGroupGetPayload<{
-  include: { _count: { select: { members: true } } };
-}>;
+type GroupWithCount = NonNullable<Awaited<ReturnType<typeof db.contactGroup.findFirst<{ include: { _count: { select: { members: true } } } }>>>>;
 
 export async function getGroups(): Promise<GroupWithCount[]>;
 export async function getGroups(userId: string): Promise<GroupWithCount[]>;
@@ -238,13 +236,13 @@ export async function importContactsToGroup(
   // Step 2: Bulk create + add to group in one transaction
   const validPhones = valid.map((v) => v.phone);
 
-  const result = await db.$transaction(async (tx) => {
+  const result = await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
     // Find existing contacts by phone (batch query, not N+1)
     const existingContacts = await tx.contact.findMany({
       where: { userId, phone: { in: validPhones } },
       select: { id: true, phone: true },
     });
-    const existingPhoneMap = new Map(existingContacts.map((c) => [c.phone, c.id]));
+    const existingPhoneMap = new Map<string, string>(existingContacts.map((c: (typeof existingContacts)[number]) => [c.phone, c.id] as [string, string]));
 
     // Split into new vs existing
     const toCreate = valid.filter((v) => !existingPhoneMap.has(v.phone));
@@ -253,7 +251,7 @@ export async function importContactsToGroup(
     // Bulk create new contacts (createMany, not loop)
     if (toCreate.length > 0) {
       await tx.contact.createMany({
-        data: toCreate.map((c) => ({ userId, name: c.name, phone: c.phone })),
+        data: toCreate.map((c: (typeof toCreate)[number]) => ({ userId, name: c.name, phone: c.phone })),
       });
     }
 
@@ -266,7 +264,7 @@ export async function importContactsToGroup(
     // Bulk add all to group (createMany, not loop)
     if (allContacts.length > 0) {
       await tx.contactGroupMember.createMany({
-        data: allContacts.map((c) => ({ groupId, contactId: c.id })),
+        data: allContacts.map((c: (typeof allContacts)[number]) => ({ groupId, contactId: c.id })),
         skipDuplicates: true,
       });
     }
@@ -305,7 +303,7 @@ export async function getContactsNotInGroup(userIdOrGroupId: string, groupIdOrSe
     where: { groupId },
     select: { contactId: true },
   });
-  const excludeIds = membersInGroup.map((m) => m.contactId);
+  const excludeIds = membersInGroup.map((m: (typeof membersInGroup)[number]) => m.contactId);
 
   return db.contact.findMany({
     where: {

@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { authenticateRequest, apiResponse, apiError, ApiError } from "@/lib/api-auth";
 import { bumpPolicyVersion, createPolicy, getActivePolicies } from "@/lib/actions/consent";
-import type { PolicyDocType } from "@prisma/client";
+type PolicyDocType = "PRIVACY" | "TERMS" | "MARKETING" | "COOKIE";
 import { z } from "zod";
 
 const VALID_POLICY_TYPES: PolicyDocType[] = ["PRIVACY", "TERMS", "MARKETING", "COOKIE"];

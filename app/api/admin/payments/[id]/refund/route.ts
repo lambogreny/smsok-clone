@@ -35,7 +35,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     }
     const isFullRefund = refundAmount === (payment.totalAmount ?? 0);
 
-    const result = await db.$transaction(async (tx) => {
+    const result = await db.$transaction(async (tx: Parameters<Parameters<typeof db.$transaction>[0]>[0]) => {
       const updated = await tx.payment.update({
         where: { id },
         data: {

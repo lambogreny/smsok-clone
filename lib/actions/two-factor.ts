@@ -302,7 +302,7 @@ export async function get2FAStatus() {
   return {
     enabled: tfa?.enabled ?? false,
     setupAt: tfa?.createdAt ?? null,
-    remainingRecoveryCodes: tfa ? tfa.recoveryCodes.filter((c) => c !== "").length : 0,
+    remainingRecoveryCodes: tfa ? tfa.recoveryCodes.filter((c: (typeof tfa.recoveryCodes)[number]) => c !== "").length : 0,
   }
 }
 
@@ -580,7 +580,7 @@ export async function getDefaultOrgMember2FAStatuses(userId: string) {
     orderBy: { createdAt: "asc" },
   })
 
-  const memberIds = memberships.map((membership) => membership.userId)
+  const memberIds = memberships.map((membership: (typeof memberships)[number]) => membership.userId)
   const twoFactorRecords = await prisma.twoFactorAuth.findMany({
     where: { userId: { in: memberIds } },
     select: {
@@ -590,13 +590,13 @@ export async function getDefaultOrgMember2FAStatuses(userId: string) {
     },
   })
 
-  const twoFactorByUserId = new Map(
-    twoFactorRecords.map((record) => [record.userId, record])
+  const twoFactorByUserId = new Map<string, (typeof twoFactorRecords)[number]>(
+    twoFactorRecords.map((record: (typeof twoFactorRecords)[number]) => [record.userId, record] as [string, (typeof twoFactorRecords)[number]])
   )
 
   return {
     organizationId,
-    members: memberships.map((membership) => {
+    members: memberships.map((membership: (typeof memberships)[number]) => {
       const twoFactor = twoFactorByUserId.get(membership.userId)
       return {
         userId: membership.user.id,

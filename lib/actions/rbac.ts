@@ -254,7 +254,7 @@ export async function getRolePermissions(
   return {
     roleId,
     roleName: role.name,
-    permissions: rolePerms.map((rp) => ({
+    permissions: rolePerms.map((rp: (typeof rolePerms)[number]) => ({
       id: rp.permission.id,
       action: rp.permission.action,
       resource: rp.permission.resource,
@@ -432,7 +432,7 @@ export async function getUserEffectivePermissions(
   return {
     userId: targetUserId,
     organizationId,
-    roles: userRoles.map((ur) => ur.role),
+    roles: userRoles.map((ur: (typeof userRoles)[number]) => ur.role),
     permissions: [...perms].sort(),
   };
 }
