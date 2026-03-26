@@ -288,7 +288,7 @@ const QUICK_ACTIONS = [
 
 function QuickActionsBar() {
   return (
-    <div className="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
+    <div className="flex gap-3 overflow-x-auto pt-1 pb-1 -mx-1 px-1 scrollbar-hide">
       {QUICK_ACTIONS.map((action) => {
         const Icon = action.icon;
         return (

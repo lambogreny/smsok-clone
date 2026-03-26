@@ -18,6 +18,12 @@ export interface CustomSelectProps {
   className?: string;
 }
 
+// Track how many CustomSelect dropdowns are currently open (module-level)
+let _openCount = 0;
+export function isCustomSelectOpen() {
+  return _openCount > 0;
+}
+
 export default function CustomSelect({
   value,
   onChange,
@@ -34,6 +40,14 @@ export default function CustomSelect({
   const selectedLabel = options.find((o) => o.value === value)?.label ?? "";
 
   const close = useCallback(() => setOpen(false), []);
+
+  // Track open/close in module-level counter
+  useEffect(() => {
+    if (open) {
+      _openCount++;
+      return () => { _openCount--; };
+    }
+  }, [open]);
 
   // Compute trigger position whenever dropdown opens
   function computeRect() {
@@ -103,6 +117,9 @@ export default function CustomSelect({
           exit={{ opacity: 0, y: -4 }}
           transition={{ duration: 0.15 }}
           style={{ position: "fixed", top: rect.top, left: rect.left, width: rect.width, zIndex: 9999 }}
+          data-custom-select-dropdown
+          onPointerDown={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
           className="rounded-lg overflow-hidden
             bg-[var(--bg-elevated)]/95 border border-white/10
             shadow-[0_8px_32px_rgba(0,0,0,0.5)]"

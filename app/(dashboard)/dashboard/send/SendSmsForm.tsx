@@ -368,7 +368,7 @@ export default function SendSmsForm({ senderNames: rawNames = [] }: { senderName
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-muted)] mb-1.5">ประเภทข้อความ</label>
                 <Tabs value={msgType} onValueChange={(v) => setMsgType(v as MsgType)}>
-                  <TabsList className="h-auto bg-transparent gap-2 p-0 overflow-x-auto">
+                  <TabsList className="h-auto bg-transparent gap-2 p-0">
                     {([
                       { value: "thai", label: "ภาษาไทย (70)" },
                       { value: "english", label: "English (160)" },
@@ -634,7 +634,7 @@ export default function SendSmsForm({ senderNames: rawNames = [] }: { senderName
       </div>
 
       {/* Mobile Sticky CTA */}
-      <div className="lg:hidden fixed bottom-16 left-0 right-0 z-40 bg-[var(--bg-base)] border-t border-[var(--border-default)] px-4 py-3 safe-area-bottom">
+      <div className="md:hidden fixed bottom-16 left-0 right-0 z-40 bg-[var(--bg-base)] border-t border-[var(--border-default)] px-4 py-3 safe-area-bottom">
         <div className="flex items-center justify-between gap-4">
           <div className="text-sm">
             <span className="text-[var(--text-muted)]">รวม: </span>

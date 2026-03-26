@@ -6,14 +6,25 @@ import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
+import { isCustomSelectOpen } from "@/components/ui/CustomSelect"
 
 /**
  * Dialog Root — uses modal={false} to avoid Base UI's inert behavior
  * which blocks pointer events on the entire page including dialog content.
  * We handle the backdrop overlay ourselves via DialogOverlay.
+ *
+ * Wraps onOpenChange to prevent dismiss when a CustomSelect dropdown
+ * is open (portaled outside Dialog DOM, triggering false outside-click).
  */
-function Dialog({ modal = false, ...props }: DialogPrimitive.Root.Props) {
-  return <DialogPrimitive.Root data-slot="dialog" modal={modal} {...props} />
+function Dialog({ modal = false, onOpenChange, ...props }: DialogPrimitive.Root.Props) {
+  const handleOpenChange = React.useCallback(
+    (open: boolean, reason: unknown) => {
+      if (!open && isCustomSelectOpen()) return;
+      (onOpenChange as (...args: unknown[]) => void)?.(open, reason);
+    },
+    [onOpenChange]
+  );
+  return <DialogPrimitive.Root data-slot="dialog" modal={modal} onOpenChange={handleOpenChange as DialogPrimitive.Root.Props["onOpenChange"]} {...props} />
 }
 
 function DialogTrigger({ ...props }: DialogPrimitive.Trigger.Props) {

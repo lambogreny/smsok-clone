@@ -60,7 +60,7 @@ function PricingCard({
 
   return (
     <div
-      className="relative rounded-lg p-6 transition-all duration-200 group/card"
+      className="relative rounded-lg p-6 transition-all duration-200 group/card flex flex-col"
       style={{
         background: "var(--bg-surface)",
         border: tier.isBestValue
@@ -163,6 +163,9 @@ function PricingCard({
       <p className="text-[11px] mt-2" style={{ color: "var(--text-muted)" }}>
         VAT 7%: ฿{formatBaht(vat)} · รวม ฿{formatBaht(total)}
       </p>
+
+      {/* Spacer to push button to bottom */}
+      <div className="flex-1" />
 
       {/* CTA Button */}
       <Button
@@ -788,8 +791,9 @@ export default function PricingPage() {
       </div>
 
       {/* Segment Toggle */}
-      <div className="flex justify-center mb-8">
+      <div className="mb-8">
         <Tabs
+          className="items-start"
           value={group}
           onValueChange={(v) => {
             if (v === "sme" || v === "enterprise") {
@@ -800,30 +804,35 @@ export default function PricingPage() {
           }}
         >
           <TabsList
-            className="h-10 p-1 rounded-lg"
+            className="rounded-lg"
             style={{
+              height: 40,
+              padding: 4,
               background: "var(--bg-surface)",
               border: "1px solid var(--border-default)",
             }}
           >
             <TabsTrigger
               value="sme"
-              className="px-6 h-8 rounded-md text-[13px] font-medium transition-all data-active:shadow-sm"
+              className="px-6 rounded-md text-[13px] font-medium transition-all"
               style={{
+                height: 32,
                 color:
                   group === "sme"
                     ? "var(--accent)"
                     : "var(--text-muted)",
                 background:
                   group === "sme" ? "var(--bg-base)" : "transparent",
+                borderColor: "transparent",
               }}
             >
               SME (A-D)
             </TabsTrigger>
             <TabsTrigger
               value="enterprise"
-              className="px-6 h-8 rounded-md text-[13px] font-medium transition-all data-active:shadow-sm"
+              className="px-6 rounded-md text-[13px] font-medium transition-all"
               style={{
+                height: 32,
                 color:
                   group === "enterprise"
                     ? "var(--accent)"
@@ -832,6 +841,7 @@ export default function PricingPage() {
                   group === "enterprise"
                     ? "var(--bg-base)"
                     : "transparent",
+                borderColor: "transparent",
               }}
             >
               Enterprise (E-H)

@@ -114,14 +114,14 @@ export default function MessagesClient({
   }
 
   return (
-    <div className="p-4 md:p-6 pb-20 md:pb-6 space-y-6">
+    <div className="p-4 md:p-6 pb-20 md:pb-6 space-y-6 overflow-x-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold text-[var(--text-primary)]">ประวัติการส่ง</h1>
           <p className="text-sm text-[var(--text-muted)] mt-1">{total} รายการทั้งหมด</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <Button
             variant="outline"
             className="border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)] rounded-lg gap-2"

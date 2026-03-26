@@ -200,9 +200,9 @@ export default function DashboardShell({
   return (
     <div className="h-screen flex bg-[var(--bg-base)] overflow-hidden">
       {/* ── Desktop Sidebar ── */}
-      <aside className="hidden md:flex w-[220px] shrink-0 border-r border-[var(--border-default)] bg-[var(--bg-base)] flex-col">
+      <aside className="hidden md:flex w-[220px] shrink-0 border-r border-[var(--border-default)] bg-[var(--bg-base)] flex-col pt-[env(safe-area-inset-top)]">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5 px-5 h-14 border-b border-[var(--border-default)] group">
+        <Link href="/" className="flex items-center gap-2.5 px-5 h-14 shrink-0 border-b border-[var(--border-default)] group">
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[var(--accent)] to-[var(--accent-secondary)] flex items-center justify-center">
             <Send className="w-3.5 h-3.5 text-[var(--text-primary)]" />
           </div>
@@ -329,9 +329,9 @@ export default function DashboardShell({
       </aside>
 
       {/* ── Main Content ── */}
-      <main id="main-content" className="flex-1 overflow-auto flex flex-col">
+      <main id="main-content" className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col pb-20 md:pb-0">
         {/* Header */}
-        <header className="sticky top-0 z-40 border-b border-[var(--border-default)] bg-[var(--bg-base)] h-12 md:h-14 flex items-center justify-between px-4 md:px-8">
+        <header className="sticky top-0 z-40 border-b border-[var(--border-default)] bg-[var(--bg-base)] flex items-center justify-between px-4 md:px-8" style={{ minHeight: 56 }}>
           <h1 className="text-base font-semibold text-[var(--text-primary)] tracking-tight">
             {title || sidebarItems.find((i) => i.href === pathname)?.label || "ภาพรวม"}
           </h1>
@@ -435,7 +435,7 @@ export default function DashboardShell({
         </header>
 
         {/* Page Content — no page transitions per Nansen directive */}
-        <div className="flex-1 pb-20 md:pb-0">
+        <div className="flex-1">
           <div className="px-6 md:px-8 pt-4">
             <DashboardBreadcrumb />
           </div>

@@ -360,12 +360,13 @@ export default function TemplatesClient({
   }, [activeCategory, searchQuery]);
 
   const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: initialTemplates.length };
-    for (const t of initialTemplates) {
+    const source = activeTab === "my" ? initialTemplates : TEMPLATE_LIBRARY;
+    const counts: Record<string, number> = { all: source.length };
+    for (const t of source) {
       counts[t.category] = (counts[t.category] || 0) + 1;
     }
     return counts;
-  }, [initialTemplates]);
+  }, [initialTemplates, activeTab]);
 
   // ==========================================
   // Handlers
