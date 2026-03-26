@@ -20,10 +20,33 @@ export function getAllowedOrigins(): string[] {
     .filter((value): value is string => Boolean(value));
 }
 
+/**
+ * Check if the request origin is "same-site" — i.e. matches the Host header.
+ * This handles production deployments where NEXT_PUBLIC_APP_URL may not be set
+ * as a runtime env var (it's a build-time variable in Next.js).
+ */
+function isSameSiteOrigin(req: Request): boolean {
+  const origin = req.headers.get("origin");
+  if (!origin) return false;
+
+  const host = req.headers.get("host") || req.headers.get("x-forwarded-host");
+  if (!host) return false;
+
+  try {
+    const originHost = new URL(origin).host;
+    return originHost === host;
+  } catch {
+    return false;
+  }
+}
+
 export function hasValidCsrfOrigin(req: Request): boolean {
   const origin = req.headers.get("origin");
   if (origin) {
-    return getAllowedOrigins().includes(origin);
+    if (getAllowedOrigins().includes(origin)) return true;
+    // Fallback: check if origin matches the Host header (same-site)
+    if (isSameSiteOrigin(req)) return true;
+    return false;
   }
 
   const referer = req.headers.get("referer");
