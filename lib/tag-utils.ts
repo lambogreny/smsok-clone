@@ -48,9 +48,15 @@ export function hashString(str: string): number {
 }
 
 /**
- * Get consistent color for a tag
+ * Get consistent color for a tag.
+ * If dbColor (hex) is provided and matches a known color, use that.
+ * Otherwise fallback to deterministic hash-based color.
  */
-export function getTagColor(tag: string): TagColor {
+export function getTagColor(tag: string, dbColor?: string | null): TagColor {
+  if (dbColor) {
+    const match = TAG_COLORS.find((c) => c.hex.toLowerCase() === dbColor.toLowerCase());
+    if (match) return match;
+  }
   return TAG_COLORS[hashString(tag) % TAG_COLORS.length];
 }
 

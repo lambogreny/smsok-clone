@@ -892,6 +892,17 @@
 
 } /* end @layer components */
 
+/* Calendar day button — remove rectangular focus outline (outside @layer for max priority) */
+[data-slot="calendar"] button:focus,
+[data-slot="calendar"] button:focus-visible,
+[data-slot="calendar"] [data-focused="true"] button {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
+}
+
 /* ── VIEW TRANSITIONS API ── */
 
 ::view-transition-old(root) {

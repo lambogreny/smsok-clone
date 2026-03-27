@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -172,12 +172,14 @@ function TagChip({
   tag,
   onRemove,
   size = "sm",
+  dbColor,
 }: {
   tag: string;
   onRemove?: () => void;
   size?: "xs" | "sm";
+  dbColor?: string | null;
 }) {
-  const color = getTagColor(tag);
+  const color = getTagColor(tag, dbColor);
   const sizeClasses =
     size === "xs" ? "text-[10px] px-2 py-0.5" : "text-xs px-2.5 py-1";
 
@@ -274,10 +276,10 @@ function TagInput({
         />
       </div>
 
-      {/* Presets */}
-      {tags.length === 0 && !inputValue && (
+      {/* Presets — show unselected presets always */}
+      {!inputValue && TAG_PRESETS.filter((p) => !tags.includes(p)).length > 0 && (
         <div className="flex flex-wrap gap-1.5 mt-2">
-          {TAG_PRESETS.map((preset) => (
+          {TAG_PRESETS.filter((p) => !tags.includes(p)).map((preset) => (
             <button
               key={preset}
               type="button"
@@ -322,6 +324,7 @@ export default function ContactsClient({
   groups = [],
   stats,
   initialStatus = "all",
+  availableTags = [],
 }: {
   initialContacts: Contact[];
   totalContacts: number;
@@ -331,6 +334,7 @@ export default function ContactsClient({
   groups?: ContactGroupItem[];
   stats?: ContactStats;
   initialStatus?: string;
+  availableTags?: { name: string; color: string }[];
 }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -386,24 +390,60 @@ export default function ContactsClient({
   // Tag state for form (managed separately because TagInput is custom)
   const [formTags, setFormTags] = useState<string[]>([]);
 
+  // Optimistic tag overrides — instant UI update before server responds
+  const [tagOverrides, setTagOverrides] = useState<Map<string, string[]>>(new Map());
+
+  // Merge initialContacts with optimistic tag overrides
+  const contacts = useMemo(() => {
+    if (tagOverrides.size === 0) return initialContacts;
+    return initialContacts.map((c) => {
+      const override = tagOverrides.get(c.id);
+      if (!override) return c;
+      return { ...c, tags: override.map((name) => ({ id: name, name, color: "" })) };
+    });
+  }, [initialContacts, tagOverrides]);
+
+  // Clear overrides when server data refreshes (initialContacts changes)
+  useEffect(() => {
+    setTagOverrides(new Map());
+  }, [initialContacts]);
+
   // ==========================================
   // Derived data
   // ==========================================
 
   const allTags = useMemo(() => {
     const tagMap = new Map<string, number>();
-    initialContacts.forEach((c) => {
+    contacts.forEach((c) => {
       getTagNames(c.tags).forEach((tag) => {
         tagMap.set(tag, (tagMap.get(tag) || 0) + 1);
       });
     });
     return tagMap;
-  }, [initialContacts]);
+  }, [contacts]);
 
-  const allTagNames = useMemo(() => Array.from(allTags.keys()), [allTags]);
+  // Build color map from DB tags + contact tags
+  const tagColorMap = useMemo(() => {
+    const map = new Map<string, string>();
+    availableTags.forEach((t) => map.set(t.name, t.color));
+    contacts.forEach((c) => {
+      const tags = c.tags;
+      if (Array.isArray(tags)) {
+        tags.forEach((t: { name: string; color?: string }) => {
+          if (t.color && !map.has(t.name)) map.set(t.name, t.color);
+        });
+      }
+    });
+    return map;
+  }, [availableTags, contacts]);
+
+  const allTagNames = useMemo(
+    () => [...new Set([...Array.from(allTags.keys()), ...availableTags.map((t) => t.name)])],
+    [allTags, availableTags],
+  );
 
   const filteredContacts = useMemo(() => {
-    let result = initialContacts;
+    let result = contacts;
 
     if (activeStatusFilter === "active") {
       result = result.filter((c) => c.smsConsent);
@@ -431,7 +471,7 @@ export default function ContactsClient({
     }
 
     return result;
-  }, [initialContacts, activeStatusFilter, activeTagFilter, activeGroupFilter, searchQuery]);
+  }, [contacts, activeStatusFilter, activeTagFilter, activeGroupFilter, searchQuery]);
 
   const hasSelection = selectedIds.size > 0;
   const allSelected =
@@ -731,17 +771,28 @@ export default function ContactsClient({
   }
 
   function handleQuickTagToggle(contactId: string, tag: string) {
-    const contact = initialContacts.find((c) => c.id === contactId);
+    const contact = contacts.find((c) => c.id === contactId);
     if (!contact) return;
     const currentTags = getTagNames(contact.tags);
     const newTags = currentTags.includes(tag)
       ? currentTags.filter((t) => t !== tag)
       : [...currentTags, tag];
+
+    // Optimistic update — UI updates instantly
+    setTagOverrides((prev) => new Map(prev).set(contactId, newTags));
+
+    // Save to server in background
     startTransition(async () => {
       try {
         await updateContact(contactId, { tags: newTags.join(", ") });
         router.refresh();
       } catch {
+        // Revert on error
+        setTagOverrides((prev) => {
+          const next = new Map(prev);
+          next.delete(contactId);
+          return next;
+        });
         toast("error", "เกิดข้อผิดพลาด");
       }
     });
@@ -1031,7 +1082,7 @@ export default function ContactsClient({
             </span>
           </button>
           {Array.from(allTags.entries()).map(([tag, count]) => {
-            const color = getTagColor(tag);
+            const color = getTagColor(tag, tagColorMap.get(tag));
             const isActive = activeTagFilter === tag;
             return (
               <button
@@ -1235,7 +1286,7 @@ export default function ContactsClient({
                       <TableCell className="py-3.5">
                         <div className="flex gap-1 flex-wrap items-center">
                           {visibleTags.map((tag) => (
-                            <TagChip key={tag} tag={tag} size="xs" />
+                            <TagChip key={tag} tag={tag} size="xs" dbColor={tagColorMap.get(tag)} />
                           ))}
                           {overflowCount > 0 && (
                             <span className="text-[10px] text-[var(--text-muted)] ml-0.5">
@@ -1262,7 +1313,7 @@ export default function ContactsClient({
                                   ...new Set([...allTagNames, ...TAG_PRESETS]),
                                 ].map((tag) => {
                                   const active = contactTags.includes(tag);
-                                  const color = getTagColor(tag);
+                                  const color = getTagColor(tag, tagColorMap.get(tag));
                                   return (
                                     <button
                                       key={tag}
@@ -1276,11 +1327,7 @@ export default function ContactsClient({
                                     >
                                       <span className="flex items-center gap-2">
                                         <span
-                                          className={`w-1.5 h-1.5 rounded-full ${
-                                            active
-                                              ? color.dot
-                                              : "bg-[var(--text-muted)]/30"
-                                          }`}
+                                          className={`w-1.5 h-1.5 rounded-full ${color.dot}`}
                                         />
                                         {tag}
                                       </span>
@@ -1382,7 +1429,7 @@ export default function ContactsClient({
             {/* Filter info */}
             {(activeTagFilter || searchQuery || activeStatusFilter !== "all") && (
               <div className="px-5 py-3 border-t border-[var(--border-default)] text-xs text-[var(--text-muted)]">
-                แสดง {filteredContacts.length} จาก {initialContacts.length}{" "}
+                แสดง {filteredContacts.length} จาก {contacts.length}{" "}
                 รายชื่อ
                 {activeStatusFilter !== "all" && (
                   <span>
@@ -1603,7 +1650,7 @@ export default function ContactsClient({
                       {contactTags.length > 0 && (
                         <div className="flex gap-1 flex-wrap mt-2">
                           {contactTags.slice(0, MAX_VISIBLE_TAGS).map((tag) => (
-                            <TagChip key={tag} tag={tag} size="xs" />
+                            <TagChip key={tag} tag={tag} size="xs" dbColor={tagColorMap.get(tag)} />
                           ))}
                           {contactTags.length > MAX_VISIBLE_TAGS && (
                             <span className="text-[10px] text-[var(--text-muted)]">
@@ -1665,7 +1712,7 @@ export default function ContactsClient({
               )}
           </div>
         </>
-      ) : initialContacts.length > 0 ? (
+      ) : contacts.length > 0 ? (
         /* No results after filtering */
         <Card className="bg-[var(--bg-surface)] border-[var(--border-default)] rounded-lg p-8 text-center">
           <Search className="mx-auto mb-3 text-[var(--text-muted)] w-8 h-8" />

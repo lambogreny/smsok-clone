@@ -1,6 +1,7 @@
 import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getContacts, getContactGroups, getContactStats } from "@/lib/actions/contacts";
+import { getTags } from "@/lib/actions/tags";
 import ContactsClient from "./ContactsClient";
 import { ErrorState } from "@/components/ErrorState";
 
@@ -20,10 +21,11 @@ export default async function ContactsPage({
   const limit = (VALID_LIMITS as readonly number[]).includes(limitParsed) ? limitParsed : 20;
 
   try {
-    const [contactsResult, groups, stats] = await Promise.all([
+    const [contactsResult, groups, stats, dbTags] = await Promise.all([
       getContacts({ page, limit }),
       getContactGroups(),
       getContactStats(),
+      getTags(),
     ]);
 
     if (!contactsResult || !groups || !stats) {
@@ -38,7 +40,11 @@ export default async function ContactsPage({
       name: c.name ?? "",
       phone: c.phone ?? "",
       email: c.email ?? "",
-      tags: c.tags ?? "",
+      tags: (c.contactTags ?? []).map((ct: { tag: { id: string; name: string; color?: string | null } }) => ({
+        id: ct.tag.id,
+        name: ct.tag.name,
+        color: ct.tag.color ?? "",
+      })),
       smsConsent: c.smsConsent ?? false,
       groups: (c.groups ?? []).map((g: typeof c.groups[number]) => ({
         id: g.group.id,
@@ -57,6 +63,7 @@ export default async function ContactsPage({
         groups={groups}
         stats={stats}
         initialStatus={statusParam || "all"}
+        availableTags={dbTags.map((t) => ({ name: t.name, color: t.color }))}
       />
     );
   } catch {
