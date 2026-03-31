@@ -21,7 +21,7 @@ import { useToast } from "@/app/components/ui/Toast";
 import ImportWizard from "./ImportWizard";
 import EmptyState from "@/components/EmptyState";
 import CustomSelect from "@/components/ui/CustomSelect";
-import { TAG_PRESETS, MAX_VISIBLE_TAGS, getTagColor } from "@/lib/tag-utils";
+import { TAG_PRESETS, TAG_COLORS, MAX_VISIBLE_TAGS, getTagColor } from "@/lib/tag-utils";
 import type { ContactItem, ContactTag, ContactGroupItem, PaginationMeta } from "@/lib/types/api-responses";
 import type { ContactStats } from "@/lib/actions/contacts";
 import { toCsvCell } from "@/lib/csv";
@@ -367,6 +367,7 @@ export default function ContactsClient({
   const [showBatchTagInput, setShowBatchTagInput] = useState(false);
   const [batchTagValue, setBatchTagValue] = useState("");
   const [batchAction, setBatchAction] = useState<"add" | "remove">("add");
+  const [batchTagColor, setBatchTagColor] = useState<string | null>(null);
 
   // Import ref
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -584,18 +585,20 @@ export default function ContactsClient({
     }
   }
 
-  function handleBatchTag(tagOverride?: string) {
+  function handleBatchTag(tagOverride?: string, colorOverride?: string) {
     const tag = (tagOverride ?? batchTagValue).trim();
     if (!tag) return;
+    const color = colorOverride ?? batchTagColor ?? undefined;
 
     startTransition(async () => {
       try {
-        await bulkUpdateTags(Array.from(selectedIds), tag, batchAction);
+        await bulkUpdateTags(Array.from(selectedIds), tag, batchAction, undefined, color);
         toast(
           "success",
           `${batchAction === "add" ? "เพิ่ม" : "ลบ"}แท็ก "${tag}" สำเร็จ ${selectedIds.size} รายชื่อ`,
         );
         setBatchTagValue("");
+        setBatchTagColor(null);
         setShowBatchTagInput(false);
         setSelectedIds(new Set());
         router.refresh();
@@ -1254,15 +1257,35 @@ export default function ContactsClient({
                     );
                   })}
                   {query && !hasExact && (
-                    <button
-                      type="button"
-                      disabled={isPending}
-                      onClick={() => handleBatchTag(batchTagValue.trim())}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[rgba(var(--accent-rgb),0.06)] transition-colors text-[var(--accent)] disabled:opacity-50 border-t border-[var(--border-default)]"
-                    >
-                      <Plus className="w-3 h-3 flex-shrink-0" />
-                      {batchAction === "add" ? `สร้างแท็กใหม่ "${batchTagValue.trim()}"` : `ลบแท็ก "${batchTagValue.trim()}"`}
-                    </button>
+                    <div className="border-t border-[var(--border-default)]">
+                      {batchAction === "add" && (
+                        <div className="px-3 pt-2 pb-1 flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[10px] text-[var(--text-muted)]">สี:</span>
+                          {TAG_COLORS.map((c) => (
+                            <button
+                              key={c.name}
+                              type="button"
+                              onClick={() => setBatchTagColor(batchTagColor === c.hex ? null : c.hex)}
+                              className={`w-4 h-4 rounded-full transition-all ${batchTagColor === c.hex ? "ring-2 ring-offset-1 ring-[var(--border-default)] scale-110" : "opacity-70 hover:opacity-100"}`}
+                              style={{ backgroundColor: c.hex }}
+                              title={c.name}
+                            />
+                          ))}
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        disabled={isPending}
+                        onClick={() => handleBatchTag(batchTagValue.trim(), batchTagColor ?? undefined)}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[rgba(var(--accent-rgb),0.06)] transition-colors text-[var(--accent)] disabled:opacity-50"
+                      >
+                        <span
+                          className="w-2 h-2 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: batchTagColor ?? getTagColor(batchTagValue.trim()).hex }}
+                        />
+                        {batchAction === "add" ? `สร้างแท็กใหม่ "${batchTagValue.trim()}"` : `ลบแท็ก "${batchTagValue.trim()}"`}
+                      </button>
+                    </div>
                   )}
                   {filtered.length === 0 && !query && (
                     <p className="px-3 py-3 text-xs text-[var(--text-muted)] text-center">ยังไม่มีแท็ก</p>

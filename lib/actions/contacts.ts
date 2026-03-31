@@ -58,7 +58,7 @@ function normalizeTagNames(tags: string | null | undefined) {
   )];
 }
 
-async function ensureTagsByName(client: TxClient | typeof db, userId: string, tagNames: string[]) {
+async function ensureTagsByName(client: TxClient | typeof db, userId: string, tagNames: string[], color?: string) {
   if (tagNames.length === 0) return [];
 
   const uniqueTagNames = [...new Set(tagNames)];
@@ -71,7 +71,7 @@ async function ensureTagsByName(client: TxClient | typeof db, userId: string, ta
 
   if (missingNames.length > 0) {
     await client.tag.createMany({
-      data: missingNames.map((name) => ({ userId, name })),
+      data: missingNames.map((name) => ({ userId, name, ...(color ? { color } : {}) })),
       skipDuplicates: true,
     });
   }
@@ -676,6 +676,7 @@ export async function bulkUpdateTags(
   contactIdsOrTag: string[] | string,
   tagOrAction: string,
   maybeAction?: "add" | "remove",
+  color?: string,
 ) {
   const hasExplicitUserId = maybeAction !== undefined;
   const userId = await resolveActionUserId(hasExplicitUserId ? userIdOrContactIds as string : undefined);
@@ -698,7 +699,7 @@ export async function bulkUpdateTags(
     await migrateLegacyTagsForContacts(tx, userId, contacts);
 
     if (action === "add") {
-      const [tagRecord] = await ensureTagsByName(tx, userId, [trimmedTag]);
+      const [tagRecord] = await ensureTagsByName(tx, userId, [trimmedTag], color);
       if (!tagRecord) return;
 
       await tx.contactTag.createMany({
