@@ -437,9 +437,9 @@ export default function CheckoutPage() {
 
   // Form validation
   const isFormValid = useMemo(() => {
-    if (!taxName.trim()) return false;
+    if (taxName.trim().length < 2) return false;
     if (rawTaxId.length !== 13) return false;
-    if (!taxAddress.trim()) return false;
+    if (taxAddress.trim().length < 10) return false;
     if (branchType === "BRANCH" && branchNumber.length !== 5) return false;
     return true;
   }, [taxName, rawTaxId, taxAddress, branchType, branchNumber]);
@@ -451,10 +451,12 @@ export default function CheckoutPage() {
   // Validation errors per field
   const fieldErrors = useMemo(() => {
     const errors: Record<string, string> = {};
-    if (touched.taxName && !taxName.trim()) errors.taxName = "กรุณากรอกชื่อ";
+    if (touched.taxName && taxName.trim().length === 0) errors.taxName = "กรุณากรอกชื่อ";
+    else if (touched.taxName && taxName.trim().length < 2) errors.taxName = "ต้องมีอย่างน้อย 2 ตัวอักษร";
     if (touched.taxId && rawTaxId.length > 0 && rawTaxId.length < 13) errors.taxId = `${rawTaxId.length}/13 หลัก`;
     if (touched.taxId && rawTaxId.length === 13 && !taxIdValid) errors.taxId = "เลขไม่ถูกต้อง";
-    if (touched.taxAddress && !taxAddress.trim()) errors.taxAddress = "กรุณากรอกที่อยู่";
+    if (touched.taxAddress && taxAddress.trim().length === 0) errors.taxAddress = "กรุณากรอกที่อยู่";
+    else if (touched.taxAddress && taxAddress.trim().length < 10) errors.taxAddress = "ต้องมีอย่างน้อย 10 ตัวอักษร";
     if (touched.branchNumber && branchType === "BRANCH" && branchNumber.length > 0 && branchNumber.length < 5) errors.branchNumber = `${branchNumber.length}/5 หลัก`;
     return errors;
   }, [touched, taxName, rawTaxId, taxIdValid, taxAddress, branchType, branchNumber]);
