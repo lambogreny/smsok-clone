@@ -30,35 +30,11 @@ export async function updateProfile(userIdOrData: string | unknown, maybeData?: 
     data: {
       name: input.name,
     },
-    select: { id: true, name: true, email: true, phone: true, avatarUrl: true },
+    select: { id: true, name: true, email: true, phone: true },
   });
 
   revalidatePath("/dashboard/settings");
   revalidatePath("/dashboard");
-  return updated;
-}
-
-// ==========================================
-// Update avatar only
-// ==========================================
-
-export async function updateAvatar(userId: string, avatarUrl: unknown) {
-  userId = await resolveActionUserId(userId);
-
-  // Accept string data URL or null (to remove avatar)
-  const parsed = avatarUrl === null || avatarUrl === undefined
-    ? null
-    : typeof avatarUrl === "string"
-      ? avatarUrl
-      : null;
-
-  const updated = await db.user.update({
-    where: { id: userId },
-    data: { avatarUrl: parsed },
-    select: { id: true, avatarUrl: true },
-  });
-
-  revalidatePath("/dashboard/settings");
   return updated;
 }
 
@@ -158,7 +134,6 @@ export async function getProfile(userId?: string) {
       phone: true,
       role: true,
       createdAt: true,
-      avatarUrl: true,
     },
   });
 
@@ -166,7 +141,14 @@ export async function getProfile(userId?: string) {
     throw new ApiError(404, "ไม่พบบัญชีผู้ใช้");
   }
 
-  return profile;
+  // Read avatar_url via raw SQL (column added after initial Prisma generation)
+  type AvatarRow = { avatar_url: string | null };
+  const rows = await db.$queryRaw<AvatarRow[]>`
+    SELECT avatar_url FROM users WHERE id = ${userId} LIMIT 1
+  `;
+  const avatarUrl = rows[0]?.avatar_url ?? null;
+
+  return { ...profile, avatarUrl };
 }
 
 // ==========================================

@@ -41,12 +41,9 @@ export async function PATCH(req: NextRequest) {
       throw new ApiError(400, "กรุณาส่งข้อมูล JSON");
     }
     const avatarUrl = typeof body.avatarUrl === "string" ? body.avatarUrl : null;
-    const updated = await prisma.user.update({
-      where: { id: user.id },
-      data: { avatarUrl },
-      select: { id: true, avatarUrl: true },
-    });
-    return apiResponse(updated);
+    // Use raw SQL since Prisma client may not yet reflect the new avatar_url column
+    await prisma.$executeRaw`UPDATE users SET avatar_url = ${avatarUrl} WHERE id = ${user.id}`;
+    return apiResponse({ id: user.id, avatarUrl });
   } catch (error) {
     return apiError(error);
   }
