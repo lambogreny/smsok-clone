@@ -544,15 +544,15 @@ export default function ContactsClient({
   // Handlers
   // ==========================================
 
-  function openAddDialog() {
+  async function openAddDialog() {
     setEditingContact(null);
     contactForm.reset({ name: "", phone: "", email: "", tags: "" });
     setFormTags([]);
-    refreshTags();
+    await refreshTags();
     setShowContactDialog(true);
   }
 
-  function openEditDialog(contact: Contact) {
+  async function openEditDialog(contact: Contact) {
     setEditingContact(contact);
     contactForm.reset({
       name: contact.name,
@@ -561,7 +561,7 @@ export default function ContactsClient({
       tags: getTagNames(contact.tags).join(", "),
     });
     setFormTags(getTagNames(contact.tags));
-    refreshTags();
+    await refreshTags();
     setShowContactDialog(true);
   }
 
