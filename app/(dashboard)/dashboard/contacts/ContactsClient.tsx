@@ -392,6 +392,27 @@ export default function ContactsClient({
   // Tag state for form (managed separately because TagInput is custom)
   const [formTags, setFormTags] = useState<string[]>([]);
 
+  // Available tags — initialized from server prop, re-fetched when dialog opens
+  const [localAvailableTags, setLocalAvailableTags] = useState<{ name: string; color: string }[]>(availableTags);
+
+  const refreshTags = useCallback(async () => {
+    try {
+      const res = await fetch("/api/v1/tags", { credentials: "include" });
+      if (res.ok) {
+        const json = await res.json();
+        const fetched = (json.data?.tags ?? json.tags ?? []) as { name: string; color?: string }[];
+        setLocalAvailableTags(fetched.map((t) => ({ name: t.name, color: t.color ?? "" })));
+      }
+    } catch {
+      // ignore — keep current list
+    }
+  }, []);
+
+  // Load fresh tags on mount
+  useEffect(() => {
+    refreshTags();
+  }, [refreshTags]);
+
   // Optimistic tag overrides — instant UI update before server responds
   const [tagOverrides, setTagOverrides] = useState<Map<string, string[]>>(new Map());
 
@@ -427,7 +448,7 @@ export default function ContactsClient({
   // Build color map from DB tags + contact tags
   const tagColorMap = useMemo(() => {
     const map = new Map<string, string>();
-    availableTags.forEach((t) => map.set(t.name, t.color));
+    localAvailableTags.forEach((t) => map.set(t.name, t.color));
     contacts.forEach((c) => {
       const tags = c.tags;
       if (Array.isArray(tags)) {
@@ -437,11 +458,11 @@ export default function ContactsClient({
       }
     });
     return map;
-  }, [availableTags, contacts]);
+  }, [localAvailableTags, contacts]);
 
   const allTagNames = useMemo(
-    () => [...new Set([...Array.from(allTags.keys()), ...availableTags.map((t) => t.name)])],
-    [allTags, availableTags],
+    () => [...new Set([...Array.from(allTags.keys()), ...localAvailableTags.map((t) => t.name)])],
+    [allTags, localAvailableTags],
   );
 
   const filteredContacts = useMemo(() => {
@@ -502,6 +523,7 @@ export default function ContactsClient({
     setEditingContact(null);
     contactForm.reset({ name: "", phone: "", email: "", tags: "" });
     setFormTags([]);
+    refreshTags();
     setShowContactDialog(true);
   }
 
@@ -514,6 +536,7 @@ export default function ContactsClient({
       tags: getTagNames(contact.tags).join(", "),
     });
     setFormTags(getTagNames(contact.tags));
+    refreshTags();
     setShowContactDialog(true);
   }
 
@@ -542,7 +565,12 @@ export default function ContactsClient({
         setShowContactDialog(false);
         router.refresh();
       } catch (e) {
-        toast("error", safeErrorMessage(e));
+        const msg = e instanceof Error ? e.message : "";
+        if (msg.includes("เบอร์โทรนี้มีอยู่แล้ว")) {
+          contactForm.setError("phone", { message: "เบอร์โทรนี้มีอยู่ในระบบแล้ว" });
+        } else {
+          toast("error", safeErrorMessage(e));
+        }
       }
     });
   }
