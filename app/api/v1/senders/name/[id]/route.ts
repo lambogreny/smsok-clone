@@ -9,10 +9,16 @@ const updateSenderSchema = z
     name: z.string().trim().min(3).max(11).optional(),
     accountType: z.enum(["corporate", "individual"]).optional(),
     urls: z.array(z.string().url()).optional(),
+    senderType: z.enum(["general", "otp", "marketing"]).optional(),
+    note: z.string().trim().max(500).optional(),
   })
   .refine(
     (value) =>
-      value.name !== undefined || value.accountType !== undefined || value.urls !== undefined,
+      value.name !== undefined ||
+      value.accountType !== undefined ||
+      value.urls !== undefined ||
+      value.senderType !== undefined ||
+      value.note !== undefined,
     {
       message: "กรุณาระบุข้อมูลที่ต้องการอัปเดต",
     },
@@ -184,6 +190,8 @@ async function updateSenderName(
         data: {
           name: normalizedName,
           accountType: input.accountType,
+          ...(input.senderType !== undefined && { senderType: input.senderType }),
+          ...(input.note !== undefined && { adminNotes: input.note || null }),
         },
       });
 

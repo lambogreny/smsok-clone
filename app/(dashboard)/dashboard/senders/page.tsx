@@ -164,6 +164,8 @@ export default function SendersPage() {
   const [editSender, setEditSender] = useState<Sender | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editName, setEditName] = useState("");
+  const [editType, setEditType] = useState("general");
+  const [editNote, setEditNote] = useState("");
   const [editNameError, setEditNameError] = useState("");
   const [editSubmitting, setEditSubmitting] = useState(false);
 
@@ -256,7 +258,7 @@ export default function SendersPage() {
       const res = await fetch(`/api/v1/senders/${editSender.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: editName.trim() }),
+        body: JSON.stringify({ name: editName.trim(), senderType: editType, note: editNote.trim() }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -679,6 +681,8 @@ export default function SendersPage() {
                                   e.stopPropagation();
                                   setEditSender(sender);
                                   setEditName(sender.name);
+                                  setEditType(sender.type);
+                                  setEditNote(sender.note || "");
                                   setEditNameError("");
                                   setEditDialogOpen(true);
                                 }}
@@ -872,6 +876,24 @@ export default function SendersPage() {
                 </span>
               </div>
               {editNameError && <p className="text-xs mt-1" style={{ color: "var(--error)" }}>{editNameError}</p>}
+            </div>
+            <div>
+              <label className="text-xs font-medium text-[var(--text-primary)] mb-1.5 block">
+                ประเภท
+              </label>
+              <CustomSelect value={editType} onChange={setEditType} options={TYPE_OPTIONS} placeholder="เลือกประเภท" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-[var(--text-primary)] mb-1.5 block">
+                หมายเหตุ (ไม่บังคับ)
+              </label>
+              <Textarea
+                value={editNote}
+                onChange={(e) => setEditNote(e.target.value)}
+                placeholder="อธิบายการใช้งาน เช่น ส่ง OTP สำหรับยืนยันตัวตน"
+                rows={3}
+                className="text-sm"
+              />
             </div>
             <div className="flex items-center justify-end gap-2 pt-2">
               <Button
