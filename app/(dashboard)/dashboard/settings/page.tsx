@@ -14,7 +14,8 @@ export default async function SettingsPage({
 
   const { forceChange } = await searchParams;
 
-  const [fullUser, quota] = await Promise.all([
+  type AvatarRow = { avatar_url: string | null };
+  const [fullUser, avatarRows, quota] = await Promise.all([
     prisma.user.findUnique({
       where: { id: user.id },
       select: {
@@ -26,6 +27,7 @@ export default async function SettingsPage({
         createdAt: true,
       },
     }),
+    prisma.$queryRaw<AvatarRow[]>`SELECT avatar_url FROM users WHERE id = ${user.id} LIMIT 1`,
     getRemainingQuota(user.id).catch(() => ({ totalRemaining: 0 })),
   ]);
 
@@ -34,6 +36,7 @@ export default async function SettingsPage({
   const serializedUser = {
     ...fullUser,
     createdAt: fullUser.createdAt.toISOString(),
+    avatarUrl: avatarRows[0]?.avatar_url ?? null,
   };
 
   return (
