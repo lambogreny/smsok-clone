@@ -214,10 +214,12 @@ function TagInput({
   tags,
   onChange,
   allTags,
+  colorMap,
 }: {
   tags: string[];
   onChange: (tags: string[]) => void;
   allTags: string[];
+  colorMap?: Map<string, string>;
 }) {
   const [inputValue, setInputValue] = useState("");
   const [focused, setFocused] = useState(false);
@@ -233,11 +235,11 @@ function TagInput({
   const dropdownItems = useMemo(() => {
     const query = inputValue.toLowerCase().trim();
     const unselected = combined.filter((t) => !tags.includes(t));
-    if (!query) return unselected.slice(0, 10);
-    return unselected.filter((t) => t.toLowerCase().includes(query)).slice(0, 8);
+    if (!query) return unselected;
+    return unselected.filter((t) => t.toLowerCase().includes(query));
   }, [inputValue, combined, tags]);
 
-  const showDropdown = focused && dropdownItems.length > 0;
+  const showDropdown = focused && (dropdownItems.length > 0 || (!!inputValue.trim() && !tags.includes(inputValue.trim()) && !combined.includes(inputValue.trim())));
 
   const addTag = useCallback(
     (tag: string) => {
@@ -265,7 +267,7 @@ function TagInput({
         onClick={() => inputRef.current?.focus()}
       >
         {tags.map((tag) => (
-          <TagChip key={tag} tag={tag} onRemove={() => removeTag(tag)} size="xs" />
+          <TagChip key={tag} tag={tag} onRemove={() => removeTag(tag)} size="xs" dbColor={colorMap?.get(tag)} />
         ))}
         <input
           ref={inputRef}
@@ -296,9 +298,9 @@ function TagInput({
 
       {/* Dropdown: all tags when focused, filtered when typing */}
       {showDropdown && (
-        <div className="absolute z-50 top-full left-0 right-0 mt-1 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] shadow-xl overflow-hidden max-h-48 overflow-y-auto">
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] shadow-xl overflow-y-auto max-h-56">
           {!inputValue && (
-            <p className="text-[10px] text-[var(--text-muted)] px-3 pt-2 pb-1 uppercase tracking-wider">
+            <p className="text-[10px] text-[var(--text-muted)] px-3 pt-2 pb-1 uppercase tracking-wider sticky top-0 bg-[var(--bg-surface)]">
               แท็กที่มีในระบบ
             </p>
           )}
@@ -311,9 +313,9 @@ function TagInput({
                 e.preventDefault(); // prevent blur before click
                 addTag(s);
               }}
-              className="w-full text-left px-3 py-2 text-sm text-[var(--text-primary)] hover:bg-[rgba(var(--accent-rgb),0.04)] transition-colors flex items-center gap-2"
+              className="w-full text-left px-3 py-2.5 text-sm text-[var(--text-primary)] hover:bg-[rgba(var(--accent-rgb),0.06)] transition-colors flex items-center gap-2"
             >
-              <TagChip tag={s} size="xs" />
+              <TagChip tag={s} size="xs" dbColor={colorMap?.get(s)} />
             </button>
           ))}
           {inputValue.trim() && !tags.includes(inputValue.trim()) && !combined.includes(inputValue.trim()) && (
@@ -324,7 +326,7 @@ function TagInput({
                 e.preventDefault();
                 addTag(inputValue.trim());
               }}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-[rgba(var(--accent-rgb),0.04)] transition-colors flex items-center gap-2"
+              className="w-full text-left px-3 py-2.5 text-sm hover:bg-[rgba(var(--accent-rgb),0.06)] transition-colors flex items-center gap-2"
               style={{ color: "var(--accent)" }}
             >
               <Plus className="w-3 h-3" />
@@ -1975,6 +1977,7 @@ export default function ContactsClient({
                   tags={formTags}
                   onChange={setFormTags}
                   allTags={allTagNames}
+                  colorMap={tagColorMap}
                 />
               </div>
 
