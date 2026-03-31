@@ -220,16 +220,24 @@ function TagInput({
   allTags: string[];
 }) {
   const [inputValue, setInputValue] = useState("");
+  const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const suggestions = useMemo(() => {
+  const combined = useMemo(
+    () => [...new Set([...allTags, ...TAG_PRESETS])],
+    [allTags],
+  );
+
+  // When typing: filter by query. When just focused (no input): show all unselected tags
+  const dropdownItems = useMemo(() => {
     const query = inputValue.toLowerCase().trim();
-    if (!query) return [];
-    const combined = [...new Set([...allTags, ...TAG_PRESETS])];
-    return combined
-      .filter((t) => t.toLowerCase().includes(query) && !tags.includes(t))
-      .slice(0, 6);
-  }, [inputValue, allTags, tags]);
+    const unselected = combined.filter((t) => !tags.includes(t));
+    if (!query) return unselected.slice(0, 10);
+    return unselected.filter((t) => t.toLowerCase().includes(query)).slice(0, 8);
+  }, [inputValue, combined, tags]);
+
+  const showDropdown = focused && dropdownItems.length > 0;
 
   const addTag = useCallback(
     (tag: string) => {
@@ -251,7 +259,7 @@ function TagInput({
   );
 
   return (
-    <div className="relative">
+    <div className="relative" ref={containerRef}>
       <div
         className="flex flex-wrap gap-1.5 min-h-[42px] items-center py-1.5 px-3 rounded-lg bg-[var(--bg-base)] border border-[var(--border-default)] cursor-text focus-within:border-[rgba(var(--accent-rgb),0.6)]"
         onClick={() => inputRef.current?.focus()}
@@ -263,49 +271,66 @@ function TagInput({
           ref={inputRef}
           type="text"
           className="bg-transparent outline-none text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] flex-1 min-w-[80px]"
-          placeholder={tags.length === 0 ? "พิมพ์แล้วกด Enter..." : ""}
+          placeholder={tags.length === 0 ? "เลือกหรือพิมพ์แท็ก..." : ""}
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={(e) => {
+            // delay to allow click on dropdown item
+            if (!containerRef.current?.contains(e.relatedTarget as Node)) {
+              setFocused(false);
+            }
+          }}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
               if (inputValue.trim()) addTag(inputValue);
             } else if (e.key === "Backspace" && !inputValue && tags.length > 0) {
               removeTag(tags[tags.length - 1]);
+            } else if (e.key === "Escape") {
+              setFocused(false);
             }
           }}
         />
       </div>
 
-      {/* Presets — show unselected presets always */}
-      {!inputValue && TAG_PRESETS.filter((p) => !tags.includes(p)).length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mt-2">
-          {TAG_PRESETS.filter((p) => !tags.includes(p)).map((preset) => (
-            <button
-              key={preset}
-              type="button"
-              onClick={() => addTag(preset)}
-              className="text-[10px] px-2 py-0.5 rounded-md bg-[rgba(var(--accent-rgb),0.06)] text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors border border-[var(--border-default)]"
-            >
-              + {preset}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Suggestions dropdown */}
-      {suggestions.length > 0 && (
-        <div className="absolute z-50 top-full left-0 right-0 mt-1 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] shadow-xl overflow-hidden">
-          {suggestions.map((s) => (
+      {/* Dropdown: all tags when focused, filtered when typing */}
+      {showDropdown && (
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] shadow-xl overflow-hidden max-h-48 overflow-y-auto">
+          {!inputValue && (
+            <p className="text-[10px] text-[var(--text-muted)] px-3 pt-2 pb-1 uppercase tracking-wider">
+              แท็กที่มีในระบบ
+            </p>
+          )}
+          {dropdownItems.map((s) => (
             <button
               key={s}
               type="button"
-              onClick={() => addTag(s)}
+              tabIndex={0}
+              onMouseDown={(e) => {
+                e.preventDefault(); // prevent blur before click
+                addTag(s);
+              }}
               className="w-full text-left px-3 py-2 text-sm text-[var(--text-primary)] hover:bg-[rgba(var(--accent-rgb),0.04)] transition-colors flex items-center gap-2"
             >
               <TagChip tag={s} size="xs" />
             </button>
           ))}
+          {inputValue.trim() && !tags.includes(inputValue.trim()) && !combined.includes(inputValue.trim()) && (
+            <button
+              type="button"
+              tabIndex={0}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                addTag(inputValue.trim());
+              }}
+              className="w-full text-left px-3 py-2 text-sm hover:bg-[rgba(var(--accent-rgb),0.04)] transition-colors flex items-center gap-2"
+              style={{ color: "var(--accent)" }}
+            >
+              <Plus className="w-3 h-3" />
+              สร้างแท็ก &quot;{inputValue.trim()}&quot;
+            </button>
+          )}
         </div>
       )}
     </div>
