@@ -88,7 +88,8 @@ export default function NotificationsPage() {
       const res = await fetch("/api/notifications");
       if (!res.ok) throw new Error("Failed to fetch");
       const data = await res.json();
-      const mapped: Notification[] = (data.notifications ?? data ?? []).map((n: Record<string, unknown>) => ({
+      const rawItems: Record<string, unknown>[] = data.items ?? data.notifications ?? [];
+      const mapped: Notification[] = rawItems.map((n) => ({
         id: n.id as string,
         type: (n.type as NotifType) ?? "system",
         title: (n.title as string) ?? getNotifTypeLabel((n.type as NotifType) ?? "system"),
