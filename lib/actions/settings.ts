@@ -28,9 +28,10 @@ export async function updateProfile(userIdOrData: string | unknown, maybeData?: 
   const updated = await db.user.update({
     where: { id: userId },
     data: {
-      name: input.name,
+      ...(input.name !== undefined ? { name: input.name } : {}),
+      ...(input.avatarUrl !== undefined ? { avatarUrl: input.avatarUrl } : {}),
     },
-    select: { id: true, name: true, email: true, phone: true },
+    select: { id: true, name: true, email: true, phone: true, avatarUrl: true },
   });
 
   revalidatePath("/dashboard/settings");
@@ -118,6 +119,7 @@ type ProfileRecord = {
   phone: string | null;
   role: string;
   createdAt: Date;
+  avatarUrl?: string | null;
 };
 
 export async function getProfile(): Promise<ProfileRecord>;
@@ -133,6 +135,7 @@ export async function getProfile(userId?: string) {
       phone: true,
       role: true,
       createdAt: true,
+      avatarUrl: true,
     },
   });
 

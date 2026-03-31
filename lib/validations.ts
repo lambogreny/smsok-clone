@@ -145,7 +145,8 @@ export const changePasswordSchema = z
   });
 
 export const updateProfileSchema = z.object({
-  name: sanitizedNameSchema(2, 100, "ชื่อต้องมีอย่างน้อย 2 ตัวอักษร", "ชื่อต้องไม่เกิน 100 ตัวอักษร"),
+  name: sanitizedNameSchema(2, 100, "ชื่อต้องมีอย่างน้อย 2 ตัวอักษร", "ชื่อต้องไม่เกิน 100 ตัวอักษร").optional(),
+  avatarUrl: z.string().max(2 * 1024 * 1024, "รูปภาพใหญ่เกินไป").optional().nullable(),
 });
 
 // ==========================================

@@ -636,14 +636,41 @@ export default function SettingsContent({
   const handleAvatarChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error("ไฟล์ต้องมีขนาดไม่เกิน 2MB");
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("ไฟล์ต้องมีขนาดไม่เกิน 5MB");
       return;
     }
     const reader = new FileReader();
     reader.onload = (ev) => {
-      setAvatarPreview(ev.target?.result as string);
-      toast.success("อัปเดตรูปโปรไฟล์แล้ว");
+      const dataUrl = ev.target?.result as string;
+      // Compress via canvas to max 256x256, JPEG 80%
+      const img = new Image();
+      img.onload = async () => {
+        const canvas = document.createElement("canvas");
+        const MAX = 256;
+        const ratio = Math.min(MAX / img.width, MAX / img.height, 1);
+        canvas.width = Math.round(img.width * ratio);
+        canvas.height = Math.round(img.height * ratio);
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const compressed = canvas.toDataURL("image/jpeg", 0.8);
+        setAvatarPreview(compressed);
+        // Upload to server
+        try {
+          const res = await fetch("/api/v1/settings/profile", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ avatarUrl: compressed }),
+          });
+          if (!res.ok) throw new Error("upload failed");
+          toast.success("อัปเดตรูปโปรไฟล์แล้ว");
+        } catch {
+          toast.error("ไม่สามารถอัปโหลดรูปได้ กรุณาลองใหม่");
+          setAvatarPreview(null);
+        }
+      };
+      img.src = dataUrl;
     };
     reader.readAsDataURL(file);
   }, []);

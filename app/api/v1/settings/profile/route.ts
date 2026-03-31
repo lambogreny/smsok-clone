@@ -28,3 +28,20 @@ export async function PUT(req: NextRequest) {
     return apiError(error);
   }
 }
+
+// PATCH /api/v1/settings/profile — update avatar or profile fields
+export async function PATCH(req: NextRequest) {
+  try {
+    const user = await authenticateRequest(req);
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      throw new ApiError(400, "กรุณาส่งข้อมูล JSON");
+    }
+    const result = await updateProfile(user.id, body);
+    return apiResponse(result);
+  } catch (error) {
+    return apiError(error);
+  }
+}

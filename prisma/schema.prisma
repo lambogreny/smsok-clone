@@ -159,6 +159,7 @@ model User {
   updatedAt           DateTime           @updatedAt @map("updated_at")
   mustChangePassword  Boolean            @default(false) @map("must_change_password")
   phoneVerified       Boolean            @default(false) @map("phone_verified")
+  avatarUrl           String?            @map("avatar_url")
   notificationsReadAt DateTime?          @map("notifications_read_at")
   acceptedTermsAt     DateTime?          @map("accepted_terms_at")
   failedLoginAttempts Int                @default(0) @map("failed_login_attempts")
