@@ -4,6 +4,7 @@ import { useState, useTransition, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { formatThaiDateOnly } from "@/lib/format-thai-date";
+import { displayPhone } from "@/lib/validations";
 import { removeContactFromGroup, bulkRemoveFromGroup, deleteGroup, getContactsNotInGroup, addContactToGroup } from "@/lib/actions/groups";
 import { safeErrorMessage } from "@/lib/error-messages";
 import { useToast } from "@/app/components/ui/Toast";
@@ -59,6 +60,10 @@ export default function GroupDetailClient({
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
+  // Optimistic member list — updated instantly on add/remove
+  const [localMembers, setLocalMembers] = useState<Member[]>(members);
+  const [localCount, setLocalCount] = useState(memberCount);
+
   // Selection
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
@@ -77,11 +82,11 @@ export default function GroupDetailClient({
   const [showBulkRemove, setShowBulkRemove] = useState(false);
 
   const filteredMembers = searchQuery.trim()
-    ? members.filter((m) => {
+    ? localMembers.filter((m) => {
         const q = searchQuery.toLowerCase().trim();
-        return m.name.toLowerCase().includes(q) || m.phone.includes(q) || (m.email && m.email.toLowerCase().includes(q));
+        return m.name.toLowerCase().includes(q) || m.phone.includes(q) || displayPhone(m.phone).includes(q) || (m.email && m.email.toLowerCase().includes(q));
       })
-    : members;
+    : localMembers;
 
   const hasSelection = selectedIds.size > 0;
   const allSelected = filteredMembers.length > 0 && filteredMembers.every((m) => selectedIds.has(m.id));
@@ -101,13 +106,20 @@ export default function GroupDetailClient({
   }
 
   function handleRemoveMember(contactId: string) {
+    // Optimistic remove
+    setLocalMembers((prev) => prev.filter((m) => m.id !== contactId));
+    setLocalCount((prev) => prev - 1);
+    setSelectedIds((prev) => { const n = new Set(prev); n.delete(contactId); return n; });
+
     startTransition(async () => {
       try {
         await removeContactFromGroup(groupId, contactId);
-        setSelectedIds((prev) => { const n = new Set(prev); n.delete(contactId); return n; });
         toast("success", "ลบออกจากกลุ่มสำเร็จ");
         router.refresh();
       } catch (e) {
+        // Revert on error
+        setLocalMembers(members);
+        setLocalCount(memberCount);
         toast("error", safeErrorMessage(e));
       }
     });
@@ -115,14 +127,23 @@ export default function GroupDetailClient({
 
   function handleBulkRemove() {
     if (selectedIds.size === 0) return;
+    const toRemove = Array.from(selectedIds);
+    const removeCount = toRemove.length;
+
+    // Optimistic remove
+    setLocalMembers((prev) => prev.filter((m) => !selectedIds.has(m.id)));
+    setLocalCount((prev) => prev - removeCount);
+    setSelectedIds(new Set());
+    setShowBulkRemove(false);
+
     startTransition(async () => {
       try {
-        await bulkRemoveFromGroup(groupId, Array.from(selectedIds));
-        toast("success", `ลบ ${selectedIds.size} รายชื่อออกจากกลุ่มสำเร็จ`);
-        setSelectedIds(new Set());
-        setShowBulkRemove(false);
+        await bulkRemoveFromGroup(groupId, toRemove);
+        toast("success", `ลบ ${removeCount} รายชื่อออกจากกลุ่มสำเร็จ`);
         router.refresh();
       } catch (e) {
+        setLocalMembers(members);
+        setLocalCount(memberCount);
         toast("error", safeErrorMessage(e));
       }
     });
@@ -181,17 +202,38 @@ export default function GroupDetailClient({
 
   function handleAddMembers() {
     if (selectedToAdd.size === 0) return;
+    const ids = Array.from(selectedToAdd);
+
+    // Optimistic add — build member objects from availableContacts
+    const newMembers: Member[] = ids.flatMap((id) => {
+      const c = availableContacts.find((ac) => ac.id === id);
+      if (!c) return [];
+      return [{
+        id: c.id,
+        name: c.name,
+        phone: c.phone,
+        email: c.email,
+        smsConsent: true,
+        createdAt: new Date().toISOString(),
+      }];
+    });
+    setLocalMembers((prev) => [...prev, ...newMembers]);
+    setLocalCount((prev) => prev + newMembers.length);
+    setShowAddMembers(false);
+    setSelectedToAdd(new Set());
+
     startTransition(async () => {
       try {
-        const ids = Array.from(selectedToAdd);
         for (const contactId of ids) {
           await addContactToGroup(groupId, contactId);
         }
         toast("success", `เพิ่ม ${ids.length} คนเข้ากลุ่มสำเร็จ`);
-        setShowAddMembers(false);
-        setSelectedToAdd(new Set());
         router.refresh();
       } catch (e) {
+        // Revert on error
+        setLocalMembers(members);
+        setLocalCount(memberCount);
+        setShowAddMembers(true);
         toast("error", safeErrorMessage(e));
       }
     });
@@ -216,7 +258,7 @@ export default function GroupDetailClient({
           <div>
             <h2 className="text-xl font-bold text-[var(--text-primary)]">{groupName}</h2>
             <p className="text-xs text-[var(--text-muted)]">
-              {memberCount.toLocaleString()} contacts · สร้างเมื่อ {formatThaiDateOnly(createdAt)}
+              {localCount.toLocaleString()} contacts · สร้างเมื่อ {formatThaiDateOnly(createdAt)}
             </p>
           </div>
         </div>
@@ -295,7 +337,7 @@ export default function GroupDetailClient({
                           className="border-[rgba(var(--accent-rgb),0.4)] data-[state=checked]:bg-[var(--accent)] data-[state=checked]:border-[var(--accent)] data-[state=checked]:text-[var(--bg-base)]"
                         />
                       </TableCell>
-                      <TableCell className="py-3.5 text-[var(--text-primary)] font-mono text-[13px] font-medium">{member.phone}</TableCell>
+                      <TableCell className="py-3.5 text-[var(--text-primary)] font-mono text-[13px] font-medium">{displayPhone(member.phone)}</TableCell>
                       <TableCell className="py-3.5 text-[13px] text-[var(--text-secondary)]">
                         <Link href={`/dashboard/contacts/${member.id}`} className="hover:text-[var(--accent)] hover:underline transition-colors">
                           {member.name}
@@ -332,7 +374,7 @@ export default function GroupDetailClient({
               </Table>
             </div>
             <div className="px-5 py-3 border-t border-[var(--border-default)] text-xs text-[var(--text-muted)]">
-              แสดง {filteredMembers.length} จาก {members.length} สมาชิก
+              แสดง {filteredMembers.length} จาก {localMembers.length} สมาชิก
             </div>
           </Card>
 
@@ -371,7 +413,7 @@ export default function GroupDetailClient({
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
-                    <p className="text-[13px] text-[var(--accent)] font-mono">{member.phone}</p>
+                    <p className="text-[13px] text-[var(--accent)] font-mono">{displayPhone(member.phone)}</p>
                     <div className="flex items-center gap-2 mt-1 text-xs text-[var(--text-muted)]">
                       {member.smsConsent ? (
                         <span className="inline-flex items-center gap-1">
