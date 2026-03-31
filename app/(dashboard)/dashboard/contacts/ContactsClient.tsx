@@ -584,9 +584,9 @@ export default function ContactsClient({
     }
   }
 
-  function handleBatchTag() {
-    if (!batchTagValue.trim()) return;
-    const tag = batchTagValue.trim();
+  function handleBatchTag(tagOverride?: string) {
+    const tag = (tagOverride ?? batchTagValue).trim();
+    if (!tag) return;
 
     startTransition(async () => {
       try {
@@ -1195,27 +1195,60 @@ export default function ContactsClient({
               <X className="w-4 h-4" />
             </button>
           </div>
-          {showBatchTagInput && (
-            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[var(--border-default)]">
-              <Input
-                type="text"
-                className="h-8 flex-1 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] text-xs placeholder:text-[var(--text-muted)] focus:border-[rgba(var(--accent-rgb),0.6)]"
-                placeholder={batchAction === "add" ? "แท็กที่จะเพิ่ม..." : "แท็กที่จะลบ..."}
-                value={batchTagValue}
-                onChange={(e) => setBatchTagValue(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") handleBatchTag(); }}
-                autoFocus
-              />
-              <Button
-                size="sm"
-                onClick={handleBatchTag}
-                disabled={isPending || !batchTagValue.trim()}
-                className="h-8 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-base)] font-semibold disabled:opacity-50"
-              >
-                {isPending ? "..." : "ยืนยัน"}
-              </Button>
-            </div>
-          )}
+          {showBatchTagInput && (() => {
+            const query = batchTagValue.toLowerCase().trim();
+            const allOptions = [...new Set([...allTagNames, ...TAG_PRESETS])];
+            const filtered = query
+              ? allOptions.filter((t) => t.toLowerCase().includes(query))
+              : allOptions;
+            const hasExact = allOptions.some((t) => t.toLowerCase() === query);
+            return (
+              <div className="mt-3 pt-3 border-t border-[var(--border-default)]">
+                <div className="flex items-center gap-2 mb-2">
+                  <Input
+                    type="text"
+                    className="h-8 flex-1 bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] text-xs placeholder:text-[var(--text-muted)] focus:border-[rgba(var(--accent-rgb),0.6)]"
+                    placeholder={batchAction === "add" ? "ค้นหาหรือพิมพ์ชื่อแท็ก..." : "ค้นหาแท็กที่จะลบ..."}
+                    value={batchTagValue}
+                    onChange={(e) => setBatchTagValue(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter" && batchTagValue.trim()) handleBatchTag(); }}
+                    autoFocus
+                  />
+                </div>
+                <div className="max-h-36 overflow-y-auto rounded-md border border-[var(--border-default)] bg-[var(--bg-base)]">
+                  {filtered.map((tag) => {
+                    const color = getTagColor(tag, tagColorMap.get(tag));
+                    return (
+                      <button
+                        key={tag}
+                        type="button"
+                        disabled={isPending}
+                        onClick={() => handleBatchTag(tag)}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[rgba(var(--accent-rgb),0.06)] transition-colors text-[var(--text-secondary)] disabled:opacity-50"
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${color.dot}`} />
+                        {tag}
+                      </button>
+                    );
+                  })}
+                  {query && !hasExact && (
+                    <button
+                      type="button"
+                      disabled={isPending}
+                      onClick={() => handleBatchTag(batchTagValue.trim())}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[rgba(var(--accent-rgb),0.06)] transition-colors text-[var(--accent)] disabled:opacity-50 border-t border-[var(--border-default)]"
+                    >
+                      <Plus className="w-3 h-3 flex-shrink-0" />
+                      {batchAction === "add" ? `สร้างแท็กใหม่ "${batchTagValue.trim()}"` : `ลบแท็ก "${batchTagValue.trim()}"`}
+                    </button>
+                  )}
+                  {filtered.length === 0 && !query && (
+                    <p className="px-3 py-3 text-xs text-[var(--text-muted)] text-center">ยังไม่มีแท็ก</p>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       )}
 
