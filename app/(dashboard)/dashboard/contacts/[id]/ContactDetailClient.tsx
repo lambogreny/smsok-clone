@@ -7,6 +7,7 @@ import {
   Tag, Users, Shield, ShieldOff, Calendar,
 } from "lucide-react";
 import { formatThaiDateOnly } from "@/lib/format-thai-date";
+import { displayPhone } from "@/lib/validations";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -83,7 +84,7 @@ export default function ContactDetailClient({
               <h1 className="text-xl font-bold">{contact.name}</h1>
               <div className="flex items-center gap-3 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
-                  <Phone className="w-3 h-3" /> {contact.phone}
+                  <Phone className="w-3 h-3" /> {displayPhone(contact.phone)}
                 </span>
                 {contact.email && (
                   <span className="flex items-center gap-1">

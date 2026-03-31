@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { safeErrorMessage } from "@/lib/error-messages";
 import { formatThaiDateOnly } from "@/lib/format-thai-date";
+import { displayPhone } from "@/lib/validations";
 import {
   createContact,
   updateContact,
@@ -466,6 +467,7 @@ export default function ContactsClient({
         (c) =>
           c.name.toLowerCase().includes(q) ||
           c.phone.includes(q) ||
+          displayPhone(c.phone).includes(q) ||
           (c.email && c.email.toLowerCase().includes(q)) ||
           getTagNames(c.tags).some((t) => t.toLowerCase().includes(q)),
       );
@@ -507,7 +509,7 @@ export default function ContactsClient({
     setEditingContact(contact);
     contactForm.reset({
       name: contact.name,
-      phone: contact.phone,
+      phone: displayPhone(contact.phone),
       email: contact.email || "",
       tags: getTagNames(contact.tags).join(", "),
     });
@@ -1354,7 +1356,7 @@ export default function ContactsClient({
                         />
                       </TableCell>
                       <TableCell className="py-3.5 text-[var(--text-primary)] font-mono text-[13px] font-medium">
-                        {contact.phone}
+                        {displayPhone(contact.phone)}
                       </TableCell>
                       <TableCell className="py-3.5 text-[13px] text-[var(--text-secondary)]">
                         <a href={`/dashboard/contacts/${contact.id}`} className="hover:text-[var(--accent)] hover:underline transition-colors">
@@ -1697,7 +1699,7 @@ export default function ContactsClient({
                         </DropdownMenu>
                       </div>
                       <p className="text-[13px] text-[var(--accent)] font-mono mt-0.5">
-                        {contact.phone}
+                        {displayPhone(contact.phone)}
                       </p>
                       {contact.email && (
                         <p className="text-xs text-[var(--text-muted)] mt-0.5 truncate">

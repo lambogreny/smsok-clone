@@ -720,6 +720,18 @@ export function calculateCreditCost(message: string): number {
   return calculateSmsCount(message);
 }
 
+/** Convert phone to local Thai format (0XXXXXXXXX) for display */
+export function displayPhone(phone: string): string {
+  const s = (phone ?? "").trim();
+  if (s.startsWith("+66") && s.length > 3) {
+    return "0" + s.slice(3);
+  }
+  if (s.startsWith("66") && s.length > 2 && !s.startsWith("0")) {
+    return "0" + s.slice(2);
+  }
+  return s;
+}
+
 /** Normalize Thai phone to E.164 format */
 export function normalizePhone(phone: string): string {
   const sanitized = sanitizePhoneInput(phone);
