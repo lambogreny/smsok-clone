@@ -2,13 +2,9 @@
 
 import { ApiError } from "../api-auth";
 
-// ── Action Error (returned instead of thrown — survives Next.js production serialization) ──
-export type ContactActionError = { __contactActionError: string; __field?: string };
-export function isContactActionError(v: unknown): v is ContactActionError {
-  return typeof v === "object" && v !== null && "__contactActionError" in v;
-}
-
 import { prisma as db } from "../db";
+import type { ContactActionError } from "../contact-action-error";
+export type { ContactActionError } from "../contact-action-error";
 import { revalidatePath } from "next/cache";
 import {
   contactFilterSchema,

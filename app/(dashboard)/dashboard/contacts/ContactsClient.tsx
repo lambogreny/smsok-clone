@@ -19,7 +19,7 @@ import {
   addContactsToGroup,
 } from "@/lib/actions/contacts";
 import { useToast } from "@/app/components/ui/Toast";
-import { isContactActionError } from "@/lib/actions/contacts";
+import { isContactActionError } from "@/lib/contact-action-error";
 import ImportWizard from "./ImportWizard";
 import EmptyState from "@/components/EmptyState";
 import CustomSelect from "@/components/ui/CustomSelect";
