@@ -165,29 +165,36 @@ export default function MessagesClient({
             )}
           </button>
           {/* Desktop: inline filters */}
-          <div className="hidden sm:contents">
-            <PillTabs
-              value={typeFilter}
-              onChange={setTypeFilter}
-              label="กรองตามประเภทข้อความ"
-              options={[
-                { value: "all", label: "ทั้งหมด" },
-                { value: "SMS", label: "SMS" },
-                { value: "OTP", label: "OTP" },
-              ]}
-            />
-            <PillTabs
-              value={statusFilter}
-              onChange={setStatusFilter}
-              label="กรองตามสถานะ"
-              options={[
-                { value: "all", label: "ทุกสถานะ" },
-                { value: "delivered", label: "สำเร็จ" },
-                { value: "sent", label: "ส่งแล้ว" },
-                { value: "pending", label: "รอส่ง" },
-                { value: "failed", label: "ล้มเหลว" },
-              ]}
-            />
+          <div className="hidden sm:flex items-center gap-3">
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] px-1">ประเภท</span>
+              <PillTabs
+                value={typeFilter}
+                onChange={setTypeFilter}
+                label="กรองตามประเภทข้อความ"
+                options={[
+                  { value: "all", label: "ทั้งหมด" },
+                  { value: "SMS", label: "SMS" },
+                  { value: "OTP", label: "OTP" },
+                ]}
+              />
+            </div>
+            <div className="w-px h-8 bg-[var(--border-default)] self-end mb-1" />
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] px-1">สถานะ</span>
+              <PillTabs
+                value={statusFilter}
+                onChange={setStatusFilter}
+                label="กรองตามสถานะ"
+                options={[
+                  { value: "all", label: "ทุกสถานะ" },
+                  { value: "delivered", label: "สำเร็จ" },
+                  { value: "sent", label: "ส่งแล้ว" },
+                  { value: "pending", label: "รอส่ง" },
+                  { value: "failed", label: "ล้มเหลว" },
+                ]}
+              />
+            </div>
           </div>
         </div>
         {/* Desktop: date filters */}
