@@ -2,6 +2,12 @@
 
 import { ApiError } from "../api-auth";
 
+// ── Action Error (returned instead of thrown — survives Next.js production serialization) ──
+export type ContactActionError = { __contactActionError: string; __field?: string };
+export function isContactActionError(v: unknown): v is ContactActionError {
+  return typeof v === "object" && v !== null && "__contactActionError" in v;
+}
+
 import { prisma as db } from "../db";
 import { revalidatePath } from "next/cache";
 import {
@@ -332,8 +338,8 @@ export async function searchContactsBasic(
 // Create contact
 // ==========================================
 
-export async function createContact(data: unknown): Promise<Awaited<ReturnType<typeof db.contact.create>>>;
-export async function createContact(userId: string, data: unknown): Promise<Awaited<ReturnType<typeof db.contact.create>>>;
+export async function createContact(data: unknown): Promise<Awaited<ReturnType<typeof db.contact.create>> | ContactActionError>;
+export async function createContact(userId: string, data: unknown): Promise<Awaited<ReturnType<typeof db.contact.create>> | ContactActionError>;
 export async function createContact(userIdOrData: string | unknown, maybeData?: unknown) {
   const userId = await resolveActionUserId(
     maybeData === undefined ? undefined : userIdOrData as string,
@@ -344,7 +350,7 @@ export async function createContact(userIdOrData: string | unknown, maybeData?: 
   const existing = await db.contact.findUnique({
     where: { userId_phone: { userId, phone: normalizedPhone } },
   });
-  if (existing) throw new Error("เบอร์โทรนี้มีอยู่แล้ว");
+  if (existing) return { __contactActionError: "เบอร์โทรนี้มีอยู่แล้ว", __field: "phone" } satisfies ContactActionError;
 
   const consentData =
     input.smsConsent === undefined
@@ -385,7 +391,7 @@ export async function createContact(userIdOrData: string | unknown, maybeData?: 
     return contact;
   } catch (err) {
     if (err instanceof Error && "code" in err && (err as { code: string }).code === "P2002") {
-      throw new Error("เบอร์โทรนี้มีอยู่แล้ว");
+      return { __contactActionError: "เบอร์โทรนี้มีอยู่แล้ว", __field: "phone" } satisfies ContactActionError;
     }
     throw err;
   }
@@ -395,8 +401,8 @@ export async function createContact(userIdOrData: string | unknown, maybeData?: 
 // Update contact
 // ==========================================
 
-export async function updateContact(contactId: string, data: unknown): Promise<Awaited<ReturnType<typeof db.contact.update>>>;
-export async function updateContact(userId: string, contactId: string, data: unknown): Promise<Awaited<ReturnType<typeof db.contact.update>>>;
+export async function updateContact(contactId: string, data: unknown): Promise<Awaited<ReturnType<typeof db.contact.update>> | ContactActionError>;
+export async function updateContact(userId: string, contactId: string, data: unknown): Promise<Awaited<ReturnType<typeof db.contact.update>> | ContactActionError>;
 export async function updateContact(userIdOrContactId: string, contactIdOrData: string | unknown, maybeData?: unknown) {
   const hasExplicitUserId = maybeData !== undefined;
   const userId = await resolveActionUserId(hasExplicitUserId ? userIdOrContactId : undefined);
@@ -415,7 +421,7 @@ export async function updateContact(userIdOrContactId: string, contactIdOrData: 
     const existing = await db.contact.findUnique({
       where: { userId_phone: { userId, phone: normalizedPhone } },
     });
-    if (existing) throw new Error("เบอร์โทรนี้มีอยู่แล้ว");
+    if (existing) return { __contactActionError: "เบอร์โทรนี้มีอยู่แล้ว", __field: "phone" } satisfies ContactActionError;
   }
 
   try {
@@ -441,7 +447,7 @@ export async function updateContact(userIdOrContactId: string, contactIdOrData: 
     return updated;
   } catch (err) {
     if (err instanceof Error && "code" in err && (err as { code: string }).code === "P2002") {
-      throw new Error("เบอร์โทรนี้มีอยู่แล้ว");
+      return { __contactActionError: "เบอร์โทรนี้มีอยู่แล้ว", __field: "phone" } satisfies ContactActionError;
     }
     throw err;
   }

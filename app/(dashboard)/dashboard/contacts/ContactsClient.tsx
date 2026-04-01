@@ -19,6 +19,7 @@ import {
   addContactsToGroup,
 } from "@/lib/actions/contacts";
 import { useToast } from "@/app/components/ui/Toast";
+import { isContactActionError } from "@/lib/actions/contacts";
 import ImportWizard from "./ImportWizard";
 import EmptyState from "@/components/EmptyState";
 import CustomSelect from "@/components/ui/CustomSelect";
@@ -225,6 +226,7 @@ function TagInput({
   const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   const combined = useMemo(
     () => [...new Set([...allTags, ...TAG_PRESETS])],
@@ -244,13 +246,18 @@ function TagInput({
   const addTag = useCallback(
     (tag: string) => {
       const trimmed = tag.trim();
-      if (trimmed && !tags.includes(trimmed)) {
-        onChange([...tags, trimmed]);
+      if (!trimmed) return;
+      if (tags.includes(trimmed)) {
+        toast("warning", `แท็ก "${trimmed}" มีอยู่แล้ว`);
+        setInputValue("");
+        inputRef.current?.focus();
+        return;
       }
+      onChange([...tags, trimmed]);
       setInputValue("");
       inputRef.current?.focus();
     },
-    [tags, onChange],
+    [tags, onChange, toast],
   );
 
   const removeTag = useCallback(
@@ -572,32 +579,34 @@ export default function ContactsClient({
 
     startTransition(async () => {
       try {
-        if (editingContact) {
-          await updateContact(editingContact.id, {
-            name: data.name.trim(),
-            phone: data.phone.trim(),
-            email: data.email?.trim() || undefined,
-            tags: tagsStr,
-          });
-          toast("success", "อัปเดตรายชื่อสำเร็จ!");
-        } else {
-          await createContact({
-            name: data.name.trim(),
-            phone: data.phone.trim(),
-            email: data.email?.trim() || undefined,
-            tags: tagsStr,
-          });
-          toast("success", "เพิ่มรายชื่อสำเร็จ!");
+        const result = editingContact
+          ? await updateContact(editingContact.id, {
+              name: data.name.trim(),
+              phone: data.phone.trim(),
+              email: data.email?.trim() || undefined,
+              tags: tagsStr,
+            })
+          : await createContact({
+              name: data.name.trim(),
+              phone: data.phone.trim(),
+              email: data.email?.trim() || undefined,
+              tags: tagsStr,
+            });
+
+        if (isContactActionError(result)) {
+          if (result.__field === "phone") {
+            contactForm.setError("phone", { message: result.__contactActionError });
+          } else {
+            toast("error", result.__contactActionError);
+          }
+          return;
         }
+
+        toast("success", editingContact ? "อัปเดตรายชื่อสำเร็จ!" : "เพิ่มรายชื่อสำเร็จ!");
         setShowContactDialog(false);
         router.refresh();
       } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e ?? "");
-        if (msg.includes("เบอร์โทรนี้มีอยู่แล้ว")) {
-          contactForm.setError("phone", { message: "เบอร์โทรนี้มีอยู่ในระบบแล้ว" });
-        } else {
-          toast("error", safeErrorMessage(e));
-        }
+        toast("error", safeErrorMessage(e));
       }
     });
   }
