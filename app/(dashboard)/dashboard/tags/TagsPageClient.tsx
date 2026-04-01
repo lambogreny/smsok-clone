@@ -121,13 +121,11 @@ export default function TagsPageClient({
     ? initialTags.reduce((max, t) => (t._count.contactTags > max._count.contactTags ? t : max), initialTags[0])
     : null;
 
-  // Form
-  const DEFAULT_COLOR = COLOR_OPTIONS[0]?.hex ?? "#10B981";
-
+  // Form — no default color so user is forced to pick one
   const form = useForm<TagFormValues>({
-    mode: "onChange",
+    mode: "onSubmit",
     resolver: zodResolver(tagFormSchema),
-    defaultValues: { name: "", color: DEFAULT_COLOR },
+    defaultValues: { name: "", color: "" },
   });
 
   // ==========================================
@@ -136,7 +134,7 @@ export default function TagsPageClient({
 
   function openCreate() {
     setEditingTag(null);
-    form.reset({ name: "", color: DEFAULT_COLOR });
+    form.reset({ name: "", color: "" });
     setShowDialog(true);
   }
 
@@ -446,32 +444,40 @@ export default function TagsPageClient({
               <FormField
                 control={form.control}
                 name="color"
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-semibold uppercase tracking-[0.05em] text-[var(--text-muted)]">
-                      สี
+                      สี <span className="text-red-400">*</span>
                     </FormLabel>
-                    <div className="flex gap-2 flex-wrap">
+                    <div
+                      className={`flex gap-2 flex-wrap p-3 rounded-lg border transition-colors ${
+                        fieldState.error
+                          ? "border-red-500/50 bg-red-500/5"
+                          : field.value
+                          ? "border-[var(--border-default)]"
+                          : "border-dashed border-[var(--border-default)]"
+                      }`}
+                    >
                       {COLOR_OPTIONS.map((c) => (
                         <button
                           key={c.hex}
                           type="button"
                           onClick={() => field.onChange(c.hex)}
-                          className={`w-7 h-7 rounded-full transition-all cursor-pointer ${
+                          className={`w-8 h-8 rounded-full transition-all cursor-pointer ${
                             field.value === c.hex
                               ? "ring-2 ring-offset-2 ring-offset-[var(--bg-surface)] scale-110"
-                              : "hover:scale-105"
+                              : "hover:scale-110 opacity-70 hover:opacity-100"
                           }`}
-                          style={{
-                            backgroundColor: c.hex,
-                            ...(field.value === c.hex
-                              ? { ringColor: c.hex }
-                              : {}),
-                          }}
+                          style={{ backgroundColor: c.hex }}
                           title={c.name}
+                          aria-label={`เลือกสี ${c.name}`}
+                          aria-pressed={field.value === c.hex}
                         />
                       ))}
                     </div>
+                    {!field.value && !fieldState.error && (
+                      <p className="text-xs text-[var(--text-muted)]">กรุณาเลือกสีสำหรับแท็ก</p>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}

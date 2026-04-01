@@ -95,7 +95,7 @@ export default function RootLayout({
           <TooltipProvider>
             <NavigationProgress />
             {children}
-            <Toaster position="top-right" />
+            <Toaster position="bottom-right" />
             <CookieConsentBanner />
           </TooltipProvider>
         </StoreProviders>
