@@ -158,3 +158,26 @@ export async function deleteTemplate(userIdOrTemplateId: string, maybeTemplateId
   revalidatePath("/dashboard/templates");
   revalidatePath("/dashboard/send");
 }
+
+// ==========================================
+// Permanent delete template (hard delete)
+// ==========================================
+
+export async function permanentDeleteTemplate(templateId: string): Promise<void>;
+export async function permanentDeleteTemplate(userId: string, templateId: string): Promise<void>;
+export async function permanentDeleteTemplate(userIdOrTemplateId: string, maybeTemplateId?: string) {
+  const userId = await resolveActionUserId(
+    maybeTemplateId === undefined ? undefined : userIdOrTemplateId,
+  );
+  const templateId = maybeTemplateId ?? userIdOrTemplateId;
+  const existing = await db.messageTemplate.findFirst({
+    where: { id: templateId, userId },
+  });
+  if (!existing) throw new Error("ไม่พบเทมเพลต");
+
+  await db.messageTemplate.delete({
+    where: { id: templateId },
+  });
+  revalidatePath("/dashboard/templates");
+  revalidatePath("/dashboard/send");
+}

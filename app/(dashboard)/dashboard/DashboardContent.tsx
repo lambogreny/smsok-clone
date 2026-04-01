@@ -223,16 +223,39 @@ type SmartAlert = {
 
 function SmartAlertCards({ alerts }: { alerts: SmartAlert[] }) {
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
+  const [allHidden, setAllHidden] = useState(false);
 
   const visible = alerts.filter((a) => !dismissedIds.has(a.id));
-  if (visible.length === 0) return null;
+  const hasAlerts = alerts.length > 0;
+
+  function dismiss(id: string) {
+    setDismissedIds((prev) => {
+      const next = new Set([...prev, id]);
+      if (alerts.every((a) => next.has(a.id))) setAllHidden(true);
+      return next;
+    });
+  }
+
+  function restore() {
+    setDismissedIds(new Set());
+    setAllHidden(false);
+  }
+
+  if (allHidden || visible.length === 0) {
+    if (!hasAlerts) return null;
+    return (
+      <button
+        type="button"
+        onClick={restore}
+        className="text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors py-1 cursor-pointer"
+      >
+        แสดงการแจ้งเตือน ({alerts.length}) ↓
+      </button>
+    );
+  }
 
   const shown = visible.slice(0, 3);
   const remaining = visible.length - 3;
-
-  function dismiss(id: string) {
-    setDismissedIds((prev) => new Set([...prev, id]));
-  }
 
   return (
     <div className="space-y-2">

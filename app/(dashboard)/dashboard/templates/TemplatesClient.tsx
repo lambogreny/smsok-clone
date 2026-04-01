@@ -10,6 +10,7 @@ import {
   createTemplate,
   updateTemplate,
   deleteTemplate,
+  permanentDeleteTemplate,
 } from "@/lib/actions/templates";
 import EmptyState from "@/components/EmptyState";
 import type { TemplateItem } from "@/lib/types/api-responses";
@@ -38,6 +39,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
   Form,
@@ -63,6 +72,7 @@ import {
   Loader2,
   Copy,
   Archive,
+  Trash2,
   MoreVertical,
   Search,
   BookOpen,
@@ -309,6 +319,7 @@ export default function TemplatesClient({
   // Dialog states
   const [showDialog, setShowDialog] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
+  const [deleteConfirmTemplate, setDeleteConfirmTemplate] = useState<Template | null>(null);
 
   // Textarea ref for cursor insertion
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -459,6 +470,20 @@ export default function TemplatesClient({
         router.refresh();
       } catch (e) {
         toast("error", safeErrorMessage(e));
+      }
+    });
+  }
+
+  function handlePermanentDelete(template: Template) {
+    startTransition(async () => {
+      try {
+        await permanentDeleteTemplate(template.id);
+        toast("success", "ลบเทมเพลตแล้ว");
+        router.refresh();
+      } catch (e) {
+        toast("error", safeErrorMessage(e));
+      } finally {
+        setDeleteConfirmTemplate(null);
       }
     });
   }
@@ -628,6 +653,9 @@ export default function TemplatesClient({
                           <DropdownMenuItem onClick={() => handleArchive(template)} className="gap-2 text-[var(--text-secondary)] focus:text-[var(--text-primary)] cursor-pointer">
                             <Archive className="w-4 h-4" /> เก็บเข้าคลัง
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setDeleteConfirmTemplate(template)} className="gap-2 text-[var(--error)] focus:text-[var(--error)] cursor-pointer">
+                            <Trash2 className="w-4 h-4" /> ลบถาวร
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
@@ -727,6 +755,29 @@ export default function TemplatesClient({
         ))}
 
       {/* DIALOGS */}
+
+      {/* Permanent Delete Confirmation */}
+      <AlertDialog open={!!deleteConfirmTemplate} onOpenChange={(open) => !open && setDeleteConfirmTemplate(null)}>
+        <AlertDialogContent className="bg-[var(--bg-surface)] border-[var(--border-default)]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-[var(--text-primary)]">ลบเทมเพลตถาวร</AlertDialogTitle>
+            <AlertDialogDescription className="text-[var(--text-muted)]">
+              คุณแน่ใจหรือไม่ว่าต้องการลบ <span className="font-medium text-[var(--text-secondary)]">&ldquo;{deleteConfirmTemplate?.name}&rdquo;</span> ถาวร? การกระทำนี้ไม่สามารถย้อนกลับได้
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-[var(--border-default)] text-[var(--text-secondary)]">ยกเลิก</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteConfirmTemplate && handlePermanentDelete(deleteConfirmTemplate)}
+              className="bg-[var(--error)] hover:bg-[var(--error)] hover:opacity-90 text-white"
+              disabled={isPending}
+            >
+              {isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Trash2 className="w-4 h-4 mr-1" />}
+              ลบถาวร
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Create / Edit Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>

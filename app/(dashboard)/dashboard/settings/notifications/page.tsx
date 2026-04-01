@@ -176,11 +176,14 @@ export default function NotificationPreferencesPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(prefs),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || `HTTP ${res.status}`);
+      }
       toast.success("บันทึกการตั้งค่าสำเร็จ");
       setDirty(false);
-    } catch {
-      toast.error("เกิดข้อผิดพลาด กรุณาลองใหม่");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "เกิดข้อผิดพลาด กรุณาลองใหม่");
     } finally {
       setSaving(false);
     }

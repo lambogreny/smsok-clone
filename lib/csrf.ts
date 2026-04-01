@@ -29,12 +29,18 @@ function isSameSiteOrigin(req: Request): boolean {
   const origin = req.headers.get("origin");
   if (!origin) return false;
 
-  const host = req.headers.get("host") || req.headers.get("x-forwarded-host");
-  if (!host) return false;
+  const rawHost =
+    req.headers.get("x-forwarded-host") ||
+    req.headers.get("host");
+  if (!rawHost) return false;
 
   try {
-    const originHost = new URL(origin).host;
-    return originHost === host;
+    // Use hostname (strips port) for robust matching — handles cases where
+    // nginx sends "Host: example.com:443" vs Origin "https://example.com"
+    const originHostname = new URL(origin).hostname;
+    // x-forwarded-host may contain comma-separated list; take the first entry
+    const hostHostname = rawHost.split(",")[0].trim().split(":")[0];
+    return originHostname === hostHostname;
   } catch {
     return false;
   }
