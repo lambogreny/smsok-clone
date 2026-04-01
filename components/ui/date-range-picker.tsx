@@ -646,13 +646,16 @@ export function DateRangePicker({
 
   const handleCalendarSelect = React.useCallback(
     (range: DateRange | undefined) => {
-      if (range?.from && range?.to && isBefore(range.to, range.from)) {
+      // If only from is selected (first click), keep to undefined so user picks end date next
+      if (range?.from && range?.to && isSameDay(range.from, range.to) && !internalRange?.from) {
+        setInternalRange({ from: range.from, to: undefined });
+      } else if (range?.from && range?.to && isBefore(range.to, range.from)) {
         setInternalRange({ from: range.to, to: range.from });
       } else {
         setInternalRange(range);
       }
     },
-    []
+    [internalRange?.from]
   );
 
   const handleMonthSelect = React.useCallback(

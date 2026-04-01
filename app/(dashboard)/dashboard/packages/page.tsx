@@ -169,7 +169,7 @@ function PricingCard({
 
       {/* CTA Button */}
       <Button
-        className="w-full mt-5"
+        className={`w-full mt-5${tier.isBestValue ? " hover:opacity-90 transition-opacity" : ""}`}
         size="lg"
         onClick={() => onSelect(tier)}
         style={
@@ -290,7 +290,7 @@ function AccordionCard({
           </ul>
 
           <Button
-            className="w-full"
+            className={`w-full${tier.isBestValue ? " hover:opacity-90 transition-opacity" : ""}`}
             size="lg"
             onClick={() => onSelect(tier)}
             style={
