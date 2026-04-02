@@ -6,34 +6,47 @@ import { prisma as db } from "@/lib/db";
 // Frontend uses { id, email, sms } format; DB uses field names like emailCreditLow
 
 type DbFields = {
-  emailCreditLow?: boolean;
-  emailCampaignDone?: boolean;
-  emailWeeklyReport?: boolean;
-  emailSecurity?: boolean;
+  emailCreditLow?:     boolean;
+  emailCampaignDone?:  boolean;
+  emailWeeklyReport?:  boolean;
+  emailSecurity?:      boolean;
   emailPackageExpiry?: boolean;
-  emailInvoice?: boolean;
-  smsCreditLow?: boolean;
-  smsCampaignDone?: boolean;
+  emailInvoice?:       boolean;
+  emailApiError?:      boolean;
+  smsCreditLow?:       boolean;
+  smsCampaignDone?:    boolean;
+  smsWeeklyReport?:    boolean;
+  smsSecurityAlert?:   boolean;
+  smsPackageExpiry?:   boolean;
+  smsInvoice?:         boolean;
+  smsApiError?:        boolean;
 };
 
 const DB_DEFAULTS: Required<DbFields> = {
-  emailCreditLow: true,
-  emailCampaignDone: true,
-  emailWeeklyReport: false,
-  emailSecurity: true,
+  emailCreditLow:     true,
+  emailCampaignDone:  true,
+  emailWeeklyReport:  false,
+  emailSecurity:      true,
   emailPackageExpiry: true,
-  emailInvoice: true,
-  smsCreditLow: false,
-  smsCampaignDone: false,
+  emailInvoice:       true,
+  emailApiError:      true,
+  smsCreditLow:       false,
+  smsCampaignDone:    false,
+  smsWeeklyReport:    false,
+  smsSecurityAlert:   false,
+  smsPackageExpiry:   false,
+  smsInvoice:         false,
+  smsApiError:        false,
 };
 
 const CHANNEL_MAP: Record<string, { email?: keyof DbFields; sms?: keyof DbFields }> = {
-  low_balance:       { email: "emailCreditLow",   sms: "smsCreditLow" },
-  campaign_complete: { email: "emailCampaignDone", sms: "smsCampaignDone" },
-  monthly_report:    { email: "emailWeeklyReport" },
-  security_alert:    { email: "emailSecurity" },
-  package_expiry:    { email: "emailPackageExpiry" },
-  invoice:           { email: "emailInvoice" },
+  low_balance:       { email: "emailCreditLow",     sms: "smsCreditLow" },
+  campaign_complete: { email: "emailCampaignDone",  sms: "smsCampaignDone" },
+  monthly_report:    { email: "emailWeeklyReport",  sms: "smsWeeklyReport" },
+  security_alert:    { email: "emailSecurity",      sms: "smsSecurityAlert" },
+  package_expiry:    { email: "emailPackageExpiry", sms: "smsPackageExpiry" },
+  invoice:           { email: "emailInvoice",       sms: "smsInvoice" },
+  api_error:         { email: "emailApiError",      sms: "smsApiError" },
 };
 
 function toFrontendArray(prefs: Required<DbFields>) {
@@ -57,14 +70,20 @@ async function getDbPrefs(userId: string): Promise<Required<DbFields>> {
   const row = await db.notificationPrefs.findUnique({
     where: { userId },
     select: {
-      emailCreditLow: true,
-      emailCampaignDone: true,
-      emailWeeklyReport: true,
-      emailSecurity: true,
+      emailCreditLow:     true,
+      emailCampaignDone:  true,
+      emailWeeklyReport:  true,
+      emailSecurity:      true,
       emailPackageExpiry: true,
-      emailInvoice: true,
-      smsCreditLow: true,
-      smsCampaignDone: true,
+      emailInvoice:       true,
+      emailApiError:      true,
+      smsCreditLow:       true,
+      smsCampaignDone:    true,
+      smsWeeklyReport:    true,
+      smsSecurityAlert:   true,
+      smsPackageExpiry:   true,
+      smsInvoice:         true,
+      smsApiError:        true,
     },
   });
   return { ...DB_DEFAULTS, ...(row ?? {}) };
@@ -94,7 +113,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     await db.notificationPrefs.upsert({
-      where: { userId: user.id },
+      where:  { userId: user.id },
       create: { userId: user.id, ...DB_DEFAULTS, ...patch },
       update: patch,
     });

@@ -82,7 +82,7 @@ type NotifPref = {
   description: string;
   icon: typeof Mail;
   email: boolean;
-  sms: boolean | undefined;
+  sms: boolean;
 };
 
 const DEFAULT_NOTIF_PREFS: NotifPref[] = [
@@ -107,8 +107,8 @@ const DEFAULT_NOTIF_PREFS: NotifPref[] = [
     label: "รายงานประจำเดือน",
     description: "สรุปยอดส่ง SMS และค่าใช้จ่ายรายเดือน",
     icon: BarChart3,
-    email: true,
-    sms: undefined,
+    email: false,
+    sms: false,
   },
   {
     id: "security_alert",
@@ -116,7 +116,31 @@ const DEFAULT_NOTIF_PREFS: NotifPref[] = [
     description: "เข้าสู่ระบบจากอุปกรณ์ใหม่ หรือเปลี่ยนรหัสผ่าน",
     icon: AlertTriangle,
     email: true,
-    sms: undefined,
+    sms: false,
+  },
+  {
+    id: "package_expiry",
+    label: "แพ็กเกจใกล้หมดอายุ",
+    description: "แจ้งเตือนก่อนแพ็กเกจ SMS หมดอายุ",
+    icon: Clock,
+    email: true,
+    sms: false,
+  },
+  {
+    id: "invoice",
+    label: "ใบแจ้งหนี้",
+    description: "รับใบเสร็จและใบแจ้งหนี้ทางอีเมล",
+    icon: FileText,
+    email: true,
+    sms: false,
+  },
+  {
+    id: "api_error",
+    label: "ข้อผิดพลาด API",
+    description: "แจ้งเตือนเมื่อ API Key มีการใช้งานผิดปกติหรือเกิด error",
+    icon: AlertTriangle,
+    email: true,
+    sms: false,
   },
 ];
 
@@ -478,17 +502,13 @@ function NotificationsContent({
                   />
                 </div>
                 <div className="w-16 flex justify-center">
-                  {pref.sms !== undefined ? (
-                    <Switch
-                      checked={pref.sms}
-                      onCheckedChange={() => toggleNotif(pref.id, "sms")}
-                      disabled={pref.id === "security_alert" || savingSms}
-                      aria-label={`${pref.label} — SMS`}
-                      className={`transition-opacity ${savingSms ? "opacity-40 cursor-wait" : ""}`}
-                    />
-                  ) : (
-                    <span className="text-[var(--text-muted)] text-xs">—</span>
-                  )}
+                  <Switch
+                    checked={pref.sms}
+                    onCheckedChange={() => toggleNotif(pref.id, "sms")}
+                    disabled={savingSms}
+                    aria-label={`${pref.label} — SMS`}
+                    className={`transition-opacity ${savingSms ? "opacity-40 cursor-wait" : ""}`}
+                  />
                 </div>
               </div>
             );
