@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -18,7 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { Search, ArrowRight, Inbox, ChevronLeft, ChevronRight, MessageSquare, Download, SlidersHorizontal } from "lucide-react";
+import { Search, ArrowRight, Inbox, ChevronLeft, ChevronRight, MessageSquare, Download, SlidersHorizontal, Calendar } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -70,11 +70,14 @@ export default function MessagesClient({
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const dateFromRef = useRef<HTMLInputElement>(null);
+  const dateToRef = useRef<HTMLInputElement>(null);
 
   const filtered = messages.filter((msg) => {
     const matchSearch =
       !search ||
       msg.recipient.includes(search) ||
+      formatDisplayPhone(msg.recipient).includes(search) ||
       msg.content.toLowerCase().includes(search.toLowerCase()) ||
       msg.senderName.toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === "all" || msg.status === statusFilter;
@@ -211,14 +214,20 @@ export default function MessagesClient({
         <div className="hidden sm:flex flex-wrap items-end gap-3">
           <div className="flex flex-col gap-1">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] px-1">ตั้งแต่</span>
-            <div className="focus-within:ring-2 focus-within:ring-[rgba(var(--accent-rgb),0.2)] focus-within:border-transparent rounded-lg">
-              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-9 text-sm w-[150px] bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)]" />
+            <div className="relative">
+              <input ref={dateFromRef} type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-9 text-sm w-[150px] rounded-lg border border-[var(--border-default)] bg-[var(--bg-base)] text-[var(--text-primary)] px-2.5 pr-8 outline-none focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-2 focus:ring-[rgba(var(--accent-rgb),0.2)] [color-scheme:dark]" />
+              <button type="button" tabIndex={-1} onClick={() => dateFromRef.current?.showPicker()} className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+                <Calendar className="w-4 h-4" />
+              </button>
             </div>
           </div>
           <div className="flex flex-col gap-1">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] px-1">ถึง</span>
-            <div className="focus-within:ring-2 focus-within:ring-[rgba(var(--accent-rgb),0.2)] focus-within:border-transparent rounded-lg">
-              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-9 text-sm w-[150px] bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)]" />
+            <div className="relative">
+              <input ref={dateToRef} type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-9 text-sm w-[150px] rounded-lg border border-[var(--border-default)] bg-[var(--bg-base)] text-[var(--text-primary)] px-2.5 pr-8 outline-none focus:border-[rgba(var(--accent-rgb),0.6)] focus:ring-2 focus:ring-[rgba(var(--accent-rgb),0.2)] [color-scheme:dark]" />
+              <button type="button" tabIndex={-1} onClick={() => dateToRef.current?.showPicker()} className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+                <Calendar className="w-4 h-4" />
+              </button>
             </div>
           </div>
           {hasFilters && (
