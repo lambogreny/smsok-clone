@@ -212,11 +212,11 @@ export default function MessagesClient({
         <div className="hidden sm:flex flex-wrap items-end gap-3">
           <div className="flex flex-col gap-1">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] px-1">ตั้งแต่</span>
-            <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-9 text-sm w-[150px] bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] [color-scheme:dark]" />
+            <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} onClick={(e) => { try { (e.currentTarget as HTMLInputElement).showPicker(); } catch {} }} className="h-9 text-sm w-[150px] bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] [color-scheme:dark] cursor-pointer" />
           </div>
           <div className="flex flex-col gap-1">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] px-1">ถึง</span>
-            <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-9 text-sm w-[150px] bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] [color-scheme:dark]" />
+            <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} onClick={(e) => { try { (e.currentTarget as HTMLInputElement).showPicker(); } catch {} }} className="h-9 text-sm w-[150px] bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] rounded-lg focus:border-[rgba(var(--accent-rgb),0.6)] [color-scheme:dark] cursor-pointer" />
           </div>
           {hasFilters && (
             <Button
@@ -269,11 +269,11 @@ export default function MessagesClient({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider mb-2 block">ตั้งแต่</label>
-                <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-11 text-sm bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] rounded-lg" />
+                <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} onClick={(e) => { try { (e.currentTarget as HTMLInputElement).showPicker(); } catch {} }} className="h-11 text-sm bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] rounded-lg [color-scheme:dark] cursor-pointer" />
               </div>
               <div>
                 <label className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider mb-2 block">ถึง</label>
-                <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-11 text-sm bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] rounded-lg" />
+                <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} onClick={(e) => { try { (e.currentTarget as HTMLInputElement).showPicker(); } catch {} }} className="h-11 text-sm bg-[var(--bg-base)] border-[var(--border-default)] text-[var(--text-primary)] rounded-lg [color-scheme:dark] cursor-pointer" />
               </div>
             </div>
             <div className="flex gap-3 pt-2">
