@@ -82,7 +82,7 @@ type NotifPref = {
   description: string;
   icon: typeof Mail;
   email: boolean;
-  sms: boolean;
+  sms: boolean | undefined;
 };
 
 const DEFAULT_NOTIF_PREFS: NotifPref[] = [
@@ -108,7 +108,7 @@ const DEFAULT_NOTIF_PREFS: NotifPref[] = [
     description: "สรุปยอดส่ง SMS และค่าใช้จ่ายรายเดือน",
     icon: BarChart3,
     email: true,
-    sms: false,
+    sms: undefined,
   },
   {
     id: "security_alert",
@@ -116,7 +116,7 @@ const DEFAULT_NOTIF_PREFS: NotifPref[] = [
     description: "เข้าสู่ระบบจากอุปกรณ์ใหม่ หรือเปลี่ยนรหัสผ่าน",
     icon: AlertTriangle,
     email: true,
-    sms: true,
+    sms: undefined,
   },
 ];
 
