@@ -13,7 +13,6 @@ import {
 } from "../package/quota";
 import { assertSendingHours } from "../sending-hours";
 import { resolveActionUserId } from "../action-user";
-import { assertMarketingConsent } from "./consent";
 
 const campaignFilterSchema = paginationSchema.extend({
   status: z.string().trim().min(1).max(30).optional(),
@@ -180,8 +179,6 @@ export async function executeCampaign(...args: [string, string?, string?]) {
   const orgId = hasExplicitUserId ? maybeOrgId : campaignIdOrOrgId;
   // PDPA: Block marketing campaigns outside org-configured hours
   await assertSendingHours(orgId);
-  // PDPA: Verify account has marketing consent before sending campaign
-  await assertMarketingConsent(userId);
 
   // 1. Fetch campaign with contacts and template
   const campaign = await db.campaign.findFirst({

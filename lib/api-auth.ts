@@ -277,7 +277,7 @@ export function apiError(error: unknown) {
         : isThaiValidation && isDuplicate ? 409
         : isThaiValidation ? 400 : 500;
     const body = {
-      error: isThaiValidation ? msg : "เกิดข้อผิดพลาดภายในระบบ กรุณาลองใหม่",
+      error: isThaiValidation ? msg : (process.env.NODE_ENV !== "production" ? msg : "เกิดข้อผิดพลาดภายในระบบ กรุณาลองใหม่"),
       code,
     };
     finishApiLog(status, body, code, body.error, error.stack);
