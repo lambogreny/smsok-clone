@@ -15,7 +15,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatThaiDate } from "@/lib/format-thai-date";
+import { formatThaiDate, formatPhone } from "@/lib/format-thai-date";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -215,7 +215,7 @@ function DayDetailPanel({
                 <div className="flex items-center gap-2 text-[11px] text-[var(--text-muted)]">
                   <span>{sms.senderName}</span>
                   <span className="text-[var(--border-default)]">|</span>
-                  <span className="font-mono">{sms.recipient}</span>
+                  <span className="font-mono">{formatPhone(sms.recipient)}</span>
                 </div>
               </div>
             );

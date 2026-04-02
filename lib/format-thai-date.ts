@@ -134,3 +134,14 @@ export function timeAgo(iso: string | Date): string {
   if (diffDay < 30) return `${Math.floor(diffDay / 7)} สัปดาห์ที่แล้ว`;
   return formatThaiDateOnly(date);
 }
+
+/**
+ * Format phone number for display — strips +66 prefix and replaces with 0.
+ * e.g. +66891234567 → 0891234567
+ */
+export function formatPhone(phone: string | null | undefined): string {
+  if (!phone) return "";
+  if (phone.startsWith("+66") && phone.length >= 11) return "0" + phone.slice(3);
+  if (phone.startsWith("66") && phone.length >= 10) return "0" + phone.slice(2);
+  return phone;
+}

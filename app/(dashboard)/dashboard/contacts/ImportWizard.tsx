@@ -18,6 +18,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import CustomSelect from "@/components/ui/CustomSelect";
+import { formatPhone } from "@/lib/format-thai-date";
 
 type Step = "upload" | "mapping" | "preview" | "importing" | "result";
 
@@ -603,7 +604,7 @@ export default function ImportWizard({
                       {result.errors.slice(0, 20).map((err, i) => (
                         <TableRow key={i}>
                           <TableCell className="text-xs">{err.row}</TableCell>
-                          <TableCell className="text-xs font-mono">{err.phone}</TableCell>
+                          <TableCell className="text-xs font-mono">{formatPhone(err.phone)}</TableCell>
                           <TableCell className="text-xs text-[var(--error)]">{err.error}</TableCell>
                         </TableRow>
                       ))}

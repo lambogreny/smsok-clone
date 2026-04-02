@@ -34,6 +34,7 @@ import PageLayout, {
   PaginationBar,
 } from "@/components/blocks/PageLayout";
 import { cn } from "@/lib/utils";
+import { formatPhone } from "@/lib/format-thai-date";
 
 /* ─── Types ─── */
 
@@ -406,7 +407,7 @@ export default function ConsentPage() {
                     </td>
                     <td>
                       <span className="text-[13px] text-[var(--text-secondary)] font-mono tracking-wide">
-                        {contact.phone}
+                        {formatPhone(contact.phone)}
                       </span>
                     </td>
                     <td>

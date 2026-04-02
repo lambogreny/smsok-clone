@@ -34,6 +34,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import PageLayout, { PageHeader } from "@/components/blocks/PageLayout";
+import { formatPhone } from "@/lib/format-thai-date";
 
 /* ─── Schema ─── */
 
@@ -245,7 +246,7 @@ export default function NewGroupPage() {
                         {contact.name}
                       </p>
                       <p className="text-[11px] text-[var(--text-muted)] font-mono">
-                        {contact.phone}
+                        {formatPhone(contact.phone)}
                       </p>
                     </div>
                     <Plus className="w-4 h-4 text-[var(--accent)] shrink-0" />
@@ -270,7 +271,7 @@ export default function NewGroupPage() {
                       {contact.name}
                     </span>
                     <span className="text-[var(--text-muted)] font-mono text-[11px]">
-                      {contact.phone}
+                      {formatPhone(contact.phone)}
                     </span>
                     <button
                       type="button"

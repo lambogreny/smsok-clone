@@ -16,7 +16,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { formatThaiDate, formatThaiDateSplit } from "@/lib/format-thai-date";
+import { formatThaiDate, formatThaiDateSplit, formatPhone } from "@/lib/format-thai-date";
 import EmptyStateShared from "@/components/EmptyState";
 import PageLayout, {
   PageHeader,
@@ -358,7 +358,7 @@ export default function ScheduledPage() {
                         <span className="text-sm font-mono text-[var(--text-primary)]">{item.senderName}</span>
                       </td>
                       <td className="px-4 py-2.5">
-                        <span className="text-sm font-mono text-[var(--text-primary)]">{item.recipient}</span>
+                        <span className="text-sm font-mono text-[var(--text-primary)]">{formatPhone(item.recipient)}</span>
                       </td>
                       <td className="px-4 py-2.5 max-w-[240px]">
                         <p className="text-sm text-[var(--text-secondary)] truncate">{item.content}</p>
@@ -435,7 +435,7 @@ export default function ScheduledPage() {
                 <div key={item.id} className="p-4">
                   <div className="flex items-start justify-between mb-2">
                     <div>
-                      <p className="text-sm font-medium text-[var(--text-primary)]">{item.recipient}</p>
+                      <p className="text-sm font-medium text-[var(--text-primary)]">{formatPhone(item.recipient)}</p>
                       <p className="text-xs text-[var(--text-muted)] mt-0.5 font-mono">{item.senderName}</p>
                     </div>
                     <StatusBadge status={item.status} />

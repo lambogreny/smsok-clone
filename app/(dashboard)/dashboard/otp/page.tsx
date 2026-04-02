@@ -6,6 +6,7 @@ import { generateOtpForSession, verifyOtpForSession } from "@/lib/actions/otp";
 import { blockNonNumeric } from "@/lib/form-utils";
 import { safeErrorMessage } from "@/lib/error-messages";
 import { toCsvCell } from "@/lib/csv";
+import { formatPhone } from "@/lib/format-thai-date";
 import { toast } from "sonner";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -655,7 +656,7 @@ function OverviewTab({
                     className="text-xs text-[var(--text-primary)]"
                     style={{ fontFamily: "'IBM Plex Mono', monospace" }}
                   >
-                    {row.phone}
+                    {formatPhone(row.phone)}
                   </TableCell>
                   <TableCell
                     className="text-xs text-[var(--text-muted)]"
@@ -791,7 +792,7 @@ function HistoryTab({ historyData }: { historyData: OtpHistoryItem[] }) {
                   className="text-xs text-[var(--text-primary)]"
                   style={{ fontFamily: "'IBM Plex Mono', monospace" }}
                 >
-                  {row.phone}
+                  {formatPhone(row.phone)}
                 </TableCell>
                 <TableCell
                   className="text-xs text-[var(--text-muted)]"

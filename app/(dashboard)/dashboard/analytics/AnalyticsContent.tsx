@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { toCsvCell } from "@/lib/csv";
+import { formatPhone } from "@/lib/format-thai-date";
 import Link from "next/link";
 import {
   Send,
@@ -56,13 +57,6 @@ type CampaignRow = {
 
 type SortKey = "name" | "sentCount" | "deliveredRate" | "failedRate" | "duration";
 type SortDir = "asc" | "desc";
-
-function formatDisplayPhone(phone: string): string {
-  if (phone.startsWith("+66") && phone.length >= 11) {
-    return "0" + phone.slice(3);
-  }
-  return phone;
-}
 
 // ── Donut Chart ──
 
@@ -725,7 +719,7 @@ export default function AnalyticsContent({ stats }: { stats: Stats }) {
       ["สถานะ", "เบอร์ผู้รับ", "ผู้ส่ง", "ข้อความ (SMS)", "วันที่"],
       ...stats.recentMessages.map((msg) => [
         msg.status,
-        formatDisplayPhone(msg.recipient),
+        formatPhone(msg.recipient),
         msg.senderName,
         String(msg.creditCost),
         new Date(msg.createdAt).toLocaleString("th-TH"),
@@ -1151,7 +1145,7 @@ export default function AnalyticsContent({ stats }: { stats: Stats }) {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-[13px] font-mono tabular-nums" style={{ color: "var(--text-primary)" }}>{formatDisplayPhone(msg.recipient)}</span>
+                        <span className="text-[13px] font-mono tabular-nums" style={{ color: "var(--text-primary)" }}>{formatPhone(msg.recipient)}</span>
                       </td>
                       <td className="px-4 py-3 hidden sm:table-cell">
                         <span className="text-[12px]" style={{ color: "var(--text-muted)" }}>{msg.senderName}</span>

@@ -45,7 +45,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import OnboardingChecklist from "@/components/blocks/OnboardingChecklist";
 import TrialBanner, { TrialNotice } from "@/components/blocks/TrialBanner";
-import { formatThaiDateOnly, formatThaiDateShort, formatThaiTime } from "@/lib/format-thai-date";
+import { formatThaiDateOnly, formatThaiDateShort, formatThaiTime, formatPhone } from "@/lib/format-thai-date";
 
 /* ── Types ── */
 
@@ -805,7 +805,7 @@ function ActivityFeed({ messages }: { messages: DashboardStats["recentMessages"]
           type: "sms_sent",
           icon: CheckCircle,
           color: "var(--success)",
-          title: `SMS ส่งสำเร็จ ถึง ${msg.recipient}`,
+          title: `SMS ส่งสำเร็จ ถึง ${formatPhone(msg.recipient)}`,
           subtitle: `Sender: ${msg.senderName}`,
           time,
         };
@@ -816,7 +816,7 @@ function ActivityFeed({ messages }: { messages: DashboardStats["recentMessages"]
           type: "sms_failed",
           icon: XCircle,
           color: "var(--error)",
-          title: `SMS ล้มเหลว ถึง ${msg.recipient}`,
+          title: `SMS ล้มเหลว ถึง ${formatPhone(msg.recipient)}`,
           subtitle: `Sender: ${msg.senderName}`,
           time,
         };
@@ -826,7 +826,7 @@ function ActivityFeed({ messages }: { messages: DashboardStats["recentMessages"]
         type: "sms_pending",
         icon: Info,
         color: "var(--warning)",
-        title: `กำลังส่ง SMS ถึง ${msg.recipient}`,
+        title: `กำลังส่ง SMS ถึง ${formatPhone(msg.recipient)}`,
         subtitle: `Sender: ${msg.senderName}`,
         time,
       };
@@ -935,7 +935,7 @@ function RecentMessagesTable({ messages }: { messages: DashboardStats["recentMes
                     }`}
                   >
                     <TableCell className="text-sm text-[var(--text-primary)] font-mono py-2 px-4">{time}</TableCell>
-                    <TableCell className="text-sm text-[var(--text-primary)] font-mono py-2 px-4">{msg.recipient}</TableCell>
+                    <TableCell className="text-sm text-[var(--text-primary)] font-mono py-2 px-4">{formatPhone(msg.recipient)}</TableCell>
                     <TableCell className="text-sm text-[var(--text-secondary)] py-2 px-4 hidden md:table-cell">{msg.senderName}</TableCell>
                     <TableCell className="py-2 px-4 text-center">
                       <span className={`text-[11px] font-medium px-2.5 py-0.5 rounded-full ${s.badge}`}>

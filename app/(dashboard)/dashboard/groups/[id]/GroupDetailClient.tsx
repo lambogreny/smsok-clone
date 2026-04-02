@@ -7,7 +7,7 @@ import { removeContactFromGroup, bulkRemoveFromGroup, getContactsNotInGroup } fr
 import { importContacts, addContactsToGroup } from "@/lib/actions/contacts";
 import { safeErrorMessage } from "@/lib/error-messages";
 import { useToast } from "@/app/components/ui/Toast";
-import { formatThaiDateOnly } from "@/lib/format-thai-date";
+import { formatThaiDateOnly, formatPhone } from "@/lib/format-thai-date";
 import { getTagColor, parseTags } from "@/lib/tag-utils";
 import type { GroupDetailMember, GroupDetailContactStub } from "@/lib/types/api-responses";
 
@@ -565,7 +565,7 @@ export default function GroupDetailClient({
                       {m.name}
                     </TableCell>
                     <TableCell className="text-sm text-[var(--text-muted)] font-mono">
-                      {m.phone}
+                      {formatPhone(m.phone)}
                     </TableCell>
                     <TableCell className="text-sm text-[var(--text-muted)]">
                       {m.email || "—"}
@@ -645,7 +645,7 @@ export default function GroupDetailClient({
                       {m.name}
                     </div>
                     <div className="text-xs text-[var(--text-muted)] font-mono mt-0.5">
-                      {m.phone}
+                      {formatPhone(m.phone)}
                     </div>
                     {m.email && (
                       <div className="text-xs text-[var(--text-muted)] mt-0.5 truncate">
@@ -966,7 +966,7 @@ export default function GroupDetailClient({
                             )}
                           </div>
                           <div className="text-xs text-[var(--text-muted)] font-mono mt-0.5">
-                            {c.phone}
+                            {formatPhone(c.phone)}
                           </div>
                         </div>
                       </button>

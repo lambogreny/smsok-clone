@@ -13,7 +13,7 @@ import CustomSelect from "@/components/ui/CustomSelect";
 import PillTabs from "@/components/ui/PillTabs";
 import { Input } from "@/components/ui/input";
 import EmptyState from "@/components/EmptyState";
-import { formatThaiTimestamp, formatThaiTimestampFull } from "@/lib/format-thai-date";
+import { formatThaiTimestamp, formatThaiTimestampFull, formatPhone } from "@/lib/format-thai-date";
 import { toCsvCell } from "@/lib/csv";
 
 // ─── Types ────────────────────────────────────────────────────────────────
@@ -287,7 +287,7 @@ function DetailPane({
         )}
         <span className="text-[var(--text-muted)]">IP: <span className="text-[var(--text-secondary)] font-mono">{log.ip}</span></span>
         {log.phone && (
-          <span className="text-[var(--text-muted)]">Phone: <span className="text-[var(--text-secondary)] font-mono">{log.phone}</span></span>
+          <span className="text-[var(--text-muted)]">Phone: <span className="text-[var(--text-secondary)] font-mono">{formatPhone(log.phone)}</span></span>
         )}
         {log.messageId && (
           <span className="text-[var(--text-muted)]">Msg: <span className="text-[var(--text-secondary)] font-mono">{log.messageId}</span></span>

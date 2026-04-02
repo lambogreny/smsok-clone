@@ -3,7 +3,7 @@
 import { useState, useTransition, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { formatThaiDateOnly } from "@/lib/format-thai-date";
+import { formatThaiDateOnly, formatPhone } from "@/lib/format-thai-date";
 import { displayPhone } from "@/lib/validations";
 import { removeContactFromGroup, bulkRemoveFromGroup, deleteGroup, getContactsNotInGroup, addContactToGroup } from "@/lib/actions/groups";
 import { safeErrorMessage } from "@/lib/error-messages";
@@ -571,7 +571,7 @@ export default function GroupDetailClient({
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-[var(--text-primary)] truncate">{contact.name}</p>
-                      <p className="text-xs text-[var(--text-muted)] font-mono">{contact.phone}</p>
+                      <p className="text-xs text-[var(--text-muted)] font-mono">{formatPhone(contact.phone)}</p>
                     </div>
                     {isSelected && <Check className="w-4 h-4 text-[var(--accent)] shrink-0" />}
                   </button>

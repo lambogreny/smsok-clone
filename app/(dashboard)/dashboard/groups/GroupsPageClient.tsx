@@ -94,7 +94,7 @@ async function apiRemoveMember(groupId: string, contactId: string) {
   }
 }
 import { useToast } from "@/app/components/ui/Toast";
-import { formatThaiDateShort } from "@/lib/format-thai-date";
+import { formatThaiDateShort, formatPhone } from "@/lib/format-thai-date";
 
 // shadcn
 import { Button } from "@/components/ui/button";
@@ -773,7 +773,7 @@ export default function GroupsPageClient({
                           {m.contact.name}
                         </div>
                         <div className="text-[12px] text-[var(--text-muted)] font-mono">
-                          {m.contact.phone}
+                          {formatPhone(m.contact.phone)}
                         </div>
                       </div>
                       <button
@@ -828,7 +828,7 @@ export default function GroupsPageClient({
                           {c.name}
                         </div>
                         <div className="text-[12px] text-[var(--text-muted)] font-mono">
-                          {c.phone}
+                          {formatPhone(c.phone)}
                         </div>
                       </div>
                       <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[rgba(var(--accent-rgb),0.06)] group-hover:bg-[rgba(var(--accent-rgb),0.15)] flex items-center justify-center text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors">
