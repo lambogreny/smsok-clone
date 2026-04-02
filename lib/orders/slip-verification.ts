@@ -8,8 +8,7 @@ import {
 } from "@/lib/orders/api";
 import { MAX_SLIP_ATTEMPTS, type SlipRejectCode } from "@/lib/orders/rejected-slip";
 import { createOrderHistory } from "@/lib/orders/service";
-import type { SlipVerifyResult } from "@/lib/easyslip";
-import { verifySlipByUrl } from "@/lib/slipok";
+import { verifySlipByUrl, type SlipVerifyResult } from "@/lib/easyslip";
 import { extractStoredFileKey } from "@/lib/storage/files";
 
 const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL || "";
@@ -120,7 +119,7 @@ function shouldQueueForManualReview(verification: SlipVerifyResult) {
 }
 
 function getManualReviewNote(verification: SlipVerifyResult) {
-  return `SlipOK: ${verification.error ?? verification.providerCode ?? "manual review required"}`;
+  return `EasySlip: ${verification.error ?? verification.providerCode ?? "manual review required"}`;
 }
 
 function getExpectedSlipAmount(order: QueuedOrderRecord) {
@@ -564,15 +563,15 @@ export async function processQueuedOrderSlipVerification(input: {
   const expectedAmount = getExpectedSlipAmount(order);
 
   const verification = await withTimeout(
-    verifySlipByUrl(publicUrl, expectedAmount),
+    verifySlipByUrl(publicUrl),
     SLIP_VERIFY_TIMEOUT_MS,
-    "SlipOK verification timed out",
+    "EasySlip verification timed out",
   ).catch((error) => {
-    console.error("[Slip Worker] SlipOK request failed:", error);
+    console.error("[Slip Worker] EasySlip request failed:", error);
     if (error instanceof SlipVerificationRetryableError) {
       throw error;
     }
-    throw new SlipVerificationRetryableError("SlipOK verification request failed");
+    throw new SlipVerificationRetryableError("EasySlip verification request failed");
   });
 
   if (verification.isDuplicate) {
