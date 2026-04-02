@@ -382,15 +382,41 @@ function AccountSummary({
   );
 }
 
+function NotifSkeleton() {
+  return (
+    <div className="space-y-1">
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className="flex items-center gap-4 rounded-lg px-4 py-3.5">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="w-4 h-4 rounded bg-[var(--border-default)] animate-pulse shrink-0" />
+            <div className="min-w-0 space-y-1.5">
+              <div className="h-3.5 w-28 rounded bg-[var(--border-default)] animate-pulse" />
+              <div className="h-2.5 w-44 rounded bg-[var(--border-default)] animate-pulse" />
+            </div>
+          </div>
+          <div className="w-16 flex justify-center">
+            <div className="h-5 w-9 rounded-full bg-[var(--border-default)] animate-pulse" />
+          </div>
+          <div className="w-16 flex justify-center">
+            <div className="h-5 w-9 rounded-full bg-[var(--border-default)] animate-pulse" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function NotificationsContent({
   notifPrefs,
   toggleNotif,
   savingId,
+  loading,
   apiUnavailable,
 }: {
   notifPrefs: NotifPref[];
   toggleNotif: (id: string, channel: "email" | "sms") => void;
   savingId: string | null;
+  loading: boolean;
   apiUnavailable: boolean;
 }) {
   return (
@@ -428,47 +454,51 @@ function NotificationsContent({
         </div>
       </div>
 
-      <div className="space-y-1">
-        {notifPrefs.map((pref) => {
-          const Icon = pref.icon;
-          return (
-            <div
-              key={pref.id}
-              className="flex items-center gap-4 rounded-lg px-4 py-3.5 hover:bg-white/[0.02] transition-colors"
-            >
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <Icon className="w-4 h-4 text-[var(--text-muted)] shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-[var(--text-primary)]">
-                    {pref.label}
-                  </p>
-                  <p className="text-xs text-[var(--text-muted)] truncate">
-                    {pref.description}
-                  </p>
+      {loading ? <NotifSkeleton /> : (
+        <div className="space-y-1">
+          {notifPrefs.map((pref) => {
+            const Icon = pref.icon;
+            const savingEmail = savingId === `${pref.id}:email`;
+            const savingSms   = savingId === `${pref.id}:sms`;
+            return (
+              <div
+                key={pref.id}
+                className="flex items-center gap-4 rounded-lg px-4 py-3.5 hover:bg-white/[0.02] transition-colors"
+              >
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <Icon className="w-4 h-4 text-[var(--text-muted)] shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-[var(--text-primary)]">
+                      {pref.label}
+                    </p>
+                    <p className="text-xs text-[var(--text-muted)] truncate">
+                      {pref.description}
+                    </p>
+                  </div>
+                </div>
+                <div className="w-16 flex justify-center">
+                  <Switch
+                    checked={pref.email}
+                    onCheckedChange={() => toggleNotif(pref.id, "email")}
+                    disabled={pref.id === "security_alert" || savingEmail}
+                    aria-label={`${pref.label} — อีเมล${pref.id === "security_alert" ? " (ปิดไม่ได้)" : ""}`}
+                    className={`transition-opacity ${savingEmail ? "opacity-40 cursor-wait" : ""}`}
+                  />
+                </div>
+                <div className="w-16 flex justify-center">
+                  <Switch
+                    checked={pref.sms}
+                    onCheckedChange={() => toggleNotif(pref.id, "sms")}
+                    disabled={savingSms}
+                    aria-label={`${pref.label} — SMS`}
+                    className={`transition-opacity ${savingSms ? "opacity-40 cursor-wait" : ""}`}
+                  />
                 </div>
               </div>
-              <div className="w-16 flex justify-center">
-                <Switch
-                  checked={pref.email}
-                  onCheckedChange={() => toggleNotif(pref.id, "email")}
-                  disabled={pref.id === "security_alert" || savingId === `${pref.id}:email`}
-                  aria-label={`${pref.label} — อีเมล${pref.id === "security_alert" ? " (ปิดไม่ได้)" : ""}`}
-                  className={savingId === `${pref.id}:email` ? "opacity-50" : ""}
-                />
-              </div>
-              <div className="w-16 flex justify-center">
-                <Switch
-                  checked={pref.sms}
-                  onCheckedChange={() => toggleNotif(pref.id, "sms")}
-                  disabled={savingId === `${pref.id}:sms`}
-                  aria-label={`${pref.label} — SMS`}
-                  className={savingId === `${pref.id}:sms` ? "opacity-50" : ""}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       <p className="text-xs text-[var(--text-muted)] mt-5 ml-4">
         การแจ้งเตือนด้านความปลอดภัยทางอีเมลไม่สามารถปิดได้
@@ -623,6 +653,7 @@ export default function SettingsContent({
 }) {
   const [activeTab, setActiveTab] = useState<Tab>("profile");
   const [notifPrefs, setNotifPrefs] = useState(DEFAULT_NOTIF_PREFS);
+  const [notifLoading, setNotifLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [apiUnavailable, setApiUnavailable] = useState(false);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -700,20 +731,28 @@ export default function SettingsContent({
         const res = await fetch("/api/v1/settings/notifications");
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        if (!cancelled && Array.isArray(data)) {
-          setNotifPrefs((prev) =>
-            prev.map((pref) => {
-              const remote = data.find((d: { id: string }) => d.id === pref.id);
-              if (remote) {
-                return { ...pref, email: remote.email, sms: remote.sms };
-              }
-              return pref;
-            })
-          );
+        if (!cancelled) {
+          if (Array.isArray(data)) {
+            setNotifPrefs((prev) =>
+              prev.map((pref) => {
+                const remote = data.find((d: { id: string }) => d.id === pref.id);
+                if (remote) {
+                  return {
+                    ...pref,
+                    ...(remote.email !== undefined && { email: remote.email }),
+                    ...(remote.sms   !== undefined && { sms:   remote.sms }),
+                  };
+                }
+                return pref;
+              })
+            );
+          }
+          setNotifLoading(false);
         }
       } catch {
         if (!cancelled) {
           setApiUnavailable(true);
+          setNotifLoading(false);
         }
       }
     }
@@ -755,21 +794,25 @@ export default function SettingsContent({
     if (id === "security_alert" && channel === "email") return;
 
     const savingKey = `${id}:${channel}`;
+
+    // Prevent double-click while saving
+    if (savingId === savingKey) return;
+
     const prev = notifPrefs;
+    const current = prev.find((p) => p.id === id);
+    if (!current) return;
+
+    const newValue = !current[channel];
 
     // Optimistic update
     setNotifPrefs((prefs) =>
-      prefs.map((p) => (p.id === id ? { ...p, [channel]: !p[channel] } : p))
+      prefs.map((p) => (p.id === id ? { ...p, [channel]: newValue } : p))
     );
 
     if (apiUnavailable) return;
 
     setSavingId(savingKey);
     try {
-      const updated = prev.find((p) => p.id === id);
-      if (!updated) return;
-      const newValue = !updated[channel];
-
       const res = await fetch("/api/v1/settings/notifications", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -777,6 +820,7 @@ export default function SettingsContent({
       });
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      toast.success("บันทึกการตั้งค่าแล้ว");
     } catch {
       // Revert on failure
       setNotifPrefs(prev);
@@ -858,6 +902,7 @@ export default function SettingsContent({
                   notifPrefs={notifPrefs}
                   toggleNotif={toggleNotif}
                   savingId={savingId}
+                  loading={notifLoading}
                   apiUnavailable={apiUnavailable}
                 />
               ),
@@ -1006,6 +1051,7 @@ export default function SettingsContent({
                 notifPrefs={notifPrefs}
                 toggleNotif={toggleNotif}
                 savingId={savingId}
+                loading={notifLoading}
                 apiUnavailable={apiUnavailable}
               />
               <PushNotificationOptIn />
