@@ -32,7 +32,7 @@ import { toCsvCell } from "@/lib/csv";
 
 const statusConfig: Record<string, { badge: string; label: string }> = {
   delivered: { badge: "bg-[rgba(var(--success-rgb),0.08)] text-[var(--success)] border-[rgba(var(--success-rgb),0.2)]", label: "สำเร็จ" },
-  sent:      { badge: "bg-[rgba(var(--accent-rgb),0.08)] text-[var(--accent)] border-[rgba(var(--accent-rgb),0.2)]", label: "กำลังส่ง" },
+  sent:      { badge: "bg-[rgba(var(--info-rgb),0.08)] text-[var(--info)] border-[rgba(var(--info-rgb),0.2)]", label: "ส่งออกแล้ว" },
   pending:   { badge: "bg-[rgba(var(--warning-rgb),0.08)] text-[var(--warning)] border-[rgba(var(--warning-rgb),0.2)]", label: "รอส่ง" },
   failed:    { badge: "bg-[rgba(var(--error-rgb),0.08)] text-[var(--error)] border-[rgba(var(--error-rgb),0.2)]", label: "ล้มเหลว" },
 };
@@ -202,7 +202,7 @@ export default function MessagesClient({
                 options={[
                   { value: "all", label: "ทุกสถานะ" },
                   { value: "delivered", label: "สำเร็จ" },
-                  { value: "sent", label: "กำลังส่ง" },
+                  { value: "sent", label: "ส่งออกแล้ว" },
                   { value: "pending", label: "รอส่ง" },
                   { value: "failed", label: "ล้มเหลว" },
                 ]}
@@ -262,7 +262,7 @@ export default function MessagesClient({
                 options={[
                   { value: "all", label: "ทุกสถานะ" },
                   { value: "delivered", label: "สำเร็จ" },
-                  { value: "sent", label: "กำลังส่ง" },
+                  { value: "sent", label: "ส่งออกแล้ว" },
                   { value: "pending", label: "รอส่ง" },
                   { value: "failed", label: "ล้มเหลว" },
                 ]}
