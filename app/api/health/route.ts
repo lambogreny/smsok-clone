@@ -54,6 +54,17 @@ export async function GET() {
     heapTotal: Math.round(mem.heapTotal / 1024 / 1024),
   };
 
+  // R2 storage check (set/not-set only — no secret values)
+  const r2Status = {
+    R2_ENDPOINT: process.env.R2_ENDPOINT ? "set" : "NOT SET",
+    R2_BUCKET: process.env.R2_BUCKET ? "set" : "NOT SET",
+    R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID ? "set" : "NOT SET",
+    R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY ? "set" : "NOT SET",
+    R2_PUBLIC_URL: process.env.R2_PUBLIC_URL ? `set (${process.env.R2_PUBLIC_URL})` : "NOT SET",
+  };
+  const r2Configured = Object.values(r2Status).every((v) => v !== "NOT SET");
+  checks.r2 = { status: r2Configured ? "ok" : "not_configured" };
+
   const ready = checks.app.status === "ok" && checks.database?.status === "ok";
   const dependenciesHealthy = [checks.redis, checks.queues].every((check) => check?.status === "ok");
   const status = ready
@@ -69,6 +80,7 @@ export async function GET() {
       latency: Date.now() - start,
       memory: memoryMB,
       checks,
+      r2: r2Status,
       version: env.COMMIT_SHA,
     },
     {

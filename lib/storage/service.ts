@@ -25,8 +25,12 @@ type StoreFileInput = {
 };
 
 export class StorageUploadError extends Error {
-  constructor(message = "R2 upload failed") {
+  constructor(
+    message = "R2 upload failed",
+    public readonly reason?: string,
+  ) {
     super(message);
+    this.name = "StorageUploadError";
   }
 }
 
@@ -47,8 +51,10 @@ export async function storeBufferInR2(input: StoreFileInput) {
       contentType: input.contentType,
     });
   } catch (error) {
-    console.error("[storage] R2 upload failed:", error);
-    throw new StorageUploadError("R2 upload failed");
+    const isConfigError = error instanceof Error && error.message === "R2 storage is not configured";
+    const reason = isConfigError ? "not_configured" : "upload_failed";
+    console.error(`[storage] R2 ${reason}:`, error);
+    throw new StorageUploadError("R2 upload failed", reason);
   }
 
   return {

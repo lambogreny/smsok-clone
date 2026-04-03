@@ -261,7 +261,10 @@ export async function POST(req: Request, ctx: RouteContext) {
       await cleanupUploads();
     }
     if (error instanceof StorageUploadError) {
-      return apiError(new ApiError(503, "ระบบอัปโหลดไฟล์ยังไม่พร้อม กรุณาลองใหม่"));
+      const msg = error.reason === "not_configured"
+        ? "ระบบอัปโหลดไฟล์ยังไม่ได้ตั้งค่า (R2 env missing)"
+        : "ระบบอัปโหลดไฟล์ยังไม่พร้อม กรุณาลองใหม่";
+      return apiError(new ApiError(503, msg));
     }
     return apiError(error);
   }
