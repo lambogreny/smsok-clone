@@ -11,6 +11,10 @@ const SMS_API_URL = process.env.SMS_API_URL || "https://sms-api.cl1.easythunder.
 const SMS_API_USERNAME = process.env.SMS_API_USERNAME || "";
 const SMS_API_PASSWORD = process.env.SMS_API_PASSWORD || "";
 
+// Webhook URL for EasyThunder DLR callbacks — must be publicly accessible
+const SMS_WEBHOOK_URL = process.env.SMS_WEBHOOK_URL ||
+  (process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/api/v1/sms/webhook` : "");
+
 let cachedToken: { accessToken: string; refreshToken: string; expiresAt: number } | null = null;
 
 // ==========================================
@@ -172,6 +176,7 @@ export async function sendSmsBatch(params: SendSmsParams): Promise<SendSmsResult
       message,
       sender,
       msgType,
+      ...(SMS_WEBHOOK_URL ? { webhookUrl: SMS_WEBHOOK_URL } : {}),
     }),
   });
 
@@ -184,7 +189,13 @@ export async function sendSmsBatch(params: SendSmsParams): Promise<SendSmsResult
         "Content-Type": "application/json",
         Authorization: `Bearer ${newToken}`,
       },
-      body: JSON.stringify({ msnList, message, sender, msgType }),
+      body: JSON.stringify({
+        msnList,
+        message,
+        sender,
+        msgType,
+        ...(SMS_WEBHOOK_URL ? { webhookUrl: SMS_WEBHOOK_URL } : {}),
+      }),
     });
 
     if (!retryRes.ok) {
